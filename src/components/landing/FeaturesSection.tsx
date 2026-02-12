@@ -36,7 +36,7 @@ const features = [
 
 const container = {
   hidden: {},
-  show: { transition: { staggerChildren: 0.1 } },
+  show: { transition: { staggerChildren: 0.08 } },
 };
 
 const item = {
@@ -45,21 +45,21 @@ const item = {
 };
 
 const FeaturesSection = () => (
-  <section id="funcionalidades" className="relative py-24">
+  <section id="funcionalidades" className="relative py-32 bg-secondary/30">
     <div className="container mx-auto px-4">
-      <div className="mb-16 text-center">
-        <span className="mb-3 inline-block text-sm font-medium uppercase tracking-wider text-accent">
+      <div className="mb-20 text-center">
+        <span className="mb-4 inline-block text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
           Funcionalidades
         </span>
-        <h2 className="text-3xl font-bold md:text-5xl">
+        <h2 className="text-3xl font-normal md:text-5xl">
           Tudo que seu escritório precisa
         </h2>
-        <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
+        <p className="mx-auto mt-5 max-w-lg text-muted-foreground">
           Módulos integrados que simplificam a rotina jurídica do início ao fim.
         </p>
       </div>
       <motion.div
-        className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
+        className="grid gap-px bg-border md:grid-cols-2 lg:grid-cols-3"
         variants={container}
         initial="hidden"
         whileInView="show"
@@ -69,13 +69,14 @@ const FeaturesSection = () => (
           <motion.div
             key={feat.title}
             variants={item}
-            className="group rounded-xl border border-border bg-gradient-card p-8 transition-all duration-300 hover:border-accent/30 hover:glow-gold"
+            className="group relative bg-background p-10 transition-all duration-500 hover:bg-primary hover:text-primary-foreground cursor-pointer"
           >
-            <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-accent/10 text-accent transition-colors group-hover:bg-accent/20">
-              <feat.icon className="h-6 w-6" />
+            <div className="mb-6 inline-flex h-12 w-12 items-center justify-center text-primary transition-colors duration-500 group-hover:text-primary-foreground">
+              <feat.icon className="h-6 w-6" strokeWidth={1.5} />
             </div>
-            <h3 className="mb-2 text-xl font-semibold font-display">{feat.title}</h3>
-            <p className="text-sm leading-relaxed text-muted-foreground">{feat.description}</p>
+            <h3 className="mb-3 text-xl font-normal font-display transition-colors duration-500">{feat.title}</h3>
+            <p className="text-sm leading-relaxed text-muted-foreground transition-colors duration-500 group-hover:text-primary-foreground/70">{feat.description}</p>
+            <div className="absolute bottom-0 left-0 h-[2px] w-0 bg-cream transition-all duration-500 group-hover:w-full" />
           </motion.div>
         ))}
       </motion.div>
