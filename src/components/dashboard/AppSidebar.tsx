@@ -56,18 +56,18 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      <div className="flex h-16 items-center justify-center border-b border-sidebar-border px-3">
+      <div className="flex h-20 items-center justify-center border-b border-sidebar-border px-4">
         {collapsed ? (
           <img
             src={iconLexa}
             alt="LEXA"
-            className="h-9 w-auto object-contain"
+            className="h-12 w-auto object-contain"
           />
         ) : (
           <img
             src={logoLexa}
             alt="LEXA"
-            className="h-10 w-auto object-contain"
+            className="h-14 w-auto object-contain"
           />
         )}
       </div>
