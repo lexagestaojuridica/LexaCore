@@ -2,3 +2,6 @@ project_id = "ujpbksnlqzdivqjztubo"
 
 [functions.aruna-chat]
 verify_jwt = false
+
+[functions.aruna-generate-doc]
+verify_jwt = false

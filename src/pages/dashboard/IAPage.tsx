@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Sparkles, User, Trash2 } from "lucide-react";
+import { Send, Sparkles, User, Trash2, FileText, Loader2 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -45,7 +45,18 @@ const suggestions = [
   "Qual cliente tem mais processos?",
 ];
 
+const DOC_TYPES = [
+  { value: "peticao_inicial", label: "Petição Inicial", icon: "📄" },
+  { value: "procuracao", label: "Procuração", icon: "📋" },
+  { value: "contestacao", label: "Contestação", icon: "📝" },
+  { value: "recurso", label: "Recurso", icon: "⚖️" },
+  { value: "contrato", label: "Contrato", icon: "📑" },
+  { value: "notificacao", label: "Notificação Extrajudicial", icon: "📬" },
+  { value: "parecer", label: "Parecer Jurídico", icon: "🔍" },
+];
+
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/aruna-chat`;
+const DOC_GEN_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/aruna-generate-doc`;
 
 export default function IAPage() {
   const { user } = useAuth();
@@ -55,6 +66,10 @@ export default function IAPage() {
   const [input, setInput] = useState("");
   const [localMessages, setLocalMessages] = useState<LocalMsg[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [isGeneratingDoc, setIsGeneratingDoc] = useState(false);
+  const [showDocPanel, setShowDocPanel] = useState(false);
+  const [selectedDocType, setSelectedDocType] = useState("");
+  const [docInstructions, setDocInstructions] = useState("");
 
   const { data: profileData } = useQuery({
     queryKey: ["profile", user?.id],
@@ -319,6 +334,84 @@ export default function IAPage() {
     }
   };
 
+  const handleGenerateDoc = async () => {
+    if (!selectedDocType || !orgId || !user?.id || isGeneratingDoc) return;
+
+    setIsGeneratingDoc(true);
+    const docLabel = DOC_TYPES.find((d) => d.value === selectedDocType)?.label || "Documento";
+
+    // Add a user message about the generation
+    const userMsg: LocalMsg = {
+      id: crypto.randomUUID(),
+      role: "user",
+      content: `📝 Gerar documento: **${docLabel}**${docInstructions ? `\n\nInstruções: ${docInstructions}` : ""}`,
+      created_at: new Date().toISOString(),
+    };
+    setLocalMessages((prev) => [...prev, userMsg]);
+    setShowDocPanel(false);
+
+    const assistantId = crypto.randomUUID();
+    setLocalMessages((prev) => [
+      ...prev,
+      { id: assistantId, role: "assistant", content: "⏳ Gerando documento...", created_at: new Date().toISOString() },
+    ]);
+
+    try {
+      const resp = await fetch(DOC_GEN_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({
+          doc_type: selectedDocType,
+          instructions: docInstructions,
+          organization_id: orgId,
+          user_id: user.id,
+        }),
+      });
+
+      if (!resp.ok) {
+        const errData = await resp.json().catch(() => ({}));
+        throw new Error(errData.error || `Erro ${resp.status}`);
+      }
+
+      const result = await resp.json();
+
+      const successContent = `${result.message}\n\n**Arquivo:** ${result.document.file_name}\n\nO documento foi salvo automaticamente no módulo de **Documentos**. Você pode acessá-lo lá para baixar ou visualizar.\n\n---\n\n**Prévia do conteúdo:**\n\n${result.content_preview}${result.content_preview.length >= 500 ? "..." : ""}`;
+
+      setLocalMessages((prev) =>
+        prev.map((m) =>
+          m.id === assistantId ? { ...m, content: successContent } : m
+        )
+      );
+
+      // Save both messages to DB
+      await supabase.from("conversas_ia").insert([
+        { content: userMsg.content, role: "user", user_id: user.id, organization_id: orgId },
+        { content: successContent, role: "assistant", user_id: user.id, organization_id: orgId },
+      ]);
+
+      // Invalidate documents query so the list updates
+      queryClient.invalidateQueries({ queryKey: ["documentos"] });
+
+      toast({ title: "Documento gerado!", description: `${docLabel} criado e salvo com sucesso.` });
+    } catch (e: any) {
+      setLocalMessages((prev) =>
+        prev.map((m) =>
+          m.id === assistantId
+            ? { ...m, content: `❌ Erro ao gerar documento: ${e.message}` }
+            : m
+        )
+      );
+      toast({ title: "Erro", description: e.message, variant: "destructive" });
+    } finally {
+      setIsGeneratingDoc(false);
+      setSelectedDocType("");
+      setDocInstructions("");
+    }
+  };
+
   const displayMessages = localMessages.length > 0 ? localMessages : [];
 
   return (
@@ -335,6 +428,16 @@ export default function IAPage() {
           </p>
         </div>
         <div className="ml-auto flex items-center gap-3">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowDocPanel(!showDocPanel)}
+            disabled={isStreaming || isGeneratingDoc}
+            className="text-primary"
+          >
+            <FileText className="mr-1.5 h-4 w-4" />
+            Gerar Documento
+          </Button>
           {displayMessages.length > 0 && (
             <Button
               variant="ghost"
@@ -353,6 +456,61 @@ export default function IAPage() {
           </div>
         </div>
       </div>
+
+      {/* Document Generation Panel */}
+      {showDocPanel && (
+        <div className="border-b border-border bg-muted/30 px-4 py-4">
+          <div className="mx-auto max-w-2xl space-y-3">
+            <h3 className="text-sm font-medium text-foreground">📝 Gerar Documento Jurídico</h3>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+              {DOC_TYPES.map((dt) => (
+                <button
+                  key={dt.value}
+                  onClick={() => setSelectedDocType(selectedDocType === dt.value ? "" : dt.value)}
+                  className={cn(
+                    "rounded-lg border px-3 py-2 text-left text-xs transition-colors",
+                    selectedDocType === dt.value
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border bg-background text-foreground hover:bg-muted"
+                  )}
+                >
+                  <span className="mr-1">{dt.icon}</span>
+                  {dt.label}
+                </button>
+              ))}
+            </div>
+            {selectedDocType && (
+              <div className="space-y-2">
+                <Textarea
+                  value={docInstructions}
+                  onChange={(e) => setDocInstructions(e.target.value)}
+                  placeholder="Instruções adicionais (opcional): ex. 'para ação de despejo, comarca de São Paulo'"
+                  rows={2}
+                  className="resize-none text-sm"
+                />
+                <div className="flex justify-end gap-2">
+                  <Button variant="ghost" size="sm" onClick={() => { setShowDocPanel(false); setSelectedDocType(""); setDocInstructions(""); }}>
+                    Cancelar
+                  </Button>
+                  <Button size="sm" onClick={handleGenerateDoc} disabled={isGeneratingDoc}>
+                    {isGeneratingDoc ? (
+                      <>
+                        <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                        Gerando...
+                      </>
+                    ) : (
+                      <>
+                        <FileText className="mr-1.5 h-4 w-4" />
+                        Gerar e Salvar
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto py-6">
