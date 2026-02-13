@@ -5,7 +5,7 @@ import logoLexa from "@/assets/logo-lexa.png";
 const Navbar = () => (
   <nav className="fixed top-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-md">
     <div className="container mx-auto flex h-20 items-center justify-between px-4">
-      <img src={logoLexa} alt="LEXA" className="h-8" />
+      <img src={logoLexa} alt="LEXA" className="h-14" />
       <div className="hidden items-center gap-10 md:flex">
         <a href="#funcionalidades" className="text-sm tracking-wide text-muted-foreground transition-colors hover:text-primary">Funcionalidades</a>
         <a href="#aruna" className="text-sm tracking-wide text-muted-foreground transition-colors hover:text-primary">ARUNA IA</a>
