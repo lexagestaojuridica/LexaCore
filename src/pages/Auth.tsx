@@ -1,13 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import LoginForm from "@/components/auth/LoginForm";
 import SignupForm from "@/components/auth/SignupForm";
-import logoLexa from "@/assets/logo-lexa.png";
 import logoLexaWhite from "@/assets/logo-lexa-white.png";
-import heroOffice from "@/assets/hero-office.jpg";
+import logoLexa from "@/assets/logo-lexa.png";
+import authBgVideo from "@/assets/auth-bg-video.mp4";
 import { motion, AnimatePresence } from "framer-motion";
-import { useEffect } from "react";
+import { Shield, Scale, Bot } from "lucide-react";
 
 const Auth = () => {
   const [mode, setMode] = useState<"login" | "signup">("login");
@@ -30,56 +30,101 @@ const Auth = () => {
 
   return (
     <div className="flex min-h-screen">
-      {/* Left - Branding with real image */}
-      <div className="hidden w-1/2 items-center justify-center lg:flex relative overflow-hidden">
-        <img src={heroOffice} alt="" className="absolute inset-0 h-full w-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/95 via-primary/85 to-primary/75" />
-        <div className="relative max-w-md px-12 text-center">
-          <img src={logoLexaWhite} alt="LEXA" className="mx-auto mb-10 h-28" />
-          <h2 className="font-display text-3xl font-semibold text-primary-foreground">
+      {/* Left - Video Background */}
+      <div className="hidden w-[55%] items-center justify-center lg:flex relative overflow-hidden">
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 h-full w-full object-cover"
+        >
+          <source src={authBgVideo} type="video/mp4" />
+        </video>
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/90 via-primary/70 to-primary/50" />
+        <div className="absolute inset-0 bg-gradient-to-t from-primary/80 via-transparent to-transparent" />
+
+        <div className="relative z-10 max-w-lg px-16 text-center">
+          <motion.img
+            src={logoLexaWhite}
+            alt="LEXA"
+            className="mx-auto mb-12 h-28"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+          />
+          <motion.h2
+            className="font-display text-4xl font-semibold leading-tight text-primary-foreground"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.8 }}
+          >
             Tecnologia a serviço do Direito
-          </h2>
-          <p className="mt-4 text-sm leading-relaxed text-primary-foreground/60">
+          </motion.h2>
+          <motion.p
+            className="mt-4 text-base leading-relaxed text-primary-foreground/70"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4, duration: 0.8 }}
+          >
             Gerencie processos, finanças, prazos e clientes em um único lugar com inteligência artificial.
-          </p>
-          <div className="mt-12 flex justify-center gap-8 text-center">
-            <div>
-              <p className="text-2xl font-bold text-primary-foreground">500+</p>
-              <p className="text-xs text-primary-foreground/50">Escritórios</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-primary-foreground">50k+</p>
-              <p className="text-xs text-primary-foreground/50">Processos</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-primary-foreground">99.9%</p>
-              <p className="text-xs text-primary-foreground/50">Uptime</p>
-            </div>
-          </div>
+          </motion.p>
+
+          {/* Feature pills */}
+          <motion.div
+            className="mt-10 flex flex-wrap justify-center gap-3"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6, duration: 0.8 }}
+          >
+            {[
+              { icon: Scale, label: "Gestão de Processos" },
+              { icon: Bot, label: "IA Jurídica" },
+              { icon: Shield, label: "Segurança Total" },
+            ].map((item) => (
+              <div
+                key={item.label}
+                className="flex items-center gap-2 rounded-full border border-primary-foreground/20 bg-primary-foreground/10 px-4 py-2 backdrop-blur-sm"
+              >
+                <item.icon className="h-3.5 w-3.5 text-accent" />
+                <span className="text-xs font-medium text-primary-foreground/80">
+                  {item.label}
+                </span>
+              </div>
+            ))}
+          </motion.div>
+
+          {/* Stats */}
+          <motion.div
+            className="mt-14 flex justify-center gap-10"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.8, duration: 0.8 }}
+          >
+            {[
+              { value: "500+", label: "Escritórios" },
+              { value: "50k+", label: "Processos" },
+              { value: "99.9%", label: "Uptime" },
+            ].map((stat) => (
+              <div key={stat.label} className="text-center">
+                <p className="text-2xl font-bold text-primary-foreground">{stat.value}</p>
+                <p className="text-[11px] text-primary-foreground/50 uppercase tracking-wider">{stat.label}</p>
+              </div>
+            ))}
+          </motion.div>
         </div>
       </div>
 
       {/* Right - Forms */}
-      <div className="flex w-full flex-1 flex-col items-center justify-center px-6 lg:w-1/2">
+      <div className="flex w-full flex-1 flex-col items-center justify-center px-6 lg:w-[45%] bg-background">
         <div className="w-full max-w-md">
           <img src={logoLexa} alt="LEXA" className="mx-auto mb-10 h-24 lg:hidden" />
 
-          <div className="mb-2">
-            <h1 className="font-display text-2xl font-semibold text-foreground">
-              {mode === "login" ? "Bem-vindo de volta" : "Crie sua conta"}
-            </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {mode === "login"
-                ? "Entre na sua conta para continuar"
-                : "Comece seu teste grátis de 7 dias"}
-            </p>
-          </div>
-
           {/* Tab switcher */}
-          <div className="mb-8 mt-6 flex rounded-lg bg-muted p-1">
+          <div className="mb-8 flex rounded-xl bg-muted p-1">
             <button
               onClick={() => setMode("login")}
-              className={`flex-1 rounded-md py-2 text-sm font-medium transition-all duration-200 ${
+              className={`flex-1 rounded-lg py-2.5 text-sm font-medium transition-all duration-300 ${
                 mode === "login"
                   ? "bg-background text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
@@ -89,7 +134,7 @@ const Auth = () => {
             </button>
             <button
               onClick={() => setMode("signup")}
-              className={`flex-1 rounded-md py-2 text-sm font-medium transition-all duration-200 ${
+              className={`flex-1 rounded-lg py-2.5 text-sm font-medium transition-all duration-300 ${
                 mode === "signup"
                   ? "bg-background text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
@@ -105,7 +150,7 @@ const Auth = () => {
               initial={{ opacity: 0, x: mode === "login" ? -20 : 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: mode === "login" ? 20 : -20 }}
-              transition={{ duration: 0.2 }}
+              transition={{ duration: 0.25 }}
             >
               {mode === "login" ? (
                 <LoginForm onSwitchToSignup={() => setMode("signup")} />

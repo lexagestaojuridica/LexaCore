@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "@/hooks/use-toast";
-import { Eye, EyeOff, Mail } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, ArrowRight } from "lucide-react";
 import SocialAuthButtons from "./SocialAuthButtons";
 
 const loginSchema = z.object({
@@ -53,7 +53,7 @@ const LoginForm = ({ onSwitchToSignup }: LoginFormProps) => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-2xl">Bem-vindo de volta</h1>
+        <h1 className="font-display text-2xl font-semibold text-foreground">Bem-vindo de volta</h1>
         <p className="mt-1 text-sm text-muted-foreground">Entre na sua conta para continuar</p>
       </div>
 
@@ -64,7 +64,7 @@ const LoginForm = ({ onSwitchToSignup }: LoginFormProps) => {
           <span className="w-full border-t border-border" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background px-2 text-muted-foreground">ou continue com e-mail</span>
+          <span className="bg-background px-3 text-muted-foreground">ou continue com e-mail</span>
         </div>
       </div>
 
@@ -75,11 +75,11 @@ const LoginForm = ({ onSwitchToSignup }: LoginFormProps) => {
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>E-mail</FormLabel>
+                <FormLabel className="text-xs font-medium">E-mail</FormLabel>
                 <FormControl>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input placeholder="seu@email.com" className="pl-10" {...field} />
+                    <Input placeholder="seu@email.com" className="pl-10 h-11" {...field} />
                   </div>
                 </FormControl>
                 <FormMessage />
@@ -92,12 +92,19 @@ const LoginForm = ({ onSwitchToSignup }: LoginFormProps) => {
             name="password"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Senha</FormLabel>
+                <div className="flex items-center justify-between">
+                  <FormLabel className="text-xs font-medium">Senha</FormLabel>
+                  <button type="button" className="text-xs text-primary hover:underline">
+                    Esqueceu a senha?
+                  </button>
+                </div>
                 <FormControl>
                   <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       type={showPassword ? "text" : "password"}
                       placeholder="••••••••"
+                      className="pl-10 h-11"
                       {...field}
                     />
                     <button
@@ -114,8 +121,10 @@ const LoginForm = ({ onSwitchToSignup }: LoginFormProps) => {
             )}
           />
 
-          <Button type="submit" variant="hero" size="lg" className="w-full" disabled={loading}>
-            {loading ? "Entrando..." : "Entrar"}
+          <Button type="submit" variant="hero" size="lg" className="w-full gap-2" disabled={loading}>
+            {loading ? "Entrando..." : (
+              <>Entrar <ArrowRight className="h-4 w-4" /></>
+            )}
           </Button>
         </form>
       </Form>
@@ -123,7 +132,7 @@ const LoginForm = ({ onSwitchToSignup }: LoginFormProps) => {
       <p className="text-center text-sm text-muted-foreground">
         Não tem uma conta?{" "}
         <button onClick={onSwitchToSignup} className="font-medium text-primary hover:underline">
-          Criar conta grátis
+          Criar conta
         </button>
       </p>
     </div>

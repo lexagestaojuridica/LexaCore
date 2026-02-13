@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "@/hooks/use-toast";
-import { Eye, EyeOff, Mail, User, Phone, Building2, FileText } from "lucide-react";
+import { Eye, EyeOff, Mail, User, Phone, Building2, FileText, ArrowRight } from "lucide-react";
 import SocialAuthButtons from "./SocialAuthButtons";
 
 const signupSchema = z.object({
@@ -71,7 +71,7 @@ const SignupForm = ({ onSwitchToLogin }: SignupFormProps) => {
     } else {
       toast({
         title: "Conta criada com sucesso!",
-        description: "Verifique seu e-mail para confirmar o cadastro. Você tem 7 dias de trial grátis.",
+        description: "Verifique seu e-mail para confirmar o cadastro.",
       });
       onSwitchToLogin();
     }
@@ -79,11 +79,11 @@ const SignupForm = ({ onSwitchToLogin }: SignupFormProps) => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div>
-        <h1 className="font-display text-2xl">Crie sua conta</h1>
+        <h1 className="font-display text-2xl font-semibold text-foreground">Crie sua conta</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          7 dias grátis — sem cartão de crédito
+          Comece a transformar seu escritório agora
         </p>
       </div>
 
@@ -94,40 +94,39 @@ const SignupForm = ({ onSwitchToLogin }: SignupFormProps) => {
           <span className="w-full border-t border-border" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background px-2 text-muted-foreground">ou cadastre-se com e-mail</span>
+          <span className="bg-background px-3 text-muted-foreground">ou cadastre-se com e-mail</span>
         </div>
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3.5">
+          <div className="grid gap-3.5 sm:grid-cols-2">
             <FormField
               control={form.control}
               name="fullName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nome Completo</FormLabel>
+                  <FormLabel className="text-xs font-medium">Nome Completo</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input placeholder="João da Silva" className="pl-10" {...field} />
+                      <Input placeholder="João da Silva" className="pl-10 h-10" {...field} />
                     </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-
             <FormField
               control={form.control}
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>E-mail</FormLabel>
+                  <FormLabel className="text-xs font-medium">E-mail</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input placeholder="joao@escritorio.com" className="pl-10" {...field} />
+                      <Input placeholder="joao@escritorio.com" className="pl-10 h-10" {...field} />
                     </div>
                   </FormControl>
                   <FormMessage />
@@ -136,34 +135,33 @@ const SignupForm = ({ onSwitchToLogin }: SignupFormProps) => {
             />
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-3.5 sm:grid-cols-2">
             <FormField
               control={form.control}
               name="phone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Telefone / WhatsApp</FormLabel>
+                  <FormLabel className="text-xs font-medium">Telefone / WhatsApp</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input placeholder="(11) 99999-0000" className="pl-10" {...field} />
+                      <Input placeholder="(11) 99999-0000" className="pl-10 h-10" {...field} />
                     </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-
             <FormField
               control={form.control}
               name="oabNumber"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Número OAB <span className="text-muted-foreground">(opcional)</span></FormLabel>
+                  <FormLabel className="text-xs font-medium">OAB <span className="text-muted-foreground">(opcional)</span></FormLabel>
                   <FormControl>
                     <div className="relative">
                       <FileText className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input placeholder="123456/SP" className="pl-10" {...field} />
+                      <Input placeholder="123456/SP" className="pl-10 h-10" {...field} />
                     </div>
                   </FormControl>
                   <FormMessage />
@@ -177,11 +175,11 @@ const SignupForm = ({ onSwitchToLogin }: SignupFormProps) => {
             name="organizationName"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Nome do Escritório</FormLabel>
+                <FormLabel className="text-xs font-medium">Nome do Escritório</FormLabel>
                 <FormControl>
                   <div className="relative">
                     <Building2 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input placeholder="Silva & Associados Advocacia" className="pl-10" {...field} />
+                    <Input placeholder="Silva & Associados Advocacia" className="pl-10 h-10" {...field} />
                   </div>
                 </FormControl>
                 <FormMessage />
@@ -189,18 +187,19 @@ const SignupForm = ({ onSwitchToLogin }: SignupFormProps) => {
             )}
           />
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-3.5 sm:grid-cols-2">
             <FormField
               control={form.control}
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Senha</FormLabel>
+                  <FormLabel className="text-xs font-medium">Senha</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Input
                         type={showPassword ? "text" : "password"}
                         placeholder="••••••••"
+                        className="h-10"
                         {...field}
                       />
                       <button
@@ -216,15 +215,14 @@ const SignupForm = ({ onSwitchToLogin }: SignupFormProps) => {
                 </FormItem>
               )}
             />
-
             <FormField
               control={form.control}
               name="confirmPassword"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Confirmar Senha</FormLabel>
+                  <FormLabel className="text-xs font-medium">Confirmar Senha</FormLabel>
                   <FormControl>
-                    <Input type={showPassword ? "text" : "password"} placeholder="••••••••" {...field} />
+                    <Input type={showPassword ? "text" : "password"} placeholder="••••••••" className="h-10" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -232,11 +230,13 @@ const SignupForm = ({ onSwitchToLogin }: SignupFormProps) => {
             />
           </div>
 
-          <Button type="submit" variant="hero" size="lg" className="w-full" disabled={loading}>
-            {loading ? "Criando conta..." : "Criar Conta Grátis"}
+          <Button type="submit" variant="hero" size="lg" className="w-full gap-2 mt-2" disabled={loading}>
+            {loading ? "Criando conta..." : (
+              <>Criar Conta <ArrowRight className="h-4 w-4" /></>
+            )}
           </Button>
 
-          <p className="text-center text-xs text-muted-foreground">
+          <p className="text-center text-[11px] text-muted-foreground">
             Ao criar sua conta, você concorda com nossos{" "}
             <a href="#" className="underline hover:text-primary">Termos de Uso</a> e{" "}
             <a href="#" className="underline hover:text-primary">Política de Privacidade</a>.

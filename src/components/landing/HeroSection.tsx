@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import logoLexa from "@/assets/logo-lexa.png";
 import heroOffice from "@/assets/hero-office.jpg";
+import { ArrowRight } from "lucide-react";
 
 const navLinks = [
   { href: "#funcionalidades", label: "Funcionalidades" },
@@ -28,8 +29,11 @@ const Navbar = () => (
         <Button variant="ghost" size="sm" className="nav-link-hover relative text-muted-foreground font-medium" asChild>
           <a href="/auth">Entrar</a>
         </Button>
-        <Button size="sm" className="rounded-full px-6" asChild>
-          <a href="/auth">Teste Grátis</a>
+        <Button size="sm" className="rounded-full px-6 gap-2" asChild>
+          <a href="/auth">
+            Começar Agora
+            <ArrowRight className="h-3.5 w-3.5" />
+          </a>
         </Button>
       </div>
     </div>
@@ -57,9 +61,9 @@ const HeroSection = () => (
           transition={{ delay: 0.3, duration: 0.6 }}
           className="mb-6 inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-4 py-1.5"
         >
-          <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+          <span className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse" />
           <span className="text-xs font-semibold uppercase tracking-widest text-accent-foreground">
-            7 dias grátis — sem cartão
+            Plataforma Jurídica com IA
           </span>
         </motion.div>
 
@@ -74,12 +78,12 @@ const HeroSection = () => (
           <strong className="font-semibold text-foreground">ARUNA</strong>, seu escritório nunca mais será o mesmo.
         </p>
 
-        <div className="mt-12 flex flex-col gap-4 sm:flex-row">
-          <Button size="lg" className="rounded-full px-10 text-base shadow-lg shadow-primary/20" asChild>
-            <a href="/auth">Começar Teste Grátis</a>
-          </Button>
-          <Button variant="outline" size="lg" className="rounded-full px-10 text-base">
-            Ver Demonstração
+        <div className="mt-12">
+          <Button size="lg" className="rounded-full px-10 text-base shadow-lg shadow-primary/20 gap-2" asChild>
+            <a href="/auth">
+              Começar Agora
+              <ArrowRight className="h-4 w-4" />
+            </a>
           </Button>
         </div>
 
