@@ -16,36 +16,90 @@ export type Database = {
     Tables: {
       clients: {
         Row: {
+          address_city: string | null
+          address_complement: string | null
+          address_neighborhood: string | null
+          address_number: string | null
+          address_state: string | null
+          address_street: string | null
+          address_zip: string | null
+          birth_date: string | null
+          client_type: string | null
+          company_name: string | null
+          company_position: string | null
           created_at: string
           document: string | null
           email: string | null
+          gender: string | null
           id: string
+          marital_status: string | null
           name: string
+          nationality: string | null
           notes: string | null
           organization_id: string
           phone: string | null
+          profession: string | null
+          rg: string | null
+          secondary_email: string | null
+          secondary_phone: string | null
           updated_at: string
         }
         Insert: {
+          address_city?: string | null
+          address_complement?: string | null
+          address_neighborhood?: string | null
+          address_number?: string | null
+          address_state?: string | null
+          address_street?: string | null
+          address_zip?: string | null
+          birth_date?: string | null
+          client_type?: string | null
+          company_name?: string | null
+          company_position?: string | null
           created_at?: string
           document?: string | null
           email?: string | null
+          gender?: string | null
           id?: string
+          marital_status?: string | null
           name: string
+          nationality?: string | null
           notes?: string | null
           organization_id: string
           phone?: string | null
+          profession?: string | null
+          rg?: string | null
+          secondary_email?: string | null
+          secondary_phone?: string | null
           updated_at?: string
         }
         Update: {
+          address_city?: string | null
+          address_complement?: string | null
+          address_neighborhood?: string | null
+          address_number?: string | null
+          address_state?: string | null
+          address_street?: string | null
+          address_zip?: string | null
+          birth_date?: string | null
+          client_type?: string | null
+          company_name?: string | null
+          company_position?: string | null
           created_at?: string
           document?: string | null
           email?: string | null
+          gender?: string | null
           id?: string
+          marital_status?: string | null
           name?: string
+          nationality?: string | null
           notes?: string | null
           organization_id?: string
           phone?: string | null
+          profession?: string | null
+          rg?: string | null
+          secondary_email?: string | null
+          secondary_phone?: string | null
           updated_at?: string
         }
         Relationships: [
