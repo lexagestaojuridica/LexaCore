@@ -1,19 +1,27 @@
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card } from "@/components/ui/card";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Bot, Send, Sparkles, User, Trash2 } from "lucide-react";
+import { Send, Sparkles, User } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 import iconLexa from "@/assets/icon-lexa.png";
+import ReactMarkdown from "react-markdown";
 
 interface Message {
   id: string;
   role: string;
+  content: string;
+  created_at: string;
+}
+
+interface LocalMsg {
+  id: string;
+  role: "user" | "assistant";
   content: string;
   created_at: string;
 }
@@ -37,11 +45,16 @@ const suggestions = [
   "Qual cliente tem mais processos?",
 ];
 
+const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/aruna-chat`;
+
 export default function IAPage() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const queryClient = useQueryClient();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [input, setInput] = useState("");
+  const [localMessages, setLocalMessages] = useState<LocalMsg[]>([]);
+  const [isStreaming, setIsStreaming] = useState(false);
 
   const { data: profileData } = useQuery({
     queryKey: ["profile", user?.id],
@@ -56,7 +69,8 @@ export default function IAPage() {
     enabled: !!user?.id,
   });
 
-  const { data: messages = [], isLoading } = useQuery({
+  // Load persisted messages on mount
+  const { data: dbMessages = [], isLoading } = useQuery({
     queryKey: ["conversas_ia", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -70,42 +84,160 @@ export default function IAPage() {
     enabled: !!user?.id,
   });
 
-  const sendMutation = useMutation({
-    mutationFn: async (content: string) => {
-      if (!profileData?.organization_id) throw new Error("Organização não encontrada");
-      // Save user message
-      const { error } = await supabase.from("conversas_ia").insert({
-        content,
-        role: "user",
-        user_id: user!.id,
-        organization_id: profileData.organization_id,
-      });
-      if (error) throw error;
-
-      // Simulate ARUNA response (will be replaced with real AI later)
-      const response = generateArunaResponse(content);
-      const { error: err2 } = await supabase.from("conversas_ia").insert({
-        content: response,
-        role: "assistant",
-        user_id: user!.id,
-        organization_id: profileData.organization_id,
-      });
-      if (err2) throw err2;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["conversas_ia", user?.id] });
-      setInput("");
-    },
-  });
+  // Sync db messages to local state once
+  useEffect(() => {
+    if (dbMessages.length > 0 && localMessages.length === 0) {
+      setLocalMessages(
+        dbMessages.map((m) => ({
+          id: m.id,
+          role: m.role as "user" | "assistant",
+          content: m.content,
+          created_at: m.created_at,
+        }))
+      );
+    }
+  }, [dbMessages]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [localMessages]);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     const trimmed = input.trim();
-    if (!trimmed || sendMutation.isPending) return;
-    sendMutation.mutate(trimmed);
+    if (!trimmed || isStreaming || !profileData?.organization_id) return;
+
+    const userMsg: LocalMsg = {
+      id: crypto.randomUUID(),
+      role: "user",
+      content: trimmed,
+      created_at: new Date().toISOString(),
+    };
+
+    setLocalMessages((prev) => [...prev, userMsg]);
+    setInput("");
+    setIsStreaming(true);
+
+    // Save user message to DB
+    await supabase.from("conversas_ia").insert({
+      content: trimmed,
+      role: "user",
+      user_id: user!.id,
+      organization_id: profileData.organization_id,
+    });
+
+    // Build conversation history for AI (last 20 messages for context)
+    const historyForAI = [...localMessages, userMsg]
+      .slice(-20)
+      .map((m) => ({ role: m.role, content: m.content }));
+
+    let assistantContent = "";
+    const assistantId = crypto.randomUUID();
+
+    // Add empty assistant message
+    setLocalMessages((prev) => [
+      ...prev,
+      { id: assistantId, role: "assistant", content: "", created_at: new Date().toISOString() },
+    ]);
+
+    try {
+      const resp = await fetch(CHAT_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({ messages: historyForAI }),
+      });
+
+      if (!resp.ok) {
+        const errData = await resp.json().catch(() => ({}));
+        throw new Error(errData.error || `Erro ${resp.status}`);
+      }
+
+      if (!resp.body) throw new Error("Sem corpo de resposta");
+
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let textBuffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        textBuffer += decoder.decode(value, { stream: true });
+
+        let newlineIndex: number;
+        while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
+          let line = textBuffer.slice(0, newlineIndex);
+          textBuffer = textBuffer.slice(newlineIndex + 1);
+
+          if (line.endsWith("\r")) line = line.slice(0, -1);
+          if (line.startsWith(":") || line.trim() === "") continue;
+          if (!line.startsWith("data: ")) continue;
+
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === "[DONE]") break;
+
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const content = parsed.choices?.[0]?.delta?.content;
+            if (content) {
+              assistantContent += content;
+              setLocalMessages((prev) =>
+                prev.map((m) =>
+                  m.id === assistantId ? { ...m, content: assistantContent } : m
+                )
+              );
+            }
+          } catch {
+            textBuffer = line + "\n" + textBuffer;
+            break;
+          }
+        }
+      }
+
+      // Flush remaining buffer
+      if (textBuffer.trim()) {
+        for (let raw of textBuffer.split("\n")) {
+          if (!raw) continue;
+          if (raw.endsWith("\r")) raw = raw.slice(0, -1);
+          if (!raw.startsWith("data: ")) continue;
+          const jsonStr = raw.slice(6).trim();
+          if (jsonStr === "[DONE]") continue;
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const content = parsed.choices?.[0]?.delta?.content;
+            if (content) {
+              assistantContent += content;
+              setLocalMessages((prev) =>
+                prev.map((m) =>
+                  m.id === assistantId ? { ...m, content: assistantContent } : m
+                )
+              );
+            }
+          } catch {}
+        }
+      }
+
+      // Persist assistant message
+      if (assistantContent) {
+        await supabase.from("conversas_ia").insert({
+          content: assistantContent,
+          role: "assistant",
+          user_id: user!.id,
+          organization_id: profileData.organization_id,
+        });
+      }
+    } catch (e: any) {
+      toast({
+        title: "Erro na ARUNA",
+        description: e.message || "Não foi possível obter resposta.",
+        variant: "destructive",
+      });
+      // Remove empty assistant message on error
+      setLocalMessages((prev) => prev.filter((m) => m.id !== assistantId));
+    } finally {
+      setIsStreaming(false);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -114,6 +246,8 @@ export default function IAPage() {
       handleSend();
     }
   };
+
+  const displayMessages = localMessages.length > 0 ? localMessages : [];
 
   return (
     <div className="flex h-[calc(100vh-6rem)] flex-col">
@@ -136,33 +270,23 @@ export default function IAPage() {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto py-6">
-        {messages.length === 0 && !isLoading ? (
+        {displayMessages.length === 0 && !isLoading ? (
           <div className="mx-auto max-w-2xl space-y-6">
-            {/* Greeting */}
             <div className="flex gap-3">
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
                 <img src={iconLexa} alt="ARUNA" className="h-5 w-5" />
               </div>
               <div className="rounded-2xl rounded-tl-sm bg-muted px-4 py-3">
-                <p className="whitespace-pre-line text-sm text-foreground leading-relaxed">
-                  {ARUNA_GREETING.split("**").map((part, i) =>
-                    i % 2 === 1 ? (
-                      <strong key={i} className="text-primary">{part}</strong>
-                    ) : (
-                      part
-                    )
-                  )}
-                </p>
+                <div className="prose prose-sm max-w-none text-foreground">
+                  <ReactMarkdown>{ARUNA_GREETING}</ReactMarkdown>
+                </div>
               </div>
             </div>
-            {/* Suggestions */}
             <div className="ml-11 flex flex-wrap gap-2">
               {suggestions.map((s) => (
                 <button
                   key={s}
-                  onClick={() => {
-                    setInput(s);
-                  }}
+                  onClick={() => setInput(s)}
                   className="rounded-full border border-border bg-background px-4 py-2 text-xs text-foreground transition-colors hover:bg-muted"
                 >
                   <Sparkles className="mr-1.5 inline h-3 w-3 text-primary" />
@@ -173,13 +297,10 @@ export default function IAPage() {
           </div>
         ) : (
           <div className="mx-auto max-w-2xl space-y-4">
-            {messages.map((msg) => (
+            {displayMessages.map((msg) => (
               <div
                 key={msg.id}
-                className={cn(
-                  "flex gap-3",
-                  msg.role === "user" && "flex-row-reverse"
-                )}
+                className={cn("flex gap-3", msg.role === "user" && "flex-row-reverse")}
               >
                 <div
                   className={cn(
@@ -203,9 +324,15 @@ export default function IAPage() {
                       : "rounded-tl-sm bg-muted text-foreground"
                   )}
                 >
-                  <p className="whitespace-pre-line text-sm leading-relaxed">
-                    {msg.content}
-                  </p>
+                  {msg.role === "assistant" ? (
+                    <div className="prose prose-sm max-w-none text-foreground">
+                      <ReactMarkdown>{msg.content || "..."}</ReactMarkdown>
+                    </div>
+                  ) : (
+                    <p className="whitespace-pre-line text-sm leading-relaxed">
+                      {msg.content}
+                    </p>
+                  )}
                   <p
                     className={cn(
                       "mt-1 text-[10px]",
@@ -219,20 +346,21 @@ export default function IAPage() {
                 </div>
               </div>
             ))}
-            {sendMutation.isPending && (
-              <div className="flex gap-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
-                  <img src={iconLexa} alt="ARUNA" className="h-5 w-5" />
-                </div>
-                <div className="rounded-2xl rounded-tl-sm bg-muted px-4 py-3">
-                  <div className="flex gap-1">
-                    <span className="h-2 w-2 animate-bounce rounded-full bg-primary/40" />
-                    <span className="h-2 w-2 animate-bounce rounded-full bg-primary/40 [animation-delay:0.15s]" />
-                    <span className="h-2 w-2 animate-bounce rounded-full bg-primary/40 [animation-delay:0.3s]" />
+            {isStreaming &&
+              displayMessages[displayMessages.length - 1]?.role !== "assistant" && (
+                <div className="flex gap-3">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                    <img src={iconLexa} alt="ARUNA" className="h-5 w-5" />
+                  </div>
+                  <div className="rounded-2xl rounded-tl-sm bg-muted px-4 py-3">
+                    <div className="flex gap-1">
+                      <span className="h-2 w-2 animate-bounce rounded-full bg-primary/40" />
+                      <span className="h-2 w-2 animate-bounce rounded-full bg-primary/40 [animation-delay:0.15s]" />
+                      <span className="h-2 w-2 animate-bounce rounded-full bg-primary/40 [animation-delay:0.3s]" />
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
             <div ref={messagesEndRef} />
           </div>
         )}
@@ -251,7 +379,7 @@ export default function IAPage() {
           />
           <Button
             onClick={handleSend}
-            disabled={!input.trim() || sendMutation.isPending}
+            disabled={!input.trim() || isStreaming}
             size="icon"
             className="h-11 w-11 shrink-0"
           >
@@ -264,25 +392,4 @@ export default function IAPage() {
       </div>
     </div>
   );
-}
-
-// Temporary local response generator — will be replaced with real AI
-function generateArunaResponse(input: string): string {
-  const lower = input.toLowerCase();
-  if (lower.includes("prazo") || lower.includes("vence")) {
-    return "📅 Consultei sua agenda e no momento não encontrei prazos cadastrados para esta semana. Deseja que eu ajude a criar um lembrete de prazo?";
-  }
-  if (lower.includes("processo") || lower.includes("resum")) {
-    return "📋 Para resumir um processo específico, me informe o número ou título do processo. Posso analisar as informações cadastradas e gerar um resumo completo com as últimas movimentações.";
-  }
-  if (lower.includes("petição") || lower.includes("minuta") || lower.includes("procuração") || lower.includes("modelo")) {
-    return "📝 Posso ajudar a gerar modelos de documentos jurídicos! Por favor, especifique:\n\n• Tipo do documento (petição, procuração, contestação, etc.)\n• Dados das partes envolvidas\n• Contexto ou finalidade\n\nAssim consigo gerar um modelo adequado para sua necessidade.";
-  }
-  if (lower.includes("cliente")) {
-    return "👥 Para consultar informações sobre clientes, posso verificar os dados cadastrados no sistema. Me diga o nome do cliente ou que tipo de informação você precisa.";
-  }
-  if (lower.includes("olá") || lower.includes("oi") || lower.includes("bom dia") || lower.includes("boa tarde") || lower.includes("boa noite")) {
-    return "Olá! 👋 Como posso ajudar você hoje? Estou pronta para auxiliar com processos, prazos, documentos ou qualquer questão jurídica.";
-  }
-  return "Entendi sua solicitação. No momento estou operando em modo demonstração, mas em breve terei acesso completo à IA para fornecer respostas mais precisas e detalhadas.\n\nPosso ajudar com:\n• Consultas a processos e clientes cadastrados\n• Gerenciamento de prazos e compromissos\n• Geração de modelos de documentos\n\nO que mais posso fazer por você?";
 }
