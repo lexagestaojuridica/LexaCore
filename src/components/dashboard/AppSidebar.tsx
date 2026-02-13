@@ -25,6 +25,7 @@ import {
   LogOut,
   Settings,
   ChevronRight,
+  BarChart3,
 } from "lucide-react";
 import logoLexaWhite from "@/assets/logo-lexa-white.png";
 import iconLexa from "@/assets/icon-lexa.png";
@@ -37,6 +38,7 @@ const mainNav = [
   { title: "Financeiro", url: "/dashboard/financeiro", icon: DollarSign },
   { title: "Documentos", url: "/dashboard/documentos", icon: FileText },
   { title: "Aruna IA", url: "/dashboard/ia", icon: Bot },
+  { title: "Business Intelligence", url: "/dashboard/bi", icon: BarChart3 },
 ];
 
 const bottomNav = [

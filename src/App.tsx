@@ -16,6 +16,7 @@ import FinanceiroPage from "@/pages/dashboard/FinanceiroPage";
 import DocumentosPage from "@/pages/dashboard/DocumentosPage";
 import IAPage from "@/pages/dashboard/IAPage";
 import ConfiguracoesPage from "@/pages/dashboard/ConfiguracoesPage";
+import BIPage from "@/pages/dashboard/BIPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -46,6 +47,7 @@ const App = () => (
               <Route path="documentos" element={<DocumentosPage />} />
               <Route path="ia" element={<IAPage />} />
               <Route path="configuracoes" element={<ConfiguracoesPage />} />
+              <Route path="bi" element={<BIPage />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
