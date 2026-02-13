@@ -12,8 +12,12 @@ const Navbar = () => (
         <a href="#planos" className="text-sm tracking-wide text-muted-foreground transition-colors hover:text-primary">Planos</a>
       </div>
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="sm" className="text-muted-foreground">Entrar</Button>
-        <Button variant="hero" size="sm">Teste Grátis</Button>
+        <Button variant="ghost" size="sm" className="text-muted-foreground" asChild>
+          <a href="/auth">Entrar</a>
+        </Button>
+        <Button variant="hero" size="sm" asChild>
+          <a href="/auth">Teste Grátis</a>
+        </Button>
       </div>
     </div>
   </nav>
@@ -40,8 +44,8 @@ const HeroSection = () => (
           Com a inteligência artificial da <strong className="text-primary">ARUNA</strong>, seu escritório nunca mais será o mesmo.
         </p>
         <div className="mt-12 flex flex-col items-center justify-center gap-4 sm:flex-row">
-          <Button variant="hero" size="lg" className="px-12 text-base">
-            Começar Teste Grátis
+          <Button variant="hero" size="lg" className="px-12 text-base" asChild>
+            <a href="/auth">Começar Teste Grátis</a>
           </Button>
           <Button variant="heroOutline" size="lg" className="px-12 text-base">
             Ver Demonstração
