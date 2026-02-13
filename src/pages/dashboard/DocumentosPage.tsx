@@ -400,12 +400,12 @@ export default function DocumentosPage() {
             </div>
             <div>
               <Label>Vincular a Processo (opcional)</Label>
-              <Select value={linkProcessId} onValueChange={setLinkProcessId}>
+              <Select value={linkProcessId || "none"} onValueChange={(v) => setLinkProcessId(v === "none" ? "" : v)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Nenhum" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nenhum</SelectItem>
+                  <SelectItem value="none">Nenhum</SelectItem>
                   {processos.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
                       {p.number ? `${p.number} - ` : ""}{p.title}
@@ -416,12 +416,12 @@ export default function DocumentosPage() {
             </div>
             <div>
               <Label>Vincular a Cliente (opcional)</Label>
-              <Select value={linkClientId} onValueChange={setLinkClientId}>
+              <Select value={linkClientId || "none"} onValueChange={(v) => setLinkClientId(v === "none" ? "" : v)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Nenhum" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nenhum</SelectItem>
+                  <SelectItem value="none">Nenhum</SelectItem>
                   {clientes.map((c) => (
                     <SelectItem key={c.id} value={c.id}>
                       {c.name}
