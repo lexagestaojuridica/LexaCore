@@ -9,7 +9,7 @@ import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import iconLexa from "@/assets/icon-lexa.png";
+import arunaAvatar from "@/assets/aruna-avatar.png";
 import ReactMarkdown from "react-markdown";
 
 interface Message {
@@ -418,8 +418,8 @@ export default function IAPage() {
     <div className="flex h-[calc(100vh-6rem)] flex-col">
       {/* Header */}
       <div className="flex items-center gap-3 border-b border-border pb-4">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-          <img src={iconLexa} alt="ARUNA" className="h-6 w-6" />
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 overflow-hidden">
+          <img src={arunaAvatar} alt="ARUNA" className="h-8 w-8 object-cover" />
         </div>
         <div>
           <h1 className="font-display text-xl text-foreground">ARUNA</h1>
@@ -517,8 +517,8 @@ export default function IAPage() {
         {displayMessages.length === 0 && !isLoading ? (
           <div className="mx-auto max-w-2xl space-y-6">
             <div className="flex gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
-                <img src={iconLexa} alt="ARUNA" className="h-5 w-5" />
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 overflow-hidden">
+                <img src={arunaAvatar} alt="ARUNA" className="h-7 w-7 object-cover" />
               </div>
               <div className="rounded-2xl rounded-tl-sm bg-muted px-4 py-3">
                 <div className="prose prose-sm max-w-none text-foreground">
@@ -557,7 +557,7 @@ export default function IAPage() {
                   {msg.role === "user" ? (
                     <User className="h-4 w-4" />
                   ) : (
-                    <img src={iconLexa} alt="ARUNA" className="h-5 w-5" />
+                    <img src={arunaAvatar} alt="ARUNA" className="h-7 w-7 object-cover" />
                   )}
                 </div>
                 <div
@@ -593,8 +593,8 @@ export default function IAPage() {
             {isStreaming &&
               displayMessages[displayMessages.length - 1]?.role !== "assistant" && (
                 <div className="flex gap-3">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
-                    <img src={iconLexa} alt="ARUNA" className="h-5 w-5" />
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 overflow-hidden">
+                    <img src={arunaAvatar} alt="ARUNA" className="h-7 w-7 object-cover" />
                   </div>
                   <div className="rounded-2xl rounded-tl-sm bg-muted px-4 py-3">
                     <div className="flex gap-1">

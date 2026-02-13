@@ -76,14 +76,14 @@ const FeaturesSection = () => (
           <motion.div
             key={feat.title}
             variants={item}
-            className="group relative rounded-2xl border border-border bg-card p-8 transition-all duration-500 hover:border-accent/40 hover:shadow-xl hover:shadow-accent/5"
+            className="group relative rounded-2xl border border-border/60 bg-card p-8 transition-all duration-500 hover:border-accent/40 hover:shadow-xl hover:shadow-accent/5 hover:-translate-y-1"
           >
-            <div className="mb-5 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary/5 text-primary transition-colors group-hover:bg-accent/10 group-hover:text-accent-foreground">
+            <div className="mb-5 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary/5 text-primary transition-all duration-300 group-hover:bg-accent/10 group-hover:text-accent-foreground group-hover:scale-110">
               <feat.icon className="h-6 w-6" strokeWidth={1.5} />
             </div>
             <h3 className="mb-2 text-lg font-semibold font-display">{feat.title}</h3>
             <p className="text-sm leading-relaxed text-muted-foreground">{feat.description}</p>
-            <ArrowRight className="mt-4 h-4 w-4 text-muted-foreground/30 transition-all group-hover:translate-x-1 group-hover:text-accent" />
+            <ArrowRight className="mt-4 h-4 w-4 text-muted-foreground/30 transition-all duration-300 group-hover:translate-x-2 group-hover:text-accent" />
           </motion.div>
         ))}
       </motion.div>
