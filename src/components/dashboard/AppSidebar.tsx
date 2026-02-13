@@ -25,6 +25,7 @@ import {
   Settings,
 } from "lucide-react";
 import logoLexa from "@/assets/logo-lexa.png";
+import iconLexa from "@/assets/icon-lexa.png";
 
 const mainNav = [
   { title: "Visão Geral", url: "/dashboard", icon: LayoutDashboard },
@@ -55,16 +56,19 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      <div className="flex h-14 items-center gap-2 border-b border-sidebar-border px-4">
-        <img
-          src={logoLexa}
-          alt="LEXA"
-          className="h-6 brightness-0 invert"
-        />
-        {!collapsed && (
-          <span className="font-display text-sm text-sidebar-foreground">
-            LEXA
-          </span>
+      <div className="flex h-16 items-center justify-center border-b border-sidebar-border px-3">
+        {collapsed ? (
+          <img
+            src={iconLexa}
+            alt="LEXA"
+            className="h-9 w-auto object-contain"
+          />
+        ) : (
+          <img
+            src={logoLexa}
+            alt="LEXA"
+            className="h-10 w-auto object-contain"
+          />
         )}
       </div>
 
