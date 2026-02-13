@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { MessageSquare, FileText, Mic, Sparkles } from "lucide-react";
 import iconLexa from "@/assets/icon-lexa.png";
+import patternNavy from "@/assets/pattern-navy.jpg";
 
 const capabilities = [
   { icon: MessageSquare, text: "Resuma o processo 12345" },
@@ -10,30 +11,39 @@ const capabilities = [
 ];
 
 const ArunaSection = () => (
-  <section id="aruna" className="relative py-32">
+  <section id="aruna" className="relative overflow-hidden py-32">
+    {/* Background */}
+    <div className="absolute inset-0">
+      <img src={patternNavy} alt="" className="h-full w-full object-cover" />
+      <div className="absolute inset-0 bg-gradient-navy/90" />
+    </div>
+
     <div className="container relative z-10 mx-auto px-4">
-      <div className="grid items-center gap-20 lg:grid-cols-2">
+      <div className="grid items-center gap-16 lg:grid-cols-2">
         <motion.div
           initial={{ opacity: 0, x: -30 }}
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
-          <span className="mb-4 inline-block text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+          <span className="mb-4 inline-block rounded-full border border-primary-foreground/20 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-primary-foreground/70">
             Inteligência Artificial
           </span>
-          <h2 className="text-3xl font-normal md:text-5xl">
-            Conheça a <span className="text-gradient-navy">ARUNA</span>
+          <h2 className="text-4xl font-semibold text-primary-foreground md:text-5xl">
+            Conheça a <span className="text-gradient-gold">ARUNA</span>
           </h2>
-          <p className="mt-5 max-w-lg text-lg leading-relaxed text-muted-foreground">
+          <p className="mt-5 max-w-lg text-lg leading-relaxed text-primary-foreground/70">
             Sua assistente jurídica com IA integrada ao escritório. Ela entende
             seus processos, finanças e prazos — e responde em segundos.
           </p>
-          <div className="mt-10 space-y-3">
+          <div className="mt-10 space-y-2">
             {capabilities.map((cap) => (
-              <div key={cap.text} className="flex items-center gap-4 p-4 transition-colors hover:bg-secondary/50">
-                <cap.icon className="h-5 w-5 shrink-0 text-primary" strokeWidth={1.5} />
-                <span className="text-sm">"{cap.text}"</span>
+              <div
+                key={cap.text}
+                className="flex items-center gap-4 rounded-xl border border-primary-foreground/10 p-4 transition-colors hover:border-primary-foreground/20 hover:bg-primary-foreground/5"
+              >
+                <cap.icon className="h-5 w-5 shrink-0 text-accent" strokeWidth={1.5} />
+                <span className="text-sm text-primary-foreground/80">"{cap.text}"</span>
               </div>
             ))}
           </div>
@@ -46,8 +56,11 @@ const ArunaSection = () => (
           transition={{ duration: 0.6 }}
           className="flex items-center justify-center"
         >
-          <div className="relative flex h-72 w-72 items-center justify-center rounded-full bg-secondary">
-            <img src={iconLexa} alt="ARUNA" className="h-28 w-28" />
+          <div className="relative">
+            <div className="absolute -inset-4 rounded-full bg-accent/10 blur-3xl" />
+            <div className="relative flex h-72 w-72 items-center justify-center rounded-full border border-primary-foreground/10 bg-primary-foreground/5">
+              <img src={iconLexa} alt="ARUNA" className="h-28 w-28 drop-shadow-2xl" />
+            </div>
           </div>
         </motion.div>
       </div>

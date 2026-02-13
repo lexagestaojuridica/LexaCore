@@ -1,10 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import LoginForm from "@/components/auth/LoginForm";
 import SignupForm from "@/components/auth/SignupForm";
 import logoLexa from "@/assets/logo-lexa.png";
+import logoLexaWhite from "@/assets/logo-lexa-white.png";
+import patternNavy from "@/assets/pattern-navy.jpg";
 import { motion, AnimatePresence } from "framer-motion";
+import { useEffect } from "react";
 
 const Auth = () => {
   const [mode, setMode] = useState<"login" | "signup">("login");
@@ -28,30 +31,57 @@ const Auth = () => {
   return (
     <div className="flex min-h-screen">
       {/* Left - Branding */}
-      <div className="hidden w-1/2 items-center justify-center bg-primary lg:flex">
-        <div className="max-w-md px-12 text-center">
-          <img src={logoLexa} alt="LEXA" className="mx-auto mb-10 h-20 brightness-0 invert" />
-          <h2 className="font-display text-3xl text-primary-foreground">
+      <div className="hidden w-1/2 items-center justify-center lg:flex relative overflow-hidden">
+        <img src={patternNavy} alt="" className="absolute inset-0 h-full w-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-navy/90" />
+        <div className="relative max-w-md px-12 text-center">
+          <img src={logoLexaWhite} alt="LEXA" className="mx-auto mb-10 h-20" />
+          <h2 className="font-display text-3xl font-semibold text-primary-foreground">
             Tecnologia a serviço do Direito
           </h2>
-          <p className="mt-4 text-sm leading-relaxed text-primary-foreground/70">
+          <p className="mt-4 text-sm leading-relaxed text-primary-foreground/60">
             Gerencie processos, finanças, prazos e clientes em um único lugar com inteligência artificial.
           </p>
+          <div className="mt-12 flex justify-center gap-8 text-center">
+            <div>
+              <p className="text-2xl font-bold text-primary-foreground">500+</p>
+              <p className="text-xs text-primary-foreground/50">Escritórios</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-primary-foreground">50k+</p>
+              <p className="text-xs text-primary-foreground/50">Processos</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-primary-foreground">99.9%</p>
+              <p className="text-xs text-primary-foreground/50">Uptime</p>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Right - Forms */}
       <div className="flex w-full flex-1 flex-col items-center justify-center px-6 lg:w-1/2">
         <div className="w-full max-w-md">
-          <img src={logoLexa} alt="LEXA" className="mx-auto mb-8 h-14 lg:hidden" />
+          <img src={logoLexa} alt="LEXA" className="mx-auto mb-10 h-16 lg:hidden" />
+
+          <div className="mb-2">
+            <h1 className="font-display text-2xl font-semibold text-foreground">
+              {mode === "login" ? "Bem-vindo de volta" : "Crie sua conta"}
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {mode === "login"
+                ? "Entre na sua conta para continuar"
+                : "Comece seu teste grátis de 7 dias"}
+            </p>
+          </div>
 
           {/* Tab switcher */}
-          <div className="mb-8 flex border-b border-border">
+          <div className="mb-8 mt-6 flex rounded-lg bg-muted p-1">
             <button
               onClick={() => setMode("login")}
-              className={`flex-1 pb-3 text-sm font-medium transition-colors ${
+              className={`flex-1 rounded-md py-2 text-sm font-medium transition-all ${
                 mode === "login"
-                  ? "border-b-2 border-primary text-primary"
+                  ? "bg-background text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -59,9 +89,9 @@ const Auth = () => {
             </button>
             <button
               onClick={() => setMode("signup")}
-              className={`flex-1 pb-3 text-sm font-medium transition-colors ${
+              className={`flex-1 rounded-md py-2 text-sm font-medium transition-all ${
                 mode === "signup"
-                  ? "border-b-2 border-primary text-primary"
+                  ? "bg-background text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
