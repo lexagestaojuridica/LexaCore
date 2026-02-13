@@ -22,13 +22,64 @@ Capacidades:
 - Consultar e interpretar legislação brasileira (Código Civil, CPC, CLT, CP, CTN, CF/88, etc.)
 - Auxiliar na estratégia jurídica e argumentação
 - Organizar tarefas e compromissos do escritório
+- **Consultar dados reais do escritório** como processos ativos, clientes cadastrados e compromissos da agenda
 
 Regras:
 - Sempre cite os artigos de lei relevantes quando aplicável
 - Informe quando uma questão exige análise mais aprofundada do caso concreto
 - Nunca forneça aconselhamento jurídico definitivo — oriente e sugira
 - Formate respostas com Markdown para melhor legibilidade
-- Use emojis com moderação para tornar a comunicação mais amigável (📋 📅 ⚖️ 📝 👥)`;
+- Use emojis com moderação para tornar a comunicação mais amigável (📋 📅 ⚖️ 📝 👥)
+- Quando houver dados do escritório disponíveis no contexto, USE-OS para dar respostas personalizadas e precisas
+- Ao mencionar processos, clientes ou eventos, referencie os dados reais fornecidos no contexto`;
+
+function buildContextBlock(context: any): string {
+  if (!context) return "";
+
+  const parts: string[] = [];
+
+  if (context.processos?.length > 0) {
+    parts.push("## Processos Jurídicos do Escritório");
+    for (const p of context.processos) {
+      const lines = [`- **${p.title}**`];
+      if (p.number) lines.push(`  Número: ${p.number}`);
+      if (p.court) lines.push(`  Tribunal: ${p.court}`);
+      if (p.status) lines.push(`  Status: ${p.status}`);
+      if (p.subject) lines.push(`  Assunto: ${p.subject}`);
+      if (p.client_name) lines.push(`  Cliente: ${p.client_name}`);
+      if (p.estimated_value) lines.push(`  Valor estimado: R$ ${Number(p.estimated_value).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`);
+      if (p.notes) lines.push(`  Notas: ${p.notes}`);
+      parts.push(lines.join("\n"));
+    }
+  }
+
+  if (context.clientes?.length > 0) {
+    parts.push("## Clientes Cadastrados");
+    for (const c of context.clientes) {
+      const lines = [`- **${c.name}**`];
+      if (c.email) lines.push(`  Email: ${c.email}`);
+      if (c.phone) lines.push(`  Telefone: ${c.phone}`);
+      if (c.document) lines.push(`  Documento: ${c.document}`);
+      parts.push(lines.join("\n"));
+    }
+  }
+
+  if (context.eventos?.length > 0) {
+    parts.push("## Agenda / Compromissos");
+    for (const e of context.eventos) {
+      const lines = [`- **${e.title}**`];
+      if (e.start_time) lines.push(`  Início: ${e.start_time}`);
+      if (e.end_time) lines.push(`  Fim: ${e.end_time}`);
+      if (e.category) lines.push(`  Categoria: ${e.category}`);
+      if (e.description) lines.push(`  Descrição: ${e.description}`);
+      parts.push(lines.join("\n"));
+    }
+  }
+
+  if (parts.length === 0) return "";
+
+  return `\n\n---\n# DADOS ATUAIS DO ESCRITÓRIO (use esses dados para responder com precisão)\n\n${parts.join("\n\n")}`;
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -36,9 +87,12 @@ serve(async (req) => {
   }
 
   try {
-    const { messages } = await req.json();
+    const { messages, context } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+
+    const contextBlock = buildContextBlock(context);
+    const systemContent = SYSTEM_PROMPT + contextBlock;
 
     const response = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
@@ -51,7 +105,7 @@ serve(async (req) => {
         body: JSON.stringify({
           model: "google/gemini-3-flash-preview",
           messages: [
-            { role: "system", content: SYSTEM_PROMPT },
+            { role: "system", content: systemContent },
             ...messages,
           ],
           stream: true,

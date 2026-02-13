@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -69,6 +69,62 @@ export default function IAPage() {
     enabled: !!user?.id,
   });
 
+  const orgId = profileData?.organization_id;
+
+  // Fetch office context data
+  const { data: processosData } = useQuery({
+    queryKey: ["processos_context", orgId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("processos_juridicos")
+        .select("title, number, court, status, subject, estimated_value, notes, client_id, clients(name)")
+        .eq("organization_id", orgId!)
+        .order("updated_at", { ascending: false })
+        .limit(50);
+      return data;
+    },
+    enabled: !!orgId,
+  });
+
+  const { data: clientesData } = useQuery({
+    queryKey: ["clientes_context", orgId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("clients")
+        .select("name, email, phone, document")
+        .eq("organization_id", orgId!)
+        .order("name")
+        .limit(50);
+      return data;
+    },
+    enabled: !!orgId,
+  });
+
+  const { data: eventosData } = useQuery({
+    queryKey: ["eventos_context", orgId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("eventos_agenda")
+        .select("title, start_time, end_time, category, description")
+        .eq("organization_id", orgId!)
+        .gte("start_time", new Date().toISOString())
+        .order("start_time")
+        .limit(30);
+      return data;
+    },
+    enabled: !!orgId,
+  });
+
+  const officeContext = useMemo(() => ({
+    processos: processosData?.map((p: any) => ({
+      ...p,
+      client_name: p.clients?.name,
+      clients: undefined,
+    })) || [],
+    clientes: clientesData || [],
+    eventos: eventosData || [],
+  }), [processosData, clientesData, eventosData]);
+
   // Load persisted messages on mount
   const { data: dbMessages = [], isLoading } = useQuery({
     queryKey: ["conversas_ia", user?.id],
@@ -104,7 +160,7 @@ export default function IAPage() {
 
   const handleSend = async () => {
     const trimmed = input.trim();
-    if (!trimmed || isStreaming || !profileData?.organization_id) return;
+    if (!trimmed || isStreaming || !orgId) return;
 
     const userMsg: LocalMsg = {
       id: crypto.randomUUID(),
@@ -122,7 +178,7 @@ export default function IAPage() {
       content: trimmed,
       role: "user",
       user_id: user!.id,
-      organization_id: profileData.organization_id,
+      organization_id: orgId,
     });
 
     // Build conversation history for AI (last 20 messages for context)
@@ -146,7 +202,7 @@ export default function IAPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
-        body: JSON.stringify({ messages: historyForAI }),
+        body: JSON.stringify({ messages: historyForAI, context: officeContext }),
       });
 
       if (!resp.ok) {
@@ -224,7 +280,7 @@ export default function IAPage() {
           content: assistantContent,
           role: "assistant",
           user_id: user!.id,
-          organization_id: profileData.organization_id,
+          organization_id: orgId,
         });
       }
     } catch (e: any) {
