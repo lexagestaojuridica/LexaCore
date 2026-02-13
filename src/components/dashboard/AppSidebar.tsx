@@ -69,14 +69,14 @@ export function AppSidebar() {
           {mainNav.map((item) => (
             <Tooltip key={item.title} delayDuration={0}>
               <TooltipTrigger asChild>
-                <NavLink
+              <NavLink
                   to={item.url}
                   end={item.url === "/dashboard"}
-                  className="group flex items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] text-sidebar-foreground/55 transition-all duration-150 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                  className="sidebar-nav-link group flex items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] text-sidebar-foreground/55 transition-all duration-200 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
                   activeClassName="bg-gradient-to-r from-accent/20 to-transparent text-sidebar-foreground font-medium border-l-2 border-accent !rounded-l-none"
                 >
-                  <item.icon className="h-4 w-4 shrink-0" />
-                  {!collapsed && <span className="truncate">{item.title}</span>}
+                  <item.icon className="sidebar-icon h-4 w-4 shrink-0" />
+                  {!collapsed && <span className="truncate transition-transform duration-200 group-hover:translate-x-0.5">{item.title}</span>}
                 </NavLink>
               </TooltipTrigger>
               {collapsed && <TooltipContent side="right">{item.title}</TooltipContent>}
@@ -90,11 +90,11 @@ export function AppSidebar() {
             <TooltipTrigger asChild>
               <NavLink
                 to="/dashboard/configuracoes"
-                className="group flex items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] text-sidebar-foreground/55 transition-all duration-150 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                className="sidebar-nav-link group flex items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] text-sidebar-foreground/55 transition-all duration-200 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
                 activeClassName="bg-gradient-to-r from-accent/20 to-transparent text-sidebar-foreground font-medium border-l-2 border-accent !rounded-l-none"
               >
-                <Settings className="h-4 w-4 shrink-0" />
-                {!collapsed && <span>Configurações</span>}
+                <Settings className="sidebar-icon h-4 w-4 shrink-0" />
+                {!collapsed && <span className="transition-transform duration-200 group-hover:translate-x-0.5">Configurações</span>}
               </NavLink>
             </TooltipTrigger>
             {collapsed && <TooltipContent side="right">Configurações</TooltipContent>}
