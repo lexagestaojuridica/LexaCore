@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Sparkles, User } from "lucide-react";
+import { Send, Sparkles, User, Trash2 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -303,6 +303,22 @@ export default function IAPage() {
     }
   };
 
+  const handleClearHistory = async () => {
+    if (!user?.id || isStreaming) return;
+    try {
+      const { error } = await supabase
+        .from("conversas_ia")
+        .delete()
+        .eq("user_id", user.id);
+      if (error) throw error;
+      setLocalMessages([]);
+      queryClient.invalidateQueries({ queryKey: ["conversas_ia", user.id] });
+      toast({ title: "Histórico limpo", description: "Todas as conversas foram removidas." });
+    } catch (e: any) {
+      toast({ title: "Erro", description: e.message || "Não foi possível limpar o histórico.", variant: "destructive" });
+    }
+  };
+
   const displayMessages = localMessages.length > 0 ? localMessages : [];
 
   return (
@@ -318,9 +334,23 @@ export default function IAPage() {
             Assistente Jurídica com Inteligência Artificial
           </p>
         </div>
-        <div className="ml-auto flex items-center gap-1">
-          <span className="h-2 w-2 rounded-full bg-emerald-500" />
-          <span className="text-xs text-emerald-600">Online</span>
+        <div className="ml-auto flex items-center gap-3">
+          {displayMessages.length > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleClearHistory}
+              disabled={isStreaming}
+              className="text-muted-foreground hover:text-destructive"
+            >
+              <Trash2 className="mr-1.5 h-4 w-4" />
+              Limpar
+            </Button>
+          )}
+          <div className="flex items-center gap-1">
+            <span className="h-2 w-2 rounded-full bg-emerald-500" />
+            <span className="text-xs text-emerald-600">Online</span>
+          </div>
         </div>
       </div>
 
