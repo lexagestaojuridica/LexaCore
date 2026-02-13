@@ -1,9 +1,7 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { Outlet } from "react-router-dom";
-import { Bell, Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { NotificationsDropdown } from "./NotificationsDropdown";
 
 export default function DashboardLayout() {
   return (
@@ -16,10 +14,7 @@ export default function DashboardLayout() {
               <SidebarTrigger />
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" className="relative h-9 w-9 text-muted-foreground hover:text-foreground">
-                <Bell className="h-4 w-4" />
-                <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-accent ring-2 ring-background" />
-              </Button>
+              <NotificationsDropdown />
             </div>
           </header>
           <main className="flex-1 overflow-auto bg-muted/20 p-6">
