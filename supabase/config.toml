@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.aruna-analyze-doc]
 verify_jwt = false
+
+[functions.aruna-transcribe]
+verify_jwt = false
