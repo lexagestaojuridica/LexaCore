@@ -5,3 +5,9 @@ verify_jwt = false
 
 [functions.aruna-generate-doc]
 verify_jwt = false
+
+[functions.aruna-jurisprudencia]
+verify_jwt = false
+
+[functions.aruna-analyze-doc]
+verify_jwt = false
