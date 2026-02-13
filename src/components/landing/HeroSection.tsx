@@ -3,17 +3,29 @@ import { Button } from "@/components/ui/button";
 import logoLexa from "@/assets/logo-lexa.png";
 import heroOffice from "@/assets/hero-office.jpg";
 
+const navLinks = [
+  { href: "#funcionalidades", label: "Funcionalidades" },
+  { href: "#aruna", label: "ARUNA IA" },
+  { href: "#planos", label: "Planos" },
+];
+
 const Navbar = () => (
-  <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/50">
+  <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/30">
     <div className="container mx-auto flex h-20 items-center justify-between px-4">
-      <img src={logoLexa} alt="LEXA" className="h-14" />
+      <img src={logoLexa} alt="LEXA" className="h-20" />
       <div className="hidden items-center gap-10 md:flex">
-        <a href="#funcionalidades" className="text-sm font-medium tracking-wide text-muted-foreground transition-colors hover:text-foreground">Funcionalidades</a>
-        <a href="#aruna" className="text-sm font-medium tracking-wide text-muted-foreground transition-colors hover:text-foreground">ARUNA IA</a>
-        <a href="#planos" className="text-sm font-medium tracking-wide text-muted-foreground transition-colors hover:text-foreground">Planos</a>
+        {navLinks.map((link) => (
+          <a
+            key={link.href}
+            href={link.href}
+            className="nav-link-hover relative text-sm font-medium tracking-wide text-muted-foreground transition-colors hover:text-foreground"
+          >
+            {link.label}
+          </a>
+        ))}
       </div>
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="sm" className="text-muted-foreground font-medium" asChild>
+        <Button variant="ghost" size="sm" className="nav-link-hover relative text-muted-foreground font-medium" asChild>
           <a href="/auth">Entrar</a>
         </Button>
         <Button size="sm" className="rounded-full px-6" asChild>

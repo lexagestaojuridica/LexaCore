@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { MessageSquare, FileText, Mic, Sparkles } from "lucide-react";
-import iconLexa from "@/assets/icon-lexa.png";
+import arunaAvatar from "@/assets/aruna-avatar.png";
 import patternNavy from "@/assets/pattern-navy.jpg";
 
 const capabilities = [
@@ -40,7 +40,7 @@ const ArunaSection = () => (
             {capabilities.map((cap) => (
               <div
                 key={cap.text}
-                className="flex items-center gap-4 rounded-xl border border-primary-foreground/10 p-4 transition-colors hover:border-primary-foreground/20 hover:bg-primary-foreground/5"
+                className="flex items-center gap-4 rounded-xl border border-primary-foreground/10 p-4 transition-all duration-300 hover:border-primary-foreground/20 hover:bg-primary-foreground/5 hover:translate-x-1"
               >
                 <cap.icon className="h-5 w-5 shrink-0 text-accent" strokeWidth={1.5} />
                 <span className="text-sm text-primary-foreground/80">"{cap.text}"</span>
@@ -57,9 +57,9 @@ const ArunaSection = () => (
           className="flex items-center justify-center"
         >
           <div className="relative">
-            <div className="absolute -inset-4 rounded-full bg-accent/10 blur-3xl" />
-            <div className="relative flex h-72 w-72 items-center justify-center rounded-full border border-primary-foreground/10 bg-primary-foreground/5">
-              <img src={iconLexa} alt="ARUNA" className="h-28 w-28 drop-shadow-2xl" />
+            <div className="absolute -inset-8 rounded-full bg-accent/10 blur-3xl animate-pulse-glow" />
+            <div className="relative flex h-80 w-80 items-center justify-center rounded-full border border-primary-foreground/10 bg-primary-foreground/5 overflow-hidden">
+              <img src={arunaAvatar} alt="ARUNA — Assistente Virtual" className="h-56 w-56 object-contain drop-shadow-2xl" />
             </div>
           </div>
         </motion.div>

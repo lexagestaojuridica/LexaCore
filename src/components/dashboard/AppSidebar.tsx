@@ -24,7 +24,7 @@ import {
   LogOut,
   Settings,
 } from "lucide-react";
-import logoLexa from "@/assets/logo-lexa.png";
+import logoLexaWhite from "@/assets/logo-lexa-white.png";
 import iconLexa from "@/assets/icon-lexa.png";
 
 const mainNav = [
@@ -56,18 +56,18 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      <div className="flex h-24 items-center justify-center border-b border-sidebar-border px-4 py-3">
+      <div className="flex h-28 items-center justify-center border-b border-sidebar-border px-4 py-4">
         {collapsed ? (
           <img
             src={iconLexa}
             alt="LEXA"
-            className="h-10 w-10 object-contain"
+            className="h-12 w-12 object-contain"
           />
         ) : (
           <img
-            src={logoLexa}
+            src={logoLexaWhite}
             alt="LEXA"
-            className="h-20 w-auto max-w-[180px] object-contain"
+            className="h-24 w-auto max-w-[200px] object-contain"
           />
         )}
       </div>
@@ -85,7 +85,7 @@ export function AppSidebar() {
                     <NavLink
                       to={item.url}
                       end={item.url === "/dashboard"}
-                      className="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                      className="sidebar-nav-link flex items-center gap-3 rounded-md px-3 py-2 text-sm text-sidebar-foreground/70 transition-all duration-200 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                       activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
                     >
                       <item.icon className="h-4 w-4 shrink-0" />
@@ -106,7 +106,7 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild tooltip={item.title}>
                     <NavLink
                       to={item.url}
-                      className="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                      className="sidebar-nav-link flex items-center gap-3 rounded-md px-3 py-2 text-sm text-sidebar-foreground/70 transition-all duration-200 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                       activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
                     >
                       <item.icon className="h-4 w-4 shrink-0" />
