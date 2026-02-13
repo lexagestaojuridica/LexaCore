@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useGoogleCalendar } from "@/hooks/useGoogleCalendar";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Calendar } from "@/components/ui/calendar";
@@ -25,8 +26,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  CalendarDays, Plus, Clock, Trash2, Edit, Zap, Bell, Link2, RefreshCw,
-  AlertTriangle, ChevronLeft, ChevronRight, Gavel, Users, Timer, CheckCircle2,
+  CalendarDays, Plus, Clock, Trash2, Edit, Zap, Bell, Link2, RefreshCw, Download, Upload,
+  AlertTriangle, ChevronLeft, ChevronRight, Gavel, Users, Timer, CheckCircle2, Loader2, Unplug,
 } from "lucide-react";
 import { format, isSameDay, parseISO, startOfDay, addDays, startOfWeek, endOfWeek, eachDayOfInterval, isToday, isPast, isSameMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -82,6 +83,7 @@ export default function AgendaPage() {
   const [view, setView] = useState<"calendar" | "week">("calendar");
   const [automationOpen, setAutomationOpen] = useState(false);
   const [syncOpen, setSyncOpen] = useState(false);
+  const gcal = useGoogleCalendar();
 
   const { data: eventos = [], isLoading } = useQuery({
     queryKey: ["eventos_agenda"],
@@ -549,20 +551,81 @@ export default function AgendaPage() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <p className="text-sm text-muted-foreground">
-              Conecte sua agenda do Google Calendar ou Microsoft Outlook para importar e exportar compromissos automaticamente.
+              Conecte sua agenda do Google Calendar para importar e exportar compromissos automaticamente.
             </p>
+
+            {/* Google Calendar */}
             <div className="space-y-3">
-              <button className="flex w-full items-center gap-3 rounded-lg border border-border p-4 transition-colors hover:bg-muted/30">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-destructive/10">
-                  <CalendarDays className="h-5 w-5 text-destructive" />
+              {gcal.isConnected ? (
+                <div className="rounded-lg border border-success/30 bg-success/5 p-4 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-success/10">
+                      <CheckCircle2 className="h-5 w-5 text-success" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-foreground">Google Calendar conectado</p>
+                      <p className="text-xs text-muted-foreground">
+                        {gcal.lastSyncAt
+                          ? `Última sinc: ${format(parseISO(gcal.lastSyncAt), "dd/MM HH:mm", { locale: ptBR })}`
+                          : "Nunca sincronizado"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5 text-xs flex-1"
+                      onClick={() => gcal.importEvents()}
+                      disabled={gcal.importing}
+                    >
+                      {gcal.importing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+                      Importar
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5 text-xs flex-1"
+                      onClick={() => gcal.exportEvents()}
+                      disabled={gcal.exporting}
+                    >
+                      {gcal.exporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+                      Exportar
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="gap-1.5 text-xs text-destructive"
+                      onClick={() => gcal.disconnect()}
+                      disabled={gcal.disconnecting}
+                    >
+                      <Unplug className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex-1 text-left">
-                  <p className="text-sm font-medium text-foreground">Google Calendar</p>
-                  <p className="text-xs text-muted-foreground">Sincronize eventos bidirecionalmente</p>
-                </div>
-                <Badge variant="outline" className="text-[10px]">Em breve</Badge>
-              </button>
-              <button className="flex w-full items-center gap-3 rounded-lg border border-border p-4 transition-colors hover:bg-muted/30">
+              ) : (
+                <button
+                  onClick={() => gcal.connect()}
+                  disabled={gcal.connecting}
+                  className="flex w-full items-center gap-3 rounded-lg border border-border p-4 transition-colors hover:bg-muted/30 disabled:opacity-50"
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-destructive/10">
+                    {gcal.connecting ? (
+                      <Loader2 className="h-5 w-5 text-destructive animate-spin" />
+                    ) : (
+                      <CalendarDays className="h-5 w-5 text-destructive" />
+                    )}
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="text-sm font-medium text-foreground">Google Calendar</p>
+                    <p className="text-xs text-muted-foreground">
+                      {gcal.connecting ? "Conectando..." : "Clique para conectar via OAuth"}
+                    </p>
+                  </div>
+                </button>
+              )}
+
+              <button className="flex w-full items-center gap-3 rounded-lg border border-border p-4 transition-colors hover:bg-muted/30 opacity-60 cursor-not-allowed">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
                   <CalendarDays className="h-5 w-5 text-primary" />
                 </div>
@@ -572,14 +635,6 @@ export default function AgendaPage() {
                 </div>
                 <Badge variant="outline" className="text-[10px]">Em breve</Badge>
               </button>
-            </div>
-            <div className="rounded-lg border border-border bg-muted/30 p-3">
-              <p className="text-xs text-muted-foreground">
-                <strong className="text-foreground">Exportar .ICS</strong> — Exporte seus compromissos no formato iCalendar para importar em qualquer aplicativo de agenda.
-              </p>
-              <Button variant="outline" size="sm" className="mt-2 text-xs" onClick={() => toast.info("Exportação ICS será disponibilizada em breve")}>
-                Exportar agenda
-              </Button>
             </div>
           </div>
         </DialogContent>
