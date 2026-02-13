@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Scale, Users, CalendarDays, DollarSign, TrendingUp, TrendingDown, Clock, AlertTriangle } from "lucide-react";
+import { Scale, Users, CalendarDays, TrendingUp, TrendingDown, Clock, AlertTriangle, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -110,10 +110,10 @@ export default function DashboardOverview() {
   };
 
   const statusColor: Record<string, string> = {
-    ativo: "bg-emerald-100 text-emerald-700",
+    ativo: "bg-success/10 text-success",
     arquivado: "bg-muted text-muted-foreground",
-    suspenso: "bg-amber-100 text-amber-700",
-    encerrado: "bg-red-100 text-red-700",
+    suspenso: "bg-warning/10 text-warning",
+    encerrado: "bg-destructive/10 text-destructive",
   };
 
   if (loading) {
@@ -128,71 +128,79 @@ export default function DashboardOverview() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="font-display text-2xl text-foreground">
+        <h1 className="font-display text-3xl font-semibold text-foreground">
           Olá, {displayName.split(" ")[0]}
         </h1>
-        <p className="text-sm text-muted-foreground">
+        <p className="mt-1 text-sm text-muted-foreground">
           {format(new Date(), "EEEE, d 'de' MMMM 'de' yyyy", { locale: ptBR })}
         </p>
       </div>
 
       {/* Stats Grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-border bg-background">
+        <Card className="border-border">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               Processos Ativos
             </CardTitle>
-            <Scale className="h-4 w-4 text-primary" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/5">
+              <Scale className="h-4 w-4 text-primary" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-foreground">{stats.processosAtivos}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-3xl font-bold text-foreground">{stats.processosAtivos}</div>
+            <p className="mt-1 text-xs text-muted-foreground">
               de {stats.totalProcessos} totais
             </p>
           </CardContent>
         </Card>
 
-        <Card className="border-border bg-background">
+        <Card className="border-border">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               Clientes
             </CardTitle>
-            <Users className="h-4 w-4 text-primary" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/5">
+              <Users className="h-4 w-4 text-primary" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-foreground">{stats.totalClientes}</div>
-            <p className="text-xs text-muted-foreground">cadastrados</p>
+            <div className="text-3xl font-bold text-foreground">{stats.totalClientes}</div>
+            <p className="mt-1 text-xs text-muted-foreground">cadastrados</p>
           </CardContent>
         </Card>
 
-        <Card className="border-border bg-background">
+        <Card className="border-border">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               A Receber
             </CardTitle>
-            <TrendingUp className="h-4 w-4 text-emerald-600" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-success/10">
+              <ArrowUpRight className="h-4 w-4 text-success" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-emerald-600">
+            <div className="text-2xl font-bold text-success">
               {formatCurrency(stats.contasReceberPendente)}
             </div>
-            <p className="text-xs text-muted-foreground">pendente</p>
+            <p className="mt-1 text-xs text-muted-foreground">pendente</p>
           </CardContent>
         </Card>
 
-        <Card className="border-border bg-background">
+        <Card className="border-border">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               A Pagar
             </CardTitle>
-            <TrendingDown className="h-4 w-4 text-destructive" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-destructive/10">
+              <ArrowDownRight className="h-4 w-4 text-destructive" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-destructive">
               {formatCurrency(stats.contasPagarPendente)}
             </div>
-            <p className="text-xs text-muted-foreground">pendente</p>
+            <p className="mt-1 text-xs text-muted-foreground">pendente</p>
           </CardContent>
         </Card>
       </div>
@@ -200,9 +208,9 @@ export default function DashboardOverview() {
       {/* Content Grid */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Recent Processes */}
-        <Card className="border-border bg-background">
+        <Card className="border-border">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
+            <CardTitle className="flex items-center gap-2 text-base font-semibold">
               <Scale className="h-4 w-4 text-primary" />
               Processos Recentes
             </CardTitle>
@@ -210,20 +218,20 @@ export default function DashboardOverview() {
           <CardContent>
             {recentProcesses.length === 0 ? (
               <div className="flex flex-col items-center py-8 text-center">
-                <Scale className="mb-2 h-8 w-8 text-muted-foreground/40" />
+                <Scale className="mb-2 h-8 w-8 text-muted-foreground/30" />
                 <p className="text-sm text-muted-foreground">Nenhum processo cadastrado</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {recentProcesses.map((p) => (
-                  <div key={p.id} className="flex items-center justify-between rounded-md border border-border p-3">
+                  <div key={p.id} className="flex items-center justify-between rounded-xl border border-border p-3 transition-colors hover:bg-muted/30">
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium text-foreground">{p.title}</p>
                       {p.number && (
                         <p className="text-xs text-muted-foreground">Nº {p.number}</p>
                       )}
                     </div>
-                    <span className={`ml-3 shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${statusColor[p.status] || "bg-muted text-muted-foreground"}`}>
+                    <span className={`ml-3 shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold ${statusColor[p.status] || "bg-muted text-muted-foreground"}`}>
                       {statusLabel[p.status] || p.status}
                     </span>
                   </div>
@@ -234,13 +242,13 @@ export default function DashboardOverview() {
         </Card>
 
         {/* Upcoming Events */}
-        <Card className="border-border bg-background">
+        <Card className="border-border">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
+            <CardTitle className="flex items-center gap-2 text-base font-semibold">
               <CalendarDays className="h-4 w-4 text-primary" />
               Próximos Compromissos
               {stats.eventosHoje > 0 && (
-                <span className="ml-auto flex items-center gap-1 text-xs font-normal text-amber-600">
+                <span className="ml-auto flex items-center gap-1 rounded-full bg-warning/10 px-2.5 py-0.5 text-xs font-semibold text-warning">
                   <AlertTriangle className="h-3 w-3" />
                   {stats.eventosHoje} hoje
                 </span>
@@ -250,15 +258,15 @@ export default function DashboardOverview() {
           <CardContent>
             {upcomingEvents.length === 0 ? (
               <div className="flex flex-col items-center py-8 text-center">
-                <CalendarDays className="mb-2 h-8 w-8 text-muted-foreground/40" />
+                <CalendarDays className="mb-2 h-8 w-8 text-muted-foreground/30" />
                 <p className="text-sm text-muted-foreground">Nenhum compromisso agendado</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {upcomingEvents.map((e) => (
-                  <div key={e.id} className="flex items-start gap-3 rounded-md border border-border p-3">
-                    <div className="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-md bg-primary/10 text-primary">
-                      <span className="text-xs font-bold leading-none">
+                  <div key={e.id} className="flex items-start gap-3 rounded-xl border border-border p-3 transition-colors hover:bg-muted/30">
+                    <div className="flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-xl bg-primary/5 text-primary">
+                      <span className="text-sm font-bold leading-none">
                         {format(new Date(e.start_time), "dd")}
                       </span>
                       <span className="text-[9px] uppercase leading-none">
@@ -271,7 +279,7 @@ export default function DashboardOverview() {
                         <Clock className="h-3 w-3" />
                         {format(new Date(e.start_time), "HH:mm")}
                         {e.category && (
-                          <span className="ml-1 rounded bg-muted px-1.5 py-0.5 text-[10px]">
+                          <span className="ml-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium">
                             {e.category}
                           </span>
                         )}
