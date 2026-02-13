@@ -17,6 +17,8 @@ import DocumentosPage from "@/pages/dashboard/DocumentosPage";
 import IAPage from "@/pages/dashboard/IAPage";
 import ConfiguracoesPage from "@/pages/dashboard/ConfiguracoesPage";
 import BIPage from "@/pages/dashboard/BIPage";
+import CalculadoraPage from "@/pages/dashboard/CalculadoraPage";
+import NoticiasPage from "@/pages/dashboard/NoticiasPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -48,6 +50,8 @@ const App = () => (
               <Route path="ia" element={<IAPage />} />
               <Route path="configuracoes" element={<ConfiguracoesPage />} />
               <Route path="bi" element={<BIPage />} />
+              <Route path="calculadora" element={<CalculadoraPage />} />
+              <Route path="noticias" element={<NoticiasPage />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
