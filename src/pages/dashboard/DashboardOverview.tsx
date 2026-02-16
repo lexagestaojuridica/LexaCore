@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Scale, Users, CalendarDays, ArrowUpRight, ArrowDownRight, Clock, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import heroOffice from "@/assets/hero-office.jpg";
 
 interface Stats {
   totalProcessos: number;
@@ -127,18 +126,14 @@ export default function DashboardOverview() {
 
   return (
     <div className="space-y-6">
-      {/* Hero banner */}
-      <div className="relative overflow-hidden rounded-2xl h-40">
-        <img src={heroOffice} alt="" className="absolute inset-0 h-full w-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/90 via-primary/70 to-primary/40" />
-        <div className="relative z-10 flex h-full flex-col justify-center px-8">
-          <h1 className="font-display text-3xl font-semibold text-primary-foreground">
-            Olá, {displayName.split(" ")[0]}
-          </h1>
-          <p className="mt-1 text-sm text-primary-foreground/60">
-            {format(new Date(), "EEEE, d 'de' MMMM 'de' yyyy", { locale: ptBR })}
-          </p>
-        </div>
+      {/* Welcome banner — clean, no image */}
+      <div className="rounded-2xl bg-primary p-8">
+        <h1 className="text-3xl font-semibold text-primary-foreground">
+          Olá, {displayName.split(" ")[0]}
+        </h1>
+        <p className="mt-1 text-sm text-primary-foreground/60">
+          {format(new Date(), "EEEE, d 'de' MMMM 'de' yyyy", { locale: ptBR })}
+        </p>
       </div>
 
       {/* Stats Grid */}

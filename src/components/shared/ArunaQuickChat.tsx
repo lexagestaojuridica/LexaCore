@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bot, Send, X, Sparkles } from "lucide-react";
+import { Send, X, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import arunaAvatar from "@/assets/aruna-avatar.png";
@@ -90,18 +90,18 @@ export default function ArunaQuickChat() {
 
   return (
     <>
-      {/* Floating button */}
+      {/* Floating button with ARUNA photo */}
       <motion.button
         onClick={() => setOpen(true)}
-        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary shadow-lg shadow-primary/25 text-primary-foreground transition-transform hover:scale-105 active:scale-95"
+        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full shadow-lg shadow-primary/20 transition-transform hover:scale-105 active:scale-95 overflow-hidden border-2 border-accent/30"
         whileHover={{ scale: 1.08 }}
         whileTap={{ scale: 0.95 }}
         aria-label="Chat com ARUNA"
       >
-        <Bot className="h-6 w-6" />
-        <span className="absolute -top-1 -right-1 flex h-4 w-4">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-50" />
-          <span className="relative inline-flex h-4 w-4 rounded-full bg-accent" />
+        <img src={arunaAvatar} alt="ARUNA" className="h-full w-full object-cover" />
+        <span className="absolute -top-0.5 -right-0.5 flex h-3.5 w-3.5">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-50" />
+          <span className="relative inline-flex h-3.5 w-3.5 rounded-full bg-success border border-background" />
         </span>
       </motion.button>
 
@@ -116,7 +116,7 @@ export default function ArunaQuickChat() {
             className="fixed bottom-24 right-6 z-50 flex h-[480px] w-[380px] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl"
           >
             {/* Header */}
-            <div className="flex items-center gap-3 border-b border-border bg-gradient-to-r from-primary/5 to-accent/5 px-4 py-3">
+            <div className="flex items-center gap-3 border-b border-border bg-card px-4 py-3">
               <img src={arunaAvatar} alt="ARUNA" className="h-9 w-9 rounded-full object-cover" />
               <div className="flex-1">
                 <p className="text-sm font-semibold text-foreground flex items-center gap-1.5">
@@ -133,7 +133,7 @@ export default function ArunaQuickChat() {
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
               {msgs.length === 0 && (
                 <div className="flex flex-col items-center justify-center h-full text-center">
-                  <Bot className="h-10 w-10 text-muted-foreground/20 mb-3" />
+                  <img src={arunaAvatar} alt="" className="h-16 w-16 rounded-full object-cover mb-3 opacity-30" />
                   <p className="text-sm text-muted-foreground">Pergunte algo à ARUNA</p>
                   <p className="text-xs text-muted-foreground/60 mt-1">Ex: "Quais prazos vencem amanhã?"</p>
                 </div>

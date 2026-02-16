@@ -17,17 +17,16 @@ import {
 } from "@/components/ui/select";
 import {
   CalendarDays, Plus, Clock, Trash2, Edit, Zap, Bell, Link2, RefreshCw, Download, Upload,
-  AlertTriangle, ChevronLeft, ChevronRight, Gavel, Users, Timer, CheckCircle2, Loader2, Unplug,
+  ChevronLeft, ChevronRight, Gavel, Users, Timer, CheckCircle2, Loader2, Unplug,
 } from "lucide-react";
 import {
-  format, isSameDay, parseISO, startOfDay, addDays, addMonths, subMonths,
-  startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isToday, isPast, isSameMonth,
+  format, isSameDay, parseISO, addMonths, subMonths,
+  startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isToday, isPast, isSameMonth, addDays,
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
-import lexaIcon from "@/assets/icon-lexa.png";
+import { AnimatePresence, motion } from "framer-motion";
 
 interface Evento {
   id: string;
@@ -42,11 +41,11 @@ interface Evento {
 }
 
 const categories = [
-  { value: "audiencia", label: "Audiência", icon: Gavel, color: "bg-destructive/10 text-destructive border-destructive/20", dot: "bg-destructive" },
-  { value: "reuniao", label: "Reunião", icon: Users, color: "bg-primary/10 text-primary border-primary/20", dot: "bg-primary" },
-  { value: "prazo", label: "Prazo", icon: Timer, color: "bg-warning/10 text-warning border-warning/20", dot: "bg-warning" },
-  { value: "compromisso", label: "Compromisso", icon: CheckCircle2, color: "bg-success/10 text-success border-success/20", dot: "bg-success" },
-  { value: "lembrete", label: "Lembrete", icon: Bell, color: "bg-accent/10 text-accent-foreground border-accent/20", dot: "bg-accent" },
+  { value: "audiencia", label: "Audiência", icon: Gavel, dot: "bg-destructive" },
+  { value: "reuniao", label: "Reunião", icon: Users, dot: "bg-primary" },
+  { value: "prazo", label: "Prazo", icon: Timer, dot: "bg-warning" },
+  { value: "compromisso", label: "Compromisso", icon: CheckCircle2, dot: "bg-success" },
+  { value: "lembrete", label: "Lembrete", icon: Bell, dot: "bg-accent" },
 ];
 
 const getCat = (cat: string | null) => categories.find((c) => c.value === cat) || categories[3];
@@ -85,7 +84,6 @@ export default function AgendaPage() {
     enabled: !!user?.id,
   });
 
-  // Calendar grid: full month with padding
   const calendarDays = useMemo(() => {
     const monthStart = startOfMonth(currentMonth);
     const monthEnd = endOfMonth(currentMonth);
@@ -95,17 +93,6 @@ export default function AgendaPage() {
   }, [currentMonth]);
 
   const eventsForDate = eventos.filter((e) => isSameDay(parseISO(e.start_time), selectedDate));
-
-  // Stats
-  const todayEvents = eventos.filter((e) => isSameDay(parseISO(e.start_time), new Date()));
-  const upcomingDeadlines = eventos.filter((e) => {
-    const d = parseISO(e.start_time);
-    return e.category === "prazo" && !isPast(d) && d <= addDays(new Date(), 7);
-  });
-  const overdueCount = eventos.filter((e) => {
-    const d = parseISO(e.start_time);
-    return e.category === "prazo" && isPast(d);
-  }).length;
 
   const createMutation = useMutation({
     mutationFn: async (payload: any) => {
@@ -169,15 +156,12 @@ export default function AgendaPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-display text-2xl text-foreground">Agenda</h1>
+          <h1 className="text-2xl font-semibold text-foreground">Agenda</h1>
           <p className="text-sm text-muted-foreground">Gerencie compromissos, prazos e audiências</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => setSyncOpen(true)}>
             <Link2 className="h-3.5 w-3.5" /> Sincronizar
-          </Button>
-          <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => setAutomationOpen(true)}>
-            <Zap className="h-3.5 w-3.5" /> Automações
           </Button>
           <Button onClick={() => openCreate()} size="sm" className="gap-1.5">
             <Plus className="h-3.5 w-3.5" /> Novo
@@ -185,30 +169,8 @@ export default function AgendaPage() {
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {[
-          { icon: CalendarDays, value: todayEvents.length, label: "Hoje", bg: "bg-primary/10", text: "text-primary" },
-          { icon: Timer, value: upcomingDeadlines.length, label: "Prazos (7d)", bg: "bg-warning/10", text: "text-warning" },
-          { icon: AlertTriangle, value: overdueCount, label: "Vencidos", bg: "bg-destructive/10", text: "text-destructive" },
-          { icon: CheckCircle2, value: eventos.length, label: "Total", bg: "bg-success/10", text: "text-success" },
-        ].map((s) => (
-          <Card key={s.label} className="border-border">
-            <CardContent className="flex items-center gap-3 p-4">
-              <div className={cn("flex h-10 w-10 items-center justify-center rounded-xl", s.bg)}>
-                <s.icon className={cn("h-5 w-5", s.text)} />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">{s.value}</p>
-                <p className="text-xs text-muted-foreground">{s.label}</p>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
       {/* Main calendar layout */}
-      <div className="grid gap-5 lg:grid-cols-[1fr_340px]">
+      <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
         {/* Full month calendar */}
         <Card className="border-border">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -216,7 +178,7 @@ export default function AgendaPage() {
               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setCurrentMonth((m) => subMonths(m, 1))}>
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <CardTitle className="font-display text-lg capitalize">
+              <CardTitle className="text-lg font-semibold capitalize">
                 {format(currentMonth, "MMMM yyyy", { locale: ptBR })}
               </CardTitle>
               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setCurrentMonth((m) => addMonths(m, 1))}>
@@ -228,16 +190,14 @@ export default function AgendaPage() {
             </Button>
           </CardHeader>
           <CardContent className="px-3 pb-3">
-            {/* Weekday headers */}
             <div className="grid grid-cols-7 mb-1">
               {weekDayHeaders.map((d) => (
-                <div key={d} className="py-2 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <div key={d} className="py-2 text-center text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
                   {d}
                 </div>
               ))}
             </div>
-            {/* Days grid */}
-            <div className="grid grid-cols-7 gap-px rounded-lg border border-border bg-border overflow-hidden">
+            <div className="grid grid-cols-7 gap-px rounded-lg border border-border overflow-hidden">
               {calendarDays.map((day) => {
                 const dayEvents = eventos.filter((e) => isSameDay(parseISO(e.start_time), day));
                 const inMonth = isSameMonth(day, currentMonth);
@@ -250,43 +210,37 @@ export default function AgendaPage() {
                     onClick={() => setSelectedDate(day)}
                     onDoubleClick={() => openCreate(day)}
                     className={cn(
-                      "flex min-h-[90px] flex-col bg-background p-1.5 text-left transition-all hover:bg-muted/30 relative",
+                      "flex min-h-[80px] flex-col bg-card p-1.5 text-left transition-all hover:bg-muted/30 relative",
                       !inMonth && "bg-muted/10",
-                      selected && "ring-2 ring-inset ring-primary/40 bg-primary/5",
+                      selected && "ring-2 ring-inset ring-primary/30 bg-primary/5",
                     )}
                   >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className={cn(
-                        "flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium transition-colors",
-                        today && "bg-primary text-primary-foreground font-bold",
-                        !today && inMonth && "text-foreground",
-                        !today && !inMonth && "text-muted-foreground/40",
-                      )}>
-                        {format(day, "d")}
-                      </span>
-                      {dayEvents.length > 0 && !today && (
-                        <span className="text-[10px] text-muted-foreground font-medium">{dayEvents.length}</span>
-                      )}
-                    </div>
-                    <div className="flex-1 space-y-0.5 overflow-hidden">
-                      {dayEvents.slice(0, 3).map((e) => {
+                    <span className={cn(
+                      "flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium",
+                      today && "bg-primary text-primary-foreground",
+                      !today && inMonth && "text-foreground",
+                      !today && !inMonth && "text-muted-foreground/40",
+                    )}>
+                      {format(day, "d")}
+                    </span>
+                    <div className="flex-1 mt-0.5 space-y-px overflow-hidden">
+                      {dayEvents.slice(0, 2).map((e) => {
                         const cat = getCat(e.category);
                         return (
-                          <div key={e.id} className={cn("flex items-center gap-1 rounded px-1 py-0.5 text-[10px] leading-tight truncate", cat.color)}>
+                          <div key={e.id} className="flex items-center gap-1 px-1 py-px text-[10px] leading-tight truncate rounded">
                             <div className={cn("h-1.5 w-1.5 rounded-full shrink-0", cat.dot)} />
-                            <span className="truncate">{e.title}</span>
+                            <span className="truncate text-foreground/70">{e.title}</span>
                           </div>
                         );
                       })}
-                      {dayEvents.length > 3 && (
-                        <p className="text-[9px] text-muted-foreground px-1">+{dayEvents.length - 3}</p>
+                      {dayEvents.length > 2 && (
+                        <p className="text-[9px] text-muted-foreground px-1">+{dayEvents.length - 2}</p>
                       )}
                     </div>
                   </button>
                 );
               })}
             </div>
-            {/* Category legend */}
             <div className="mt-3 flex flex-wrap gap-3 px-1">
               {categories.map((c) => (
                 <div key={c.value} className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
@@ -302,13 +256,10 @@ export default function AgendaPage() {
         <div className="space-y-4">
           <Card className="border-border">
             <CardHeader className="pb-2">
-              <CardTitle className="flex items-center justify-between text-base">
-                <div className="flex items-center gap-2">
-                  <CalendarDays className="h-4 w-4 text-primary" />
-                  <span className="capitalize">{format(selectedDate, "EEEE", { locale: ptBR })}</span>
-                </div>
+              <CardTitle className="flex items-center justify-between text-base font-semibold">
+                <span className="capitalize">{format(selectedDate, "EEEE", { locale: ptBR })}</span>
                 {isToday(selectedDate) && (
-                  <Badge variant="outline" className="text-[10px] bg-primary/5 text-primary border-primary/20">Hoje</Badge>
+                  <Badge variant="outline" className="text-[10px]">Hoje</Badge>
                 )}
               </CardTitle>
               <p className="text-sm text-muted-foreground">{format(selectedDate, "d 'de' MMMM 'de' yyyy", { locale: ptBR })}</p>
@@ -331,7 +282,6 @@ export default function AgendaPage() {
                   <AnimatePresence mode="popLayout">
                     {eventsForDate.map((e, idx) => {
                       const cat = getCat(e.category);
-                      const CatIcon = cat.icon;
                       return (
                         <motion.div
                           key={e.id}
@@ -339,12 +289,10 @@ export default function AgendaPage() {
                           animate={{ opacity: 1, x: 0 }}
                           exit={{ opacity: 0, x: -10 }}
                           transition={{ delay: idx * 0.04 }}
-                          className="group rounded-lg border border-border p-3 transition-colors hover:bg-muted/30"
+                          className="group rounded-lg border border-border p-3 transition-colors hover:bg-muted/20"
                         >
                           <div className="flex items-start gap-2.5">
-                            <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg mt-0.5", cat.color)}>
-                              <CatIcon className="h-3.5 w-3.5" />
-                            </div>
+                            <div className={cn("h-2 w-2 rounded-full mt-1.5 shrink-0", cat.dot)} />
                             <div className="min-w-0 flex-1">
                               <p className="text-sm font-medium text-foreground leading-tight">{e.title}</p>
                               {e.description && <p className="mt-0.5 text-xs text-muted-foreground line-clamp-1">{e.description}</p>}
@@ -376,7 +324,7 @@ export default function AgendaPage() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{editingEvent ? "Editar Compromisso" : "Novo Compromisso"}</DialogTitle>
+            <DialogTitle className="font-semibold">{editingEvent ? "Editar Compromisso" : "Novo Compromisso"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div>
@@ -431,7 +379,7 @@ export default function AgendaPage() {
       <Dialog open={syncOpen} onOpenChange={setSyncOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><Link2 className="h-5 w-5 text-primary" /> Sincronizar Calendário</DialogTitle>
+            <DialogTitle className="font-semibold">Sincronizar Calendário</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <p className="text-sm text-muted-foreground">Conecte sua agenda do Google Calendar para importar e exportar compromissos automaticamente.</p>
@@ -439,7 +387,7 @@ export default function AgendaPage() {
               {gcal.isConnected ? (
                 <div className="rounded-lg border border-success/30 bg-success/5 p-4 space-y-3">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-success/10"><CheckCircle2 className="h-5 w-5 text-success" /></div>
+                    <CheckCircle2 className="h-5 w-5 text-success" />
                     <div className="flex-1">
                       <p className="text-sm font-medium text-foreground">Google Calendar conectado</p>
                       <p className="text-xs text-muted-foreground">{gcal.lastSyncAt ? `Última sinc: ${format(parseISO(gcal.lastSyncAt), "dd/MM HH:mm", { locale: ptBR })}` : "Nunca sincronizado"}</p>
@@ -459,57 +407,13 @@ export default function AgendaPage() {
                 </div>
               ) : (
                 <button onClick={() => gcal.connect()} disabled={gcal.connecting} className="flex w-full items-center gap-3 rounded-lg border border-border p-4 transition-colors hover:bg-muted/30 disabled:opacity-50">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-destructive/10">
-                    {gcal.connecting ? <Loader2 className="h-5 w-5 text-destructive animate-spin" /> : <CalendarDays className="h-5 w-5 text-destructive" />}
-                  </div>
+                  <CalendarDays className="h-5 w-5 text-primary" />
                   <div className="flex-1 text-left">
                     <p className="text-sm font-medium text-foreground">Google Calendar</p>
                     <p className="text-xs text-muted-foreground">{gcal.connecting ? "Conectando..." : "Clique para conectar via OAuth"}</p>
                   </div>
                 </button>
               )}
-              <button className="flex w-full items-center gap-3 rounded-lg border border-border p-4 transition-colors hover:bg-muted/30 opacity-60 cursor-not-allowed">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10"><CalendarDays className="h-5 w-5 text-primary" /></div>
-                <div className="flex-1 text-left">
-                  <p className="text-sm font-medium text-foreground">Microsoft Outlook</p>
-                  <p className="text-xs text-muted-foreground">Conecte sua conta Microsoft</p>
-                </div>
-                <Badge variant="outline" className="text-[10px]">Em breve</Badge>
-              </button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Automations Dialog */}
-      <Dialog open={automationOpen} onOpenChange={setAutomationOpen}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><Zap className="h-5 w-5 text-warning" /> Automações da Agenda</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <p className="text-sm text-muted-foreground">Configure alertas e ações automáticas para nunca perder um prazo.</p>
-            <div className="space-y-3">
-              {[
-                { title: "Alerta de prazo vencendo", desc: "Notifique 48h antes do vencimento de prazos processuais", enabled: true },
-                { title: "Lembrete de audiência", desc: "Envie lembrete 24h e 1h antes de audiências", enabled: true },
-                { title: "Resumo diário", desc: "Receba um resumo dos compromissos do dia às 7h", enabled: false },
-                { title: "Alerta de conflito", desc: "Avise quando dois compromissos estão sobrepostos", enabled: true },
-                { title: "Criação automática de prazos", desc: "Gere prazos automaticamente a partir de movimentações processuais", enabled: false },
-              ].map((auto) => (
-                <div key={auto.title} className="flex items-start gap-3 rounded-lg border border-border p-3">
-                  <Switch defaultChecked={auto.enabled} className="mt-0.5" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-foreground">{auto.title}</p>
-                    <p className="text-xs text-muted-foreground">{auto.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="flex justify-end">
-              <Button size="sm" onClick={() => { setAutomationOpen(false); toast.success("Automações salvas"); }}>
-                Salvar configurações
-              </Button>
             </div>
           </div>
         </DialogContent>

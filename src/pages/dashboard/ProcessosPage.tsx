@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
-  Scale, Plus, Search, Filter, Edit2, Trash2, Eye, Upload, Download, File, Calculator,
+  Scale, Plus, Search, Filter, Edit2, Trash2, Eye, Upload, Download, File, Calculator, X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,7 +26,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import FormField from "@/components/shared/FormField";
 import LexaLoadingOverlay from "@/components/shared/LexaLoadingOverlay";
-import lexaIcon from "@/assets/icon-lexa.png";
+import { formatCurrencyInput, parseCurrencyToNumber } from "@/lib/formatters";
 import type { Tables, TablesInsert } from "@/integrations/supabase/types";
 
 type Processo = Tables<"processos_juridicos">;
@@ -44,12 +44,11 @@ const statusBadge = (status: string) => {
   return <Badge variant={opt?.variant ?? "secondary"}>{opt?.label ?? status}</Badge>;
 };
 
-const emptyForm: Partial<TablesInsert<"processos_juridicos">> = {
+const emptyForm: Partial<TablesInsert<"processos_juridicos">> & { estimated_value_display?: string } = {
   title: "", number: "", court: "", subject: "", status: "ativo",
-  estimated_value: null, notes: "", client_id: null,
+  estimated_value: null, notes: "", client_id: null, estimated_value_display: "",
 };
 
-// Inline calculator for process
 function ProcessCalculator({ estimatedValue }: { estimatedValue: number | null }) {
   const [percentual, setPercentual] = useState("20");
   const [horas, setHoras] = useState("");
@@ -57,7 +56,7 @@ function ProcessCalculator({ estimatedValue }: { estimatedValue: number | null }
   const valor = Number(estimatedValue) || 0;
   const honorariosExito = valor * (Number(percentual) / 100);
   const honorariosHora = Number(horas) * Number(valorHora) || 0;
-  const formatCurrency = (v: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
+  const fmtCurrency = (v: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
 
   return (
     <div className="rounded-lg border border-border/50 bg-muted/20 p-4 space-y-4">
@@ -65,7 +64,7 @@ function ProcessCalculator({ estimatedValue }: { estimatedValue: number | null }
         <Calculator className="h-3.5 w-3.5" /> Calculadora do Processo
       </h3>
       <div className="grid grid-cols-2 gap-3 text-sm">
-        <div><span className="text-xs text-muted-foreground">Valor da Causa</span><p className="font-medium">{valor ? formatCurrency(valor) : "Não informado"}</p></div>
+        <div><span className="text-xs text-muted-foreground">Valor da Causa</span><p className="font-medium">{valor ? fmtCurrency(valor) : "Não informado"}</p></div>
         <div>
           <span className="text-xs text-muted-foreground">Honorários (%)</span>
           <Input type="number" value={percentual} onChange={(e) => setPercentual(e.target.value)} className="h-8 mt-1" />
@@ -83,10 +82,10 @@ function ProcessCalculator({ estimatedValue }: { estimatedValue: number | null }
         </div>
       </div>
       <div className="rounded-lg bg-primary/5 p-3 space-y-1.5">
-        <div className="flex justify-between text-sm"><span className="text-muted-foreground">Honorários Êxito</span><span className="font-medium">{formatCurrency(honorariosExito)}</span></div>
-        {honorariosHora > 0 && <div className="flex justify-between text-sm"><span className="text-muted-foreground">Honorários Hora</span><span className="font-medium">{formatCurrency(honorariosHora)}</span></div>}
+        <div className="flex justify-between text-sm"><span className="text-muted-foreground">Honorários Êxito</span><span className="font-medium">{fmtCurrency(honorariosExito)}</span></div>
+        {honorariosHora > 0 && <div className="flex justify-between text-sm"><span className="text-muted-foreground">Honorários Hora</span><span className="font-medium">{fmtCurrency(honorariosHora)}</span></div>}
         <Separator />
-        <div className="flex justify-between text-sm font-bold"><span>Total</span><span className="text-primary">{formatCurrency(honorariosExito + honorariosHora)}</span></div>
+        <div className="flex justify-between text-sm font-bold"><span>Total</span><span className="text-primary">{fmtCurrency(honorariosExito + honorariosHora)}</span></div>
       </div>
     </div>
   );
@@ -134,7 +133,6 @@ export default function ProcessosPage() {
     enabled: !!orgId,
   });
 
-  // Docs for selected process
   const { data: processDocs = [] } = useQuery({
     queryKey: ["process-docs", selectedProcesso?.id],
     queryFn: async () => {
@@ -182,7 +180,7 @@ export default function ProcessosPage() {
       });
       if (dbError) throw dbError;
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["process-docs"] }); queryClient.invalidateQueries({ queryKey: ["documentos"] }); toast.success("Documento vinculado ao processo"); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["process-docs"] }); toast.success("Documento vinculado ao processo"); },
     onError: () => toast.error("Erro ao enviar documento"),
   });
 
@@ -190,7 +188,8 @@ export default function ProcessosPage() {
   const openCreate = () => { setForm(emptyForm); setIsEditing(false); setDialogOpen(true); };
 
   const openEdit = (p: Processo) => {
-    setForm({ title: p.title, number: p.number, court: p.court, subject: p.subject, status: p.status, estimated_value: p.estimated_value, notes: p.notes, client_id: p.client_id });
+    const display = p.estimated_value != null ? formatCurrencyInput(String(Math.round(Number(p.estimated_value) * 100))) : "";
+    setForm({ title: p.title, number: p.number, court: p.court, subject: p.subject, status: p.status, estimated_value: p.estimated_value, notes: p.notes, client_id: p.client_id, estimated_value_display: display });
     setSelectedProcesso(p);
     setIsEditing(true);
     setDialogOpen(true);
@@ -200,13 +199,20 @@ export default function ProcessosPage() {
     setForm((prev) => ({ ...prev, [key]: value }));
   }, []);
 
+  const handleValueChange = (v: string) => {
+    const formatted = formatCurrencyInput(v);
+    const num = parseCurrencyToNumber(formatted);
+    setForm((prev) => ({ ...prev, estimated_value_display: formatted, estimated_value: num || null }));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.title) { toast.error("O título é obrigatório"); return; }
+    const { estimated_value_display, ...rest } = form;
     if (isEditing && selectedProcesso) {
-      updateMutation.mutate({ id: selectedProcesso.id, ...form });
+      updateMutation.mutate({ id: selectedProcesso.id, ...rest });
     } else {
-      createMutation.mutate({ ...form, title: form.title!, organization_id: orgId!, responsible_user_id: user!.id } as TablesInsert<"processos_juridicos">);
+      createMutation.mutate({ ...rest, title: rest.title!, organization_id: orgId!, responsible_user_id: user!.id } as TablesInsert<"processos_juridicos">);
     }
   };
 
@@ -241,7 +247,7 @@ export default function ProcessosPage() {
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-display text-2xl text-foreground">Processos Jurídicos</h1>
+          <h1 className="text-2xl font-semibold text-foreground">Processos Jurídicos</h1>
           <p className="text-sm text-muted-foreground">Gerencie todos os processos do escritório</p>
         </div>
         <Button onClick={openCreate} className="gap-2"><Plus className="h-4 w-4" /> Novo Processo</Button>
@@ -315,26 +321,24 @@ export default function ProcessosPage() {
       </Card>
 
       {/* Create / Edit Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={(o) => !o && closeDialog()}>
+      <Dialog open={dialogOpen} onOpenChange={(o) => { if (!o) closeDialog(); }}>
         <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto p-0">
-          <div className="sticky top-0 z-10 border-b border-border bg-gradient-to-r from-primary/5 to-accent/5 px-6 py-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
-                <img src={lexaIcon} alt="" className="h-5 w-5" />
-              </div>
-              <div>
-                <DialogTitle className="font-display text-lg">{isEditing ? "Editar Processo" : "Novo Processo"}</DialogTitle>
-                <p className="text-xs text-muted-foreground">Informações do processo jurídico</p>
-              </div>
+          <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-card px-6 py-4">
+            <div>
+              <DialogTitle className="text-lg font-semibold">{isEditing ? "Editar Processo" : "Novo Processo"}</DialogTitle>
+              <p className="text-xs text-muted-foreground">Informações do processo jurídico</p>
             </div>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={closeDialog}>
+              <X className="h-4 w-4" />
+            </Button>
           </div>
 
           <form onSubmit={handleSubmit} className="px-6 pb-6">
             <Tabs defaultValue="dados" className="w-full">
               <TabsList className="my-4 grid w-full grid-cols-3">
-                <TabsTrigger value="dados" className="gap-1.5 text-xs"><Scale className="h-3.5 w-3.5" /> Dados</TabsTrigger>
-                <TabsTrigger value="documentos" className="gap-1.5 text-xs"><File className="h-3.5 w-3.5" /> Documentos</TabsTrigger>
-                <TabsTrigger value="calculadora" className="gap-1.5 text-xs"><Calculator className="h-3.5 w-3.5" /> Calculadora</TabsTrigger>
+                <TabsTrigger value="dados" className="text-xs">Dados</TabsTrigger>
+                <TabsTrigger value="documentos" className="text-xs">Documentos</TabsTrigger>
+                <TabsTrigger value="calculadora" className="text-xs">Calculadora</TabsTrigger>
               </TabsList>
 
               <TabsContent value="dados" className="space-y-4">
@@ -353,7 +357,7 @@ export default function ProcessosPage() {
                         <SelectContent>{STATUS_OPTIONS.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
                       </Select>
                     </div>
-                    <FormField label="Valor Estimado" value={form.estimated_value?.toString() ?? ""} onChange={(v) => setField("estimated_value", v ? Number(v) : null)} placeholder="R$ 0,00" type="number" />
+                    <FormField label="Valor Estimado" value={form.estimated_value_display ?? ""} onChange={handleValueChange} placeholder="0,00" />
                   </div>
                 </div>
                 <div className="rounded-lg border border-border/50 bg-muted/20 p-4 space-y-4">
@@ -380,7 +384,7 @@ export default function ProcessosPage() {
 
               <TabsContent value="documentos" className="space-y-4">
                 <div className="rounded-lg border border-border/50 bg-muted/20 p-4 space-y-4">
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5"><File className="h-3.5 w-3.5" /> Documentos do Processo</h3>
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Documentos do Processo</h3>
                   {isEditing && selectedProcesso ? (
                     <>
                       <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={() => triggerFileUpload(selectedProcesso.id)}>
@@ -428,18 +432,16 @@ export default function ProcessosPage() {
       {/* View Dialog */}
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
         <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto p-0">
-          <div className="border-b border-border bg-gradient-to-r from-primary/5 to-accent/5 px-6 py-4">
+          <div className="flex items-center justify-between border-b border-border bg-card px-6 py-4">
             {selectedProcesso && (
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
-                  <Scale className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <DialogTitle className="font-display text-lg">{selectedProcesso.title}</DialogTitle>
-                  <div className="mt-1">{statusBadge(selectedProcesso.status)}</div>
-                </div>
+              <div>
+                <DialogTitle className="text-lg font-semibold">{selectedProcesso.title}</DialogTitle>
+                <div className="mt-1">{statusBadge(selectedProcesso.status)}</div>
               </div>
             )}
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setViewDialogOpen(false)}>
+              <X className="h-4 w-4" />
+            </Button>
           </div>
           {selectedProcesso && (
             <div className="space-y-5 px-6 pb-6 pt-4">
@@ -455,11 +457,10 @@ export default function ProcessosPage() {
                 <><Separator /><div><span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Observações</span><p className="mt-1 whitespace-pre-wrap text-sm">{selectedProcesso.notes}</p></div></>
               )}
 
-              {/* Documents */}
               <Separator />
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5"><File className="h-3.5 w-3.5" /> Documentos</h4>
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Documentos</h4>
                   <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => triggerFileUpload(selectedProcesso.id)}>
                     <Upload className="h-3 w-3" /> Anexar
                   </Button>
@@ -482,7 +483,6 @@ export default function ProcessosPage() {
                 )}
               </div>
 
-              {/* Inline calculator */}
               <Separator />
               <ProcessCalculator estimatedValue={selectedProcesso.estimated_value} />
 
@@ -498,7 +498,7 @@ export default function ProcessosPage() {
       {/* Delete confirmation */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle className="font-display">Excluir Processo</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="font-semibold">Excluir Processo</DialogTitle></DialogHeader>
           <p className="text-sm text-muted-foreground">Tem certeza que deseja excluir o processo <strong className="text-foreground">{selectedProcesso?.title}</strong>?</p>
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Cancelar</Button>
