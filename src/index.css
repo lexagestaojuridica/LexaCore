@@ -2,62 +2,62 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap');
 
 @layer base {
   :root {
-    --background: 30 10% 99%;
-    --foreground: 220 20% 10%;
+    --background: 210 20% 98%;
+    --foreground: 215 25% 15%;
 
-    --card: 30 10% 99%;
-    --card-foreground: 220 20% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 215 25% 15%;
 
-    --popover: 30 10% 99%;
-    --popover-foreground: 220 20% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 25% 15%;
 
-    --primary: 220 60% 18%;
-    --primary-foreground: 35 25% 95%;
+    --primary: 215 50% 23%;
+    --primary-foreground: 210 20% 96%;
 
-    --secondary: 30 12% 95%;
-    --secondary-foreground: 220 20% 10%;
+    --secondary: 210 15% 95%;
+    --secondary-foreground: 215 25% 15%;
 
-    --muted: 30 8% 96%;
-    --muted-foreground: 220 10% 45%;
+    --muted: 210 12% 95%;
+    --muted-foreground: 215 12% 50%;
 
-    --accent: 35 35% 68%;
-    --accent-foreground: 220 60% 18%;
+    --accent: 30 25% 72%;
+    --accent-foreground: 215 50% 23%;
 
-    --destructive: 0 72% 51%;
+    --destructive: 0 65% 52%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 30 8% 90%;
-    --input: 30 8% 90%;
-    --ring: 220 60% 18%;
+    --border: 210 15% 90%;
+    --input: 210 15% 90%;
+    --ring: 215 50% 23%;
 
-    --radius: 0.75rem;
+    --radius: 0.625rem;
 
-    --navy: 220 60% 18%;
-    --navy-light: 220 45% 32%;
-    --gold: 35 35% 68%;
-    --gold-light: 35 30% 78%;
-    --cream: 35 25% 95%;
-    --cream-light: 30 15% 97%;
-    --champagne: 35 35% 68%;
-    --champagne-light: 35 30% 78%;
-    --champagne-glow: 35 20% 85%;
+    --navy: 215 50% 23%;
+    --navy-light: 215 35% 35%;
+    --gold: 30 25% 72%;
+    --gold-light: 30 20% 80%;
+    --cream: 210 20% 96%;
+    --cream-light: 210 15% 98%;
+    --champagne: 30 25% 72%;
+    --champagne-light: 30 20% 82%;
+    --champagne-glow: 30 15% 88%;
 
-    --sidebar-background: 220 55% 10%;
-    --sidebar-foreground: 35 25% 95%;
-    --sidebar-primary: 220 60% 18%;
-    --sidebar-primary-foreground: 35 25% 95%;
-    --sidebar-accent: 220 45% 16%;
-    --sidebar-accent-foreground: 35 25% 95%;
-    --sidebar-border: 220 35% 16%;
-    --sidebar-ring: 220 60% 18%;
+    --sidebar-background: 215 45% 12%;
+    --sidebar-foreground: 210 20% 96%;
+    --sidebar-primary: 215 50% 23%;
+    --sidebar-primary-foreground: 210 20% 96%;
+    --sidebar-accent: 215 40% 18%;
+    --sidebar-accent-foreground: 210 20% 96%;
+    --sidebar-border: 215 30% 18%;
+    --sidebar-ring: 215 50% 23%;
 
-    --success: 152 55% 42%;
+    --success: 152 45% 45%;
     --success-foreground: 0 0% 100%;
-    --warning: 38 85% 52%;
+    --warning: 38 75% 52%;
     --warning-foreground: 0 0% 100%;
   }
 }
@@ -70,14 +70,9 @@
   body {
     @apply bg-background text-foreground font-sans antialiased;
   }
-
-  h1, h2, h3, h4, h5, h6 {
-    font-family: 'DM Serif Display', serif;
-  }
 }
 
 @layer components {
-  /* Dynamic underline hover for navigation links */
   .nav-link-hover {
     position: relative;
   }
@@ -99,7 +94,6 @@
     left: 0;
   }
 
-  /* Sidebar nav link with glowing accent bar + shimmer on hover */
   .sidebar-nav-link {
     position: relative;
     overflow: hidden;
@@ -159,34 +153,34 @@
 @layer utilities {
   .text-gradient-navy {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, hsl(220 60% 18%), hsl(220 45% 32%));
+    background-image: linear-gradient(135deg, hsl(215 50% 23%), hsl(215 35% 35%));
   }
 
   .text-gradient-gold {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, hsl(35 35% 68%), hsl(35 45% 58%));
+    background-image: linear-gradient(135deg, hsl(30 25% 72%), hsl(30 35% 58%));
   }
 
   .bg-gradient-hero {
-    background: linear-gradient(180deg, hsl(30 10% 99%) 0%, hsl(30 15% 97%) 100%);
+    background: linear-gradient(180deg, hsl(210 20% 98%) 0%, hsl(210 15% 97%) 100%);
   }
 
   .bg-gradient-card {
-    background: linear-gradient(145deg, hsl(30 10% 99%), hsl(30 15% 97%));
+    background: linear-gradient(145deg, hsl(0 0% 100%), hsl(210 15% 97%));
   }
 
   .bg-gradient-navy {
-    background: linear-gradient(135deg, hsl(220 60% 18%), hsl(220 45% 25%));
+    background: linear-gradient(135deg, hsl(215 50% 23%), hsl(215 40% 28%));
   }
 
   .glass {
-    background: hsla(30, 10%, 99%, 0.75);
+    background: hsla(0, 0%, 100%, 0.8);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
   }
 
   .glass-dark {
-    background: hsla(220, 55%, 10%, 0.85);
+    background: hsla(215, 45%, 12%, 0.85);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
   }
