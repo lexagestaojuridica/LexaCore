@@ -2,6 +2,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { Outlet } from "react-router-dom";
 import { NotificationsDropdown } from "./NotificationsDropdown";
+import ArunaQuickChat from "@/components/shared/ArunaQuickChat";
 
 export default function DashboardLayout() {
   return (
@@ -22,6 +23,7 @@ export default function DashboardLayout() {
           </main>
         </div>
       </div>
+      <ArunaQuickChat />
     </SidebarProvider>
   );
 }

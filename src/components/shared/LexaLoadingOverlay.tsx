@@ -1,15 +1,30 @@
 import { motion, AnimatePresence } from "framer-motion";
 import lexaIcon from "@/assets/icon-lexa.png";
+import { useEffect, useState } from "react";
 
 interface LexaLoadingOverlayProps {
   visible: boolean;
   message?: string;
+  minDuration?: number;
 }
 
-export default function LexaLoadingOverlay({ visible, message = "Processando..." }: LexaLoadingOverlayProps) {
+export default function LexaLoadingOverlay({ visible, message = "Processando...", minDuration = 1200 }: LexaLoadingOverlayProps) {
+  const [show, setShow] = useState(false);
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+    if (visible) {
+      setShow(true);
+    } else if (show) {
+      // Keep showing for at least minDuration
+      timer = setTimeout(() => setShow(false), minDuration);
+    }
+    return () => clearTimeout(timer);
+  }, [visible, show, minDuration]);
+
   return (
     <AnimatePresence>
-      {visible && (
+      {show && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -25,29 +40,25 @@ export default function LexaLoadingOverlay({ visible, message = "Processando..."
           >
             {/* Pulsing ring + spinning orbit */}
             <div className="relative flex h-28 w-28 items-center justify-center">
-              {/* Outer spinning ring */}
               <motion.div
                 animate={{ rotate: 360 }}
                 transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
                 className="absolute inset-0 rounded-full border-2 border-transparent"
                 style={{
-                  borderTopColor: "hsl(var(--gold))",
-                  borderRightColor: "hsl(var(--gold-light))",
+                  borderTopColor: "hsl(var(--champagne))",
+                  borderRightColor: "hsl(var(--champagne-light))",
                 }}
               />
-              {/* Middle pulse ring */}
               <motion.div
                 animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0.6, 0.3] }}
                 transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
                 className="absolute inset-2 rounded-full border border-accent/30"
               />
-              {/* Inner glow */}
               <motion.div
                 animate={{ scale: [1, 1.05, 1] }}
                 transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
                 className="absolute inset-4 rounded-full bg-gradient-to-br from-primary/10 to-accent/10"
               />
-              {/* Logo */}
               <motion.img
                 src={lexaIcon}
                 alt="LEXA"
@@ -56,7 +67,6 @@ export default function LexaLoadingOverlay({ visible, message = "Processando..."
                 transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
               />
             </div>
-            {/* Orbiting dots */}
             <div className="relative -mt-4 h-2 w-20">
               {[0, 1, 2].map((i) => (
                 <motion.div

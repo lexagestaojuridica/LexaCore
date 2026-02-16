@@ -63,6 +63,11 @@ export default {
           DEFAULT: "hsl(var(--gold))",
           light: "hsl(var(--gold-light))",
         },
+        champagne: {
+          DEFAULT: "hsl(var(--champagne))",
+          light: "hsl(var(--champagne-light))",
+          glow: "hsl(var(--champagne-glow))",
+        },
         success: {
           DEFAULT: "hsl(var(--success))",
           foreground: "hsl(var(--success-foreground))",

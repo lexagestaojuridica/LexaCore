@@ -16,10 +16,13 @@ import {
   TrendingDown,
   ArrowUpRight,
   ArrowDownRight,
+  Wallet,
+  Receipt,
+  CreditCard,
+  PiggyBank,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Table,
   TableBody,
@@ -49,7 +52,10 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import FormField from "@/components/shared/FormField";
+import LexaLoadingOverlay from "@/components/shared/LexaLoadingOverlay";
 
 const STATUS_OPTIONS = [
   { value: "pendente", label: "Pendente" },
@@ -128,7 +134,6 @@ export default function FinanceiroPage() {
     enabled: !!orgId,
   });
 
-  // Stats
   const { data: receberData = [] } = useQuery({
     queryKey: ["contas_receber", orgId],
     queryFn: async () => {
@@ -153,18 +158,11 @@ export default function FinanceiroPage() {
     enabled: !!orgId,
   });
 
-  const totalReceber = receberData
-    .filter((c) => c.status === "pendente")
-    .reduce((s, c) => s + Number(c.amount), 0);
-  const totalPagar = pagarData
-    .filter((c) => c.status === "pendente")
-    .reduce((s, c) => s + Number(c.amount), 0);
-  const totalRecebido = receberData
-    .filter((c) => c.status === "pago")
-    .reduce((s, c) => s + Number(c.amount), 0);
-  const totalPagoVal = pagarData
-    .filter((c) => c.status === "pago")
-    .reduce((s, c) => s + Number(c.amount), 0);
+  const totalReceber = receberData.filter((c) => c.status === "pendente").reduce((s, c) => s + Number(c.amount), 0);
+  const totalPagar = pagarData.filter((c) => c.status === "pendente").reduce((s, c) => s + Number(c.amount), 0);
+  const totalRecebido = receberData.filter((c) => c.status === "pago").reduce((s, c) => s + Number(c.amount), 0);
+  const totalPagoVal = pagarData.filter((c) => c.status === "pago").reduce((s, c) => s + Number(c.amount), 0);
+  const saldo = totalRecebido - totalPagoVal;
 
   const createMutation = useMutation({
     mutationFn: async (payload: any) => {
@@ -263,8 +261,13 @@ export default function FinanceiroPage() {
     return matchStatus && matchSearch;
   });
 
+  const isSaving = createMutation.isPending || updateMutation.isPending;
+
   return (
     <div className="space-y-6">
+      <LexaLoadingOverlay visible={isSaving} message="Salvando..." />
+
+      {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-display text-2xl text-foreground">Financeiro</h1>
@@ -277,66 +280,71 @@ export default function FinanceiroPage() {
         </Button>
       </div>
 
-      {/* Summary Cards */}
+      {/* KPI Cards — premium style */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-border">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">A Receber</CardTitle>
-            <ArrowUpRight className="h-4 w-4 text-success" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-success">{formatCurrency(totalReceber)}</div>
-            <p className="text-xs text-muted-foreground">pendente</p>
-          </CardContent>
-        </Card>
-        <Card className="border-border">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">A Pagar</CardTitle>
-            <ArrowDownRight className="h-4 w-4 text-destructive" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-destructive">{formatCurrency(totalPagar)}</div>
-            <p className="text-xs text-muted-foreground">pendente</p>
-          </CardContent>
-        </Card>
-        <Card className="border-border">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Recebido</CardTitle>
-            <TrendingUp className="h-4 w-4 text-success" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-foreground">{formatCurrency(totalRecebido)}</div>
-            <p className="text-xs text-muted-foreground">total pago</p>
-          </CardContent>
-        </Card>
-        <Card className="border-border">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Saldo</CardTitle>
-            <DollarSign className="h-4 w-4 text-accent" />
-          </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${totalRecebido - totalPagoVal >= 0 ? "text-success" : "text-destructive"}`}>
-              {formatCurrency(totalRecebido - totalPagoVal)}
-            </div>
-            <p className="text-xs text-muted-foreground">recebido - pago</p>
-          </CardContent>
-        </Card>
+        {[
+          {
+            label: "A Receber",
+            value: formatCurrency(totalReceber),
+            icon: ArrowUpRight,
+            color: "text-success",
+            bg: "bg-success/8",
+            sub: "pendente",
+          },
+          {
+            label: "A Pagar",
+            value: formatCurrency(totalPagar),
+            icon: ArrowDownRight,
+            color: "text-destructive",
+            bg: "bg-destructive/8",
+            sub: "pendente",
+          },
+          {
+            label: "Recebido",
+            value: formatCurrency(totalRecebido),
+            icon: Receipt,
+            color: "text-foreground",
+            bg: "bg-primary/5",
+            sub: "acumulado",
+          },
+          {
+            label: "Saldo Líquido",
+            value: formatCurrency(saldo),
+            icon: Wallet,
+            color: saldo >= 0 ? "text-success" : "text-destructive",
+            bg: saldo >= 0 ? "bg-success/8" : "bg-destructive/8",
+            sub: "recebido − pago",
+          },
+        ].map((kpi) => (
+          <Card key={kpi.label} className="border-border/60 bg-card">
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{kpi.label}</p>
+                <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${kpi.bg}`}>
+                  <kpi.icon className={`h-4 w-4 ${kpi.color}`} />
+                </div>
+              </div>
+              <p className={`text-2xl font-bold ${kpi.color}`}>{kpi.value}</p>
+              <p className="mt-1 text-[11px] text-muted-foreground">{kpi.sub}</p>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {/* Tabs */}
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="grid w-full max-w-xs grid-cols-2">
-          <TabsTrigger value="receber" className="gap-2">
+          <TabsTrigger value="receber" className="gap-2 text-xs">
             <TrendingUp className="h-3.5 w-3.5" /> A Receber
           </TabsTrigger>
-          <TabsTrigger value="pagar" className="gap-2">
+          <TabsTrigger value="pagar" className="gap-2 text-xs">
             <TrendingDown className="h-3.5 w-3.5" /> A Pagar
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value={tab} className="mt-4 space-y-4">
           {/* Filters */}
-          <Card className="border-border">
+          <Card className="border-border/60">
             <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -367,7 +375,7 @@ export default function FinanceiroPage() {
           </Card>
 
           {/* Table */}
-          <Card className="border-border">
+          <Card className="border-border/60">
             <CardContent className="p-0">
               {isLoading ? (
                 <div className="flex items-center justify-center py-20">
@@ -375,7 +383,7 @@ export default function FinanceiroPage() {
                 </div>
               ) : filtered.length === 0 ? (
                 <div className="flex flex-col items-center py-20 text-center">
-                  <DollarSign className="mb-4 h-12 w-12 text-muted-foreground/30" />
+                  <DollarSign className="mb-4 h-12 w-12 text-muted-foreground/20" />
                   <p className="text-sm text-muted-foreground">
                     {contas.length === 0
                       ? `Nenhuma conta a ${tab === "receber" ? "receber" : "pagar"} cadastrada.`
@@ -386,51 +394,38 @@ export default function FinanceiroPage() {
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
-                      <TableRow>
-                        <TableHead>Descrição</TableHead>
-                        <TableHead>Categoria</TableHead>
-                        <TableHead>Valor</TableHead>
-                        <TableHead>Vencimento</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Ações</TableHead>
+                      <TableRow className="hover:bg-transparent">
+                        <TableHead className="text-xs font-semibold uppercase tracking-wider">Descrição</TableHead>
+                        <TableHead className="text-xs font-semibold uppercase tracking-wider">Categoria</TableHead>
+                        <TableHead className="text-xs font-semibold uppercase tracking-wider">Valor</TableHead>
+                        <TableHead className="text-xs font-semibold uppercase tracking-wider">Vencimento</TableHead>
+                        <TableHead className="text-xs font-semibold uppercase tracking-wider">Status</TableHead>
+                        <TableHead className="text-xs font-semibold uppercase tracking-wider text-right">Ações</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {filtered.map((c: any) => (
-                        <TableRow key={c.id}>
-                          <TableCell className="font-medium">{c.description}</TableCell>
-                          <TableCell className="text-muted-foreground">{c.category || "—"}</TableCell>
-                          <TableCell className="font-medium">
+                        <TableRow key={c.id} className="group">
+                          <TableCell className="font-medium text-foreground">{c.description}</TableCell>
+                          <TableCell className="text-muted-foreground text-sm">{c.category || "—"}</TableCell>
+                          <TableCell className="font-semibold tabular-nums">
                             {formatCurrency(Number(c.amount))}
                           </TableCell>
-                          <TableCell className="text-muted-foreground">
+                          <TableCell className="text-muted-foreground text-sm tabular-nums">
                             {format(new Date(c.due_date + "T00:00:00"), "dd/MM/yyyy", { locale: ptBR })}
                           </TableCell>
                           <TableCell>
-                            <Badge variant="outline" className={statusStyle[c.status] || ""}>
+                            <Badge variant="outline" className={`text-[11px] ${statusStyle[c.status] || ""}`}>
                               {STATUS_OPTIONS.find((s) => s.value === c.status)?.label || c.status}
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            <div className="flex items-center justify-end gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                                onClick={() => openEdit(c)}
-                              >
-                                <Edit2 className="h-4 w-4" />
+                            <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => openEdit(c)}>
+                                <Edit2 className="h-3.5 w-3.5" />
                               </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                                onClick={() => {
-                                  setEditingId(c.id);
-                                  setDeleteDialogOpen(true);
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4" />
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => { setEditingId(c.id); setDeleteDialogOpen(true); }}>
+                                <Trash2 className="h-3.5 w-3.5" />
                               </Button>
                             </div>
                           </TableCell>
@@ -454,44 +449,35 @@ export default function FinanceiroPage() {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
-            <div>
-              <label className="mb-1 block text-sm font-medium">Descrição *</label>
-              <Input
-                value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
-                placeholder="Ex: Honorários advocatícios"
+            <FormField
+              label="Descrição"
+              value={form.description}
+              onChange={(v) => setForm({ ...form, description: v })}
+              placeholder="Ex: Honorários advocatícios"
+              required
+            />
+            <div className="grid grid-cols-2 gap-3">
+              <FormField
+                label="Valor"
+                value={form.amount}
+                onChange={(v) => setForm({ ...form, amount: v })}
+                placeholder="0,00"
+                type="number"
+                required
+              />
+              <FormField
+                label="Vencimento"
+                value={form.due_date}
+                onChange={(v) => setForm({ ...form, due_date: v })}
+                type="date"
+                required
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="mb-1 block text-sm font-medium">Valor *</label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={form.amount}
-                  onChange={(e) => setForm({ ...form, amount: e.target.value })}
-                  placeholder="0,00"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium">Vencimento *</label>
-                <Input
-                  type="date"
-                  value={form.due_date}
-                  onChange={(e) => setForm({ ...form, due_date: e.target.value })}
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="mb-1 block text-sm font-medium">Categoria</label>
-                <Select
-                  value={form.category}
-                  onValueChange={(v) => setForm({ ...form, category: v })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Categoria</label>
+                <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
+                  <SelectTrigger className="h-10"><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>
                     {CATEGORIES.map((c) => (
                       <SelectItem key={c} value={c}>{c}</SelectItem>
@@ -499,15 +485,10 @@ export default function FinanceiroPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium">Status</label>
-                <Select
-                  value={form.status}
-                  onValueChange={(v) => setForm({ ...form, status: v })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</label>
+                <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
+                  <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {STATUS_OPTIONS.map((s) => (
                       <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
@@ -519,10 +500,7 @@ export default function FinanceiroPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={closeDialog}>Cancelar</Button>
-            <Button
-              onClick={handleSubmit}
-              disabled={createMutation.isPending || updateMutation.isPending}
-            >
+            <Button onClick={handleSubmit} disabled={isSaving}>
               {editingId ? "Salvar" : "Criar"}
             </Button>
           </DialogFooter>

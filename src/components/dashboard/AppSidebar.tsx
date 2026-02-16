@@ -14,7 +14,6 @@ import {
   Users,
   CalendarDays,
   DollarSign,
-  FileText,
   Bot,
   LogOut,
   Settings,
@@ -31,7 +30,6 @@ const mainNav = [
   { title: "Clientes", url: "/dashboard/clientes", icon: Users },
   { title: "Agenda", url: "/dashboard/agenda", icon: CalendarDays },
   { title: "Financeiro", url: "/dashboard/financeiro", icon: DollarSign },
-  { title: "Documentos", url: "/dashboard/documentos", icon: FileText },
   { title: "Aruna IA", url: "/dashboard/ia", icon: Bot },
   { title: "BI", url: "/dashboard/bi", icon: BarChart3 },
   { title: "Calculadora", url: "/dashboard/calculadora", icon: Calculator },
@@ -63,7 +61,7 @@ export function AppSidebar() {
         )}
       </div>
 
-      {/* Nav — single scrollable area with compact items */}
+      {/* Nav */}
       <SidebarContent className="flex-1 overflow-y-auto overflow-x-hidden px-2 py-2">
         <nav className="flex flex-col gap-0.5">
           {mainNav.map((item) => (
@@ -84,7 +82,7 @@ export function AppSidebar() {
           ))}
         </nav>
 
-        {/* Separator + Settings at the bottom of nav */}
+        {/* Settings */}
         <div className="mt-auto pt-2 border-t border-sidebar-border/40">
           <Tooltip delayDuration={0}>
             <TooltipTrigger asChild>
@@ -102,7 +100,7 @@ export function AppSidebar() {
         </div>
       </SidebarContent>
 
-      {/* Footer — User info */}
+      {/* Footer */}
       <SidebarFooter className="shrink-0 border-t border-sidebar-border p-2.5">
         <div className="flex items-center gap-2.5">
           {avatarUrl ? (

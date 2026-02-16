@@ -13,7 +13,7 @@ import ProcessosPage from "@/pages/dashboard/ProcessosPage";
 import ClientesPage from "@/pages/dashboard/ClientesPage";
 import AgendaPage from "@/pages/dashboard/AgendaPage";
 import FinanceiroPage from "@/pages/dashboard/FinanceiroPage";
-import DocumentosPage from "@/pages/dashboard/DocumentosPage";
+// DocumentosPage removed — docs are now inside Processos and Clientes
 import IAPage from "@/pages/dashboard/IAPage";
 import ConfiguracoesPage from "@/pages/dashboard/ConfiguracoesPage";
 import BIPage from "@/pages/dashboard/BIPage";
@@ -46,7 +46,7 @@ const App = () => (
               <Route path="clientes" element={<ClientesPage />} />
               <Route path="agenda" element={<AgendaPage />} />
               <Route path="financeiro" element={<FinanceiroPage />} />
-              <Route path="documentos" element={<DocumentosPage />} />
+              {/* Documentos route removed — integrated into Processos and Clientes */}
               <Route path="ia" element={<IAPage />} />
               <Route path="configuracoes" element={<ConfiguracoesPage />} />
               <Route path="bi" element={<BIPage />} />
