@@ -107,14 +107,9 @@ export default function ConfiguracoesPage() {
     <div className="space-y-6">
       <LexaLoadingOverlay visible={uploadAvatarMutation.isPending} message="Atualizando foto..." />
 
-      <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
-          <img src={lexaIcon} alt="" className="h-6 w-6" />
-        </div>
-        <div>
-          <h1 className="font-display text-2xl text-foreground">Configurações</h1>
-          <p className="text-sm text-muted-foreground">Gerencie seu perfil, escritório e preferências</p>
-        </div>
+      <div>
+        <h1 className="font-display text-2xl text-foreground">Configurações</h1>
+        <p className="text-sm text-muted-foreground">Gerencie seu perfil, escritório e preferências</p>
       </div>
 
       <Tabs defaultValue="perfil" className="w-full">

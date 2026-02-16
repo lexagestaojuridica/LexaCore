@@ -265,14 +265,9 @@ export default function ClientesPage() {
       <LexaLoadingOverlay visible={isSaving} message="Salvando cliente..." />
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
-            <img src={lexaIcon} alt="" className="h-6 w-6" />
-          </div>
-          <div>
-            <h1 className="font-display text-2xl text-foreground">Clientes</h1>
-            <p className="text-sm text-muted-foreground">Gerencie todos os clientes do escritório</p>
-          </div>
+        <div>
+          <h1 className="font-display text-2xl text-foreground">Clientes</h1>
+          <p className="text-sm text-muted-foreground">Gerencie todos os clientes do escritório</p>
         </div>
         <Button onClick={openCreate} className="gap-2">
           <Plus className="h-4 w-4" /> Novo Cliente

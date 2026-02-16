@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Scale, Users, CalendarDays, TrendingUp, TrendingDown, Clock, AlertTriangle, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { Scale, Users, CalendarDays, ArrowUpRight, ArrowDownRight, Clock, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import heroOffice from "@/assets/hero-office.jpg";
 
 interface Stats {
   totalProcessos: number;
@@ -126,110 +127,62 @@ export default function DashboardOverview() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="font-display text-3xl font-semibold text-foreground">
-          Olá, {displayName.split(" ")[0]}
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {format(new Date(), "EEEE, d 'de' MMMM 'de' yyyy", { locale: ptBR })}
-        </p>
+      {/* Hero banner */}
+      <div className="relative overflow-hidden rounded-2xl h-40">
+        <img src={heroOffice} alt="" className="absolute inset-0 h-full w-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/90 via-primary/70 to-primary/40" />
+        <div className="relative z-10 flex h-full flex-col justify-center px-8">
+          <h1 className="font-display text-3xl font-semibold text-primary-foreground">
+            Olá, {displayName.split(" ")[0]}
+          </h1>
+          <p className="mt-1 text-sm text-primary-foreground/60">
+            {format(new Date(), "EEEE, d 'de' MMMM 'de' yyyy", { locale: ptBR })}
+          </p>
+        </div>
       </div>
 
       {/* Stats Grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-border">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Processos Ativos
-            </CardTitle>
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/5">
-              <Scale className="h-4 w-4 text-primary" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-foreground">{stats.processosAtivos}</div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              de {stats.totalProcessos} totais
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Clientes
-            </CardTitle>
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/5">
-              <Users className="h-4 w-4 text-primary" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-foreground">{stats.totalClientes}</div>
-            <p className="mt-1 text-xs text-muted-foreground">cadastrados</p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              A Receber
-            </CardTitle>
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-success/10">
-              <ArrowUpRight className="h-4 w-4 text-success" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-success">
-              {formatCurrency(stats.contasReceberPendente)}
-            </div>
-            <p className="mt-1 text-xs text-muted-foreground">pendente</p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              A Pagar
-            </CardTitle>
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-destructive/10">
-              <ArrowDownRight className="h-4 w-4 text-destructive" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-destructive">
-              {formatCurrency(stats.contasPagarPendente)}
-            </div>
-            <p className="mt-1 text-xs text-muted-foreground">pendente</p>
-          </CardContent>
-        </Card>
+        {[
+          { label: "Processos Ativos", value: stats.processosAtivos, sub: `de ${stats.totalProcessos} totais`, icon: Scale, color: "text-primary", bg: "bg-primary/5" },
+          { label: "Clientes", value: stats.totalClientes, sub: "cadastrados", icon: Users, color: "text-primary", bg: "bg-primary/5" },
+          { label: "A Receber", value: formatCurrency(stats.contasReceberPendente), sub: "pendente", icon: ArrowUpRight, color: "text-success", bg: "bg-success/8" },
+          { label: "A Pagar", value: formatCurrency(stats.contasPagarPendente), sub: "pendente", icon: ArrowDownRight, color: "text-destructive", bg: "bg-destructive/8" },
+        ].map((kpi) => (
+          <Card key={kpi.label} className="border-border/60">
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{kpi.label}</p>
+                <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${kpi.bg}`}>
+                  <kpi.icon className={`h-4 w-4 ${kpi.color}`} />
+                </div>
+              </div>
+              <p className={`text-2xl font-bold ${typeof kpi.value === 'number' ? 'text-foreground' : kpi.color}`}>{kpi.value}</p>
+              <p className="mt-1 text-[11px] text-muted-foreground">{kpi.sub}</p>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {/* Content Grid */}
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* Recent Processes */}
-        <Card className="border-border">
+        <Card className="border-border/60">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base font-semibold">
-              <Scale className="h-4 w-4 text-primary" />
-              Processos Recentes
-            </CardTitle>
+            <CardTitle className="text-base font-semibold">Processos Recentes</CardTitle>
           </CardHeader>
           <CardContent>
             {recentProcesses.length === 0 ? (
               <div className="flex flex-col items-center py-8 text-center">
-                <Scale className="mb-2 h-8 w-8 text-muted-foreground/30" />
+                <Scale className="mb-2 h-8 w-8 text-muted-foreground/20" />
                 <p className="text-sm text-muted-foreground">Nenhum processo cadastrado</p>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {recentProcesses.map((p) => (
-                  <div key={p.id} className="flex items-center justify-between rounded-xl border border-border p-3 transition-colors hover:bg-muted/30">
+                  <div key={p.id} className="flex items-center justify-between rounded-xl border border-border/50 p-3 transition-colors hover:bg-muted/20">
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium text-foreground">{p.title}</p>
-                      {p.number && (
-                        <p className="text-xs text-muted-foreground">Nº {p.number}</p>
-                      )}
+                      {p.number && <p className="text-xs text-muted-foreground">Nº {p.number}</p>}
                     </div>
                     <span className={`ml-3 shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold ${statusColor[p.status] || "bg-muted text-muted-foreground"}`}>
                       {statusLabel[p.status] || p.status}
@@ -241,14 +194,12 @@ export default function DashboardOverview() {
           </CardContent>
         </Card>
 
-        {/* Upcoming Events */}
-        <Card className="border-border">
+        <Card className="border-border/60">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base font-semibold">
-              <CalendarDays className="h-4 w-4 text-primary" />
+            <CardTitle className="flex items-center justify-between text-base font-semibold">
               Próximos Compromissos
               {stats.eventosHoje > 0 && (
-                <span className="ml-auto flex items-center gap-1 rounded-full bg-warning/10 px-2.5 py-0.5 text-xs font-semibold text-warning">
+                <span className="flex items-center gap-1 rounded-full bg-warning/10 px-2.5 py-0.5 text-xs font-semibold text-warning">
                   <AlertTriangle className="h-3 w-3" />
                   {stats.eventosHoje} hoje
                 </span>
@@ -258,13 +209,13 @@ export default function DashboardOverview() {
           <CardContent>
             {upcomingEvents.length === 0 ? (
               <div className="flex flex-col items-center py-8 text-center">
-                <CalendarDays className="mb-2 h-8 w-8 text-muted-foreground/30" />
+                <CalendarDays className="mb-2 h-8 w-8 text-muted-foreground/20" />
                 <p className="text-sm text-muted-foreground">Nenhum compromisso agendado</p>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {upcomingEvents.map((e) => (
-                  <div key={e.id} className="flex items-start gap-3 rounded-xl border border-border p-3 transition-colors hover:bg-muted/30">
+                  <div key={e.id} className="flex items-start gap-3 rounded-xl border border-border/50 p-3 transition-colors hover:bg-muted/20">
                     <div className="flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-xl bg-primary/5 text-primary">
                       <span className="text-sm font-bold leading-none">
                         {format(new Date(e.start_time), "dd")}
