@@ -19,6 +19,9 @@ import ConfiguracoesPage from "@/pages/dashboard/ConfiguracoesPage";
 import BIPage from "@/pages/dashboard/BIPage";
 import CalculadoraPage from "@/pages/dashboard/CalculadoraPage";
 import NoticiasPage from "@/pages/dashboard/NoticiasPage";
+import CrmPage from "@/pages/dashboard/CrmPage";
+import WorkflowPage from "@/pages/dashboard/WorkflowPage";
+import MinutasPage from "@/pages/dashboard/MinutasPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -52,7 +55,14 @@ const App = () => (
               <Route path="bi" element={<BIPage />} />
               <Route path="calculadora" element={<CalculadoraPage />} />
               <Route path="noticias" element={<NoticiasPage />} />
+              <Route path="crm" element={<CrmPage />} />
+              <Route path="workflow" element={<WorkflowPage />} />
+              <Route path="minutas" element={<MinutasPage />} />
             </Route>
+            {/* Temporary preview route — remove after testing */}
+            <Route path="/crm-preview" element={<CrmPage />} />
+            <Route path="/workflow-preview" element={<WorkflowPage />} />
+            <Route path="/minutas-preview" element={<MinutasPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

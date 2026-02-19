@@ -20,6 +20,9 @@ import {
   BarChart3,
   Calculator,
   Newspaper,
+  Target,
+  GitBranch,
+  FileEdit,
 } from "lucide-react";
 import logoLexaWhite from "@/assets/logo-lexa-white.png";
 import iconLexa from "@/assets/icon-lexa.png";
@@ -34,6 +37,9 @@ const mainNav = [
   { title: "BI", url: "/dashboard/bi", icon: BarChart3 },
   { title: "Calculadora", url: "/dashboard/calculadora", icon: Calculator },
   { title: "Notícias", url: "/dashboard/noticias", icon: Newspaper },
+  { title: "CRM", url: "/dashboard/crm", icon: Target },
+  { title: "Workflow", url: "/dashboard/workflow", icon: GitBranch },
+  { title: "Minutas", url: "/dashboard/minutas", icon: FileEdit },
 ];
 
 export function AppSidebar() {
@@ -67,7 +73,7 @@ export function AppSidebar() {
           {mainNav.map((item) => (
             <Tooltip key={item.title} delayDuration={0}>
               <TooltipTrigger asChild>
-              <NavLink
+                <NavLink
                   to={item.url}
                   end={item.url === "/dashboard"}
                   className="sidebar-nav-link group flex items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] text-sidebar-foreground/55 transition-all duration-200 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
