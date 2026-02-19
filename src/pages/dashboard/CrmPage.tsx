@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Target, TrendingUp, Users, Activity, Briefcase } from "lucide-react";
+import { TrendingUp, Users, Activity, Briefcase } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CrmProvider, useCrm } from "@/contexts/CrmContext";
 import CrmPipelineBoard from "@/components/crm/CrmPipelineBoard";
@@ -36,19 +36,13 @@ function CrmPageInner() {
             <div className="relative overflow-hidden rounded-2xl bg-primary p-7">
                 <div className="absolute -right-8 -top-8 h-40 w-40 rounded-full bg-white/5" />
                 <div className="absolute -right-4 top-12 h-24 w-24 rounded-full bg-white/5" />
-                <div className="absolute right-20 -bottom-6 h-32 w-32 rounded-full bg-white/[0.03]" />
 
                 <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex items-center gap-4">
-                        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 backdrop-blur-sm ring-1 ring-white/20">
-                            <Target className="h-7 w-7 text-primary-foreground" />
-                        </div>
-                        <div>
-                            <h1 className="text-2xl font-bold text-primary-foreground tracking-tight">CRM</h1>
-                            <p className="text-sm text-primary-foreground/60 mt-0.5">
-                                Gerencie seu pipeline de vendas, contatos e atividades
-                            </p>
-                        </div>
+                    <div>
+                        <h1 className="text-2xl font-semibold text-primary-foreground tracking-tight">CRM</h1>
+                        <p className="text-sm text-primary-foreground/60 mt-0.5">
+                            Gerencie seu pipeline de vendas, contatos e atividades
+                        </p>
                     </div>
 
                     <div className="flex items-center gap-6">
