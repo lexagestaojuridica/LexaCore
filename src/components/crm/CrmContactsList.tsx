@@ -40,7 +40,7 @@ function StarRating({ score, onChange }: { score: number; onChange?: (s: number)
     );
 }
 
-const emptyContact = { name: "", email: "", phone: "", type: "pessoa_fisica" as const, company: "", city: "", state: "", tags: [] as string[], score: 1, notes: "" };
+const emptyContact: { name: string; email: string; phone: string; type: "pessoa_fisica" | "pessoa_juridica"; company: string; city: string; state: string; tags: string[]; score: number; notes: string } = { name: "", email: "", phone: "", type: "pessoa_fisica", company: "", city: "", state: "", tags: [], score: 1, notes: "" };
 
 export default function CrmContactsList() {
     const { contacts, leads, deals, activities, addContact, updateContact, deleteContact, addActivity } = useCrm();
