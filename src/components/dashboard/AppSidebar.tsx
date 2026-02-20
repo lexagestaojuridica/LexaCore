@@ -9,38 +9,129 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
-  LayoutDashboard,
-  Scale,
-  Users,
-  CalendarDays,
-  DollarSign,
-  Bot,
-  LogOut,
-  Settings,
-  BarChart3,
-  Calculator,
-  Newspaper,
-  Target,
-  GitBranch,
-  FileEdit,
+  LayoutDashboard, Scale, Users, CalendarDays, DollarSign, Bot,
+  LogOut, Settings, BarChart3, Calculator, Newspaper, Target,
+  GitBranch, FileEdit, ChevronDown,
 } from "lucide-react";
+import { useState } from "react";
+import { cn } from "@/lib/utils";
 import logoLexaWhite from "@/assets/logo-lexa-white.png";
 import iconLexa from "@/assets/icon-lexa.png";
 
-const mainNav = [
-  { title: "Visão Geral", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Processos", url: "/dashboard/processos", icon: Scale },
-  { title: "Clientes", url: "/dashboard/clientes", icon: Users },
-  { title: "Agenda", url: "/dashboard/agenda", icon: CalendarDays },
-  { title: "Financeiro", url: "/dashboard/financeiro", icon: DollarSign },
-  { title: "Aruna IA", url: "/dashboard/ia", icon: Bot },
-  { title: "BI", url: "/dashboard/bi", icon: BarChart3 },
-  { title: "Calculadora", url: "/dashboard/calculadora", icon: Calculator },
-  { title: "Notícias", url: "/dashboard/noticias", icon: Newspaper },
-  { title: "CRM", url: "/dashboard/crm", icon: Target },
-  { title: "Workflow", url: "/dashboard/workflow", icon: GitBranch },
-  { title: "Minutas", url: "/dashboard/minutas", icon: FileEdit },
+// ─── Nav structure grouped by journey ───────────────────────
+
+const navGroups = [
+  {
+    label: "Início",
+    items: [
+      { title: "Meu Dia", url: "/dashboard", icon: LayoutDashboard },
+    ],
+  },
+  {
+    label: "Operacional",
+    items: [
+      { title: "Processos", url: "/dashboard/processos", icon: Scale },
+      { title: "Agenda & Prazos", url: "/dashboard/agenda", icon: CalendarDays },
+      { title: "Workflow", url: "/dashboard/workflow", icon: GitBranch },
+    ],
+  },
+  {
+    label: "Relacionamento",
+    items: [
+      { title: "Clientes", url: "/dashboard/clientes", icon: Users },
+      { title: "CRM", url: "/dashboard/crm", icon: Target },
+    ],
+  },
+  {
+    label: "Documentos",
+    items: [
+      { title: "Minutas & Contratos", url: "/dashboard/minutas", icon: FileEdit },
+      { title: "Calculadora", url: "/dashboard/calculadora", icon: Calculator },
+    ],
+  },
+  {
+    label: "Financeiro",
+    items: [
+      { title: "Financeiro", url: "/dashboard/financeiro", icon: DollarSign },
+    ],
+  },
+  {
+    label: "Inteligência",
+    items: [
+      { title: "BI & Relatórios", url: "/dashboard/bi", icon: BarChart3 },
+      { title: "ARUNA IA", url: "/dashboard/ia", icon: Bot },
+      { title: "Notícias Jurídicas", url: "/dashboard/noticias", icon: Newspaper },
+    ],
+  },
 ];
+
+// ─── NavItem ─────────────────────────────────────────────────
+
+function NavItem({ item, collapsed }: { item: { title: string; url: string; icon: any }; collapsed: boolean }) {
+  return (
+    <Tooltip delayDuration={0}>
+      <TooltipTrigger asChild>
+        <NavLink
+          to={item.url}
+          end={item.url === "/dashboard"}
+          className="sidebar-nav-link group flex items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] text-sidebar-foreground/55 transition-all duration-200 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
+          activeClassName="bg-gradient-to-r from-accent/20 to-transparent text-sidebar-foreground font-medium border-l-2 border-accent !rounded-l-none"
+        >
+          <item.icon className="sidebar-icon h-4 w-4 shrink-0" />
+          {!collapsed && (
+            <span className="truncate transition-transform duration-200 group-hover:translate-x-0.5">
+              {item.title}
+            </span>
+          )}
+        </NavLink>
+      </TooltipTrigger>
+      {collapsed && <TooltipContent side="right">{item.title}</TooltipContent>}
+    </Tooltip>
+  );
+}
+
+// ─── NavGroup ─────────────────────────────────────────────────
+
+function NavGroup({
+  group,
+  collapsed,
+}: {
+  group: (typeof navGroups)[0];
+  collapsed: boolean;
+}) {
+  const [open, setOpen] = useState(true);
+
+  return (
+    <div className="mb-1">
+      {!collapsed && (
+        <button
+          onClick={() => setOpen((o) => !o)}
+          className="flex w-full items-center justify-between px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/30 hover:text-sidebar-foreground/60 transition-colors"
+        >
+          <span>{group.label}</span>
+          <ChevronDown
+            className={cn(
+              "h-3 w-3 transition-transform duration-200",
+              !open && "-rotate-90"
+            )}
+          />
+        </button>
+      )}
+      {collapsed && (
+        <div className="my-1 mx-2 h-px bg-sidebar-border/30" />
+      )}
+      {(open || collapsed) && (
+        <nav className="flex flex-col gap-0.5">
+          {group.items.map((item) => (
+            <NavItem key={item.title} item={item} collapsed={collapsed} />
+          ))}
+        </nav>
+      )}
+    </div>
+  );
+}
+
+// ─── AppSidebar ───────────────────────────────────────────────
 
 export function AppSidebar() {
   const { state } = useSidebar();
@@ -67,42 +158,18 @@ export function AppSidebar() {
         )}
       </div>
 
-      {/* Nav */}
-      <SidebarContent className="flex-1 overflow-y-auto overflow-x-hidden px-2 py-2">
-        <nav className="flex flex-col gap-0.5">
-          {mainNav.map((item) => (
-            <Tooltip key={item.title} delayDuration={0}>
-              <TooltipTrigger asChild>
-                <NavLink
-                  to={item.url}
-                  end={item.url === "/dashboard"}
-                  className="sidebar-nav-link group flex items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] text-sidebar-foreground/55 transition-all duration-200 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
-                  activeClassName="bg-gradient-to-r from-accent/20 to-transparent text-sidebar-foreground font-medium border-l-2 border-accent !rounded-l-none"
-                >
-                  <item.icon className="sidebar-icon h-4 w-4 shrink-0" />
-                  {!collapsed && <span className="truncate transition-transform duration-200 group-hover:translate-x-0.5">{item.title}</span>}
-                </NavLink>
-              </TooltipTrigger>
-              {collapsed && <TooltipContent side="right">{item.title}</TooltipContent>}
-            </Tooltip>
-          ))}
-        </nav>
+      {/* Nav Groups */}
+      <SidebarContent className="flex-1 overflow-y-auto overflow-x-hidden px-2 py-3">
+        {navGroups.map((group) => (
+          <NavGroup key={group.label} group={group} collapsed={collapsed} />
+        ))}
 
-        {/* Settings */}
-        <div className="mt-auto pt-2 border-t border-sidebar-border/40">
-          <Tooltip delayDuration={0}>
-            <TooltipTrigger asChild>
-              <NavLink
-                to="/dashboard/configuracoes"
-                className="sidebar-nav-link group flex items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] text-sidebar-foreground/55 transition-all duration-200 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
-                activeClassName="bg-gradient-to-r from-accent/20 to-transparent text-sidebar-foreground font-medium border-l-2 border-accent !rounded-l-none"
-              >
-                <Settings className="sidebar-icon h-4 w-4 shrink-0" />
-                {!collapsed && <span className="transition-transform duration-200 group-hover:translate-x-0.5">Configurações</span>}
-              </NavLink>
-            </TooltipTrigger>
-            {collapsed && <TooltipContent side="right">Configurações</TooltipContent>}
-          </Tooltip>
+        {/* Settings at bottom */}
+        <div className="mt-2 border-t border-sidebar-border/40 pt-2">
+          <NavItem
+            item={{ title: "Configurações", url: "/dashboard/configuracoes", icon: Settings }}
+            collapsed={collapsed}
+          />
         </div>
       </SidebarContent>
 
