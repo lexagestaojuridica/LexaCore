@@ -134,7 +134,7 @@ export default function TimesheetPage() {
                 // Table may not exist yet — return empty
                 return [] as TimesheetEntry[];
             }
-            return (data ?? []) as TimesheetEntry[];
+            return (data ?? []) as unknown as TimesheetEntry[];
         },
         enabled: !!orgId,
     });

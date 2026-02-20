@@ -117,7 +117,7 @@ export default function WikiJuridicaPage() {
                 .order("is_pinned", { ascending: false })
                 .order("updated_at", { ascending: false });
             if (error) return [] as WikiEntry[];
-            return (data ?? []) as WikiEntry[];
+            return (data ?? []) as unknown as WikiEntry[];
         },
         enabled: !!orgId,
     });

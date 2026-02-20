@@ -1,9 +1,11 @@
 import { useEffect, useState, useMemo } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
   BarChart3, TrendingUp, TrendingDown, Scale, Users, DollarSign, CalendarDays,
@@ -105,7 +107,7 @@ function TimesheetBITab({ orgId }: { orgId: string | null }) {
     queryFn: async () => {
       if (!orgId) return [];
       const { data } = await supabase
-        .from("timesheet_entries")
+        .from("timesheet_entries" as any)
         .select("duration_minutes, hourly_rate, billing_status, processos_juridicos(title)")
         .eq("organization_id", orgId);
       return data || [];
@@ -202,10 +204,20 @@ function TimesheetBITab({ orgId }: { orgId: string | null }) {
 }
 
 export default function BIPage() {
-
+  const { user } = useAuth();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("overview");
+
+  const { data: profile } = useQuery({
+    queryKey: ["profile", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("profiles").select("organization_id").eq("user_id", user!.id).single();
+      return data;
+    },
+    enabled: !!user,
+  });
+  const orgId = profile?.organization_id ?? null;
 
   useEffect(() => {
     fetchData();

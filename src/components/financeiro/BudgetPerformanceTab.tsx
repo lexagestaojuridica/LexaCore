@@ -91,18 +91,18 @@ export default function BudgetPerformanceTab({ orgId }: Props) {
 
     // ─── Data Fetching ────────────────────────────────────────
 
-    const { data: orcamentos = [] } = useQuery<Orcamento[]>({
+    const { data: orcamentos = [] } = useQuery({
         queryKey: ["orcamentos", orgId, month, year, typeTab],
         queryFn: async () => {
             const { data, error } = await supabase
-                .from("orcamentos")
+                .from("orcamentos" as any)
                 .select("*")
                 .eq("organization_id", orgId)
                 .eq("type", typeTab)
                 .eq("period_month", month)
                 .eq("period_year", year);
             if (error) throw error;
-            return data ?? [];
+            return (data ?? []) as unknown as Orcamento[];
         },
         enabled: !!orgId,
     });
@@ -124,7 +124,7 @@ export default function BudgetPerformanceTab({ orgId }: Props) {
         queryKey: ["orcamentos_log", orgId, month, year],
         queryFn: async () => {
             const { data, error } = await supabase
-                .from("orcamentos_log")
+                .from("orcamentos_log" as any)
                 .select("*")
                 .eq("organization_id", orgId)
                 .order("changed_at", { ascending: false })
@@ -146,8 +146,8 @@ export default function BudgetPerformanceTab({ orgId }: Props) {
                 const y = d.getFullYear();
 
                 const [{ data: orc }, { data: ct }] = await Promise.all([
-                    supabase.from("orcamentos").select("amount").eq("organization_id", orgId).eq("type", typeTab).eq("period_month", m).eq("period_year", y),
-                    supabase.from(contaTable).select("amount, status, due_date, category").eq("organization_id", orgId),
+                    supabase.from("orcamentos" as any).select("amount").eq("organization_id", orgId).eq("type", typeTab).eq("period_month", m).eq("period_year", y),
+                    supabase.from(contaTable as any).select("amount, status, due_date, category").eq("organization_id", orgId),
                 ]);
 
                 const budgeted = (orc ?? []).reduce((s: number, o: any) => s + Number(o.amount), 0);
@@ -171,7 +171,7 @@ export default function BudgetPerformanceTab({ orgId }: Props) {
     // ─── Computed Data ────────────────────────────────────────
 
     const rows = useMemo(
-        () => buildCategoryRows(orcamentos, contas, month, year, typeTab, categories),
+        () => buildCategoryRows(orcamentos as Orcamento[], contas as any[], month, year, typeTab, categories),
         [orcamentos, contas, month, year, typeTab, categories]
     );
 
@@ -200,10 +200,10 @@ export default function BudgetPerformanceTab({ orgId }: Props) {
             category: string; amount: number; carryForward: boolean; notes?: string;
         }) => {
             // Find existing orcamento for log
-            const existing = orcamentos.find((o) => o.category === payload.category);
+            const existing = (orcamentos as Orcamento[]).find((o) => o.category === payload.category);
 
             const { data, error } = await supabase
-                .from("orcamentos")
+                .from("orcamentos" as any)
                 .upsert(
                     {
                         organization_id: orgId,
@@ -223,8 +223,8 @@ export default function BudgetPerformanceTab({ orgId }: Props) {
 
             // Insert log entry
             if (existing) {
-                await supabase.from("orcamentos_log").insert({
-                    orcamento_id: data?.id ?? existing.id,
+                await supabase.from("orcamentos_log" as any).insert({
+                    orcamento_id: (data as any)?.id ?? (existing as any).id,
                     organization_id: orgId,
                     old_amount: existing.amount,
                     new_amount: payload.amount,
@@ -262,7 +262,7 @@ export default function BudgetPerformanceTab({ orgId }: Props) {
 
     const openDialog = (category?: string) => {
         if (category) {
-            const existing = orcamentos.find((o) => o.category === category);
+            const existing = (orcamentos as Orcamento[]).find((o) => o.category === category);
             setDialogCategory(category);
             setDialogAmount(existing ? formatCurrencyInput(String(Math.round(existing.amount * 100))) : "");
             setDialogCarry(existing?.carry_forward ?? false);
