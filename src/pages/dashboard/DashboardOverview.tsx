@@ -9,7 +9,7 @@ import { useNavigate } from "react-router-dom";
 import {
   Scale, Users, CalendarDays, ArrowUpRight, ArrowDownRight,
   Clock, AlertTriangle, CheckCircle2, Gavel, Timer,
-  TrendingUp, Zap, ChevronRight, Plus, Bell,
+  TrendingUp, Zap, ChevronRight, Plus, Bell, FileText, Briefcase,
 } from "lucide-react";
 import { format, formatDistanceToNow, isToday, isTomorrow, isPast, parseISO, startOfDay, endOfDay, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -311,6 +311,56 @@ export default function DashboardOverview() {
           </motion.div>
         ))}
       </div>
+
+      {/* ── Quick Actions ── */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {[
+          { label: "Novo Processo", icon: Briefcase, color: "from-blue-500/10 to-blue-600/5 hover:from-blue-500/20 hover:to-blue-600/10 border-blue-500/20", iconColor: "text-blue-600", url: "/dashboard/processos" },
+          { label: "Novo Evento", icon: CalendarDays, color: "from-emerald-500/10 to-emerald-600/5 hover:from-emerald-500/20 hover:to-emerald-600/10 border-emerald-500/20", iconColor: "text-emerald-600", url: "/dashboard/agenda" },
+          { label: "Registrar Horas", icon: Timer, color: "from-amber-500/10 to-amber-600/5 hover:from-amber-500/20 hover:to-amber-600/10 border-amber-500/20", iconColor: "text-amber-600", url: "/dashboard/timesheet" },
+          { label: "Nova Minuta", icon: FileText, color: "from-violet-500/10 to-violet-600/5 hover:from-violet-500/20 hover:to-violet-600/10 border-violet-500/20", iconColor: "text-violet-600", url: "/dashboard/minutas" },
+        ].map((a) => (
+          <button
+            key={a.label}
+            onClick={() => navigate(a.url)}
+            className={cn(
+              "flex items-center gap-3 rounded-xl border bg-gradient-to-r px-4 py-3.5 text-left transition-all duration-200",
+              a.color
+            )}
+          >
+            <div className={cn("flex h-10 w-10 items-center justify-center rounded-lg bg-white/60 dark:bg-white/10", a.iconColor)}>
+              <a.icon className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-foreground">{a.label}</p>
+              <p className="text-[10px] text-muted-foreground">Ação rápida</p>
+            </div>
+          </button>
+        ))}
+      </div>
+
+      {/* ── Smart Daily Summary ── */}
+      {todayEvents.length > 0 && (
+        <Card className="border-border/60 bg-gradient-to-r from-amber-500/5 to-orange-500/5">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-500/10">
+                <Zap className="h-4 w-4 text-amber-600" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-foreground">Resumo do seu dia</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Você tem <strong>{todayEvents.length} compromisso{todayEvents.length > 1 ? "s" : ""}</strong> hoje
+                  {urgentEvents.length > 0 && (<>, sendo <strong className="text-destructive">{urgentEvents.length} urgente{urgentEvents.length > 1 ? "s" : ""}</strong></>)}
+                  {tomorrowEvents.length > 0 && (<> e <strong>{tomorrowEvents.length}</strong> amanhã</>)}.
+                  {financeiro && financeiro.totalProcessos > 0 && (
+                    <> Gerenciando <strong>{financeiro.totalProcessos} processos</strong> ativos.</>)}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* ── Three zones ── */}
       <div className="grid gap-6 lg:grid-cols-3">

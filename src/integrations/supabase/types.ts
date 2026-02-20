@@ -989,6 +989,345 @@ export type Database = {
           },
         ]
       }
+      crm_contacts: {
+        Row: {
+          id: string
+          organization_id: string
+          user_id: string
+          name: string
+          email: string | null
+          phone: string | null
+          type: string | null
+          company: string | null
+          city: string | null
+          state: string | null
+          tags: string[] | null
+          score: number | null
+          notes: string | null
+          source: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          user_id: string
+          name: string
+          email?: string | null
+          phone?: string | null
+          type?: string | null
+          company?: string | null
+          city?: string | null
+          state?: string | null
+          tags?: string[] | null
+          score?: number | null
+          notes?: string | null
+          source?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          user_id?: string
+          name?: string
+          email?: string | null
+          phone?: string | null
+          type?: string | null
+          company?: string | null
+          city?: string | null
+          state?: string | null
+          tags?: string[] | null
+          score?: number | null
+          notes?: string | null
+          source?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      crm_leads: {
+        Row: {
+          id: string
+          organization_id: string
+          contact_id: string | null
+          name: string
+          contact_name: string | null
+          value: number | null
+          priority: string | null
+          date: string | null
+          notes: string | null
+          stage_id: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          contact_id?: string | null
+          name: string
+          contact_name?: string | null
+          value?: number | null
+          priority?: string | null
+          date?: string | null
+          notes?: string | null
+          stage_id?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          contact_id?: string | null
+          name?: string
+          contact_name?: string | null
+          value?: number | null
+          priority?: string | null
+          date?: string | null
+          notes?: string | null
+          stage_id?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      crm_deals: {
+        Row: {
+          id: string
+          organization_id: string
+          contact_id: string | null
+          name: string
+          contact_name: string | null
+          value: number | null
+          probability: number | null
+          stage: string | null
+          due_date: string | null
+          notes: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          contact_id?: string | null
+          name: string
+          contact_name?: string | null
+          value?: number | null
+          probability?: number | null
+          stage?: string | null
+          due_date?: string | null
+          notes?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          contact_id?: string | null
+          name?: string
+          contact_name?: string | null
+          value?: number | null
+          probability?: number | null
+          stage?: string | null
+          due_date?: string | null
+          notes?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      crm_activities: {
+        Row: {
+          id: string
+          organization_id: string
+          contact_id: string | null
+          type: string
+          title: string
+          description: string | null
+          contact_name: string | null
+          date: string | null
+          time: string | null
+          completed: boolean | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          contact_id?: string | null
+          type?: string
+          title: string
+          description?: string | null
+          contact_name?: string | null
+          date?: string | null
+          time?: string | null
+          completed?: boolean | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          contact_id?: string | null
+          type?: string
+          title?: string
+          description?: string | null
+          contact_name?: string | null
+          date?: string | null
+          time?: string | null
+          completed?: boolean | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      workflow_instances: {
+        Row: {
+          id: string
+          organization_id: string
+          user_id: string
+          template_id: string | null
+          template_name: string
+          template_emoji: string | null
+          sector_id: string | null
+          assigned_to: string | null
+          assigned_to_name: string | null
+          priority: string | null
+          deadline: string | null
+          status: string | null
+          created_by: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          user_id: string
+          template_id?: string | null
+          template_name: string
+          template_emoji?: string | null
+          sector_id?: string | null
+          assigned_to?: string | null
+          assigned_to_name?: string | null
+          priority?: string | null
+          deadline?: string | null
+          status?: string | null
+          created_by?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          user_id?: string
+          template_id?: string | null
+          template_name?: string
+          template_emoji?: string | null
+          sector_id?: string | null
+          assigned_to?: string | null
+          assigned_to_name?: string | null
+          priority?: string | null
+          deadline?: string | null
+          status?: string | null
+          created_by?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      workflow_steps: {
+        Row: {
+          id: string
+          workflow_id: string
+          title: string
+          description: string | null
+          completed: boolean | null
+          due_date: string | null
+          notes: string | null
+          sort_order: number | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          workflow_id: string
+          title: string
+          description?: string | null
+          completed?: boolean | null
+          due_date?: string | null
+          notes?: string | null
+          sort_order?: number | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          workflow_id?: string
+          title?: string
+          description?: string | null
+          completed?: boolean | null
+          due_date?: string | null
+          notes?: string | null
+          sort_order?: number | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      minutas_documents: {
+        Row: {
+          id: string
+          organization_id: string
+          user_id: string
+          title: string
+          category: string | null
+          content: string | null
+          variables: Json | null
+          tags: string[] | null
+          favorite: boolean | null
+          usage_count: number | null
+          source: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          user_id: string
+          title: string
+          category?: string | null
+          content?: string | null
+          variables?: Json | null
+          tags?: string[] | null
+          favorite?: boolean | null
+          usage_count?: number | null
+          source?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          user_id?: string
+          title?: string
+          category?: string | null
+          content?: string | null
+          variables?: Json | null
+          tags?: string[] | null
+          favorite?: boolean | null
+          usage_count?: number | null
+          source?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      minutas_versions: {
+        Row: {
+          id: string
+          document_id: string
+          content: string | null
+          label: string | null
+          saved_at: string
+        }
+        Insert: {
+          id?: string
+          document_id: string
+          content?: string | null
+          label?: string | null
+          saved_at?: string
+        }
+        Update: {
+          id?: string
+          document_id?: string
+          content?: string | null
+          label?: string | null
+          saved_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
