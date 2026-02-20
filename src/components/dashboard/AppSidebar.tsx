@@ -12,6 +12,7 @@ import {
   LayoutDashboard, Scale, Users, CalendarDays, DollarSign, Bot,
   LogOut, Settings, BarChart3, Calculator, Newspaper, Target,
   GitBranch, FileEdit, ChevronDown, Award, Timer, BookOpen, RotateCcw,
+  MessageSquare, Building2,
 } from "lucide-react";
 import { resetOnboardingTour } from "./OnboardingTour";
 import { useState } from "react";
@@ -34,6 +35,7 @@ const navGroups = [
       { title: "Processos", url: "/dashboard/processos", icon: Scale },
       { title: "Agenda & Prazos", url: "/dashboard/agenda", icon: CalendarDays },
       { title: "Timesheet", url: "/dashboard/timesheet", icon: Timer },
+      { title: "Chat Interno", url: "/dashboard/chat", icon: MessageSquare },
       { title: "Workflow", url: "/dashboard/workflow", icon: GitBranch },
     ],
   },
@@ -65,6 +67,12 @@ const navGroups = [
       { title: "BI & Relatórios", url: "/dashboard/bi", icon: BarChart3 },
       { title: "ARUNA IA", url: "/dashboard/ia", icon: Bot },
       { title: "Notícias Jurídicas", url: "/dashboard/noticias", icon: Newspaper },
+    ],
+  },
+  {
+    label: "Administração",
+    items: [
+      { title: "Unidades / Franquias", url: "/dashboard/unidades", icon: Building2 },
     ],
   },
 ];

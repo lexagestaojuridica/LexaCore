@@ -5,6 +5,7 @@ import { NotificationsDropdown } from "./NotificationsDropdown";
 import ArunaQuickChat from "@/components/shared/ArunaQuickChat";
 import FacilitadorBar from "./FacilitadorBar";
 import { OnboardingTour } from "./OnboardingTour";
+import { LanguageSwitcher } from "@/components/shared/LanguageSwitcher";
 import { useAuth } from "@/contexts/AuthContext";
 import { Search } from "lucide-react";
 import { useEffect, useCallback, useState } from "react";
@@ -37,6 +38,8 @@ const PAGE_TITLES: Record<string, string> = {
   "/dashboard/timesheet": "Timesheet",
   "/dashboard/certificados": "Certificados",
   "/dashboard/wiki": "Wiki Jurídica",
+  "/dashboard/chat": "Chat Interno",
+  "/dashboard/unidades": "Unidades / Franquias",
 };
 
 // ─── Quick navigation items for Cmd+K ─────────────────────────
@@ -57,6 +60,8 @@ const QUICK_NAV = [
   { label: "ARUNA IA", url: "/dashboard/ia", group: "Navegação" },
   { label: "Notícias Jurídicas", url: "/dashboard/noticias", group: "Navegação" },
   { label: "Configurações", url: "/dashboard/configuracoes", group: "Navegação" },
+  { label: "Chat Interno", url: "/dashboard/chat", group: "Navegação" },
+  { label: "Unidades / Franquias", url: "/dashboard/unidades", group: "Navegação" },
 ];
 
 // ─── GlobalSearch ─────────────────────────────────────────────
@@ -145,6 +150,7 @@ export default function DashboardLayout() {
 
             <div className="flex items-center gap-2">
               <GlobalSearch />
+              <LanguageSwitcher />
               <NotificationsDropdown />
 
               {/* Avatar with greeting */}
