@@ -63,7 +63,32 @@ const statusBadge = (status: string) => {
 const emptyForm: Partial<TablesInsert<"processos_juridicos">> & { estimated_value_display?: string } = {
   title: "", number: "", court: "", subject: "", status: "ativo",
   estimated_value: null, notes: "", client_id: null, estimated_value_display: "",
+  area_direito: null, tipo_acao: null, parte_contraria: null,
+  instancia: null, fase_processual: null, comarca: null, uf: null,
+  data_distribuicao: null,
 };
+
+const AREAS_DIREITO = [
+  "Cível", "Trabalhista", "Penal", "Tributário", "Empresarial",
+  "Família e Sucessões", "Consumidor", "Ambiental", "Administrativo",
+  "Previdenciário", "Imobiliário", "Contratual", "Propriedade Intelectual",
+  "Digital", "Internacional", "Outro",
+];
+
+const INSTANCIAS = [
+  "1ª Instância", "2ª Instância", "Tribunal Superior", "STJ", "STF",
+];
+
+const FASES_PROCESSUAIS = [
+  "Conhecimento", "Instrução", "Sentença", "Recursal",
+  "Execução", "Cumprimento de Sentença", "Encerrado",
+];
+
+const UFS = [
+  "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS",
+  "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC",
+  "SP", "SE", "TO",
+];
 
 function ProcessCalculator({ estimatedValue }: { estimatedValue: number | null }) {
   const [percentual, setPercentual] = useState("20");
@@ -580,6 +605,59 @@ export default function ProcessosPage() {
                   </div>
                 </div>
                 <div className="rounded-lg border border-border/50 bg-muted/20 p-4 space-y-4">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Dados Jurídicos</h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Área do Direito</label>
+                      <Select value={form.area_direito ?? "none"} onValueChange={(v) => setField("area_direito", v === "none" ? null : v)}>
+                        <SelectTrigger className="h-10 bg-background"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">—</SelectItem>
+                          {AREAS_DIREITO.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <FormField label="Tipo da Ação" value={form.tipo_acao ?? ""} onChange={(v) => setField("tipo_acao", v)} placeholder="Ex: Ação de Indenização" />
+                  </div>
+                  <FormField label="Parte Contrária" value={form.parte_contraria ?? ""} onChange={(v) => setField("parte_contraria", v)} placeholder="Nome da parte contrária" />
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Instância</label>
+                      <Select value={form.instancia ?? "none"} onValueChange={(v) => setField("instancia", v === "none" ? null : v)}>
+                        <SelectTrigger className="h-10 bg-background"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">—</SelectItem>
+                          {INSTANCIAS.map((i) => <SelectItem key={i} value={i}>{i}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Fase Processual</label>
+                      <Select value={form.fase_processual ?? "none"} onValueChange={(v) => setField("fase_processual", v === "none" ? null : v)}>
+                        <SelectTrigger className="h-10 bg-background"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">—</SelectItem>
+                          {FASES_PROCESSUAIS.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <FormField label="Comarca" value={form.comarca ?? ""} onChange={(v) => setField("comarca", v)} placeholder="Ex: São Paulo" />
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">UF</label>
+                      <Select value={form.uf ?? "none"} onValueChange={(v) => setField("uf", v === "none" ? null : v)}>
+                        <SelectTrigger className="h-10 bg-background"><SelectValue placeholder="UF" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">—</SelectItem>
+                          {UFS.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <FormField label="Data Distribuição" type="date" value={form.data_distribuicao ?? ""} onChange={(v) => setField("data_distribuicao", v || null)} />
+                  </div>
+                </div>
+                <div className="rounded-lg border border-border/50 bg-muted/20 p-4 space-y-4">
                   <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Detalhes</h3>
                   <div className="grid grid-cols-2 gap-3">
                     <FormField label="Assunto" value={form.subject ?? ""} onChange={(v) => setField("subject", v)} placeholder="Ex: Dano moral" />
@@ -666,6 +744,23 @@ export default function ProcessosPage() {
                 <div><span className="text-xs text-muted-foreground">Criado em</span><p>{format(new Date(selectedProcesso.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}</p></div>
                 <div><span className="text-xs text-muted-foreground">Atualizado em</span><p>{format(new Date(selectedProcesso.updated_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}</p></div>
               </div>
+              {(selectedProcesso.area_direito || selectedProcesso.tipo_acao || selectedProcesso.parte_contraria || selectedProcesso.instancia || selectedProcesso.fase_processual || selectedProcesso.comarca) && (
+                <>
+                  <Separator />
+                  <div>
+                    <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Dados Jurídicos</span>
+                    <div className="grid grid-cols-2 gap-4 text-sm mt-2">
+                      {selectedProcesso.area_direito && <div><span className="text-xs text-muted-foreground">Área do Direito</span><p className="font-medium">{selectedProcesso.area_direito}</p></div>}
+                      {selectedProcesso.tipo_acao && <div><span className="text-xs text-muted-foreground">Tipo da Ação</span><p className="font-medium">{selectedProcesso.tipo_acao}</p></div>}
+                      {selectedProcesso.parte_contraria && <div><span className="text-xs text-muted-foreground">Parte Contrária</span><p className="font-medium">{selectedProcesso.parte_contraria}</p></div>}
+                      {selectedProcesso.instancia && <div><span className="text-xs text-muted-foreground">Instância</span><p className="font-medium">{selectedProcesso.instancia}</p></div>}
+                      {selectedProcesso.fase_processual && <div><span className="text-xs text-muted-foreground">Fase Processual</span><p className="font-medium">{selectedProcesso.fase_processual}</p></div>}
+                      {(selectedProcesso.comarca || selectedProcesso.uf) && <div><span className="text-xs text-muted-foreground">Comarca / UF</span><p className="font-medium">{[selectedProcesso.comarca, selectedProcesso.uf].filter(Boolean).join(" — ")}</p></div>}
+                      {selectedProcesso.data_distribuicao && <div><span className="text-xs text-muted-foreground">Data Distribuição</span><p className="font-medium">{format(new Date(selectedProcesso.data_distribuicao + "T00:00"), "dd/MM/yyyy")}</p></div>}
+                    </div>
+                  </div>
+                </>
+              )}
               {selectedProcesso.notes && (
                 <><Separator /><div><span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Observações</span><p className="mt-1 whitespace-pre-wrap text-sm">{selectedProcesso.notes}</p></div></>
               )}
