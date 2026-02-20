@@ -3,17 +3,16 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { format } from "date-fns";
+import { format, parseISO, isPast, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   DollarSign, Plus, Search, Filter, Edit2, Trash2, TrendingUp, TrendingDown,
-  ArrowUpRight, ArrowDownRight, Wallet, Receipt, BarChart2, Bell, AlertCircle, Download,
+  ArrowUpRight, ArrowDownRight, Wallet, Receipt, BarChart2, Bell, CheckCircle2,
 } from "lucide-react";
 import BudgetPerformanceTab from "@/components/financeiro/BudgetPerformanceTab";
 import { DasDarfPanel } from "@/components/financeiro/DasDarfPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -22,26 +21,25 @@ import { Card, CardContent } from "@/components/ui/card";
 import FormField from "@/components/shared/FormField";
 import LexaLoadingOverlay from "@/components/shared/LexaLoadingOverlay";
 import { formatCurrencyInput, parseCurrencyToNumber } from "@/lib/formatters";
+import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
 
 const STATUS_OPTIONS = [
-  { value: "pendente", label: "Pendente" },
-  { value: "pago", label: "Pago" },
-  { value: "atrasado", label: "Atrasado" },
-  { value: "cancelado", label: "Cancelado" },
+  { value: "pendente", label: "Pendente", color: "text-amber-600 bg-amber-500/10 border-amber-500/20" },
+  { value: "pago", label: "Pago", color: "text-emerald-600 bg-emerald-500/10 border-emerald-500/20" },
+  { value: "atrasado", label: "Atrasado", color: "text-rose-600 bg-rose-500/10 border-rose-500/20" },
+  { value: "cancelado", label: "Cancelado", color: "text-slate-600 bg-slate-500/10 border-border" },
 ];
-
-const statusStyle: Record<string, string> = {
-  pendente: "bg-warning/10 text-warning border-warning/20",
-  pago: "bg-success/10 text-success border-success/20",
-  atrasado: "bg-destructive/10 text-destructive border-destructive/20",
-  cancelado: "bg-muted text-muted-foreground border-border",
-};
 
 const CATEGORIES = ["Honorários", "Custas Processuais", "Aluguel", "Salários", "Energia / Internet", "Marketing", "Impostos", "Outros"];
 
 const fmtCurrency = (v: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
 
 const emptyForm = { description: "", amount_display: "", due_date: "", status: "pendente", category: "" };
+
+function getMonthYearLabel(dateStr: string) {
+  return format(parseISO(dateStr), "MMMM yyyy", { locale: ptBR });
+}
 
 export default function FinanceiroPage() {
   const { user } = useAuth();
@@ -101,12 +99,16 @@ export default function FinanceiroPage() {
   const totalPagoVal = pagarData.filter((c) => c.status === "pago").reduce((s, c) => s + Number(c.amount), 0);
   const saldo = totalRecebido - totalPagoVal;
 
+  // Progress Bar Calcs
+  const totalFluxo = totalReceber + totalPagar;
+  const healthPercent = totalFluxo === 0 ? 50 : (totalReceber / totalFluxo) * 100;
+
   const createMutation = useMutation({
     mutationFn: async (payload: any) => {
       const { error } = await supabase.from(tableName).insert(payload);
       if (error) throw error;
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: [tableName] }); toast.success("Conta criada"); closeDialog(); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: [tableName] }); queryClient.invalidateQueries({ queryKey: ["contas_receber"] }); queryClient.invalidateQueries({ queryKey: ["contas_pagar"] }); toast.success("Conta criada"); closeDialog(); },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -115,7 +117,7 @@ export default function FinanceiroPage() {
       const { error } = await supabase.from(tableName).update(payload).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: [tableName] }); toast.success("Conta atualizada"); closeDialog(); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: [tableName] }); queryClient.invalidateQueries({ queryKey: ["contas_receber"] }); queryClient.invalidateQueries({ queryKey: ["contas_pagar"] }); toast.success("Conta atualizada"); closeDialog(); },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -124,9 +126,13 @@ export default function FinanceiroPage() {
       const { error } = await supabase.from(tableName).delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: [tableName] }); toast.success("Conta excluída"); setDeleteDialogOpen(false); setEditingId(null); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: [tableName] }); queryClient.invalidateQueries({ queryKey: ["contas_receber"] }); queryClient.invalidateQueries({ queryKey: ["contas_pagar"] }); toast.success("Conta excluída"); setDeleteDialogOpen(false); setEditingId(null); },
     onError: (e: any) => toast.error(e.message),
   });
+
+  const markAsPaid = (id: string) => {
+    updateMutation.mutate({ id, status: "pago" });
+  };
 
   const closeDialog = () => { setDialogOpen(false); setForm(emptyForm); setEditingId(null); };
   const openCreate = () => { setForm(emptyForm); setEditingId(null); setDialogOpen(true); };
@@ -174,147 +180,244 @@ export default function FinanceiroPage() {
     return matchStatus && matchSearch;
   });
 
+  // Group by month
+  const groupedMonths = filtered.reduce((acc, c: any) => {
+    const label = getMonthYearLabel(c.due_date);
+    if (!acc[label]) acc[label] = [];
+    acc[label].push(c);
+    return acc;
+  }, {} as Record<string, any[]>);
+
   const isSaving = createMutation.isPending || updateMutation.isPending;
 
+  const containerAnim = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.05 } } };
+  const itemAnim = { hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } };
+
   return (
-    <div className="space-y-6">
+    <motion.div variants={containerAnim} initial="hidden" animate="show" className="max-w-6xl mx-auto space-y-8 pb-10">
       <LexaLoadingOverlay visible={isSaving} message="Salvando..." />
 
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      {/* ── Minimal Header ── */}
+      <motion.div variants={itemAnim} className="flex flex-col md:flex-row md:items-end justify-between gap-4 pt-2">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">Financeiro</h1>
-          <p className="text-sm text-muted-foreground">Controle de contas a pagar e receber</p>
+          <h1 className="text-3xl font-light tracking-tight text-foreground">
+            Gestão <span className="font-semibold">Financeira</span>
+          </h1>
+          <p className="mt-1 text-muted-foreground text-sm flex items-center gap-2">
+            <Wallet className="h-4 w-4" />
+            Controle de fluxo de caixa, pagamentos e recebimentos
+          </p>
         </div>
-        <Button onClick={openCreate} className="gap-2"><Plus className="h-4 w-4" /> Nova Conta</Button>
-      </div>
+        <div className="flex gap-2">
+          <Button onClick={openCreate} className="h-10 gap-2 font-medium shadow-sm">
+            <Plus className="h-4 w-4" /> Nova Transação
+          </Button>
+        </div>
+      </motion.div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {/* ── Key Metrics Overview ── */}
+      <motion.div variants={itemAnim} className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: "A Receber", value: fmtCurrency(totalReceber), icon: ArrowUpRight, color: "text-success", bg: "bg-success/8", sub: "pendente" },
-          { label: "A Pagar", value: fmtCurrency(totalPagar), icon: ArrowDownRight, color: "text-destructive", bg: "bg-destructive/8", sub: "pendente" },
-          { label: "Recebido", value: fmtCurrency(totalRecebido), icon: Receipt, color: "text-foreground", bg: "bg-primary/5", sub: "acumulado" },
-          { label: "Saldo", value: fmtCurrency(saldo), icon: Wallet, color: saldo >= 0 ? "text-success" : "text-destructive", bg: saldo >= 0 ? "bg-success/8" : "bg-destructive/8", sub: "recebido − pago" },
-        ].map((kpi) => (
-          <Card key={kpi.label} className="border-border/60">
-            <CardContent className="p-5">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{kpi.label}</p>
-                <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${kpi.bg}`}>
-                  <kpi.icon className={`h-4 w-4 ${kpi.color}`} />
-                </div>
-              </div>
-              <p className={`text-2xl font-bold ${kpi.color}`}>{kpi.value}</p>
-              <p className="mt-1 text-[11px] text-muted-foreground">{kpi.sub}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="grid w-full max-w-2xl grid-cols-4">
-          <TabsTrigger value="receber" className="gap-2 text-xs"><TrendingUp className="h-3.5 w-3.5" /> A Receber</TabsTrigger>
-          <TabsTrigger value="pagar" className="gap-2 text-xs"><TrendingDown className="h-3.5 w-3.5" /> A Pagar</TabsTrigger>
-          <TabsTrigger value="dasdarf" className="gap-2 text-xs"><Bell className="h-3.5 w-3.5" /> DAS / DARF</TabsTrigger>
-          <TabsTrigger value="orcamento" className="gap-2 text-xs"><BarChart2 className="h-3.5 w-3.5" /> Orçamento</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value={tab} className="mt-4 space-y-4">
-          <Card className="border-border/60">
-            <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input placeholder="Buscar por descrição ou categoria..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
-              </div>
-              <div className="flex items-center gap-2">
-                <Filter className="h-4 w-4 text-muted-foreground" />
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-[150px]"><SelectValue placeholder="Status" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    {STATUS_OPTIONS.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/60">
-            <CardContent className="p-0">
-              {isLoading ? (
-                <div className="flex items-center justify-center py-20">
-                  <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                </div>
-              ) : filtered.length === 0 ? (
-                <div className="flex flex-col items-center py-20 text-center">
-                  <DollarSign className="mb-4 h-12 w-12 text-muted-foreground/20" />
-                  <p className="text-sm text-muted-foreground">
-                    {contas.length === 0 ? `Nenhuma conta a ${tab === "receber" ? "receber" : "pagar"} cadastrada.` : "Nenhuma conta encontrada."}
-                  </p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Descrição</TableHead>
-                        <TableHead>Categoria</TableHead>
-                        <TableHead>Valor</TableHead>
-                        <TableHead>Vencimento</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Ações</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filtered.map((c: any) => (
-                        <TableRow key={c.id} className="group">
-                          <TableCell className="font-medium">{c.description}</TableCell>
-                          <TableCell className="text-muted-foreground text-sm">{c.category || "—"}</TableCell>
-                          <TableCell className="font-semibold tabular-nums">{fmtCurrency(Number(c.amount))}</TableCell>
-                          <TableCell className="text-muted-foreground text-sm tabular-nums">{format(new Date(c.due_date + "T00:00:00"), "dd/MM/yyyy", { locale: ptBR })}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className={`text-[11px] ${statusStyle[c.status] || ""}`}>
-                              {STATUS_OPTIONS.find((s) => s.value === c.status)?.label || c.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => openEdit(c)}><Edit2 className="h-3.5 w-3.5" /></Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => { setEditingId(c.id); setDeleteDialogOpen(true); }}><Trash2 className="h-3.5 w-3.5" /></Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* DAS/DARF Tab */}
-        <TabsContent value="dasdarf" className="mt-4 space-y-4">
-          <DasDarfPanel />
-        </TabsContent>
-
-        {/* Budget Performance Tab */}
-        <TabsContent value="orcamento" className="mt-4">
-          {orgId ? (
-            <BudgetPerformanceTab orgId={orgId} />
-          ) : (
-            <div className="flex items-center justify-center py-20">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          { label: "A Receber (Pendente)", val: fmtCurrency(totalReceber), icon: ArrowUpRight, color: "text-blue-600", bg: "bg-blue-600/10" },
+          { label: "A Pagar (Pendente)", val: fmtCurrency(totalPagar), icon: ArrowDownRight, color: "text-rose-600", bg: "bg-rose-600/10" },
+          { label: "Receita Acumulada", val: fmtCurrency(totalRecebido), icon: Receipt, color: "text-emerald-600", bg: "bg-emerald-600/10" },
+          { label: "Saldo Acumulado", val: fmtCurrency(saldo), icon: Wallet, color: saldo >= 0 ? "text-emerald-600" : "text-rose-600", bg: saldo >= 0 ? "bg-emerald-600/10" : "bg-rose-600/10" },
+        ].map((kpi, i) => (
+          <div key={i} className="flex items-center gap-4 bg-card border border-border/50 rounded-xl p-4 shadow-sm hover:border-primary/20 transition-colors">
+            <div className={cn("p-2.5 rounded-lg", kpi.bg, kpi.color)}>
+              <kpi.icon className="h-5 w-5" />
             </div>
-          )}
-        </TabsContent>
-      </Tabs>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-0.5 max-w-[100px] leading-tight">{kpi.label}</p>
+              <p className="text-lg font-bold tracking-tight text-foreground">{kpi.val}</p>
+            </div>
+          </div>
+        ))}
+      </motion.div>
 
-      {/* Create/Edit Dialog */}
+      {/* ── Health / Flow Thermometer ── */}
+      <motion.div variants={itemAnim}>
+        <Card className="border-border/50 bg-gradient-to-br from-muted/30 to-background overflow-hidden relative shadow-sm">
+          <div className="absolute right-0 top-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+          <CardContent className="p-5">
+            <div className="flex justify-between items-end mb-2">
+              <h3 className="text-sm font-semibold flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-primary" /> Fluxo Pendente
+              </h3>
+              <span className="text-xs font-medium text-muted-foreground uppercase tracking-widest">
+                Termômetro Financeiro
+              </span>
+            </div>
+            <div className="h-3 w-full bg-muted rounded-full overflow-hidden flex">
+              <div
+                className="h-full bg-blue-500 transition-all duration-1000"
+                style={{ width: `${healthPercent}%` }}
+              />
+              <div
+                className="h-full bg-rose-500 transition-all duration-1000"
+                style={{ width: `${100 - healthPercent}%` }}
+              />
+            </div>
+            <div className="flex justify-between mt-2 text-xs font-medium">
+              <span className="text-blue-600/80">{healthPercent.toFixed(1)}% Receitas Pendentes</span>
+              <span className="text-rose-600/80">{(100 - healthPercent).toFixed(1)}% Despesas Pendentes</span>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* ── Main Layout ── */}
+      <motion.div variants={itemAnim}>
+        <Tabs value={tab} onValueChange={setTab} className="bg-transparent">
+          <TabsList className="grid w-full sm:w-auto sm:inline-grid grid-cols-2 md:grid-cols-4 h-auto p-1 bg-muted/50 rounded-xl mb-4">
+            <TabsTrigger value="receber" className="py-2.5 gap-2 rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm"><ArrowUpRight className="h-4 w-4" /> <span className="hidden sm:inline">A Receber</span></TabsTrigger>
+            <TabsTrigger value="pagar" className="py-2.5 gap-2 rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm"><ArrowDownRight className="h-4 w-4" /> <span className="hidden sm:inline">A Pagar</span></TabsTrigger>
+            <TabsTrigger value="dasdarf" className="py-2.5 gap-2 rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm"><Bell className="h-4 w-4" /> <span className="hidden sm:inline">DAS / DARF</span></TabsTrigger>
+            <TabsTrigger value="orcamento" className="py-2.5 gap-2 rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm"><BarChart2 className="h-4 w-4" /> <span className="hidden sm:inline">Orçamento</span></TabsTrigger>
+          </TabsList>
+
+          <TabsContent value={tab} className="mt-0 space-y-4 focus-visible:outline-none focus:outline-none focus-visible:ring-0 focus:ring-0">
+            {tab !== "orcamento" && tab !== "dasdarf" && (
+              <>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-muted/40 p-2 pl-4 border border-border/50 rounded-xl">
+                  <div className="relative flex-1 max-w-sm">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input placeholder="Buscar transação..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-9 bg-card border-none text-sm" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Filter className="h-4 w-4 text-muted-foreground mr-1" />
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                      <SelectTrigger className="h-9 w-36 bg-card border-none text-xs"><SelectValue placeholder="Status" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todos os status</SelectItem>
+                        {STATUS_OPTIONS.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {isLoading ? (
+                  <div className="space-y-4">
+                    {[1, 2].map((n) => <div key={n} className="h-32 rounded-xl bg-muted/30 animate-pulse border border-border/40" />)}
+                  </div>
+                ) : filtered.length === 0 ? (
+                  <div className="flex flex-col items-center py-16 text-center border border-dashed border-border/60 rounded-2xl bg-muted/10">
+                    <DollarSign className="mb-4 h-12 w-12 text-muted-foreground/30" />
+                    <p className="text-base font-medium text-foreground">
+                      {contas.length === 0 ? `Nenhuma conta a ${tab === "receber" ? "receber" : "pagar"} cadastrada.` : "Nenhuma conta encontrada."}
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-1 max-w-sm">Use o botão "Nova Transação" para adicionar.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {Object.entries(groupedMonths).map(([month, items]) => (
+                      <div key={month} className="space-y-3">
+                        <h3 className="text-xs font-bold tracking-widest text-muted-foreground uppercase flex items-center gap-2 capitalize">
+                          {month}
+                          <span className="h-px bg-border/60 flex-1 ml-2" />
+                        </h3>
+                        <div className="bg-card border border-border/50 rounded-xl overflow-hidden shadow-sm">
+                          <div className="divide-y divide-border/40">
+                            <AnimatePresence>
+                              {items.map((c: any) => {
+                                let statusObj = STATUS_OPTIONS.find((s) => s.value === c.status) || STATUS_OPTIONS[0];
+                                const dueDate = parseISO(c.due_date);
+                                const isLate = isPast(dueDate) && !isToday(dueDate) && c.status === "pendente";
+                                if (isLate) statusObj = STATUS_OPTIONS.find((s) => s.value === "atrasado") || statusObj;
+
+                                const amountNum = Number(c.amount);
+
+                                return (
+                                  <motion.div
+                                    key={c.id}
+                                    layout
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    className="group flex flex-col sm:flex-row sm:items-center justify-between p-4 hover:bg-muted/30 transition-colors gap-4 relative"
+                                  >
+                                    <div className="flex items-start sm:items-center gap-4 min-w-0">
+                                      <div className={cn(
+                                        "flex flex-col items-center justify-center shrink-0 w-14 px-1 py-1.5 rounded-lg text-center leading-tight border transition-colors",
+                                        isLate ? "bg-rose-500/10 border-rose-500/20 text-rose-600" : "bg-muted border-transparent text-muted-foreground"
+                                      )}>
+                                        <span className="text-[10px] uppercase font-bold">{format(dueDate, "MMM", { locale: ptBR })}</span>
+                                        <span className="text-lg font-bold">{format(dueDate, "dd")}</span>
+                                      </div>
+                                      <div className="min-w-0">
+                                        <p className="text-sm font-semibold text-foreground truncate">{c.description}</p>
+                                        <p className="text-xs font-medium text-muted-foreground mt-1 uppercase tracking-wider">{c.category || "Sem Categoria"}</p>
+                                      </div>
+                                    </div>
+
+                                    <div className="flex items-center justify-between sm:justify-end gap-5 shrink-0 ml-16 sm:ml-0">
+                                      <div className="text-right min-w-[100px]">
+                                        <p className={cn("text-base font-bold tabular-nums", tab === "receber" ? "text-blue-600/90" : "text-rose-600/90")}>
+                                          {tab === "receber" ? "+" : "-"}{fmtCurrency(amountNum)}
+                                        </p>
+                                        <Badge variant="outline" className={cn("text-[9px] mt-1 h-4 px-1.5 font-bold uppercase tracking-wider border", statusObj.color)}>
+                                          {statusObj.label}
+                                        </Badge>
+                                      </div>
+
+                                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity absolute right-4 sm:relative sm:right-0 bg-card sm:bg-transparent shadow-sm sm:shadow-none p-1 rounded-md border sm:border-transparent">
+                                        {c.status === "pendente" && (
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            title="Marcar como Pago"
+                                            className="h-8 w-8 text-emerald-600 hover:bg-emerald-500/10 hover:text-emerald-700"
+                                            onClick={() => markAsPaid(c.id)}
+                                          >
+                                            <CheckCircle2 className="h-4 w-4" />
+                                          </Button>
+                                        )}
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => openEdit(c)}>
+                                          <Edit2 className="h-3.5 w-3.5" />
+                                        </Button>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10" onClick={() => { setEditingId(c.id); setDeleteDialogOpen(true); }}>
+                                          <Trash2 className="h-3.5 w-3.5" />
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  </motion.div>
+                                );
+                              })}
+                            </AnimatePresence>
+                          </div>
+                          {/* Month Summary Footer */}
+                          <div className="bg-muted/30 p-3 px-4 flex justify-between items-center text-xs">
+                            <span className="text-muted-foreground font-medium uppercase tracking-wider text-[10px]">Total do mês</span>
+                            <span className={cn("font-bold text-sm", tab === "receber" ? "text-blue-600" : "text-rose-600")}>
+                              {fmtCurrency(items.reduce((s, c) => s + Number(c.amount), 0))}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* DAS/DARF Tab */}
+            {tab === "dasdarf" && <DasDarfPanel />}
+
+            {/* Budget Performance Tab */}
+            {tab === "orcamento" && (
+              orgId ? <BudgetPerformanceTab orgId={orgId} /> : <div className="py-20 flex justify-center"><div className="h-6 w-6 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>
+            )}
+
+          </TabsContent>
+        </Tabs>
+      </motion.div>
+
+      {/* ── Create/Edit Dialog ── */}
       <Dialog open={dialogOpen} onOpenChange={(o) => !o && closeDialog()}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="font-semibold">
-              {editingId ? "Editar Conta" : `Nova Conta a ${tab === "receber" ? "Receber" : "Pagar"}`}
+            <DialogTitle>
+              {editingId ? "Editar Transação" : `Nova Conta a ${tab === "receber" ? "Receber" : "Pagar"}`}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
@@ -325,18 +428,18 @@ export default function FinanceiroPage() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Categoria</label>
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Categoria</label>
                 <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
-                  <SelectTrigger className="h-10"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectTrigger className="h-10 border-border/50 bg-background/50"><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>
                     {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</label>
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Status</label>
                 <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
-                  <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-10 border-border/50 bg-background/50"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {STATUS_OPTIONS.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
                   </SelectContent>
@@ -345,23 +448,25 @@ export default function FinanceiroPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={closeDialog}>Cancelar</Button>
-            <Button onClick={handleSubmit} disabled={isSaving}>{editingId ? "Salvar" : "Criar"}</Button>
+            <Button variant="outline" onClick={closeDialog} className="w-full sm:w-auto">Cancelar</Button>
+            <Button onClick={handleSubmit} disabled={isSaving} className="w-full sm:w-auto">{editingId ? "Salvar" : "Registrar"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Delete Dialog */}
+      {/* ── Delete Dialog ── */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle className="font-semibold">Excluir Conta</DialogTitle></DialogHeader>
-          <p className="text-sm text-muted-foreground">Tem certeza que deseja excluir esta conta? Esta ação não pode ser desfeita.</p>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Excluir Transação</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">Tem certeza que deseja excluir esta movimentação? Esta ação não pode ser desfeita.</p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Cancelar</Button>
-            <Button variant="destructive" disabled={deleteMutation.isPending} onClick={() => editingId && deleteMutation.mutate(editingId)}>Excluir</Button>
+            <Button variant="destructive" disabled={deleteMutation.isPending} onClick={() => editingId && deleteMutation.mutate(editingId)}>Excluir Definitivamente</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </motion.div>
   );
 }

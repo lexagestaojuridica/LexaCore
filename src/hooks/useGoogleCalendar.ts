@@ -28,18 +28,24 @@ export function useGoogleCalendar() {
   const lastSyncAt = connection?.last_sync_at;
   const syncEnabled = connection?.sync_enabled ?? false;
 
-  // Listen for OAuth callback
+  // Check URL for OAuth callback code on mount
   useEffect(() => {
-    const handleMessage = async (event: MessageEvent) => {
-      if (event.data?.type === "google-calendar-callback" && event.data?.code) {
+    const handleCodeFromUrl = async () => {
+      const searchParams = new URLSearchParams(window.location.search);
+      const code = searchParams.get("code");
+
+      if (code && !connecting) {
         setConnecting(true);
         try {
+          // Remove code from URL immediately for clean UI
+          window.history.replaceState({}, document.title, window.location.pathname);
+
           const redirectUri = `${window.location.origin}/dashboard/agenda`;
 
           const { data: tokenData, error } = await supabase.functions.invoke("google-calendar-auth", {
             body: {
               action: "exchange_code",
-              code: event.data.code,
+              code,
               redirect_uri: redirectUri,
             },
           });
@@ -81,9 +87,8 @@ export function useGoogleCalendar() {
       }
     };
 
-    window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
-  }, [user, queryClient]);
+    handleCodeFromUrl();
+  }, [user, queryClient, connecting]);
 
   // Start OAuth flow
   const connect = useCallback(async () => {
@@ -98,31 +103,8 @@ export function useGoogleCalendar() {
       if (error) throw error;
       if (data.error) throw new Error(data.error);
 
-      // Open OAuth in popup
-      const popup = window.open(data.url, "google-oauth", "width=500,height=600,menubar=no,toolbar=no");
-
-      // Poll for the popup closing or redirect
-      const interval = setInterval(() => {
-        try {
-          if (popup?.closed) {
-            clearInterval(interval);
-            setConnecting(false);
-            return;
-          }
-          const popupUrl = popup?.location?.href;
-          if (popupUrl && popupUrl.startsWith(window.location.origin)) {
-            const url = new URL(popupUrl);
-            const code = url.searchParams.get("code");
-            if (code) {
-              popup?.close();
-              clearInterval(interval);
-              window.postMessage({ type: "google-calendar-callback", code }, window.location.origin);
-            }
-          }
-        } catch {
-          // Cross-origin - ignore
-        }
-      }, 500);
+      // Redirect full page
+      window.location.href = data.url;
     } catch (err: any) {
       toast.error(err.message || "Erro ao iniciar conexão");
       setConnecting(false);
