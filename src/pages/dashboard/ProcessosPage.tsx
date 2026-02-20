@@ -8,8 +8,9 @@ import { ptBR } from "date-fns/locale";
 import {
   Scale, Plus, Search, Filter, Edit2, Trash2, Eye, Upload, Download, File, Calculator, X,
   LayoutList, LayoutGrid, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
-  ArrowUpDown, ArrowUp, ArrowDown,
+  ArrowUpDown, ArrowUp, ArrowDown, Receipt,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -185,6 +186,7 @@ export default function ProcessosPage() {
   const [page, setPage] = useState(1);
   const [sortField, setSortField] = useState<SortField>("created_at");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const navigate = useNavigate();
 
   const { data: profile } = useQuery({
     queryKey: ["profile", user?.id],
@@ -249,6 +251,28 @@ export default function ProcessosPage() {
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["processos"] }); toast.success("Processo excluído"); setDeleteDialogOpen(false); setSelectedProcesso(null); },
     onError: () => toast.error("Erro ao excluir processo"),
+  });
+
+  const createContaMutation = useMutation({
+    mutationFn: async ({ processoTitle, value, orgId: oid }: { processoTitle: string; value: number; orgId: string }) => {
+      const dueDate = new Date();
+      dueDate.setDate(dueDate.getDate() + 30);
+      const { error } = await supabase.from("contas_receber").insert({
+        description: `Honorários — ${processoTitle}`,
+        amount: value,
+        due_date: dueDate.toISOString().split("T")[0],
+        status: "pendente",
+        category: "Honorários",
+        organization_id: oid,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Conta a Receber criada! Redirecionando para o Financeiro...");
+      setViewDialogOpen(false);
+      setTimeout(() => navigate("/dashboard/financeiro"), 1200);
+    },
+    onError: () => toast.error("Erro ao criar conta a receber"),
   });
 
   const uploadDocMutation = useMutation({
@@ -674,7 +698,22 @@ export default function ProcessosPage() {
               <ProcessCalculator estimatedValue={selectedProcesso.estimated_value} />
               <div className="flex justify-end gap-2 pt-2">
                 <Button variant="outline" onClick={() => setViewDialogOpen(false)}>Fechar</Button>
-                <Button onClick={() => { setViewDialogOpen(false); openEdit(selectedProcesso); }}>Editar</Button>
+                {selectedProcesso?.estimated_value != null && orgId && (
+                  <Button
+                    variant="outline"
+                    className="gap-1.5 border-emerald-500/30 text-emerald-700 hover:bg-emerald-500/5"
+                    disabled={createContaMutation.isPending}
+                    onClick={() => createContaMutation.mutate({
+                      processoTitle: selectedProcesso.title,
+                      value: Number(selectedProcesso.estimated_value),
+                      orgId,
+                    })}
+                  >
+                    <Receipt className="h-3.5 w-3.5" />
+                    {createContaMutation.isPending ? "Criando..." : "Gerar Conta a Receber"}
+                  </Button>
+                )}
+                <Button onClick={() => { setViewDialogOpen(false); openEdit(selectedProcesso!); }}>Editar</Button>
               </div>
             </div>
           )}

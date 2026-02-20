@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -96,7 +97,112 @@ const GrowthBadge = ({ current, previous }: { current: number; previous: number 
   );
 };
 
+// ─── Timesheet BI Tab ─────────────────────────────────────────
+
+function TimesheetBITab({ orgId }: { orgId: string | null }) {
+  const { data: entries = [], isLoading } = useQuery({
+    queryKey: ["timesheet-bi", orgId],
+    queryFn: async () => {
+      if (!orgId) return [];
+      const { data } = await supabase
+        .from("timesheet_entries")
+        .select("duration_minutes, hourly_rate, billing_status, processos_juridicos(title)")
+        .eq("organization_id", orgId);
+      return data || [];
+    },
+    enabled: !!orgId,
+  });
+
+  const totalMin = entries.reduce((s: number, e: any) => s + (e.duration_minutes || 0), 0);
+  const totalHoras = totalMin / 60;
+  const aFaturar = entries
+    .filter((e: any) => e.billing_status === "pendente")
+    .reduce((s: number, e: any) => s + ((e.duration_minutes || 0) / 60) * (e.hourly_rate || 0), 0);
+  const recebido = entries
+    .filter((e: any) => e.billing_status === "pago")
+    .reduce((s: number, e: any) => s + ((e.duration_minutes || 0) / 60) * (e.hourly_rate || 0), 0);
+  const faturado = entries
+    .filter((e: any) => e.billing_status === "faturado")
+    .reduce((s: number, e: any) => s + ((e.duration_minutes || 0) / 60) * (e.hourly_rate || 0), 0);
+
+  // Group by process
+  const byProcess: Record<string, number> = {};
+  entries.forEach((e: any) => {
+    const title = (e.processos_juridicos as any)?.title || "Sem processo";
+    byProcess[title] = (byProcess[title] || 0) + (e.duration_minutes || 0);
+  });
+  const ranked = Object.entries(byProcess)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .map(([title, mins]) => ({ title, horas: mins / 60 }));
+  const maxHoras = ranked[0]?.horas || 1;
+
+  if (isLoading) return <div className="flex items-center justify-center py-20"><div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" /></div>;
+
+  if (entries.length === 0) return (
+    <div className="flex flex-col items-center py-20 text-center">
+      <Clock className="mb-3 h-12 w-12 text-muted-foreground/20" />
+      <p className="text-sm text-muted-foreground">Nenhum registro de timesheet encontrado.</p>
+      <p className="text-xs text-muted-foreground/60 mt-1">Execute a migration SQL e comece a registrar horas no Timesheet.</p>
+    </div>
+  );
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        {[
+          { label: "Total de Horas", value: `${totalHoras.toFixed(1)}h`, icon: Clock, color: "text-primary", bg: "bg-primary/10" },
+          { label: "A Faturar", value: formatCurrency(aFaturar), icon: Receipt, color: "text-amber-600", bg: "bg-amber-500/10" },
+          { label: "Faturado", value: formatCurrency(faturado), icon: Briefcase, color: "text-blue-600", bg: "bg-blue-500/10" },
+          { label: "Recebido", value: formatCurrency(recebido), icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-500/10" },
+        ].map((kpi) => {
+          const Icon = kpi.icon;
+          return (
+            <Card key={kpi.label} className="border-border">
+              <CardContent className="flex items-start gap-3 p-4">
+                <div className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-xl", kpi.bg)}>
+                  <Icon className={cn("h-5 w-5", kpi.color)} />
+                </div>
+                <div>
+                  <p className="text-lg font-bold text-foreground">{kpi.value}</p>
+                  <p className="text-[11px] text-muted-foreground">{kpi.label}</p>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      <Card className="border-border">
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-sm"><Clock className="h-4 w-4 text-primary" /> Horas por Processo</CardTitle>
+          <CardDescription className="text-xs">Top 10 processos com mais horas registradas</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {ranked.map((item, i) => (
+            <div key={item.title} className="space-y-1">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground truncate max-w-[60%]">{item.title}</span>
+                <span className="font-semibold text-foreground tabular-nums">{item.horas.toFixed(1)}h</span>
+              </div>
+              <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                <motion.div
+                  className="h-full rounded-full bg-primary"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${(item.horas / maxHoras) * 100}%` }}
+                  transition={{ duration: 0.8, delay: i * 0.05 }}
+                />
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 export default function BIPage() {
+
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("overview");
@@ -367,6 +473,7 @@ export default function BIPage() {
           <TabsTrigger value="honorarios" className="text-xs gap-1.5"><Banknote className="h-3.5 w-3.5" /> Honorários</TabsTrigger>
           <TabsTrigger value="growth" className="text-xs gap-1.5"><TrendingUp className="h-3.5 w-3.5" /> Crescimento</TabsTrigger>
           <TabsTrigger value="processos" className="text-xs gap-1.5"><Scale className="h-3.5 w-3.5" /> Processos</TabsTrigger>
+          <TabsTrigger value="timesheet" className="text-xs gap-1.5"><Clock className="h-3.5 w-3.5" /> Timesheet</TabsTrigger>
         </TabsList>
 
         {/* VISÃO GERAL */}
@@ -792,6 +899,11 @@ export default function BIPage() {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        {/* TIMESHEET */}
+        <TabsContent value="timesheet" className="mt-0 space-y-4">
+          <TimesheetBITab orgId={orgId} />
         </TabsContent>
       </Tabs>
     </div>
