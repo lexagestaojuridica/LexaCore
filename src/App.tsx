@@ -24,6 +24,7 @@ import WorkflowPage from "@/pages/dashboard/WorkflowPage";
 import MinutasPage from "@/pages/dashboard/MinutasPage";
 import CertificadosPage from "@/pages/dashboard/CertificadosPage";
 import TimesheetPage from "@/pages/dashboard/TimesheetPage";
+import WikiJuridicaPage from "@/pages/dashboard/WikiJuridicaPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -62,6 +63,7 @@ const App = () => (
               <Route path="minutas" element={<MinutasPage />} />
               <Route path="certificados" element={<CertificadosPage />} />
               <Route path="timesheet" element={<TimesheetPage />} />
+              <Route path="wiki" element={<WikiJuridicaPage />} />
             </Route>
             {/* Temporary preview route — remove after testing */}
             <Route path="/crm-preview" element={<CrmPage />} />

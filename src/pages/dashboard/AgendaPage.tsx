@@ -18,15 +18,19 @@ import {
 import {
   CalendarDays, Plus, Clock, Trash2, Edit, Zap, Bell, Link2, RefreshCw, Download, Upload,
   ChevronLeft, ChevronRight, Gavel, Users, Timer, CheckCircle2, Loader2, Unplug,
+  AlertTriangle, Flame,
 } from "lucide-react";
 import {
   format, isSameDay, parseISO, addMonths, subMonths,
   startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isToday, isPast, isSameMonth, addDays,
+  differenceInHours,
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
+import { useUpcomingDeadlines } from "@/hooks/useUpcomingDeadlines";
+
 
 interface Evento {
   id: string;
@@ -53,6 +57,74 @@ const getCat = (cat: string | null) => categories.find((c) => c.value === cat) |
 const emptyForm = {
   title: "", description: "", start_date: "", start_hour: "09:00", end_hour: "10:00", category: "compromisso",
 };
+
+// ─── Prazos Fatais Banner ─────────────────────────────────────
+
+function PrazosFataisBanner({ eventos, onSelectDate }: { eventos: Evento[]; onSelectDate: (d: Date) => void }) {
+  const now = new Date();
+  const critical = eventos
+    .filter((e) => {
+      const dt = parseISO(e.start_time);
+      const hoursUntil = differenceInHours(dt, now);
+      return hoursUntil <= 48; // overdue or within 48h
+    })
+    .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
+    .slice(0, 5);
+
+  if (critical.length === 0) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="relative overflow-hidden rounded-xl border border-destructive/40 bg-destructive/5"
+    >
+      {/* Pulsing left bar */}
+      <div className="absolute left-0 top-0 bottom-0 w-1 bg-destructive animate-pulse" />
+      <div className="px-4 py-3 pl-5">
+        <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center gap-1.5">
+            <AlertTriangle className="h-4 w-4 text-destructive animate-pulse" />
+            <span className="text-sm font-bold text-destructive">
+              {critical.length} Prazo{critical.length > 1 ? "s" : ""} Fatal{critical.length > 1 ? "s" : ""}
+            </span>
+          </div>
+          <Badge variant="destructive" className="text-[10px] animate-pulse">{critical.filter(e => differenceInHours(parseISO(e.start_time), now) < 0).length > 0 ? "⚠ VENCIDOS" : "⏰ URGENTE"}</Badge>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {critical.map((e) => {
+            const dt = parseISO(e.start_time);
+            const hours = differenceInHours(dt, now);
+            const isOverdue = hours < 0;
+            return (
+              <button
+                key={e.id}
+                onClick={() => onSelectDate(dt)}
+                className={cn(
+                  "flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs transition-all hover:scale-[1.02]",
+                  isOverdue
+                    ? "border-destructive/50 bg-destructive/10 text-destructive"
+                    : "border-amber-500/40 bg-amber-500/5 text-amber-700 dark:text-amber-400"
+                )}
+              >
+                <Flame className={cn("h-3 w-3 shrink-0", isOverdue ? "text-destructive" : "text-amber-500")} />
+                <span className="font-medium truncate max-w-[180px]">{e.title}</span>
+                <span className="text-[10px] opacity-70 shrink-0">
+                  {isOverdue
+                    ? `${Math.abs(hours)}h atrasado`
+                    : hours === 0
+                      ? "Agora!"
+                      : `${hours}h restantes`}
+                </span>
+                <span className="text-[10px] opacity-60 shrink-0">{format(dt, "dd/MM HH:mm")}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </motion.div>
+  );
+}
 
 export default function AgendaPage() {
   const { user } = useAuth();
@@ -169,7 +241,9 @@ export default function AgendaPage() {
         </div>
       </div>
 
-      {/* Main calendar layout */}
+      {/* ── Prazos Fatais Banner ── */}
+      <PrazosFataisBanner eventos={eventos} onSelectDate={setSelectedDate} />
+
       <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
         {/* Full month calendar */}
         <Card className="border-border">

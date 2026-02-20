@@ -4,6 +4,7 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { NotificationsDropdown } from "./NotificationsDropdown";
 import ArunaQuickChat from "@/components/shared/ArunaQuickChat";
 import FacilitadorBar from "./FacilitadorBar";
+import { OnboardingTour } from "./OnboardingTour";
 import { useAuth } from "@/contexts/AuthContext";
 import { Search } from "lucide-react";
 import { useEffect, useCallback, useState } from "react";
@@ -33,6 +34,9 @@ const PAGE_TITLES: Record<string, string> = {
   "/dashboard/workflow": "Workflow",
   "/dashboard/minutas": "Minutas & Contratos",
   "/dashboard/configuracoes": "Configurações",
+  "/dashboard/timesheet": "Timesheet",
+  "/dashboard/certificados": "Certificados",
+  "/dashboard/wiki": "Wiki Jurídica",
 };
 
 // ─── Quick navigation items for Cmd+K ─────────────────────────
@@ -46,10 +50,12 @@ const QUICK_NAV = [
   { label: "Workflow", url: "/dashboard/workflow", group: "Navegação" },
   { label: "Minutas & Contratos", url: "/dashboard/minutas", group: "Navegação" },
   { label: "BI & Relatórios", url: "/dashboard/bi", group: "Navegação" },
+  { label: "Timesheet", url: "/dashboard/timesheet", group: "Navegação" },
+  { label: "Certificados", url: "/dashboard/certificados", group: "Navegação" },
+  { label: "Wiki Jurídica", url: "/dashboard/wiki", group: "Navegação" },
+  { label: "CRM", url: "/dashboard/crm", group: "Navegação" },
   { label: "ARUNA IA", url: "/dashboard/ia", group: "Navegação" },
   { label: "Notícias Jurídicas", url: "/dashboard/noticias", group: "Navegação" },
-  { label: "CRM", url: "/dashboard/crm", group: "Navegação" },
-  { label: "Calculadora", url: "/dashboard/calculadora", group: "Navegação" },
   { label: "Configurações", url: "/dashboard/configuracoes", group: "Navegação" },
 ];
 
@@ -162,6 +168,7 @@ export default function DashboardLayout() {
         </div>
       </div>
       <ArunaQuickChat />
+      <OnboardingTour />
     </SidebarProvider>
   );
 }
