@@ -9,6 +9,7 @@ import {
   PieChart, Activity, Target, ArrowUpRight, ArrowDownRight, Clock,
   Briefcase, Gavel, FileText, CheckCircle2, Wallet, Receipt,
   Banknote, PercentIcon, Layers, CreditCard, Building2, LayoutDashboard,
+  Download,
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -299,9 +300,39 @@ export default function BIPage() {
           <h1 className="font-display text-2xl text-foreground">Business Intelligence</h1>
           <p className="text-sm text-muted-foreground">Análise avançada de desempenho do escritório</p>
         </div>
-        <Badge variant="outline" className="gap-1.5 text-xs">
-          <Activity className="h-3 w-3" /> Últimos 12 meses
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="gap-1.5 text-xs">
+            <Activity className="h-3 w-3" /> Últimos 12 meses
+          </Badge>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5 text-xs"
+            onClick={() => {
+              const rows = [
+                ["Mês", "Receita", "Despesa", "Lucro", "Margem %", "Honorários"],
+                ...data.monthlyData.map((m) => [
+                  m.monthFull,
+                  m.receita.toFixed(2),
+                  m.despesa.toFixed(2),
+                  m.lucro.toFixed(2),
+                  m.receita > 0 ? ((m.lucro / m.receita) * 100).toFixed(1) : "0",
+                  m.honorarios.toFixed(2),
+                ]),
+              ];
+              const csv = rows.map((r) => r.join(";")).join("\n");
+              const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = `LEXA_BI_${format(new Date(), "yyyyMMdd")}.csv`;
+              a.click();
+              URL.revokeObjectURL(url);
+            }}
+          >
+            <Download className="h-3.5 w-3.5" /> Exportar CSV
+          </Button>
+        </div>
       </div>
 
       {/* KPI Grid */}

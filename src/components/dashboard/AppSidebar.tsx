@@ -11,8 +11,9 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import {
   LayoutDashboard, Scale, Users, CalendarDays, DollarSign, Bot,
   LogOut, Settings, BarChart3, Calculator, Newspaper, Target,
-  GitBranch, FileEdit, ChevronDown, Award, Timer, BookOpen,
+  GitBranch, FileEdit, ChevronDown, Award, Timer, BookOpen, RotateCcw,
 } from "lucide-react";
+import { resetOnboardingTour } from "./OnboardingTour";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import logoLexaWhite from "@/assets/logo-lexa-white.png";
@@ -200,6 +201,20 @@ export function AppSidebar() {
               </span>
             </div>
           )}
+          <Tooltip delayDuration={0}>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 shrink-0 text-sidebar-foreground/35 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+                title="Rever tour de boas-vindas"
+                onClick={() => { resetOnboardingTour(); window.location.reload(); }}
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">Rever Tour de Boas-Vindas</TooltipContent>
+          </Tooltip>
           <Tooltip delayDuration={0}>
             <TooltipTrigger asChild>
               <Button

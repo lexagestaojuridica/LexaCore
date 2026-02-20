@@ -7,9 +7,10 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   Users, Plus, Search, Edit2, Trash2, Eye, Mail, Phone, FileText, MapPin,
-  Building2, User, Upload, Download, File, X,
+  Building2, User, Upload, Download, File, X, ShieldAlert,
   ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
 } from "lucide-react";
+import { ConflitosInteresseDialog } from "@/components/clientes/ConflitosInteresseDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -108,6 +109,8 @@ export default function ClientesPage() {
   const [cepLoading, setCepLoading] = useState(false);
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 15;
+  const [conflitosOpen, setConflitosOpen] = useState(false);
+  const [pendingSubmit, setPendingSubmit] = useState(false);
 
   const { data: profile } = useQuery({
     queryKey: ["profile", user?.id],
@@ -254,6 +257,16 @@ export default function ClientesPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name) { toast.error("O nome é obrigatório"); return; }
+    // For new clients: check conflict of interest first
+    if (!isEditing) {
+      setConflitosOpen(true);
+      setPendingSubmit(true);
+      return;
+    }
+    doSave();
+  };
+
+  const doSave = () => {
     const payload: Record<string, any> = {};
     Object.entries(form).forEach(([k, v]) => { payload[k] = v || null; });
     payload.name = form.name;
@@ -290,6 +303,16 @@ export default function ClientesPage() {
   return (
     <div className="space-y-6">
       <LexaLoadingOverlay visible={isSaving} message="Salvando cliente..." />
+
+      {/* Conflito de Interesses Dialog */}
+      <ConflitosInteresseDialog
+        open={conflitosOpen}
+        onClose={() => { setConflitosOpen(false); setPendingSubmit(false); }}
+        clientName={form.name}
+        clientEmail={form.email}
+        clientDocument={form.document}
+        onProceed={() => { if (pendingSubmit) { setPendingSubmit(false); doSave(); } }}
+      />
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>

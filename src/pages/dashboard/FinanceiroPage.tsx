@@ -7,9 +7,10 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   DollarSign, Plus, Search, Filter, Edit2, Trash2, TrendingUp, TrendingDown,
-  ArrowUpRight, ArrowDownRight, Wallet, Receipt, BarChart2,
+  ArrowUpRight, ArrowDownRight, Wallet, Receipt, BarChart2, Bell, AlertCircle, Download,
 } from "lucide-react";
 import BudgetPerformanceTab from "@/components/financeiro/BudgetPerformanceTab";
+import { DasDarfPanel } from "@/components/financeiro/DasDarfPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -210,9 +211,10 @@ export default function FinanceiroPage() {
       </div>
 
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="grid w-full max-w-md grid-cols-3">
+        <TabsList className="grid w-full max-w-2xl grid-cols-4">
           <TabsTrigger value="receber" className="gap-2 text-xs"><TrendingUp className="h-3.5 w-3.5" /> A Receber</TabsTrigger>
           <TabsTrigger value="pagar" className="gap-2 text-xs"><TrendingDown className="h-3.5 w-3.5" /> A Pagar</TabsTrigger>
+          <TabsTrigger value="dasdarf" className="gap-2 text-xs"><Bell className="h-3.5 w-3.5" /> DAS / DARF</TabsTrigger>
           <TabsTrigger value="orcamento" className="gap-2 text-xs"><BarChart2 className="h-3.5 w-3.5" /> Orçamento</TabsTrigger>
         </TabsList>
 
@@ -288,6 +290,11 @@ export default function FinanceiroPage() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* DAS/DARF Tab */}
+        <TabsContent value="dasdarf" className="mt-4 space-y-4">
+          <DasDarfPanel />
         </TabsContent>
 
         {/* Budget Performance Tab */}
