@@ -7,6 +7,8 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   Scale, Plus, Search, Filter, Edit2, Trash2, Eye, Upload, Download, File, Calculator, X,
+  LayoutList, LayoutGrid, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
+  ArrowUpDown, ArrowUp, ArrowDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,10 +29,14 @@ import { Separator } from "@/components/ui/separator";
 import FormField from "@/components/shared/FormField";
 import LexaLoadingOverlay from "@/components/shared/LexaLoadingOverlay";
 import { formatCurrencyInput, parseCurrencyToNumber } from "@/lib/formatters";
+import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
 import type { Tables, TablesInsert } from "@/integrations/supabase/types";
 
 type Processo = Tables<"processos_juridicos">;
 type Documento = { id: string; file_name: string; file_path: string; file_type: string | null; created_at: string };
+type SortField = "title" | "number" | "court" | "status" | "estimated_value" | "created_at";
+type SortDir = "asc" | "desc";
 
 const STATUS_OPTIONS = [
   { value: "ativo", label: "Ativo", variant: "default" as const },
@@ -38,6 +44,15 @@ const STATUS_OPTIONS = [
   { value: "suspenso", label: "Suspenso", variant: "outline" as const },
   { value: "encerrado", label: "Encerrado", variant: "destructive" as const },
 ];
+
+const KANBAN_COLUMNS = [
+  { status: "ativo", label: "Ativo", color: "border-t-emerald-500" },
+  { status: "suspenso", label: "Suspenso", color: "border-t-amber-500" },
+  { status: "arquivado", label: "Arquivado", color: "border-t-muted-foreground" },
+  { status: "encerrado", label: "Encerrado", color: "border-t-destructive" },
+];
+
+const PAGE_SIZE = 15;
 
 const statusBadge = (status: string) => {
   const opt = STATUS_OPTIONS.find((o) => o.value === status);
@@ -91,6 +106,70 @@ function ProcessCalculator({ estimatedValue }: { estimatedValue: number | null }
   );
 }
 
+// ─── SortableHeader ──────────────────────────────────────────
+
+function SortableHeader({ field, label, sortField, sortDir, onSort }: {
+  field: SortField; label: string; sortField: SortField; sortDir: SortDir;
+  onSort: (f: SortField) => void;
+}) {
+  const active = sortField === field;
+  return (
+    <TableHead
+      className="cursor-pointer select-none hover:text-foreground"
+      onClick={() => onSort(field)}
+    >
+      <span className="flex items-center gap-1">
+        {label}
+        {active
+          ? sortDir === "asc"
+            ? <ArrowUp className="h-3 w-3" />
+            : <ArrowDown className="h-3 w-3" />
+          : <ArrowUpDown className="h-3 w-3 opacity-30" />}
+      </span>
+    </TableHead>
+  );
+}
+
+// ─── KanbanCard ────────────────────────────────────────────────
+
+function KanbanCard({ p, onEdit, onView, onDelete }: {
+  p: Processo;
+  onEdit: (p: Processo) => void;
+  onView: (p: Processo) => void;
+  onDelete: (p: Processo) => void;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="group rounded-xl border border-border/60 bg-card p-3.5 hover:border-primary/30 hover:shadow-sm transition-all cursor-pointer space-y-2"
+      onClick={() => onView(p)}
+    >
+      <p className="text-sm font-medium text-foreground leading-tight line-clamp-2">{p.title}</p>
+      {p.number && <p className="text-xs text-muted-foreground">Nº {p.number}</p>}
+      {p.court && <p className="text-xs text-muted-foreground truncate">{p.court}</p>}
+      {p.estimated_value != null && (
+        <p className="text-xs font-medium text-primary">
+          R$ {Number(p.estimated_value).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+        </p>
+      )}
+      <div className="flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity pt-1 border-t border-border/40 mt-1">
+        <span className="text-[10px] text-muted-foreground">{format(new Date(p.created_at), "dd/MM/yy", { locale: ptBR })}</span>
+        <div className="flex gap-0.5">
+          <button onClick={(e) => { e.stopPropagation(); onEdit(p); }} className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
+            <Edit2 className="h-3 w-3" />
+          </button>
+          <button onClick={(e) => { e.stopPropagation(); onDelete(p); }} className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors">
+            <Trash2 className="h-3 w-3" />
+          </button>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// ─── Main Page ──────────────────────────────────────────────────
+
 export default function ProcessosPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -102,6 +181,10 @@ export default function ProcessosPage() {
   const [selectedProcesso, setSelectedProcesso] = useState<Processo | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [isEditing, setIsEditing] = useState(false);
+  const [viewMode, setViewMode] = useState<"table" | "kanban">("table");
+  const [page, setPage] = useState(1);
+  const [sortField, setSortField] = useState<SortField>("created_at");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
 
   const { data: profile } = useQuery({
     queryKey: ["profile", user?.id],
@@ -111,7 +194,6 @@ export default function ProcessosPage() {
     },
     enabled: !!user,
   });
-
   const orgId = profile?.organization_id;
 
   const { data: processos = [], isLoading } = useQuery({
@@ -186,13 +268,10 @@ export default function ProcessosPage() {
 
   const closeDialog = () => { setDialogOpen(false); setForm(emptyForm); setIsEditing(false); };
   const openCreate = () => { setForm(emptyForm); setIsEditing(false); setDialogOpen(true); };
-
   const openEdit = (p: Processo) => {
     const display = p.estimated_value != null ? formatCurrencyInput(String(Math.round(Number(p.estimated_value) * 100))) : "";
     setForm({ title: p.title, number: p.number, court: p.court, subject: p.subject, status: p.status, estimated_value: p.estimated_value, notes: p.notes, client_id: p.client_id, estimated_value_display: display });
-    setSelectedProcesso(p);
-    setIsEditing(true);
-    setDialogOpen(true);
+    setSelectedProcesso(p); setIsEditing(true); setDialogOpen(true);
   };
 
   const setField = useCallback((key: string, value: any) => {
@@ -223,8 +302,7 @@ export default function ProcessosPage() {
 
   const triggerFileUpload = (processId: string) => {
     const input = document.createElement("input");
-    input.type = "file";
-    input.multiple = true;
+    input.type = "file"; input.multiple = true;
     input.onchange = (ev) => {
       const files = (ev.target as HTMLInputElement).files;
       if (files) Array.from(files).forEach((f) => uploadDocMutation.mutate({ file: f, processId }));
@@ -232,6 +310,7 @@ export default function ProcessosPage() {
     input.click();
   };
 
+  // ── Filter, sort, paginate ──
   const filtered = processos.filter((p) => {
     const matchesStatus = statusFilter === "all" || p.status === statusFilter;
     const q = search.toLowerCase();
@@ -239,29 +318,74 @@ export default function ProcessosPage() {
     return matchesStatus && matchesSearch;
   });
 
+  const sorted = [...filtered].sort((a, b) => {
+    let va: any = a[sortField as keyof Processo] ?? "";
+    let vb: any = b[sortField as keyof Processo] ?? "";
+    if (sortField === "estimated_value") { va = Number(va); vb = Number(vb); }
+    if (sortField === "created_at") { va = new Date(va).getTime(); vb = new Date(vb).getTime(); }
+    if (va < vb) return sortDir === "asc" ? -1 : 1;
+    if (va > vb) return sortDir === "asc" ? 1 : -1;
+    return 0;
+  });
+
+  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+  const paged = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) setSortDir((d) => d === "asc" ? "desc" : "asc");
+    else { setSortField(field); setSortDir("asc"); }
+    setPage(1);
+  };
+
+  const handleSearch = (v: string) => { setSearch(v); setPage(1); };
+  const handleStatusFilter = (v: string) => { setStatusFilter(v); setPage(1); };
+
   const isSaving = createMutation.isPending || updateMutation.isPending;
 
   return (
     <div className="space-y-6">
       <LexaLoadingOverlay visible={isSaving} message="Salvando processo..." />
 
+      {/* ── Header ── */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Processos Jurídicos</h1>
-          <p className="text-sm text-muted-foreground">Gerencie todos os processos do escritório</p>
+          <p className="text-sm text-muted-foreground">
+            {processos.length} processo{processos.length !== 1 ? "s" : ""} cadastrado{processos.length !== 1 ? "s" : ""}
+          </p>
         </div>
-        <Button onClick={openCreate} className="gap-2"><Plus className="h-4 w-4" /> Novo Processo</Button>
+        <div className="flex items-center gap-2">
+          {/* View toggle */}
+          <div className="flex items-center rounded-lg border border-border/60 p-0.5">
+            <button
+              onClick={() => setViewMode("table")}
+              className={cn("flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs transition-all", viewMode === "table" ? "bg-muted text-foreground font-medium" : "text-muted-foreground hover:text-foreground")}
+            >
+              <LayoutList className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Tabela</span>
+            </button>
+            <button
+              onClick={() => setViewMode("kanban")}
+              className={cn("flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs transition-all", viewMode === "kanban" ? "bg-muted text-foreground font-medium" : "text-muted-foreground hover:text-foreground")}
+            >
+              <LayoutGrid className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Kanban</span>
+            </button>
+          </div>
+          <Button onClick={openCreate} className="gap-2"><Plus className="h-4 w-4" /> Novo Processo</Button>
+        </div>
       </div>
 
+      {/* ── Filters ── */}
       <Card className="border-border bg-card">
         <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input placeholder="Buscar por título, número, vara ou assunto..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+            <Input placeholder="Buscar por título, número, vara ou assunto..." value={search} onChange={(e) => handleSearch(e.target.value)} className="pl-9" />
           </div>
           <div className="flex items-center gap-2">
             <Filter className="h-4 w-4 text-muted-foreground" />
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <Select value={statusFilter} onValueChange={handleStatusFilter}>
               <SelectTrigger className="w-[160px]"><SelectValue placeholder="Status" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos</SelectItem>
@@ -272,55 +396,130 @@ export default function ProcessosPage() {
         </CardContent>
       </Card>
 
-      <Card className="border-border bg-card">
-        <CardContent className="p-0">
-          {isLoading ? (
-            <div className="flex items-center justify-center py-20"><span className="text-sm text-muted-foreground">Carregando...</span></div>
-          ) : filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <Scale className="mb-4 h-12 w-12 text-muted-foreground/30" />
-              <p className="text-sm text-muted-foreground">{processos.length === 0 ? "Nenhum processo cadastrado." : "Nenhum processo encontrado."}</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Título</TableHead>
-                    <TableHead>Número</TableHead>
-                    <TableHead>Vara / Tribunal</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Valor Estimado</TableHead>
-                    <TableHead>Criado em</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filtered.map((p) => (
-                    <TableRow key={p.id}>
-                      <TableCell className="font-medium">{p.title}</TableCell>
-                      <TableCell className="text-muted-foreground">{p.number || "—"}</TableCell>
-                      <TableCell className="text-muted-foreground">{p.court || "—"}</TableCell>
-                      <TableCell>{statusBadge(p.status)}</TableCell>
-                      <TableCell>{p.estimated_value != null ? `R$ ${Number(p.estimated_value).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : "—"}</TableCell>
-                      <TableCell className="text-muted-foreground">{format(new Date(p.created_at), "dd/MM/yyyy", { locale: ptBR })}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center justify-end gap-1">
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => { setSelectedProcesso(p); setViewDialogOpen(true); }}><Eye className="h-4 w-4" /></Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => openEdit(p)}><Edit2 className="h-4 w-4" /></Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => { setSelectedProcesso(p); setDeleteDialogOpen(true); }}><Trash2 className="h-4 w-4" /></Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* ── Table View ── */}
+      {viewMode === "table" && (
+        <Card className="border-border bg-card">
+          <CardContent className="p-0">
+            {isLoading ? (
+              <div className="space-y-3 p-4">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <div key={n} className="flex gap-4">
+                    <div className="h-5 flex-1 rounded bg-muted/50 animate-pulse" />
+                    <div className="h-5 w-24 rounded bg-muted/50 animate-pulse" />
+                    <div className="h-5 w-20 rounded bg-muted/50 animate-pulse" />
+                    <div className="h-5 w-16 rounded bg-muted/50 animate-pulse" />
+                  </div>
+                ))}
+              </div>
+            ) : sorted.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 text-center">
+                <Scale className="mb-4 h-12 w-12 text-muted-foreground/30" />
+                <p className="text-sm text-muted-foreground">{processos.length === 0 ? "Nenhum processo cadastrado." : "Nenhum processo encontrado."}</p>
+                {processos.length === 0 && (
+                  <Button variant="outline" size="sm" className="mt-3 gap-1.5 text-xs" onClick={openCreate}>
+                    <Plus className="h-3 w-3" /> Criar primeiro processo
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <SortableHeader field="title" label="Título" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                        <SortableHeader field="number" label="Número" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                        <SortableHeader field="court" label="Vara / Tribunal" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                        <SortableHeader field="status" label="Status" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                        <SortableHeader field="estimated_value" label="Valor Estimado" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                        <SortableHeader field="created_at" label="Criado em" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                        <TableHead className="text-right">Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      <AnimatePresence>
+                        {paged.map((p) => (
+                          <TableRow key={p.id} className="hover:bg-muted/20">
+                            <TableCell className="font-medium max-w-[200px] truncate">{p.title}</TableCell>
+                            <TableCell className="text-muted-foreground">{p.number || "—"}</TableCell>
+                            <TableCell className="text-muted-foreground max-w-[160px] truncate">{p.court || "—"}</TableCell>
+                            <TableCell>{statusBadge(p.status)}</TableCell>
+                            <TableCell>{p.estimated_value != null ? `R$ ${Number(p.estimated_value).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : "—"}</TableCell>
+                            <TableCell className="text-muted-foreground">{format(new Date(p.created_at), "dd/MM/yyyy", { locale: ptBR })}</TableCell>
+                            <TableCell>
+                              <div className="flex items-center justify-end gap-1">
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => { setSelectedProcesso(p); setViewDialogOpen(true); }}><Eye className="h-4 w-4" /></Button>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => openEdit(p)}><Edit2 className="h-4 w-4" /></Button>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => { setSelectedProcesso(p); setDeleteDialogOpen(true); }}><Trash2 className="h-4 w-4" /></Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </AnimatePresence>
+                    </TableBody>
+                  </Table>
+                </div>
 
-      {/* Create / Edit Dialog */}
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between border-t border-border/60 px-4 py-3">
+                    <p className="text-xs text-muted-foreground">
+                      {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, sorted.length)} de {sorted.length} processos
+                    </p>
+                    <div className="flex items-center gap-1">
+                      <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page === 1} onClick={() => setPage(1)}><ChevronsLeft className="h-3.5 w-3.5" /></Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page === 1} onClick={() => setPage(p => p - 1)}><ChevronLeft className="h-3.5 w-3.5" /></Button>
+                      <span className="px-3 text-xs font-medium">{page} / {totalPages}</span>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page === totalPages} onClick={() => setPage(p => p + 1)}><ChevronRight className="h-3.5 w-3.5" /></Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page === totalPages} onClick={() => setPage(totalPages)}><ChevronsRight className="h-3.5 w-3.5" /></Button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ── Kanban View ── */}
+      {viewMode === "kanban" && (
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
+          {KANBAN_COLUMNS.map((col) => {
+            const colProcessos = filtered.filter((p) => p.status === col.status);
+            return (
+              <div key={col.status} className="flex flex-col gap-3">
+                <div className={cn("rounded-t-xl border-t-2 bg-muted/30 rounded-xl border border-border/60 overflow-hidden", col.color)}>
+                  <div className="flex items-center justify-between px-4 py-3">
+                    <span className="text-sm font-semibold text-foreground">{col.label}</span>
+                    <Badge variant="secondary" className="text-[10px]">{colProcessos.length}</Badge>
+                  </div>
+                </div>
+                <div className="space-y-2 min-h-[100px]">
+                  <AnimatePresence>
+                    {colProcessos.length === 0 ? (
+                      <div className="flex items-center justify-center py-8 rounded-xl border border-dashed border-border/60">
+                        <p className="text-xs text-muted-foreground/50">Nenhum processo</p>
+                      </div>
+                    ) : (
+                      colProcessos.map((p) => (
+                        <KanbanCard
+                          key={p.id}
+                          p={p}
+                          onEdit={openEdit}
+                          onView={(p) => { setSelectedProcesso(p); setViewDialogOpen(true); }}
+                          onDelete={(p) => { setSelectedProcesso(p); setDeleteDialogOpen(true); }}
+                        />
+                      ))
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── Dialogs (Create/Edit, View, Delete) — unchanged ── */}
       <Dialog open={dialogOpen} onOpenChange={(o) => { if (!o) closeDialog(); }}>
         <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto p-0">
           <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-card px-6 py-4">
@@ -328,11 +527,8 @@ export default function ProcessosPage() {
               <DialogTitle className="text-lg font-semibold">{isEditing ? "Editar Processo" : "Novo Processo"}</DialogTitle>
               <p className="text-xs text-muted-foreground">Informações do processo jurídico</p>
             </div>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={closeDialog}>
-              <X className="h-4 w-4" />
-            </Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={closeDialog}><X className="h-4 w-4" /></Button>
           </div>
-
           <form onSubmit={handleSubmit} className="px-6 pb-6">
             <Tabs defaultValue="dados" className="w-full">
               <TabsList className="my-4 grid w-full grid-cols-3">
@@ -340,7 +536,6 @@ export default function ProcessosPage() {
                 <TabsTrigger value="documentos" className="text-xs">Documentos</TabsTrigger>
                 <TabsTrigger value="calculadora" className="text-xs">Calculadora</TabsTrigger>
               </TabsList>
-
               <TabsContent value="dados" className="space-y-4">
                 <div className="rounded-lg border border-border/50 bg-muted/20 p-4 space-y-4">
                   <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Informações Principais</h3>
@@ -381,7 +576,6 @@ export default function ProcessosPage() {
                   </div>
                 </div>
               </TabsContent>
-
               <TabsContent value="documentos" className="space-y-4">
                 <div className="rounded-lg border border-border/50 bg-muted/20 p-4 space-y-4">
                   <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Documentos do Processo</h3>
@@ -414,12 +608,10 @@ export default function ProcessosPage() {
                   )}
                 </div>
               </TabsContent>
-
               <TabsContent value="calculadora">
                 <ProcessCalculator estimatedValue={form.estimated_value ?? null} />
               </TabsContent>
             </Tabs>
-
             <Separator className="my-4" />
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={closeDialog}>Cancelar</Button>
@@ -429,7 +621,6 @@ export default function ProcessosPage() {
         </DialogContent>
       </Dialog>
 
-      {/* View Dialog */}
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
         <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto p-0">
           <div className="flex items-center justify-between border-b border-border bg-card px-6 py-4">
@@ -439,9 +630,7 @@ export default function ProcessosPage() {
                 <div className="mt-1">{statusBadge(selectedProcesso.status)}</div>
               </div>
             )}
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setViewDialogOpen(false)}>
-              <X className="h-4 w-4" />
-            </Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setViewDialogOpen(false)}><X className="h-4 w-4" /></Button>
           </div>
           {selectedProcesso && (
             <div className="space-y-5 px-6 pb-6 pt-4">
@@ -456,7 +645,6 @@ export default function ProcessosPage() {
               {selectedProcesso.notes && (
                 <><Separator /><div><span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Observações</span><p className="mt-1 whitespace-pre-wrap text-sm">{selectedProcesso.notes}</p></div></>
               )}
-
               <Separator />
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
@@ -482,10 +670,8 @@ export default function ProcessosPage() {
                   </div>
                 )}
               </div>
-
               <Separator />
               <ProcessCalculator estimatedValue={selectedProcesso.estimated_value} />
-
               <div className="flex justify-end gap-2 pt-2">
                 <Button variant="outline" onClick={() => setViewDialogOpen(false)}>Fechar</Button>
                 <Button onClick={() => { setViewDialogOpen(false); openEdit(selectedProcesso); }}>Editar</Button>
@@ -495,7 +681,6 @@ export default function ProcessosPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete confirmation */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader><DialogTitle className="font-semibold">Excluir Processo</DialogTitle></DialogHeader>
