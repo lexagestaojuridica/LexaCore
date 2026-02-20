@@ -1,4 +1,8 @@
-import { createContext, useContext, useState, ReactNode, useCallback } from "react";
+import { createContext, useContext, ReactNode, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 // ── Shared CRM Types ───────────────────────────────────
 export interface CrmContact {
@@ -54,49 +58,31 @@ export interface CrmActivity {
     completed: boolean;
 }
 
-// ── Initial Sample Data ────────────────────────────────
-const INITIAL_CONTACTS: CrmContact[] = [
-    { id: "c1", name: "Carlos Silva", email: "carlos@silva.adv.br", phone: "(11) 99888-7766", type: "pessoa_fisica", company: "Silva & Associados", city: "São Paulo", state: "SP", tags: ["VIP", "Recorrente"], score: 5, notes: "", createdAt: "2026-01-10", source: "manual" },
-    { id: "c2", name: "Maria Santos", email: "maria@santos.com", phone: "(21) 98765-4321", type: "pessoa_fisica", company: "", city: "Rio de Janeiro", state: "RJ", tags: ["Novo"], score: 3, notes: "", createdAt: "2026-01-15", source: "manual" },
-    { id: "c3", name: "João Pereira", email: "joao@pereira.adv.br", phone: "(31) 97654-3210", type: "pessoa_fisica", company: "Pereira Advocacia", city: "Belo Horizonte", state: "MG", tags: ["Processo Ativo"], score: 4, notes: "", createdAt: "2026-01-20", source: "manual" },
-    { id: "c4", name: "Ana Costa", email: "ana@costalaw.com.br", phone: "(41) 96543-2109", type: "pessoa_fisica", company: "", city: "Curitiba", state: "PR", tags: ["Indicação"], score: 2, notes: "", createdAt: "2026-02-01", source: "manual" },
-    { id: "c5", name: "Pedro Almeida", email: "pedro@almeida.com", phone: "(51) 95432-1098", type: "pessoa_juridica", company: "Almeida Consultoria", city: "Porto Alegre", state: "RS", tags: ["VIP", "Processo Ativo"], score: 5, notes: "", createdAt: "2026-02-05", source: "manual" },
-    { id: "c6", name: "Fernanda Lima", email: "fernanda@lima.adv.br", phone: "(61) 94321-0987", type: "pessoa_fisica", company: "", city: "Brasília", state: "DF", tags: ["Recorrente"], score: 3, notes: "", createdAt: "2026-02-10", source: "manual" },
-    { id: "c7", name: "Roberto Dias", email: "roberto@diaslaw.com", phone: "(71) 93210-9876", type: "pessoa_juridica", company: "Dias & Associados", city: "Salvador", state: "BA", tags: ["VIP"], score: 4, notes: "", createdAt: "2026-02-12", source: "manual" },
-    { id: "c8", name: "Luciana Ferreira", email: "luciana@ferreira.com.br", phone: "(81) 92109-8765", type: "pessoa_fisica", company: "", city: "Recife", state: "PE", tags: ["Novo"], score: 1, notes: "", createdAt: "2026-02-18", source: "manual" },
-];
+// ── DB row mappers ─────────────────────────────────────
+const mapContact = (r: any): CrmContact => ({
+    id: r.id, name: r.name, email: r.email || "", phone: r.phone || "",
+    type: r.type || "pessoa_fisica", company: r.company || "", city: r.city || "",
+    state: r.state || "", tags: r.tags || [], score: r.score || 1,
+    notes: r.notes || "", createdAt: r.created_at?.split("T")[0] || "", source: r.source || "manual",
+});
 
-const INITIAL_LEADS: CrmLead[] = [
-    { id: "l1", name: "Contrato Empresarial Silva & Assoc.", contactId: "c1", contactName: "Carlos Silva", value: 25000, priority: "alta", date: "2026-02-20", notes: "", stageId: "novo_lead" },
-    { id: "l2", name: "Consultoria Trabalhista", contactId: "c2", contactName: "Maria Santos", value: 8000, priority: "media", date: "2026-02-18", notes: "", stageId: "novo_lead" },
-    { id: "l3", name: "Ação de Indenização", contactId: "c3", contactName: "João Pereira", value: 45000, priority: "alta", date: "2026-02-15", notes: "", stageId: "contato_feito" },
-    { id: "l4", name: "Revisão Contratual", contactId: "c4", contactName: "Ana Costa", value: 12000, priority: "baixa", date: "2026-02-17", notes: "", stageId: "contato_feito" },
-    { id: "l5", name: "Processo Tributário", contactId: "c5", contactName: "Pedro Almeida", value: 60000, priority: "alta", date: "2026-02-10", notes: "", stageId: "proposta_enviada" },
-    { id: "l6", name: "Recuperação de Crédito", contactId: "c6", contactName: "Fernanda Lima", value: 18000, priority: "media", date: "2026-02-12", notes: "", stageId: "em_negociacao" },
-    { id: "l7", name: "Defesa Cível", contactId: "c7", contactName: "Roberto Dias", value: 35000, priority: "alta", date: "2026-02-05", notes: "", stageId: "fechado_ganho" },
-];
+const mapLead = (r: any): CrmLead => ({
+    id: r.id, name: r.name, contactId: r.contact_id || "", contactName: r.contact_name || "",
+    value: Number(r.value) || 0, priority: r.priority || "media", date: r.date || "",
+    notes: r.notes || "", stageId: r.stage_id || "novo_lead",
+});
 
-const INITIAL_DEALS: CrmDeal[] = [
-    { id: "d1", name: "Consultoria Tributária Anual", contactId: "c1", contactName: "Carlos Silva", value: 48000, probability: 85, stage: "Contrato", dueDate: "2026-03-01", notes: "", createdAt: "2026-01-15" },
-    { id: "d2", name: "Ação Trabalhista — Defesa", contactId: "c2", contactName: "Maria Santos", value: 25000, probability: 65, stage: "Negociação", dueDate: "2026-03-10", notes: "", createdAt: "2026-01-20" },
-    { id: "d3", name: "Contrato Imobiliário", contactId: "c3", contactName: "João Pereira", value: 15000, probability: 40, stage: "Proposta", dueDate: "2026-02-28", notes: "", createdAt: "2026-02-01" },
-    { id: "d4", name: "Recuperação Judicial", contactId: "c5", contactName: "Pedro Almeida", value: 120000, probability: 90, stage: "Fechado/Ganho", dueDate: "2026-02-15", notes: "", createdAt: "2026-01-10" },
-    { id: "d5", name: "Parecer Societário", contactId: "c4", contactName: "Ana Costa", value: 8000, probability: 55, stage: "Qualificação", dueDate: "2026-03-15", notes: "", createdAt: "2026-02-10" },
-    { id: "d6", name: "Planejamento Sucessório", contactId: "c6", contactName: "Fernanda Lima", value: 35000, probability: 70, stage: "Negociação", dueDate: "2026-03-20", notes: "", createdAt: "2026-02-05" },
-    { id: "d7", name: "Compliance Empresarial", contactId: "c7", contactName: "Roberto Dias", value: 60000, probability: 30, stage: "Qualificação", dueDate: "2026-04-01", notes: "", createdAt: "2026-02-12" },
-    { id: "d8", name: "Due Diligence M&A", contactId: "c8", contactName: "Luciana Ferreira", value: 95000, probability: 20, stage: "Proposta", dueDate: "2026-04-15", notes: "", createdAt: "2026-02-18" },
-];
+const mapDeal = (r: any): CrmDeal => ({
+    id: r.id, name: r.name, contactId: r.contact_id || "", contactName: r.contact_name || "",
+    value: Number(r.value) || 0, probability: r.probability || 50, stage: r.stage || "Qualificação",
+    dueDate: r.due_date || "", notes: r.notes || "", createdAt: r.created_at?.split("T")[0] || "",
+});
 
-const INITIAL_ACTIVITIES: CrmActivity[] = [
-    { id: "a1", type: "ligacao", title: "Retorno sobre proposta", description: "Liguei para Carlos Silva para discutir os termos do contrato empresarial.", contactId: "c1", contactName: "Carlos Silva", date: "2026-02-19", time: "14:30", completed: true },
-    { id: "a2", type: "email", title: "Envio de proposta comercial", description: "Enviado orçamento detalhado com 3 opções de planos.", contactId: "c2", contactName: "Maria Santos", date: "2026-02-19", time: "11:00", completed: true },
-    { id: "a3", type: "reuniao", title: "Reunião de alinhamento", description: "Reunião presencial para discutir estratégia de defesa. Duração: 1h30.", contactId: "c3", contactName: "João Pereira", date: "2026-02-18", time: "15:00", completed: true },
-    { id: "a4", type: "tarefa", title: "Preparar documentação", description: "Organizar documentação para processo tributário.", contactId: "c5", contactName: "Pedro Almeida", date: "2026-02-18", time: "09:00", completed: false },
-    { id: "a5", type: "ligacao", title: "Follow-up semanal", description: "Ligação de acompanhamento sobre o andamento do caso.", contactId: "c4", contactName: "Ana Costa", date: "2026-02-17", time: "16:45", completed: true },
-    { id: "a6", type: "email", title: "Atualização processual", description: "Enviado relatório com andamento das últimas movimentações.", contactId: "c7", contactName: "Roberto Dias", date: "2026-02-17", time: "10:15", completed: true },
-    { id: "a7", type: "reuniao", title: "Apresentação para prospect", description: "Apresentação dos serviços para novo potencial cliente.", contactId: "c6", contactName: "Fernanda Lima", date: "2026-02-16", time: "14:00", completed: true },
-    { id: "a8", type: "tarefa", title: "Revisão de contrato", description: "Revisar minutas do contrato de prestação de serviços.", contactId: "c1", contactName: "Carlos Silva", date: "2026-02-15", time: "08:30", completed: true },
-];
+const mapActivity = (r: any): CrmActivity => ({
+    id: r.id, type: r.type || "tarefa", title: r.title, description: r.description || "",
+    contactId: r.contact_id || "", contactName: r.contact_name || "",
+    date: r.date || "", time: r.time || "09:00", completed: r.completed || false,
+});
 
 // ── Context ────────────────────────────────────────────
 interface CrmContextType {
@@ -104,6 +90,7 @@ interface CrmContextType {
     leads: CrmLead[];
     deals: CrmDeal[];
     activities: CrmActivity[];
+    isLoading: boolean;
     addContact: (contact: Omit<CrmContact, "id" | "createdAt">) => CrmContact;
     updateContact: (id: string, data: Partial<CrmContact>) => void;
     deleteContact: (id: string) => void;
@@ -127,108 +114,279 @@ export const useCrm = () => {
     return ctx;
 };
 
+// ── Helper: get org_id ─────────────────────────────────
+async function getOrgId(userId: string): Promise<string> {
+    const { data } = await supabase.from("profiles").select("organization_id").eq("user_id", userId).single();
+    return data?.organization_id || "";
+}
+
 // ── Provider ───────────────────────────────────────────
 export function CrmProvider({ children }: { children: ReactNode }) {
-    const [contacts, setContacts] = useState<CrmContact[]>(INITIAL_CONTACTS);
-    const [leads, setLeads] = useState<CrmLead[]>(INITIAL_LEADS);
-    const [deals, setDeals] = useState<CrmDeal[]>(INITIAL_DEALS);
-    const [activities, setActivities] = useState<CrmActivity[]>(INITIAL_ACTIVITIES);
+    const { user } = useAuth();
+    const qc = useQueryClient();
+    const uid = user?.id || "";
 
-    // Find existing contact by name or create a new one
+    // ── Queries ──
+    const { data: contacts = [], isLoading: loadingContacts } = useQuery({
+        queryKey: ["crm_contacts"], enabled: !!uid,
+        queryFn: async () => {
+            const { data, error } = await supabase.from("crm_contacts").select("*").order("created_at", { ascending: false });
+            if (error) throw error;
+            return (data || []).map(mapContact);
+        },
+    });
+
+    const { data: leads = [], isLoading: loadingLeads } = useQuery({
+        queryKey: ["crm_leads"], enabled: !!uid,
+        queryFn: async () => {
+            const { data, error } = await supabase.from("crm_leads").select("*").order("created_at", { ascending: false });
+            if (error) throw error;
+            return (data || []).map(mapLead);
+        },
+    });
+
+    const { data: deals = [], isLoading: loadingDeals } = useQuery({
+        queryKey: ["crm_deals"], enabled: !!uid,
+        queryFn: async () => {
+            const { data, error } = await supabase.from("crm_deals").select("*").order("created_at", { ascending: false });
+            if (error) throw error;
+            return (data || []).map(mapDeal);
+        },
+    });
+
+    const { data: activities = [], isLoading: loadingActivities } = useQuery({
+        queryKey: ["crm_activities"], enabled: !!uid,
+        queryFn: async () => {
+            const { data, error } = await supabase.from("crm_activities").select("*").order("created_at", { ascending: false });
+            if (error) throw error;
+            return (data || []).map(mapActivity);
+        },
+    });
+
+    const isLoading = loadingContacts || loadingLeads || loadingDeals || loadingActivities;
+    const invalidate = (keys: string[]) => keys.forEach((k) => qc.invalidateQueries({ queryKey: [k] }));
+
+    // ── findOrCreateContact ──
     const findOrCreateContact = useCallback((name: string): CrmContact => {
         const existing = contacts.find((c) => c.name.toLowerCase() === name.toLowerCase());
         if (existing) return existing;
-
-        const newContact: CrmContact = {
-            id: crypto.randomUUID(),
-            name,
-            email: "",
-            phone: "",
-            type: "pessoa_fisica",
-            company: "",
-            city: "",
-            state: "",
-            tags: ["Novo"],
-            score: 1,
-            notes: "",
-            createdAt: new Date().toISOString().split("T")[0],
-            source: "lead",
+        // Optimistic: return a temp object. The DB insert happens async.
+        const tempId = crypto.randomUUID();
+        const temp: CrmContact = {
+            id: tempId, name, email: "", phone: "", type: "pessoa_fisica",
+            company: "", city: "", state: "", tags: ["Novo"], score: 1,
+            notes: "", createdAt: new Date().toISOString().split("T")[0], source: "lead",
         };
-        setContacts((prev) => [...prev, newContact]);
-        return newContact;
-    }, [contacts]);
+        // Fire-and-forget insert
+        (async () => {
+            const orgId = await getOrgId(uid);
+            if (!orgId) return;
+            await supabase.from("crm_contacts").insert({
+                id: tempId, name, organization_id: orgId, user_id: uid, source: "lead", tags: ["Novo"],
+            });
+            invalidate(["crm_contacts"]);
+        })();
+        return temp;
+    }, [contacts, uid]);
 
-    // Contacts CRUD
+    // ── Contact mutations ──
+    const addContactMut = useMutation({
+        mutationFn: async (data: Omit<CrmContact, "id" | "createdAt"> & { _tempId: string }) => {
+            const orgId = await getOrgId(uid);
+            const { error } = await supabase.from("crm_contacts").insert({
+                id: data._tempId, organization_id: orgId, user_id: uid,
+                name: data.name, email: data.email, phone: data.phone, type: data.type,
+                company: data.company, city: data.city, state: data.state,
+                tags: data.tags, score: data.score, notes: data.notes, source: data.source,
+            });
+            if (error) throw error;
+        },
+        onSuccess: () => invalidate(["crm_contacts"]),
+        onError: (e: any) => toast.error(e.message),
+    });
+
     const addContact = useCallback((data: Omit<CrmContact, "id" | "createdAt">): CrmContact => {
-        const c: CrmContact = { ...data, id: crypto.randomUUID(), createdAt: new Date().toISOString().split("T")[0] };
-        setContacts((prev) => [...prev, c]);
-        return c;
+        const id = crypto.randomUUID();
+        addContactMut.mutate({ ...data, _tempId: id });
+        return { ...data, id, createdAt: new Date().toISOString().split("T")[0] };
     }, []);
 
-    const updateContact = useCallback((id: string, data: Partial<CrmContact>) => {
-        setContacts((prev) => prev.map((c) => c.id === id ? { ...c, ...data } : c));
-    }, []);
+    const updateContactMut = useMutation({
+        mutationFn: async ({ id, ...data }: { id: string } & Partial<CrmContact>) => {
+            const payload: any = {};
+            if (data.name !== undefined) payload.name = data.name;
+            if (data.email !== undefined) payload.email = data.email;
+            if (data.phone !== undefined) payload.phone = data.phone;
+            if (data.type !== undefined) payload.type = data.type;
+            if (data.company !== undefined) payload.company = data.company;
+            if (data.city !== undefined) payload.city = data.city;
+            if (data.state !== undefined) payload.state = data.state;
+            if (data.tags !== undefined) payload.tags = data.tags;
+            if (data.score !== undefined) payload.score = data.score;
+            if (data.notes !== undefined) payload.notes = data.notes;
+            const { error } = await supabase.from("crm_contacts").update(payload).eq("id", id);
+            if (error) throw error;
+        },
+        onSuccess: () => invalidate(["crm_contacts"]),
+        onError: (e: any) => toast.error(e.message),
+    });
+    const updateContact = useCallback((id: string, data: Partial<CrmContact>) => updateContactMut.mutate({ id, ...data }), []);
 
-    const deleteContact = useCallback((id: string) => {
-        setContacts((prev) => prev.filter((c) => c.id !== id));
-    }, []);
+    const deleteContactMut = useMutation({
+        mutationFn: async (id: string) => {
+            const { error } = await supabase.from("crm_contacts").delete().eq("id", id);
+            if (error) throw error;
+        },
+        onSuccess: () => invalidate(["crm_contacts"]),
+        onError: (e: any) => toast.error(e.message),
+    });
+    const deleteContact = useCallback((id: string) => deleteContactMut.mutate(id), []);
 
-    // Leads CRUD — auto-creates contact
-    const addLead = useCallback((data: Omit<CrmLead, "id" | "contactId">) => {
-        const contact = findOrCreateContact(data.contactName);
-        const lead: CrmLead = { ...data, id: crypto.randomUUID(), contactId: contact.id };
-        setLeads((prev) => [...prev, lead]);
-    }, [findOrCreateContact]);
-
-    const updateLead = useCallback((id: string, data: Partial<CrmLead>) => {
-        if (data.contactName) {
+    // ── Lead mutations ──
+    const addLeadMut = useMutation({
+        mutationFn: async (data: Omit<CrmLead, "id" | "contactId">) => {
+            const orgId = await getOrgId(uid);
             const contact = findOrCreateContact(data.contactName);
-            data.contactId = contact.id;
-        }
-        setLeads((prev) => prev.map((l) => l.id === id ? { ...l, ...data } : l));
-    }, [findOrCreateContact]);
+            const { error } = await supabase.from("crm_leads").insert({
+                organization_id: orgId, contact_id: contact.id, name: data.name,
+                contact_name: data.contactName, value: data.value, priority: data.priority,
+                date: data.date || null, notes: data.notes, stage_id: data.stageId,
+            });
+            if (error) throw error;
+        },
+        onSuccess: () => invalidate(["crm_leads", "crm_contacts"]),
+        onError: (e: any) => toast.error(e.message),
+    });
+    const addLead = useCallback((data: Omit<CrmLead, "id" | "contactId">) => addLeadMut.mutate(data), []);
 
-    const deleteLead = useCallback((id: string) => {
-        setLeads((prev) => prev.filter((l) => l.id !== id));
-    }, []);
+    const updateLeadMut = useMutation({
+        mutationFn: async ({ id, ...data }: { id: string } & Partial<CrmLead>) => {
+            const payload: any = {};
+            if (data.name !== undefined) payload.name = data.name;
+            if (data.contactName !== undefined) {
+                payload.contact_name = data.contactName;
+                const c = findOrCreateContact(data.contactName);
+                payload.contact_id = c.id;
+            }
+            if (data.value !== undefined) payload.value = data.value;
+            if (data.priority !== undefined) payload.priority = data.priority;
+            if (data.date !== undefined) payload.date = data.date;
+            if (data.notes !== undefined) payload.notes = data.notes;
+            if (data.stageId !== undefined) payload.stage_id = data.stageId;
+            const { error } = await supabase.from("crm_leads").update(payload).eq("id", id);
+            if (error) throw error;
+        },
+        onSuccess: () => invalidate(["crm_leads"]),
+        onError: (e: any) => toast.error(e.message),
+    });
+    const updateLead = useCallback((id: string, data: Partial<CrmLead>) => updateLeadMut.mutate({ id, ...data }), []);
 
-    // Deals CRUD — auto-creates contact
-    const addDeal = useCallback((data: Omit<CrmDeal, "id" | "contactId" | "createdAt">) => {
-        const contact = findOrCreateContact(data.contactName);
-        const deal: CrmDeal = { ...data, id: crypto.randomUUID(), contactId: contact.id, createdAt: new Date().toISOString().split("T")[0] };
-        setDeals((prev) => [...prev, deal]);
-    }, [findOrCreateContact]);
+    const deleteLeadMut = useMutation({
+        mutationFn: async (id: string) => {
+            const { error } = await supabase.from("crm_leads").delete().eq("id", id);
+            if (error) throw error;
+        },
+        onSuccess: () => invalidate(["crm_leads"]),
+        onError: (e: any) => toast.error(e.message),
+    });
+    const deleteLead = useCallback((id: string) => deleteLeadMut.mutate(id), []);
 
-    const updateDeal = useCallback((id: string, data: Partial<CrmDeal>) => {
-        if (data.contactName) {
+    // ── Deal mutations ──
+    const addDealMut = useMutation({
+        mutationFn: async (data: Omit<CrmDeal, "id" | "contactId" | "createdAt">) => {
+            const orgId = await getOrgId(uid);
             const contact = findOrCreateContact(data.contactName);
-            data.contactId = contact.id;
-        }
-        setDeals((prev) => prev.map((d) => d.id === id ? { ...d, ...data } : d));
-    }, [findOrCreateContact]);
+            const { error } = await supabase.from("crm_deals").insert({
+                organization_id: orgId, contact_id: contact.id, name: data.name,
+                contact_name: data.contactName, value: data.value, probability: data.probability,
+                stage: data.stage, due_date: data.dueDate || null, notes: data.notes,
+            });
+            if (error) throw error;
+        },
+        onSuccess: () => invalidate(["crm_deals", "crm_contacts"]),
+        onError: (e: any) => toast.error(e.message),
+    });
+    const addDeal = useCallback((data: Omit<CrmDeal, "id" | "contactId" | "createdAt">) => addDealMut.mutate(data), []);
 
-    const deleteDeal = useCallback((id: string) => {
-        setDeals((prev) => prev.filter((d) => d.id !== id));
-    }, []);
+    const updateDealMut = useMutation({
+        mutationFn: async ({ id, ...data }: { id: string } & Partial<CrmDeal>) => {
+            const payload: any = {};
+            if (data.name !== undefined) payload.name = data.name;
+            if (data.contactName !== undefined) {
+                payload.contact_name = data.contactName;
+                const c = findOrCreateContact(data.contactName);
+                payload.contact_id = c.id;
+            }
+            if (data.value !== undefined) payload.value = data.value;
+            if (data.probability !== undefined) payload.probability = data.probability;
+            if (data.stage !== undefined) payload.stage = data.stage;
+            if (data.dueDate !== undefined) payload.due_date = data.dueDate;
+            if (data.notes !== undefined) payload.notes = data.notes;
+            const { error } = await supabase.from("crm_deals").update(payload).eq("id", id);
+            if (error) throw error;
+        },
+        onSuccess: () => invalidate(["crm_deals"]),
+        onError: (e: any) => toast.error(e.message),
+    });
+    const updateDeal = useCallback((id: string, data: Partial<CrmDeal>) => updateDealMut.mutate({ id, ...data }), []);
 
-    // Activities CRUD — auto-creates contact
-    const addActivity = useCallback((data: Omit<CrmActivity, "id" | "contactId">) => {
-        const contact = findOrCreateContact(data.contactName);
-        const activity: CrmActivity = { ...data, id: crypto.randomUUID(), contactId: contact.id };
-        setActivities((prev) => [activity, ...prev]);
-    }, [findOrCreateContact]);
+    const deleteDealMut = useMutation({
+        mutationFn: async (id: string) => {
+            const { error } = await supabase.from("crm_deals").delete().eq("id", id);
+            if (error) throw error;
+        },
+        onSuccess: () => invalidate(["crm_deals"]),
+        onError: (e: any) => toast.error(e.message),
+    });
+    const deleteDeal = useCallback((id: string) => deleteDealMut.mutate(id), []);
 
-    const updateActivity = useCallback((id: string, data: Partial<CrmActivity>) => {
-        setActivities((prev) => prev.map((a) => a.id === id ? { ...a, ...data } : a));
-    }, []);
+    // ── Activity mutations ──
+    const addActivityMut = useMutation({
+        mutationFn: async (data: Omit<CrmActivity, "id" | "contactId">) => {
+            const orgId = await getOrgId(uid);
+            const contact = findOrCreateContact(data.contactName);
+            const { error } = await supabase.from("crm_activities").insert({
+                organization_id: orgId, contact_id: contact.id, type: data.type,
+                title: data.title, description: data.description, contact_name: data.contactName,
+                date: data.date || null, time: data.time, completed: data.completed,
+            });
+            if (error) throw error;
+        },
+        onSuccess: () => invalidate(["crm_activities", "crm_contacts"]),
+        onError: (e: any) => toast.error(e.message),
+    });
+    const addActivity = useCallback((data: Omit<CrmActivity, "id" | "contactId">) => addActivityMut.mutate(data), []);
 
-    const deleteActivity = useCallback((id: string) => {
-        setActivities((prev) => prev.filter((a) => a.id !== id));
-    }, []);
+    const updateActivityMut = useMutation({
+        mutationFn: async ({ id, ...data }: { id: string } & Partial<CrmActivity>) => {
+            const payload: any = {};
+            if (data.type !== undefined) payload.type = data.type;
+            if (data.title !== undefined) payload.title = data.title;
+            if (data.description !== undefined) payload.description = data.description;
+            if (data.date !== undefined) payload.date = data.date;
+            if (data.time !== undefined) payload.time = data.time;
+            if (data.completed !== undefined) payload.completed = data.completed;
+            const { error } = await supabase.from("crm_activities").update(payload).eq("id", id);
+            if (error) throw error;
+        },
+        onSuccess: () => invalidate(["crm_activities"]),
+        onError: (e: any) => toast.error(e.message),
+    });
+    const updateActivity = useCallback((id: string, data: Partial<CrmActivity>) => updateActivityMut.mutate({ id, ...data }), []);
+
+    const deleteActivityMut = useMutation({
+        mutationFn: async (id: string) => {
+            const { error } = await supabase.from("crm_activities").delete().eq("id", id);
+            if (error) throw error;
+        },
+        onSuccess: () => invalidate(["crm_activities"]),
+        onError: (e: any) => toast.error(e.message),
+    });
+    const deleteActivity = useCallback((id: string) => deleteActivityMut.mutate(id), []);
 
     return (
         <CrmContext.Provider value={{
-            contacts, leads, deals, activities,
+            contacts, leads, deals, activities, isLoading,
             addContact, updateContact, deleteContact,
             addLead, updateLead, deleteLead,
             addDeal, updateDeal, deleteDeal,

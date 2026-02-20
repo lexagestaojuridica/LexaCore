@@ -1,4 +1,8 @@
-import { createContext, useContext, useState, ReactNode, useCallback } from "react";
+import { createContext, useContext, ReactNode, useCallback, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 // ── Types ──────────────────────────────────────────────
 export interface WorkflowStep {
@@ -51,7 +55,7 @@ export interface WorkflowInstance {
     createdBy: string;
 }
 
-// ── Templates ──────────────────────────────────────────
+// ── Templates (static reference data) ──────────────────
 const TEMPLATES: WorkflowTemplate[] = [
     {
         id: "t1", name: "Onboarding de Cliente", emoji: "📋", category: "Geral",
@@ -130,7 +134,7 @@ const TEMPLATES: WorkflowTemplate[] = [
     },
 ];
 
-// ── Sample Data ────────────────────────────────────────
+// ── Static reference data ──────────────────────────────
 const SAMPLE_MEMBERS: Member[] = [
     { id: "m1", name: "Dr. Carlos Silva", role: "Sócio", avatar: "CS" },
     { id: "m2", name: "Dra. Maria Santos", role: "Coordenadora", avatar: "MS" },
@@ -150,25 +154,18 @@ const SAMPLE_SECTORS: Sector[] = [
     { id: "s5", name: "Empresarial", emoji: "🏢", color: "bg-violet-500", coordinatorId: "m8", memberIds: ["m4", "m6"] },
 ];
 
-function instantiateSteps(template: WorkflowTemplate): WorkflowStep[] {
-    return template.steps.map((s, i) => ({
-        id: `step-${crypto.randomUUID()}`,
-        title: s.title,
-        description: s.description,
-        completed: false,
-        dueDate: s.dueDate,
-        notes: "",
-    }));
+// ── Helpers ────────────────────────────────────────────
+async function getOrgId(userId: string): Promise<string> {
+    const { data } = await supabase.from("profiles").select("organization_id").eq("user_id", userId).single();
+    return data?.organization_id || "";
 }
 
-const SAMPLE_INSTANCES: WorkflowInstance[] = [
-    { id: "w1", templateId: "t1", templateName: "Onboarding de Cliente", templateEmoji: "📋", sectorId: "s2", assignedTo: "m4", assignedToName: "Dra. Ana Costa", priority: "alta", deadline: "2026-02-25", steps: instantiateSteps(TEMPLATES[0]).map((s, i) => ({ ...s, completed: i < 3 })), status: "em_andamento", createdAt: "2026-02-15", createdBy: "m8" },
-    { id: "w2", templateId: "t2", templateName: "Petição Inicial", templateEmoji: "⚖️", sectorId: "s1", assignedTo: "m3", assignedToName: "Dr. João Pereira", priority: "media", deadline: "2026-02-28", steps: instantiateSteps(TEMPLATES[1]).map((s, i) => ({ ...s, completed: i < 2 })), status: "em_andamento", createdAt: "2026-02-16", createdBy: "m2" },
-    { id: "w3", templateId: "t3", templateName: "Preparação para Audiência", templateEmoji: "📅", sectorId: "s3", assignedTo: "m7", assignedToName: "Dr. Roberto Dias", priority: "alta", deadline: "2026-02-21", steps: instantiateSteps(TEMPLATES[2]).map((s, i) => ({ ...s, completed: i < 4 })), status: "em_andamento", createdAt: "2026-02-14", createdBy: "m1" },
-    { id: "w4", templateId: "t5", templateName: "Cobrança Judicial", templateEmoji: "🔄", sectorId: "s2", assignedTo: "m7", assignedToName: "Dr. Roberto Dias", priority: "baixa", deadline: "2026-03-10", steps: instantiateSteps(TEMPLATES[4]).map((s, i) => ({ ...s, completed: i < 1 })), status: "em_andamento", createdAt: "2026-02-18", createdBy: "m8" },
-    { id: "w5", templateId: "t6", templateName: "Abertura de Empresa", templateEmoji: "🏢", sectorId: "s5", assignedTo: "m6", assignedToName: "Dra. Fernanda Lima", priority: "media", deadline: "2026-03-05", steps: instantiateSteps(TEMPLATES[5]), status: "pendente", createdAt: "2026-02-19", createdBy: "m8" },
-    { id: "w6", templateId: "t4", templateName: "Due Diligence", templateEmoji: "📝", sectorId: "s5", assignedTo: "m4", assignedToName: "Dra. Ana Costa", priority: "alta", deadline: "2026-03-01", steps: instantiateSteps(TEMPLATES[3]).map((s) => ({ ...s, completed: true })), status: "concluido", createdAt: "2026-02-10", createdBy: "m8" },
-];
+function computeStatus(steps: WorkflowStep[], deadline: string): WorkflowInstance["status"] {
+    const allDone = steps.every((s) => s.completed);
+    const anyDone = steps.some((s) => s.completed);
+    const overdue = deadline && new Date(deadline) < new Date() && !allDone;
+    return allDone ? "concluido" : overdue ? "atrasado" : anyDone ? "em_andamento" : "pendente";
+}
 
 // ── Context ────────────────────────────────────────────
 interface WorkflowContextType {
@@ -176,6 +173,7 @@ interface WorkflowContextType {
     members: Member[];
     sectors: Sector[];
     instances: WorkflowInstance[];
+    isLoading: boolean;
     addSector: (data: Omit<Sector, "id">) => void;
     updateSector: (id: string, data: Partial<Sector>) => void;
     deleteSector: (id: string) => void;
@@ -199,8 +197,48 @@ export const useWorkflow = () => {
 };
 
 export function WorkflowProvider({ children }: { children: ReactNode }) {
+    const { user } = useAuth();
+    const qc = useQueryClient();
+    const uid = user?.id || "";
     const [sectors, setSectors] = useState<Sector[]>(SAMPLE_SECTORS);
-    const [instances, setInstances] = useState<WorkflowInstance[]>(SAMPLE_INSTANCES);
+
+    const invalidate = () => qc.invalidateQueries({ queryKey: ["workflow_instances"] });
+
+    // ── Fetch instances + steps from Supabase ──
+    const { data: instances = [], isLoading } = useQuery({
+        queryKey: ["workflow_instances"], enabled: !!uid,
+        queryFn: async () => {
+            const { data: rows, error } = await supabase
+                .from("workflow_instances").select("*").order("created_at", { ascending: false });
+            if (error) throw error;
+            if (!rows?.length) return [];
+
+            const ids = rows.map((r: any) => r.id);
+            const { data: stepRows } = await supabase
+                .from("workflow_steps").select("*").in("workflow_id", ids).order("sort_order");
+
+            const stepsByWf: Record<string, WorkflowStep[]> = {};
+            (stepRows || []).forEach((s: any) => {
+                if (!stepsByWf[s.workflow_id]) stepsByWf[s.workflow_id] = [];
+                stepsByWf[s.workflow_id].push({
+                    id: s.id, title: s.title, description: s.description || "",
+                    completed: s.completed, dueDate: s.due_date || "", notes: s.notes || "",
+                });
+            });
+
+            return rows.map((r: any): WorkflowInstance => {
+                const steps = stepsByWf[r.id] || [];
+                return {
+                    id: r.id, templateId: r.template_id || "", templateName: r.template_name || "",
+                    templateEmoji: r.template_emoji || "📋", sectorId: r.sector_id || "",
+                    assignedTo: r.assigned_to || "", assignedToName: r.assigned_to_name || "",
+                    priority: r.priority || "media", deadline: r.deadline || "",
+                    steps, status: computeStatus(steps, r.deadline || ""),
+                    createdAt: r.created_at?.split("T")[0] || "", createdBy: r.created_by || "",
+                };
+            });
+        },
+    });
 
     const getMember = useCallback((id: string) => SAMPLE_MEMBERS.find((m) => m.id === id), []);
     const getSector = useCallback((id: string) => sectors.find((s) => s.id === id), [sectors]);
@@ -208,81 +246,105 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
     const addSector = useCallback((data: Omit<Sector, "id">) => {
         setSectors((prev) => [...prev, { ...data, id: crypto.randomUUID() }]);
     }, []);
-
     const updateSector = useCallback((id: string, data: Partial<Sector>) => {
         setSectors((prev) => prev.map((s) => s.id === id ? { ...s, ...data } : s));
     }, []);
-
     const deleteSector = useCallback((id: string) => {
         setSectors((prev) => prev.filter((s) => s.id !== id));
     }, []);
 
-    const startWorkflow = useCallback((templateId: string, sectorId: string, assignedTo: string, priority: "alta" | "media" | "baixa", deadline: string) => {
-        const template = TEMPLATES.find((t) => t.id === templateId);
-        if (!template) return;
-        const member = SAMPLE_MEMBERS.find((m) => m.id === assignedTo);
-        const instance: WorkflowInstance = {
-            id: crypto.randomUUID(),
-            templateId, templateName: template.name, templateEmoji: template.emoji,
-            sectorId, assignedTo, assignedToName: member?.name || "—",
-            priority, deadline,
-            steps: instantiateSteps(template),
-            status: "pendente",
-            createdAt: new Date().toISOString().split("T")[0],
-            createdBy: "m1",
-        };
-        setInstances((prev) => [instance, ...prev]);
+    // ── Start workflow ──
+    const startMut = useMutation({
+        mutationFn: async ({ templateId, sectorId, assignedTo, priority, deadline }: any) => {
+            const template = TEMPLATES.find((t) => t.id === templateId);
+            if (!template) throw new Error("Template not found");
+            const member = SAMPLE_MEMBERS.find((m) => m.id === assignedTo);
+            const orgId = await getOrgId(uid);
+
+            const { data: wf, error } = await supabase.from("workflow_instances").insert({
+                organization_id: orgId, user_id: uid, template_id: templateId,
+                template_name: template.name, template_emoji: template.emoji,
+                sector_id: sectorId, assigned_to: assignedTo,
+                assigned_to_name: member?.name || "—", priority, deadline: deadline || null,
+                status: "pendente", created_by: "m1",
+            }).select("id").single();
+            if (error) throw error;
+
+            const steps = template.steps.map((s, i) => ({
+                workflow_id: wf!.id, title: s.title, description: s.description,
+                completed: false, due_date: s.dueDate || null, notes: "", sort_order: i,
+            }));
+            const { error: stepErr } = await supabase.from("workflow_steps").insert(steps);
+            if (stepErr) throw stepErr;
+        },
+        onSuccess: () => { invalidate(); toast.success("Workflow iniciado"); },
+        onError: (e: any) => toast.error(e.message),
+    });
+    const startWorkflow = useCallback((...args: [string, string, string, "alta" | "media" | "baixa", string]) => {
+        startMut.mutate({ templateId: args[0], sectorId: args[1], assignedTo: args[2], priority: args[3], deadline: args[4] });
     }, []);
 
-    const updateInstanceStatus = useCallback((id: string) => {
-        setInstances((prev) => prev.map((inst) => {
-            if (inst.id !== id) return inst;
-            const allDone = inst.steps.every((s) => s.completed);
-            const anyDone = inst.steps.some((s) => s.completed);
-            const overdue = inst.deadline && new Date(inst.deadline) < new Date() && !allDone;
-            const status = allDone ? "concluido" : overdue ? "atrasado" : anyDone ? "em_andamento" : "pendente";
-            return { ...inst, status };
-        }));
-    }, []);
+    // ── Step mutations ──
+    const stepMut = useMutation({
+        mutationFn: async ({ stepId, data }: { stepId: string; data: any }) => {
+            const { error } = await supabase.from("workflow_steps").update(data).eq("id", stepId);
+            if (error) throw error;
+        },
+        onSuccess: () => invalidate(),
+        onError: (e: any) => toast.error(e.message),
+    });
 
     const completeStep = useCallback((instanceId: string, stepId: string) => {
-        setInstances((prev) => prev.map((inst) =>
-            inst.id === instanceId ? { ...inst, steps: inst.steps.map((s) => s.id === stepId ? { ...s, completed: true } : s) } : inst
-        ));
-        setTimeout(() => updateInstanceStatus(instanceId), 0);
-    }, [updateInstanceStatus]);
-
+        stepMut.mutate({ stepId, data: { completed: true } });
+    }, []);
     const uncompleteStep = useCallback((instanceId: string, stepId: string) => {
-        setInstances((prev) => prev.map((inst) =>
-            inst.id === instanceId ? { ...inst, steps: inst.steps.map((s) => s.id === stepId ? { ...s, completed: false } : s) } : inst
-        ));
-        setTimeout(() => updateInstanceStatus(instanceId), 0);
-    }, [updateInstanceStatus]);
-
+        stepMut.mutate({ stepId, data: { completed: false } });
+    }, []);
     const updateStepNotes = useCallback((instanceId: string, stepId: string, notes: string) => {
-        setInstances((prev) => prev.map((inst) =>
-            inst.id === instanceId ? { ...inst, steps: inst.steps.map((s) => s.id === stepId ? { ...s, notes } : s) } : inst
-        ));
+        stepMut.mutate({ stepId, data: { notes } });
     }, []);
 
+    const addStepMut = useMutation({
+        mutationFn: async ({ instanceId, title, description }: any) => {
+            const { error } = await supabase.from("workflow_steps").insert({
+                workflow_id: instanceId, title, description, completed: false, sort_order: 999,
+            });
+            if (error) throw error;
+        },
+        onSuccess: () => invalidate(),
+        onError: (e: any) => toast.error(e.message),
+    });
     const addCustomStep = useCallback((instanceId: string, title: string, description: string) => {
-        setInstances((prev) => prev.map((inst) =>
-            inst.id === instanceId ? { ...inst, steps: [...inst.steps, { id: crypto.randomUUID(), title, description, completed: false, dueDate: "", notes: "" }] } : inst
-        ));
+        addStepMut.mutate({ instanceId, title, description });
     }, []);
 
-    const deleteWorkflow = useCallback((id: string) => {
-        setInstances((prev) => prev.filter((i) => i.id !== id));
-    }, []);
+    const deleteMut = useMutation({
+        mutationFn: async (id: string) => {
+            const { error } = await supabase.from("workflow_instances").delete().eq("id", id);
+            if (error) throw error;
+        },
+        onSuccess: () => { invalidate(); toast.success("Workflow excluído"); },
+        onError: (e: any) => toast.error(e.message),
+    });
+    const deleteWorkflow = useCallback((id: string) => deleteMut.mutate(id), []);
 
+    const reassignMut = useMutation({
+        mutationFn: async ({ id, assignedTo }: any) => {
+            const member = SAMPLE_MEMBERS.find((m) => m.id === assignedTo);
+            const { error } = await supabase.from("workflow_instances")
+                .update({ assigned_to: assignedTo, assigned_to_name: member?.name || "—" }).eq("id", id);
+            if (error) throw error;
+        },
+        onSuccess: () => invalidate(),
+        onError: (e: any) => toast.error(e.message),
+    });
     const reassignWorkflow = useCallback((id: string, assignedTo: string) => {
-        const member = SAMPLE_MEMBERS.find((m) => m.id === assignedTo);
-        setInstances((prev) => prev.map((i) => i.id === id ? { ...i, assignedTo, assignedToName: member?.name || "—" } : i));
+        reassignMut.mutate({ id, assignedTo });
     }, []);
 
     return (
         <WorkflowContext.Provider value={{
-            templates: TEMPLATES, members: SAMPLE_MEMBERS, sectors, instances,
+            templates: TEMPLATES, members: SAMPLE_MEMBERS, sectors, instances, isLoading,
             addSector, updateSector, deleteSector,
             startWorkflow, completeStep, uncompleteStep, updateStepNotes, addCustomStep,
             deleteWorkflow, reassignWorkflow, getMember, getSector,
