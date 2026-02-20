@@ -69,6 +69,7 @@ CREATE INDEX IF NOT EXISTS idx_timesheet_started ON timesheet_entries(started_at
 
 ALTER TABLE timesheet_entries ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can manage their own timesheet entries" ON timesheet_entries;
 CREATE POLICY "Users can manage their own timesheet entries"
   ON timesheet_entries FOR ALL
   USING (
@@ -117,6 +118,7 @@ CREATE INDEX IF NOT EXISTS idx_wiki_pinned ON wiki_juridica(is_pinned) WHERE is_
 
 ALTER TABLE wiki_juridica ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users manage their org wiki" ON wiki_juridica;
 CREATE POLICY "Users manage their org wiki"
   ON wiki_juridica FOR ALL
   USING (organization_id IN (SELECT organization_id FROM profiles WHERE user_id = auth.uid()))
@@ -158,6 +160,7 @@ CREATE INDEX IF NOT EXISTS idx_units_active ON units(is_active) WHERE is_active 
 
 ALTER TABLE units ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users manage their org units" ON units;
 CREATE POLICY "Users manage their org units"
   ON units FOR ALL
   USING (organization_id IN (SELECT organization_id FROM profiles WHERE user_id = auth.uid()))
@@ -181,6 +184,7 @@ CREATE TABLE IF NOT EXISTS chat_channels (
 CREATE INDEX IF NOT EXISTS idx_chat_channels_org ON chat_channels(organization_id);
 ALTER TABLE chat_channels ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users manage their org channels" ON chat_channels;
 CREATE POLICY "Users manage their org channels"
   ON chat_channels FOR ALL
   USING (organization_id IN (SELECT organization_id FROM profiles WHERE user_id = auth.uid()))
@@ -202,6 +206,7 @@ CREATE INDEX IF NOT EXISTS idx_chat_msg_channel ON chat_messages(channel_id);
 CREATE INDEX IF NOT EXISTS idx_chat_msg_created ON chat_messages(created_at DESC);
 ALTER TABLE chat_messages ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users manage their org messages" ON chat_messages;
 CREATE POLICY "Users manage their org messages"
   ON chat_messages FOR ALL
   USING (channel_id IN (
