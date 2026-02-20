@@ -25,12 +25,14 @@ import iconLexa from "@/assets/icon-lexa.png";
 const navGroups = [
   {
     label: "Início",
+    defaultOpen: true,
     items: [
       { title: "Meu Dia", url: "/dashboard", icon: LayoutDashboard },
     ],
   },
   {
     label: "Operacional",
+    defaultOpen: false,
     items: [
       { title: "Processos", url: "/dashboard/processos", icon: Scale },
       { title: "Agenda & Prazos", url: "/dashboard/agenda", icon: CalendarDays },
@@ -41,6 +43,7 @@ const navGroups = [
   },
   {
     label: "Relacionamento",
+    defaultOpen: false,
     items: [
       { title: "Clientes", url: "/dashboard/clientes", icon: Users },
       { title: "CRM", url: "/dashboard/crm", icon: Target },
@@ -48,6 +51,7 @@ const navGroups = [
   },
   {
     label: "Documentos",
+    defaultOpen: false,
     items: [
       { title: "Minutas & Contratos", url: "/dashboard/minutas", icon: FileEdit },
       { title: "Certificados", url: "/dashboard/certificados", icon: Award },
@@ -57,12 +61,14 @@ const navGroups = [
   },
   {
     label: "Financeiro",
+    defaultOpen: false,
     items: [
       { title: "Financeiro", url: "/dashboard/financeiro", icon: DollarSign },
     ],
   },
   {
     label: "Inteligência",
+    defaultOpen: false,
     items: [
       { title: "BI & Relatórios", url: "/dashboard/bi", icon: BarChart3 },
       { title: "ARUNA IA", url: "/dashboard/ia", icon: Bot },
@@ -71,6 +77,7 @@ const navGroups = [
   },
   {
     label: "Administração",
+    defaultOpen: false,
     items: [
       { title: "Unidades / Franquias", url: "/dashboard/unidades", icon: Building2 },
     ],
@@ -86,8 +93,8 @@ function NavItem({ item, collapsed }: { item: { title: string; url: string; icon
         <NavLink
           to={item.url}
           end={item.url === "/dashboard"}
-          className="sidebar-nav-link group flex items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] text-sidebar-foreground/55 transition-all duration-200 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
-          activeClassName="bg-gradient-to-r from-accent/20 to-transparent text-sidebar-foreground font-medium border-l-2 border-accent !rounded-l-none"
+          className="sidebar-nav-link group flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] text-sidebar-foreground/60 transition-all duration-200 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+          activeClassName="bg-gradient-to-r from-sidebar-accent to-transparent text-sidebar-foreground font-medium border-l-2 border-accent !rounded-l-none"
         >
           <item.icon className="sidebar-icon h-4 w-4 shrink-0" />
           {!collapsed && (
@@ -111,14 +118,14 @@ function NavGroup({
   group: (typeof navGroups)[0];
   collapsed: boolean;
 }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(group.defaultOpen);
 
   return (
-    <div className="mb-1">
+    <div className="mb-0.5">
       {!collapsed && (
         <button
           onClick={() => setOpen((o) => !o)}
-          className="flex w-full items-center justify-between px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/30 hover:text-sidebar-foreground/60 transition-colors"
+          className="flex w-full items-center justify-between px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/35 hover:text-sidebar-foreground/60 transition-colors"
         >
           <span>{group.label}</span>
           <ChevronDown
@@ -162,7 +169,7 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       {/* Logo */}
-      <div className="flex h-14 shrink-0 items-center justify-center border-b border-sidebar-border px-3">
+      <div className="flex h-14 shrink-0 items-center justify-center border-b border-sidebar-border/50 px-3">
         {collapsed ? (
           <img src={iconLexa} alt="LEXA" className="h-8 w-8 object-contain" />
         ) : (
@@ -175,18 +182,10 @@ export function AppSidebar() {
         {navGroups.map((group) => (
           <NavGroup key={group.label} group={group} collapsed={collapsed} />
         ))}
-
-        {/* Settings at bottom */}
-        <div className="mt-2 border-t border-sidebar-border/40 pt-2">
-          <NavItem
-            item={{ title: "Configurações", url: "/dashboard/configuracoes", icon: Settings }}
-            collapsed={collapsed}
-          />
-        </div>
       </SidebarContent>
 
       {/* Footer */}
-      <SidebarFooter className="shrink-0 border-t border-sidebar-border p-2.5">
+      <SidebarFooter className="shrink-0 border-t border-sidebar-border/50 p-2.5">
         <div className="flex items-center gap-2.5">
           {avatarUrl ? (
             <img
@@ -209,6 +208,21 @@ export function AppSidebar() {
               </span>
             </div>
           )}
+          <Tooltip delayDuration={0}>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 shrink-0 text-sidebar-foreground/35 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+                asChild
+              >
+                <NavLink to="/dashboard/configuracoes">
+                  <Settings className="h-3.5 w-3.5" />
+                </NavLink>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">Configurações</TooltipContent>
+          </Tooltip>
           <Tooltip delayDuration={0}>
             <TooltipTrigger asChild>
               <Button

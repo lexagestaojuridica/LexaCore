@@ -46,13 +46,14 @@
     --champagne-light: 34 22% 82%;
     --champagne-glow: 34 16% 90%;
 
-    --sidebar-background: 220 38% 11%;
-    --sidebar-foreground: 220 16% 97%;
-    --sidebar-primary: 220 42% 22%;
+    /* Sidebar — elegant warm navy with depth */
+    --sidebar-background: 222 30% 18%;
+    --sidebar-foreground: 220 20% 95%;
+    --sidebar-primary: 222 32% 26%;
     --sidebar-primary-foreground: 220 16% 97%;
-    --sidebar-accent: 220 34% 17%;
+    --sidebar-accent: 222 24% 24%;
     --sidebar-accent-foreground: 220 16% 97%;
-    --sidebar-border: 220 28% 16%;
+    --sidebar-border: 222 20% 24%;
     --sidebar-ring: 220 42% 22%;
 
     --success: 158 40% 42%;
@@ -110,7 +111,7 @@
     background: linear-gradient(180deg, hsl(var(--champagne)), hsl(var(--champagne-light)));
     border-radius: 0 2px 2px 0;
     transition: height 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-    box-shadow: 0 0 6px hsl(var(--champagne) / 0.2);
+    box-shadow: 0 0 8px hsl(var(--champagne) / 0.25);
   }
 
   .sidebar-nav-link:hover::before {
@@ -127,9 +128,9 @@
     background: linear-gradient(
       90deg,
       transparent 0%,
-      hsl(var(--champagne) / 0.05) 40%,
-      hsl(var(--champagne) / 0.1) 50%,
-      hsl(var(--champagne) / 0.05) 60%,
+      hsl(var(--champagne) / 0.04) 40%,
+      hsl(var(--champagne) / 0.08) 50%,
+      hsl(var(--champagne) / 0.04) 60%,
       transparent 100%
     );
     transition: left 0.5s ease;
@@ -145,8 +146,61 @@
   }
 
   .sidebar-nav-link:hover .sidebar-icon {
-    transform: scale(1.15) rotate(-4deg);
+    transform: scale(1.12) rotate(-3deg);
     color: hsl(var(--champagne));
+  }
+
+  /* Premium glow effect for hero buttons */
+  .btn-glow {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-glow::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, hsl(var(--champagne) / 0.15) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+  }
+
+  .btn-glow:hover::before {
+    opacity: 1;
+  }
+
+  /* Floating shapes animation */
+  @keyframes float {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    33% { transform: translateY(-12px) rotate(2deg); }
+    66% { transform: translateY(-6px) rotate(-1deg); }
+  }
+
+  @keyframes float-slow {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-20px) rotate(3deg); }
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .animate-float-slow {
+    animation: float-slow 8s ease-in-out infinite;
+  }
+
+  @keyframes gradient-shift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+
+  .animate-gradient {
+    background-size: 200% 200%;
+    animation: gradient-shift 8s ease infinite;
   }
 }
 
@@ -159,6 +213,11 @@
   .text-gradient-gold {
     @apply bg-clip-text text-transparent;
     background-image: linear-gradient(135deg, hsl(34 30% 72%), hsl(34 40% 58%));
+  }
+
+  .text-gradient-premium {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, hsl(220 42% 22%) 0%, hsl(220 30% 32%) 40%, hsl(34 30% 72%) 100%);
   }
 
   .bg-gradient-hero {
@@ -183,5 +242,12 @@
     background: hsla(220, 38%, 11%, 0.88);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
+  }
+
+  .glass-card {
+    background: hsla(0, 0%, 100%, 0.6);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid hsla(220, 12%, 91%, 0.5);
   }
 }
