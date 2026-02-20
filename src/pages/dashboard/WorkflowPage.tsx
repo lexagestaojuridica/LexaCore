@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { GitBranch, ClipboardList, Users, Building2, LayoutTemplate } from "lucide-react";
+import { GitBranch, ClipboardList, Users, Building2, LayoutTemplate, Zap } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { WorkflowProvider, useWorkflow } from "@/contexts/WorkflowContext";
 import WorkflowMyList from "@/components/workflow/WorkflowMyList";
 import WorkflowTeamView from "@/components/workflow/WorkflowTeamView";
 import WorkflowSectors from "@/components/workflow/WorkflowSectors";
 import WorkflowTemplates from "@/components/workflow/WorkflowTemplates";
+import WorkflowAutomations from "@/components/workflow/WorkflowAutomations";
 
 function WorkflowPageInner() {
     const [activeTab, setActiveTab] = useState("meus");
@@ -18,6 +19,7 @@ function WorkflowPageInner() {
         { value: "equipe", label: "Equipe", icon: Users },
         { value: "setores", label: "Setores", icon: Building2 },
         { value: "templates", label: "Templates", icon: LayoutTemplate },
+        { value: "automacoes", label: "Automações", icon: Zap },
     ];
 
     return (
@@ -75,6 +77,7 @@ function WorkflowPageInner() {
                 <TabsContent value="equipe" className="mt-5"><WorkflowTeamView /></TabsContent>
                 <TabsContent value="setores" className="mt-5"><WorkflowSectors /></TabsContent>
                 <TabsContent value="templates" className="mt-5"><WorkflowTemplates /></TabsContent>
+                <TabsContent value="automacoes" className="mt-5"><WorkflowAutomations /></TabsContent>
             </Tabs>
         </div>
     );

@@ -1,0 +1,309 @@
+import { useEffect, useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
+import { format, parseISO } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { toast } from "sonner";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Scale, LogOut, FileText, Calendar, Receipt, Download, Loader2, QrCode, Copy } from "lucide-react";
+import { motion } from "framer-motion";
+
+export default function PortalDashboard() {
+    const { user, signOut } = useAuth();
+
+    const [pixModalOpen, setPixModalOpen] = useState(false);
+    const [selectedPix, setSelectedPix] = useState<any>(null);
+
+    // Pegar o Client ID real vinculado a este Auth User
+    const { data: clientUser, isLoading: loadingClient } = useQuery({
+        queryKey: ["portal-client-user", user?.id],
+        queryFn: async () => {
+            // @ts-ignore - Supabase type inference bug here
+            const { data, error } = await supabase
+                .from("clients")
+                .select("*")
+                .eq("auth_user_id", user?.id)
+                .single();
+            if (error) throw error;
+            return data;
+        },
+        enabled: !!user?.id,
+    });
+
+    const clientId = clientUser?.id;
+
+    const { data: processos, isLoading: loadingProcs } = useQuery({
+        queryKey: ["portal-processos", clientId],
+        queryFn: async () => {
+            const { data, error } = await supabase
+                .from("processos_juridicos")
+                .select("*")
+                .eq("client_id", clientId)
+                .order("created_at", { ascending: false });
+            if (error) throw error;
+            return data;
+        },
+        enabled: !!clientId,
+    });
+
+    const { data: faturas, isLoading: loadingFaturas } = useQuery({
+        queryKey: ["portal-faturas", clientId],
+        queryFn: async () => {
+            const { data, error } = await supabase
+                .from("contas_receber")
+                .select("*")
+                .eq("client_id", clientId)
+                .order("due_date", { ascending: true });
+            if (error) throw error;
+            return data;
+        },
+        enabled: !!clientId,
+    });
+
+    const { data: documentos, isLoading: loadingDocs } = useQuery({
+        queryKey: ["portal-documentos", clientId],
+        queryFn: async () => {
+            const { data, error } = await supabase
+                .from("documentos")
+                .select("*")
+                .eq("client_id", clientId)
+                .order("created_at", { ascending: false });
+            if (error) throw error;
+            return data;
+        },
+        enabled: !!clientId,
+    });
+
+    if (loadingClient || loadingProcs || loadingFaturas || loadingDocs) {
+        return (
+            <div className="flex min-h-screen items-center justify-center bg-muted/30">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        );
+    }
+
+    const formatCurrency = (val: number) => {
+        return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+    };
+
+    return (
+        <div className="min-h-screen bg-muted/30 pb-12">
+            {/* Header */}
+            <header className="bg-card border-b border-border sticky top-0 z-30 shadow-sm">
+                <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+                            <Scale className="h-4 w-4 text-primary-foreground" />
+                        </div>
+                        <div>
+                            <h1 className="font-display text-lg font-bold">Portal do Cliente</h1>
+                            <p className="text-[10px] text-muted-foreground uppercase tracking-widest leading-none">
+                                Lexa Nova
+                            </p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                        <span className="text-sm font-medium hidden sm:inline-block">Olá, {clientUser?.name?.split(' ')[0]}</span>
+                        <Button variant="ghost" size="sm" onClick={signOut} className="text-muted-foreground hover:text-destructive">
+                            <LogOut className="h-4 w-4 mr-2" /> Sair
+                        </Button>
+                    </div>
+                </div>
+            </header>
+
+            <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-8">
+                {/* Welcome Banner */}
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-primary text-primary-foreground rounded-2xl p-6 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-8 opacity-10">
+                        <Scale className="w-48 h-48 -mr-10 -mt-20 transform rotate-12" />
+                    </div>
+                    <div className="relative z-10">
+                        <h2 className="text-2xl font-bold mb-1">Bem-vindo ao seu espaço seguro</h2>
+                        <p className="text-primary-foreground/80 text-sm max-w-xl">Acompanhe seus processos, baixe documentos e verifique faturas sem complicação. Nossa equipe mantém tudo atualizado aqui para você.</p>
+                    </div>
+                    <Badge variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border-0 py-1.5 px-3 z-10">
+                        <Calendar className="w-3.5 h-3.5 mr-1" /> {format(new Date(), "dd 'de' MMMM", { locale: ptBR })}
+                    </Badge>
+                </motion.div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Main Content (Processos) */}
+                    <div className="lg:col-span-2 space-y-6">
+                        <h3 className="text-lg font-semibold flex items-center gap-2 border-b pb-2"><Briefcase className="w-5 h-5 text-primary" /> Meus Processos</h3>
+
+                        {processos?.length === 0 ? (
+                            <Card className="bg-transparent border-dashed">
+                                <CardContent className="flex flex-col items-center justify-center py-10 text-center">
+                                    <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
+                                        <Scale className="h-6 w-6 text-muted-foreground" />
+                                    </div>
+                                    <p className="font-medium">Nenhum processo ativo encontrado.</p>
+                                    <p className="text-sm text-muted-foreground">Seu advogado vinculará seus casos a esta conta em breve.</p>
+                                </CardContent>
+                            </Card>
+                        ) : (
+                            <div className="grid gap-4">
+                                {processos?.map((proc) => (
+                                    <Card key={proc.id} className="overflow-hidden hover:shadow-md transition-shadow">
+                                        <CardHeader className="bg-muted/30 pb-3">
+                                            <div className="flex justify-between items-start">
+                                                <div>
+                                                    <CardTitle className="text-base text-primary">{proc.title}</CardTitle>
+                                                    <CardDescription className="font-mono text-xs mt-1">{proc.number || "Sem numeração"}</CardDescription>
+                                                </div>
+                                                <Badge variant="outline" className={proc.status === 'ativo' ? 'bg-success/10 text-success border-success/20' : ''}>
+                                                    {proc.status?.toUpperCase() || "ATIVO"}
+                                                </Badge>
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent className="pt-4 pb-4">
+                                            <div className="grid grid-cols-2 gap-4 text-sm">
+                                                <div>
+                                                    <p className="text-muted-foreground text-xs mb-0.5">Tribunal/Órgão</p>
+                                                    <p className="font-medium">{proc.court || "N/A"}</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-muted-foreground text-xs mb-0.5">Assunto</p>
+                                                    <p className="font-medium line-clamp-1">{proc.subject || "N/A"}</p>
+                                                </div>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Sidebar (Faturas & Documentos) */}
+                    <div className="space-y-6">
+                        {/* Faturas */}
+                        <Card>
+                            <CardHeader className="pb-3 border-b border-border/50">
+                                <CardTitle className="text-sm flex items-center gap-2"><Receipt className="w-4 h-4 text-primary" /> Minhas Faturas</CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-0">
+                                {faturas?.length === 0 ? (
+                                    <div className="p-6 text-center text-sm text-muted-foreground">Você não possui faturas pendentes.</div>
+                                ) : (
+                                    <div className="divide-y divide-border/50">
+                                        {faturas?.map((fat) => {
+                                            const isVencido = new Date(fat.due_date) < new Date() && fat.status === 'pendente';
+                                            return (
+                                                <div key={fat.id} className="p-4 flex items-center justify-between hover:bg-muted/20 transition-colors">
+                                                    <div>
+                                                        <p className="font-medium text-sm line-clamp-1">{fat.description}</p>
+                                                        <div className="flex items-center gap-2 mt-1">
+                                                            <span className="font-bold text-foreground">{formatCurrency(fat.amount)}</span>
+                                                            <Badge className="text-[9px] px-1.5 py-0 h-4 bg-muted text-muted-foreground border-border">{format(parseISO(fat.due_date), "dd/MM/yyyy")}</Badge>
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        {fat.status === 'pago' ? (
+                                                            <Badge className="bg-success/10 text-success border-0">Pago</Badge>
+                                                        ) : (
+                                                            <Button
+                                                                size="sm"
+                                                                variant={isVencido ? "destructive" : "default"}
+                                                                className="h-7 text-xs px-2 shadow-sm gap-1.5"
+                                                                onClick={() => {
+                                                                    if ((fat as any).pix_code) {
+                                                                        setSelectedPix(fat);
+                                                                        setPixModalOpen(true);
+                                                                    } else {
+                                                                        toast.error("Boleto/PIX ainda não gerado pelo escritório.");
+                                                                    }
+                                                                }}
+                                                            >
+                                                                {(fat as any).pix_code ? <QrCode className="w-3.5 h-3.5" /> : null} Pagar
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+
+                        {/* Documentos */}
+                        <Card>
+                            <CardHeader className="pb-3 border-b border-border/50">
+                                <CardTitle className="text-sm flex items-center gap-2"><FileText className="w-4 h-4 text-primary" /> Documentos</CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-0">
+                                {documentos?.length === 0 ? (
+                                    <div className="p-6 text-center text-sm text-muted-foreground">Nenhum documento anexado.</div>
+                                ) : (
+                                    <div className="divide-y divide-border/50 max-h-[300px] overflow-y-auto">
+                                        {documentos?.map((doc) => (
+                                            <div key={doc.id} className="p-3 hover:bg-muted/30 transition-colors flex items-center justify-between group">
+                                                <div className="flex items-center gap-2 overflow-hidden mx-1">
+                                                    <div className="p-1.5 rounded bg-primary/10 text-primary shrink-0"><FileText className="w-3.5 h-3.5" /></div>
+                                                    <span className="text-xs font-medium truncate" title={doc.file_name}>{doc.file_name}</span>
+                                                </div>
+                                                <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <Download className="w-3 h-3 text-muted-foreground" />
+                                                </Button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </div>
+                </div>
+            </main>
+            {/* ── Pix Modal ── */}
+            <Dialog open={pixModalOpen} onOpenChange={setPixModalOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center justify-center gap-2 text-xl">
+                            <QrCode className="w-5 h-5 text-primary" /> Pagar Fatura
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="flex flex-col items-center py-6 space-y-4">
+                        {/* Mock PIX Image */}
+                        <div className="bg-white p-4 rounded-xl border-4 border-muted/50 w-48 h-48 flex items-center justify-center">
+                            <QrCode className="w-32 h-32 text-slate-800" />
+                        </div>
+                        <p className="font-bold text-lg text-primary">{formatCurrency(Number(selectedPix?.amount || 0))}</p>
+                        <p className="text-sm text-muted-foreground text-center">Referente a: {selectedPix?.description}</p>
+
+                        <div className="w-full mt-4">
+                            <p className="text-xs font-semibold uppercase text-muted-foreground mb-1.5 flex justify-between">
+                                Copia e Cola
+                            </p>
+                            <div className="flex gap-2 relative">
+                                <Input readOnly value={selectedPix?.pix_code || ""} className="pr-12 bg-muted/30 font-mono text-[10px]" />
+                                <Button
+                                    size="icon"
+                                    className="absolute right-0 top-0 bottom-0 rounded-l-none"
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(selectedPix?.pix_code);
+                                        toast.success("Código PIX copiado!");
+                                    }}
+                                >
+                                    <Copy className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setPixModalOpen(false)} className="w-full">Fechar</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+        </div>
+    );
+}
+
+const Briefcase = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="20" height="14" x="2" y="7" rx="2" ry="2" /><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" /></svg>
+);

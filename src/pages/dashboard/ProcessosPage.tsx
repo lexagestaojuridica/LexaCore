@@ -8,10 +8,11 @@ import { ptBR } from "date-fns/locale";
 import {
   Scale, Plus, Search, Filter, Edit2, Trash2, Eye, Upload, Download, File, Calculator, X,
   LayoutList, LayoutGrid, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
-  ArrowUpDown, ArrowUp, ArrowDown, Receipt,
+  ArrowUpDown, ArrowUp, ArrowDown, Receipt, Bot, SwitchCamera,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -65,7 +66,7 @@ const emptyForm: Partial<TablesInsert<"processos_juridicos">> & { estimated_valu
   estimated_value: null, notes: "", client_id: null, estimated_value_display: "",
   area_direito: null, tipo_acao: null, parte_contraria: null,
   instancia: null, fase_processual: null, comarca: null, uf: null,
-  data_distribuicao: null,
+  data_distribuicao: null, auto_capture_enabled: false,
 };
 
 const AREAS_DIREITO = [
@@ -251,6 +252,16 @@ export default function ProcessosPage() {
     enabled: !!selectedProcesso?.id && (viewDialogOpen || dialogOpen),
   });
 
+  const { data: captures = [] } = useQuery({
+    queryKey: ["process-captures", selectedProcesso?.id],
+    queryFn: async () => {
+      // @ts-ignore - Supabase type reference
+      const { data } = await supabase.from("process_captures").select("*").eq("process_id", selectedProcesso!.id).order("capture_date", { ascending: false });
+      return data ?? [];
+    },
+    enabled: !!selectedProcesso?.id && viewDialogOpen,
+  });
+
   const createMutation = useMutation({
     mutationFn: async (payload: TablesInsert<"processos_juridicos">) => {
       const { error } = await supabase.from("processos_juridicos").insert(payload);
@@ -319,7 +330,7 @@ export default function ProcessosPage() {
   const openCreate = () => { setForm(emptyForm); setIsEditing(false); setDialogOpen(true); };
   const openEdit = (p: Processo) => {
     const display = p.estimated_value != null ? formatCurrencyInput(String(Math.round(Number(p.estimated_value) * 100))) : "";
-    setForm({ title: p.title, number: p.number, court: p.court, subject: p.subject, status: p.status, estimated_value: p.estimated_value, notes: p.notes, client_id: p.client_id, estimated_value_display: display });
+    setForm({ title: p.title, number: p.number, court: p.court, subject: p.subject, status: p.status, estimated_value: p.estimated_value, notes: p.notes, client_id: p.client_id, estimated_value_display: display, auto_capture_enabled: p.auto_capture_enabled || false, area_direito: p.area_direito, tipo_acao: p.tipo_acao, parte_contraria: p.parte_contraria, instancia: p.instancia, fase_processual: p.fase_processual, comarca: p.comarca, uf: p.uf, data_distribuicao: p.data_distribuicao });
     setSelectedProcesso(p); setIsEditing(true); setDialogOpen(true);
   };
 
@@ -603,6 +614,16 @@ export default function ProcessosPage() {
                     </div>
                     <FormField label="Valor Estimado" value={form.estimated_value_display ?? ""} onChange={handleValueChange} placeholder="0,00" />
                   </div>
+                  <div className="flex items-center justify-between rounded-lg border border-border bg-background p-3">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-primary/10 text-primary rounded-md"><Bot className="h-4 w-4" /></div>
+                      <div>
+                        <p className="text-sm font-medium">Robô de Captura</p>
+                        <p className="text-xs text-muted-foreground">Monitorar Diários Oficiais (Jusbrasil/Escavador)</p>
+                      </div>
+                    </div>
+                    <Switch checked={form.auto_capture_enabled || false} onCheckedChange={(v) => setField("auto_capture_enabled", v)} />
+                  </div>
                 </div>
                 <div className="rounded-lg border border-border/50 bg-muted/20 p-4 space-y-4">
                   <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Dados Jurídicos</h3>
@@ -789,6 +810,37 @@ export default function ProcessosPage() {
                   </div>
                 )}
               </div>
+
+              <Separator />
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5"><Bot className="h-4 w-4" /> Andamentos Robô</h4>
+                  <Badge variant={selectedProcesso.auto_capture_enabled ? "default" : "secondary"} className="text-[10px]">
+                    {selectedProcesso.auto_capture_enabled ? "Monitoramento Ativo" : "Monitoramento Inativo"}
+                  </Badge>
+                </div>
+                {captures.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4 bg-muted/20 rounded-lg border border-border border-dashed">Nenhum andamento ou publicação capturada até o momento.</p>
+                ) : (
+                  <div className="space-y-3 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-border before:to-transparent pt-2">
+                    {captures.map((cap: any) => (
+                      <div key={cap.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+                        <div className="flex items-center justify-center w-10 h-10 rounded-full border border-border bg-card shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10 text-primary">
+                          <Bot className="h-4 w-4" />
+                        </div>
+                        <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-3 rounded border border-border bg-card shadow-sm">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="font-bold text-xs text-foreground">{cap.source}</span>
+                            <span className="text-[10px] text-muted-foreground">{format(new Date(cap.capture_date), "dd/MM/yy HH:mm")}</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed">{cap.content}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <Separator />
               <ProcessCalculator estimatedValue={selectedProcesso.estimated_value} />
               <div className="flex justify-end gap-2 pt-2">
@@ -825,6 +877,6 @@ export default function ProcessosPage() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </div >
   );
 }

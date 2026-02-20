@@ -7,13 +7,14 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   FileText, Upload, Trash2, Download, Search, Filter, File, Image, FileSpreadsheet, FileArchive,
-  FolderOpen, FolderPlus, Clock, MoreVertical, X, Share2, Eye
+  FolderOpen, FolderPlus, Clock, MoreVertical, X, Share2, Eye, PenTool, Archive, Briefcase, User
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
@@ -156,6 +157,38 @@ export default function DocumentosPage() {
       setLinkClientId("none");
     },
     onError: (err: any) => toast.error(`Erro no upload: ${err.message}`),
+  });
+
+  const [signatureOpen, setSignatureOpen] = useState(false);
+  const [docToSign, setDocToSign] = useState<Documento | null>(null);
+  const [signerName, setSignerName] = useState("");
+  const [signerEmail, setSignerEmail] = useState("");
+  const [signerDoc, setSignerDoc] = useState("");
+
+  const requestSignatureMutation = useMutation({
+    mutationFn: async () => {
+      if (!docToSign) throw new Error("Documento não selecionado");
+      if (!signerName || !signerEmail) throw new Error("Nome e E-mail são obrigatórios");
+
+      const { error } = await (supabase as any).from("document_signatures").insert({
+        organization_id: orgId,
+        document_id: docToSign.id,
+        client_id: docToSign.client_id,
+        signer_name: signerName,
+        signer_email: signerEmail,
+        signer_document: signerDoc,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Solicitação de assinatura enviada com sucesso!");
+      setSignatureOpen(false);
+      setDocToSign(null);
+      setSignerName("");
+      setSignerEmail("");
+      setSignerDoc("");
+    },
+    onError: (err: any) => toast.error(`Erro ao solicitar: ${err.message}`)
   });
 
   const deleteMutation = useMutation({
@@ -328,7 +361,9 @@ export default function DocumentosPage() {
                     </Button>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48">
+                      <DropdownMenuContent align="end" className="w-56">
+                        <DropdownMenuItem onClick={() => { setDocToSign(doc); setSignatureOpen(true); }} className="text-primary focus:text-primary gap-2 cursor-pointer font-medium"><PenTool className="h-4 w-4" /> Solicitar Assinatura</DropdownMenuItem>
+                        <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => generateShareLink(doc)}><Share2 className="h-4 w-4 mr-2" /> Copiar Link (7 dias)</DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleDownload(doc)}><Download className="h-4 w-4 mr-2" /> Baixar original</DropdownMenuItem>
                         <DropdownMenuSeparator />
@@ -404,6 +439,46 @@ export default function DocumentosPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* ── Signature Request Dialog ── */}
+      <Dialog open={signatureOpen} onOpenChange={setSignatureOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Solicitar Assinatura E-Sign</DialogTitle>
+            <DialogDescription>
+              Envie este documento para assinatura eletrônica com validade jurídica (Hash e IP).
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="bg-muted/30 p-3 rounded-md flex items-center gap-3">
+              <FileText className="w-8 h-8 text-primary" />
+              <div className="overflow-hidden">
+                <p className="font-semibold text-sm truncate">{docToSign?.file_name}</p>
+                <p className="text-xs text-muted-foreground">{formatFileSize(docToSign?.size)}</p>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Nome Completo do Signatário <span className="text-destructive">*</span></Label>
+              <Input placeholder="Ex: João da Silva" value={signerName} onChange={e => setSignerName(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>E-mail (Receberá o link) <span className="text-destructive">*</span></Label>
+              <Input type="email" placeholder="cliente@gmail.com" value={signerEmail} onChange={e => setSignerEmail(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>CPF / CNPJ (Opcional - Validará no acesso)</Label>
+              <Input placeholder="Apenas números" value={signerDoc} onChange={e => setSignerDoc(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSignatureOpen(false)}>Cancelar</Button>
+            <Button onClick={() => requestSignatureMutation.mutate()} disabled={requestSignatureMutation.isPending || !signerName || !signerEmail}>
+              {requestSignatureMutation.isPending ? "Enviando Convite..." : "Enviar para Assinatura"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 }

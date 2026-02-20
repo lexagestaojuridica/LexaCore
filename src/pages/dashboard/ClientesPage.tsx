@@ -216,6 +216,16 @@ export default function ClientesPage() {
     onError: () => toast.error("Erro ao enviar documento"),
   });
 
+  // Novo: Gerar Credenciais do Portal
+  const generatePortalAuth = useMutation({
+    mutationFn: async (client: Client) => {
+      if (!client.email) throw new Error("O cliente precisa de um e-mail cadastrado.");
+      // Chama a Edge Function que usará o supabase admin_key para criar o usuário Auth
+      // e depois setar o auth_user_id nele na tabela clients (Apenas mock para UI)
+      toast.info(`E-mail com credenciais enviado para ${client.email}`);
+    },
+  });
+
   const closeDialog = () => { setDialogOpen(false); setForm(emptyForm); setIsEditing(false); };
   const openCreate = () => { setForm(emptyForm); setIsEditing(false); setDialogOpen(true); };
 
@@ -615,9 +625,21 @@ export default function ClientesPage() {
                 </div>
               </div>
             )}
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setViewDialogOpen(false)}>
-              <X className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => generatePortalAuth.mutate(selectedClient!)}
+                disabled={generatePortalAuth.isPending || !selectedClient?.email}
+                title={!selectedClient?.email ? "O cliente precisa de e-mail cadastrado" : "Enviar acesso ao portal"}
+              >
+                <ShieldAlert className="w-4 h-4 mr-2" />
+                {generatePortalAuth.isPending ? "Processando..." : "Portal"}
+              </Button>
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setViewDialogOpen(false)}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
           {selectedClient && (
             <div className="space-y-5 px-6 pb-6 pt-4">

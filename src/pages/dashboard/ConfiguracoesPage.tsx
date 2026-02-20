@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { Settings, User, Building2, Shield, Save, Camera } from "lucide-react";
+import { Settings, User, Building2, Shield, Save, Camera, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import LexaLoadingOverlay from "@/components/shared/LexaLoadingOverlay";
 import lexaIcon from "@/assets/icon-lexa.png";
 
@@ -58,17 +59,32 @@ export default function ConfiguracoesPage() {
   const { data: teamMembers = [] } = useQuery({
     queryKey: ["team-members", profile?.organization_id],
     queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("*, user_roles(role)").eq("organization_id", profile!.organization_id!);
+      const { data } = await supabase.from("profiles").select("*, user_roles(role), custom_roles(name)").eq("organization_id", profile!.organization_id!);
+      return data ?? [];
+    },
+    enabled: !!profile?.organization_id,
+  });
+
+  const { data: customRoles = [] } = useQuery({
+    queryKey: ["custom-roles", profile?.organization_id],
+    queryFn: async () => {
+      const { data } = await supabase.from("custom_roles").select("*").eq("organization_id", profile!.organization_id!);
       return data ?? [];
     },
     enabled: !!profile?.organization_id,
   });
 
   const [profileForm, setProfileForm] = useState({ full_name: "", phone: "" });
+  const [orgForm, setOrgForm] = useState({ whatsapp_instance_id: "", whatsapp_token: "", whatsapp_enabled: false });
   const [formInitialized, setFormInitialized] = useState(false);
 
-  if (profile && !formInitialized) {
+  if (profile && org && !formInitialized) {
     setProfileForm({ full_name: profile.full_name || "", phone: profile.phone || "" });
+    setOrgForm({
+      whatsapp_instance_id: org.whatsapp_instance_id || "",
+      whatsapp_token: org.whatsapp_token || "",
+      whatsapp_enabled: org.whatsapp_enabled || false
+    });
     setFormInitialized(true);
   }
 
@@ -79,6 +95,15 @@ export default function ConfiguracoesPage() {
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["profile-full"] }); toast.success("Perfil atualizado"); },
     onError: () => toast.error("Erro ao atualizar perfil"),
+  });
+
+  const updateOrgMutation = useMutation({
+    mutationFn: async (payload: { whatsapp_instance_id: string; whatsapp_token: string; whatsapp_enabled: boolean }) => {
+      const { error } = await supabase.from("organizations").update(payload).eq("id", profile!.organization_id!);
+      if (error) throw error;
+    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["org"] }); toast.success("Organização atualizada"); },
+    onError: () => toast.error("Erro ao atualizar as configurações da Organização"),
   });
 
   const uploadAvatarMutation = useMutation({
@@ -94,6 +119,17 @@ export default function ConfiguracoesPage() {
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["profile-full"] }); toast.success("Foto atualizada"); },
     onError: () => toast.error("Erro ao atualizar foto"),
+  });
+
+  const updateMemberRoleMutation = useMutation({
+    mutationFn: async ({ userId, custom_role_id }: { userId: string, custom_role_id: string }) => {
+      const { error } = await supabase.from("profiles").update({ custom_role_id }).eq("user_id", userId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["team-members"] });
+      toast.success("Nível de acesso do membro atualizado");
+    },
   });
 
   const roleLabels: Record<string, string> = { admin: "Administrador", advogado: "Advogado", estagiario: "Estagiário", financeiro: "Financeiro" };
@@ -113,11 +149,12 @@ export default function ConfiguracoesPage() {
       </div>
 
       <Tabs defaultValue="perfil" className="w-full">
-        <TabsList className="mb-4 grid w-full max-w-md grid-cols-4">
+        <TabsList className="mb-4 grid w-full max-w-2xl grid-cols-5">
           <TabsTrigger value="perfil" className="gap-1.5 text-xs"><User className="h-3.5 w-3.5" /> Perfil</TabsTrigger>
           <TabsTrigger value="escritorio" className="gap-1.5 text-xs"><Building2 className="h-3.5 w-3.5" /> Escritório</TabsTrigger>
           <TabsTrigger value="equipe" className="gap-1.5 text-xs"><Shield className="h-3.5 w-3.5" /> Equipe</TabsTrigger>
           <TabsTrigger value="plano" className="gap-1.5 text-xs"><Settings className="h-3.5 w-3.5" /> Plano</TabsTrigger>
+          <TabsTrigger value="integracoes" className="gap-1.5 text-xs"><MessageCircle className="h-3.5 w-3.5" /> Integrações</TabsTrigger>
         </TabsList>
 
         <TabsContent value="perfil">
@@ -237,9 +274,29 @@ export default function ConfiguracoesPage() {
                         <p className="text-xs text-muted-foreground">{member.phone || "Sem telefone"}</p>
                       </div>
                     </div>
-                    <Badge variant="outline" className="text-xs">
-                      {roleLabels[member.user_roles?.[0]?.role || "advogado"] || "Membro"}
-                    </Badge>
+                    <div className="flex items-center gap-3">
+                      <Select
+                        value={member.custom_role_id || "default"}
+                        onValueChange={(val) => {
+                          if (val !== "default") updateMemberRoleMutation.mutate({ userId: member.user_id, custom_role_id: val });
+                        }}
+                      >
+                        <SelectTrigger className="w-[180px] h-8 text-xs bg-background">
+                          <SelectValue placeholder="Nível de Acesso" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="default" disabled className="text-xs">Cargo Original: {roleLabels[member.user_roles?.[0]?.role || "advogado"] || "Membro"}</SelectItem>
+                          {customRoles.map((r: any) => (
+                            <SelectItem key={r.id} value={r.id} className="text-xs flex items-center gap-2">
+                              {r.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Badge variant="outline" className="text-[10px] hidden sm:inline-flex">
+                        {member.custom_roles?.name || roleLabels[member.user_roles?.[0]?.role || "advogado"] || "Membro"}
+                      </Badge>
+                    </div>
                   </div>
                 ))}
                 {teamMembers.length === 0 && <p className="text-sm text-muted-foreground text-center py-6">Nenhum membro encontrado</p>}
@@ -282,6 +339,73 @@ export default function ConfiguracoesPage() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="integracoes">
+          <Card className="border-border">
+            <CardHeader>
+              <CardTitle className="font-display text-lg">Integrações de Notificação</CardTitle>
+              <CardDescription>Configure conexões com serviços externos para turbinar seu escritório</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+
+              <div className="bg-muted/30 p-5 rounded-lg border border-border space-y-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-[#25D366]/10 text-[#25D366] rounded-md">
+                      <MessageCircle className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-base">WhatsApp (Via Z-API)</h4>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Habilite o envio automático de mensagens para alertar clientes sobre Prazos, PIX gerados e Audiências 24h antes.
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={orgForm.whatsapp_enabled}
+                    onCheckedChange={(v) => setOrgForm({ ...orgForm, whatsapp_enabled: v })}
+                  />
+                </div>
+
+                {orgForm.whatsapp_enabled && (
+                  <div className="pt-4 border-t space-y-4 grid sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label>Instance ID</Label>
+                      <Input
+                        value={orgForm.whatsapp_instance_id}
+                        onChange={(e) => setOrgForm({ ...orgForm, whatsapp_instance_id: e.target.value })}
+                        placeholder="Ex: 3A1XXXXXXXXXXXXX"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Client Token</Label>
+                      <Input
+                        value={orgForm.whatsapp_token}
+                        onChange={(e) => setOrgForm({ ...orgForm, whatsapp_token: e.target.value })}
+                        type="password"
+                        placeholder="Ex: 730XXXXXXXXXXXXXXXXX"
+                      />
+                    </div>
+                    <div className="sm:col-span-2 flex justify-end">
+                      <Button
+                        onClick={() => updateOrgMutation.mutate({
+                          whatsapp_instance_id: orgForm.whatsapp_instance_id,
+                          whatsapp_token: orgForm.whatsapp_token,
+                          whatsapp_enabled: orgForm.whatsapp_enabled
+                        })}
+                        disabled={updateOrgMutation.isPending}
+                      >
+                        Salvar Integração
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+            </CardContent>
+          </Card>
+        </TabsContent>
+
       </Tabs>
     </div>
   );

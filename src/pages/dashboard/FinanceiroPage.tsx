@@ -7,7 +7,7 @@ import { format, parseISO, isPast, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   DollarSign, Plus, Search, Filter, Edit2, Trash2, TrendingUp, TrendingDown,
-  ArrowUpRight, ArrowDownRight, Wallet, Receipt, BarChart2, Bell, CheckCircle2,
+  ArrowUpRight, ArrowDownRight, Wallet, Receipt, BarChart2, Bell, CheckCircle2, QrCode, Copy
 } from "lucide-react";
 import BudgetPerformanceTab from "@/components/financeiro/BudgetPerformanceTab";
 import { DasDarfPanel } from "@/components/financeiro/DasDarfPanel";
@@ -52,6 +52,9 @@ export default function FinanceiroPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
+
+  const [pixModalOpen, setPixModalOpen] = useState(false);
+  const [selectedPix, setSelectedPix] = useState<any>(null);
 
   const { data: profile } = useQuery({
     queryKey: ["profile", user?.id],
@@ -128,6 +131,26 @@ export default function FinanceiroPage() {
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: [tableName] }); queryClient.invalidateQueries({ queryKey: ["contas_receber"] }); queryClient.invalidateQueries({ queryKey: ["contas_pagar"] }); toast.success("Conta excluída"); setDeleteDialogOpen(false); setEditingId(null); },
     onError: (e: any) => toast.error(e.message),
+  });
+
+  const generatePixMutation = useMutation({
+    mutationFn: async (c: any) => {
+      // Mock PIX API call / Asaas Gateway
+      const mockPixCode = `00020126440014BR.GOV.BCB.PIX0122rodrigo@lexanova.com.br5204000053039865405${Number(c.amount).toFixed(2)}5802BR5915Lexa Nova Ltda6009Sao Paulo62070503***6304${Math.floor(Math.random() * 10000)}`;
+      const { error } = await supabase.from("contas_receber").update({
+        pix_code: mockPixCode,
+        gateway_id: `pay_${Math.floor(Math.random() * 99999999)}`
+      }).eq("id", c.id);
+      if (error) throw error;
+      return { ...c, pix_code: mockPixCode };
+    },
+    onSuccess: (updatedData) => {
+      queryClient.invalidateQueries({ queryKey: [tableName] });
+      setSelectedPix(updatedData);
+      setPixModalOpen(true);
+      toast.success("Cobrança PIX gerada com sucesso!");
+    },
+    onError: (e: any) => toast.error(`Erro ao gerar PIX: ${e.message}`)
   });
 
   const markAsPaid = (id: string) => {
@@ -361,6 +384,25 @@ export default function FinanceiroPage() {
                                       </div>
 
                                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity absolute right-4 sm:relative sm:right-0 bg-card sm:bg-transparent shadow-sm sm:shadow-none p-1 rounded-md border sm:border-transparent">
+                                        {c.status === "pendente" && tab === "receber" && (
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            title="Cobrança PIX"
+                                            className="h-8 w-8 text-primary hover:bg-primary/10 hover:text-primary/90"
+                                            onClick={() => {
+                                              if (c.pix_code) {
+                                                setSelectedPix(c);
+                                                setPixModalOpen(true);
+                                              } else {
+                                                generatePixMutation.mutate(c);
+                                              }
+                                            }}
+                                            disabled={generatePixMutation.isPending}
+                                          >
+                                            <QrCode className="h-4 w-4" />
+                                          </Button>
+                                        )}
                                         {c.status === "pendente" && (
                                           <Button
                                             variant="ghost"
@@ -464,6 +506,47 @@ export default function FinanceiroPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Cancelar</Button>
             <Button variant="destructive" disabled={deleteMutation.isPending} onClick={() => editingId && deleteMutation.mutate(editingId)}>Excluir Definitivamente</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Pix Modal ── */}
+      <Dialog open={pixModalOpen} onOpenChange={setPixModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-center gap-2 text-xl">
+              <QrCode className="w-5 h-5 text-primary" /> Pagamento com PIX
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col items-center py-6 space-y-4">
+            {/* Mock PIX Image */}
+            <div className="bg-white p-4 rounded-xl border-4 border-muted/50 w-48 h-48 flex items-center justify-center">
+              <QrCode className="w-32 h-32 text-slate-800" />
+            </div>
+            <p className="font-bold text-lg text-primary">{fmtCurrency(Number(selectedPix?.amount || 0))}</p>
+            <p className="text-sm text-muted-foreground text-center">Fatura: {selectedPix?.description}</p>
+
+            <div className="w-full mt-4">
+              <p className="text-xs font-semibold uppercase text-muted-foreground mb-1.5 flex justify-between">
+                Copia e Cola
+              </p>
+              <div className="flex gap-2 relative">
+                <Input readOnly value={selectedPix?.pix_code || ""} className="pr-12 bg-muted/30 font-mono text-[10px]" />
+                <Button
+                  size="icon"
+                  className="absolute right-0 top-0 bottom-0 rounded-l-none"
+                  onClick={() => {
+                    navigator.clipboard.writeText(selectedPix?.pix_code);
+                    toast.success("Código PIX copiado!");
+                  }}
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPixModalOpen(false)} className="w-full">Concluído</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

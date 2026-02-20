@@ -27,6 +27,9 @@ import TimesheetPage from "@/pages/dashboard/TimesheetPage";
 import WikiJuridicaPage from "@/pages/dashboard/WikiJuridicaPage";
 import ChatPage from "@/pages/dashboard/ChatPage";
 import UnidadesPage from "@/pages/dashboard/UnidadesPage";
+import PortalLogin from "@/pages/portal/PortalLogin";
+import PortalDashboard from "@/pages/portal/PortalDashboard";
+import PortalSignature from "@/pages/portal/PortalSignature";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,6 +44,9 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/portal" element={<PortalLogin />} />
+            <Route path="/portal/dashboard" element={<ProtectedRoute><PortalDashboard /></ProtectedRoute>} />
+            <Route path="/portal/assinatura/:token" element={<PortalSignature />} />
             <Route
               path="/dashboard"
               element={
@@ -54,7 +60,6 @@ const App = () => (
               <Route path="clientes" element={<ClientesPage />} />
               <Route path="agenda" element={<AgendaPage />} />
               <Route path="financeiro" element={<FinanceiroPage />} />
-              {/* Documentos route removed — integrated into Processos and Clientes */}
               <Route path="ia" element={<IAPage />} />
               <Route path="configuracoes" element={<ConfiguracoesPage />} />
               <Route path="bi" element={<BIPage />} />
@@ -69,7 +74,6 @@ const App = () => (
               <Route path="chat" element={<ChatPage />} />
               <Route path="unidades" element={<UnidadesPage />} />
             </Route>
-            {/* Temporary preview route — remove after testing */}
             <Route path="/crm-preview" element={<CrmPage />} />
             <Route path="/workflow-preview" element={<WorkflowPage />} />
             <Route path="/minutas-preview" element={<MinutasPage />} />
