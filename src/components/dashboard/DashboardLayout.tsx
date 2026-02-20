@@ -7,9 +7,10 @@ import FacilitadorBar from "./FacilitadorBar";
 import { OnboardingTour } from "./OnboardingTour";
 import { LanguageSwitcher } from "@/components/shared/LanguageSwitcher";
 import { useAuth } from "@/contexts/AuthContext";
-import { Search } from "lucide-react";
+import { Search, Moon, Sun } from "lucide-react";
 import { useEffect, useCallback, useState } from "react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import {
   CommandDialog,
   CommandEmpty,
@@ -120,6 +121,31 @@ function GlobalSearch() {
   );
 }
 
+// ─── DarkModeToggle ───────────────────────────────────────────
+
+function DarkModeToggle() {
+  const [dark, setDark] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("lexa-dark") === "true" || document.documentElement.classList.contains("dark");
+  });
+
+  useEffect(() => {
+    if (dark) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("lexa-dark", "true");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("lexa-dark", "false");
+    }
+  }, [dark]);
+
+  return (
+    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => setDark((d) => !d)}>
+      {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+    </Button>
+  );
+}
+
 // ─── DashboardLayout ──────────────────────────────────────────
 
 export default function DashboardLayout() {
@@ -151,6 +177,7 @@ export default function DashboardLayout() {
             <div className="flex items-center gap-2">
               <GlobalSearch />
               <LanguageSwitcher />
+              <DarkModeToggle />
               <NotificationsDropdown />
 
               {/* Avatar with greeting */}

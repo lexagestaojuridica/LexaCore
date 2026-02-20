@@ -61,6 +61,60 @@
     --warning: 40 70% 50%;
     --warning-foreground: 0 0% 100%;
   }
+
+  .dark {
+    --background: 222 20% 10%;
+    --foreground: 220 14% 92%;
+
+    --card: 222 18% 13%;
+    --card-foreground: 220 14% 92%;
+
+    --popover: 222 18% 13%;
+    --popover-foreground: 220 14% 92%;
+
+    --primary: 220 40% 55%;
+    --primary-foreground: 220 16% 97%;
+
+    --secondary: 222 14% 18%;
+    --secondary-foreground: 220 14% 85%;
+
+    --muted: 222 12% 18%;
+    --muted-foreground: 220 10% 55%;
+
+    --accent: 34 35% 65%;
+    --accent-foreground: 34 20% 92%;
+
+    --destructive: 0 55% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 222 12% 20%;
+    --input: 222 12% 20%;
+    --ring: 220 40% 55%;
+
+    --navy: 220 42% 22%;
+    --navy-light: 220 30% 38%;
+    --gold: 34 35% 65%;
+    --gold-light: 34 28% 72%;
+    --cream: 222 20% 10%;
+    --cream-light: 222 16% 12%;
+    --champagne: 34 35% 65%;
+    --champagne-light: 34 25% 75%;
+    --champagne-glow: 34 18% 40%;
+
+    --sidebar-background: 222 28% 10%;
+    --sidebar-foreground: 220 20% 92%;
+    --sidebar-primary: 222 30% 18%;
+    --sidebar-primary-foreground: 220 16% 97%;
+    --sidebar-accent: 222 22% 16%;
+    --sidebar-accent-foreground: 220 16% 97%;
+    --sidebar-border: 222 18% 18%;
+    --sidebar-ring: 220 40% 55%;
+
+    --success: 158 40% 50%;
+    --success-foreground: 0 0% 100%;
+    --warning: 40 70% 55%;
+    --warning-foreground: 0 0% 100%;
+  }
 }
 
 @layer base {
@@ -125,14 +179,12 @@
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(
-      90deg,
-      transparent 0%,
-      hsl(var(--champagne) / 0.04) 40%,
-      hsl(var(--champagne) / 0.08) 50%,
-      hsl(var(--champagne) / 0.04) 60%,
-      transparent 100%
-    );
+    background: linear-gradient(90deg,
+        transparent 0%,
+        hsl(var(--champagne) / 0.04) 40%,
+        hsl(var(--champagne) / 0.08) 50%,
+        hsl(var(--champagne) / 0.04) 60%,
+        transparent 100%);
     transition: left 0.5s ease;
     pointer-events: none;
   }
@@ -175,14 +227,31 @@
 
   /* Floating shapes animation */
   @keyframes float {
-    0%, 100% { transform: translateY(0) rotate(0deg); }
-    33% { transform: translateY(-12px) rotate(2deg); }
-    66% { transform: translateY(-6px) rotate(-1deg); }
+
+    0%,
+    100% {
+      transform: translateY(0) rotate(0deg);
+    }
+
+    33% {
+      transform: translateY(-12px) rotate(2deg);
+    }
+
+    66% {
+      transform: translateY(-6px) rotate(-1deg);
+    }
   }
 
   @keyframes float-slow {
-    0%, 100% { transform: translateY(0) rotate(0deg); }
-    50% { transform: translateY(-20px) rotate(3deg); }
+
+    0%,
+    100% {
+      transform: translateY(0) rotate(0deg);
+    }
+
+    50% {
+      transform: translateY(-20px) rotate(3deg);
+    }
   }
 
   .animate-float {
@@ -194,8 +263,15 @@
   }
 
   @keyframes gradient-shift {
-    0%, 100% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
+
+    0%,
+    100% {
+      background-position: 0% 50%;
+    }
+
+    50% {
+      background-position: 100% 50%;
+    }
   }
 
   .animate-gradient {
