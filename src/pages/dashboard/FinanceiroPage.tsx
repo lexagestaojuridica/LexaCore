@@ -7,8 +7,9 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   DollarSign, Plus, Search, Filter, Edit2, Trash2, TrendingUp, TrendingDown,
-  ArrowUpRight, ArrowDownRight, Wallet, Receipt,
+  ArrowUpRight, ArrowDownRight, Wallet, Receipt, BarChart2,
 } from "lucide-react";
+import BudgetPerformanceTab from "@/components/financeiro/BudgetPerformanceTab";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -45,6 +46,7 @@ export default function FinanceiroPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [tab, setTab] = useState("receber");
+
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -208,9 +210,10 @@ export default function FinanceiroPage() {
       </div>
 
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="grid w-full max-w-xs grid-cols-2">
+        <TabsList className="grid w-full max-w-md grid-cols-3">
           <TabsTrigger value="receber" className="gap-2 text-xs"><TrendingUp className="h-3.5 w-3.5" /> A Receber</TabsTrigger>
           <TabsTrigger value="pagar" className="gap-2 text-xs"><TrendingDown className="h-3.5 w-3.5" /> A Pagar</TabsTrigger>
+          <TabsTrigger value="orcamento" className="gap-2 text-xs"><BarChart2 className="h-3.5 w-3.5" /> Orçamento</TabsTrigger>
         </TabsList>
 
         <TabsContent value={tab} className="mt-4 space-y-4">
@@ -285,6 +288,17 @@ export default function FinanceiroPage() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Budget Performance Tab */}
+        <TabsContent value="orcamento" className="mt-4">
+          {orgId ? (
+            <BudgetPerformanceTab orgId={orgId} />
+          ) : (
+            <div className="flex items-center justify-center py-20">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            </div>
+          )}
         </TabsContent>
       </Tabs>
 
