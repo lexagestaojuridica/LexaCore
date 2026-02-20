@@ -11,7 +11,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import {
   LayoutDashboard, Scale, Users, CalendarDays, DollarSign, Bot,
   LogOut, Settings, BarChart3, Calculator, Newspaper, Target,
-  GitBranch, FileEdit, ChevronDown, Award,
+  GitBranch, FileEdit, ChevronDown, Award, Timer,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -32,6 +32,7 @@ const navGroups = [
     items: [
       { title: "Processos", url: "/dashboard/processos", icon: Scale },
       { title: "Agenda & Prazos", url: "/dashboard/agenda", icon: CalendarDays },
+      { title: "Timesheet", url: "/dashboard/timesheet", icon: Timer },
       { title: "Workflow", url: "/dashboard/workflow", icon: GitBranch },
     ],
   },

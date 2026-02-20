@@ -8,6 +8,7 @@ import { ptBR } from "date-fns/locale";
 import {
   Users, Plus, Search, Edit2, Trash2, Eye, Mail, Phone, FileText, MapPin,
   Building2, User, Upload, Download, File, X,
+  ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -82,7 +83,7 @@ const MARITAL_OPTIONS = [
 ];
 
 const STATE_OPTIONS = [
-  "AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"
+  "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"
 ];
 
 const emptyForm: Record<string, string> = {
@@ -105,6 +106,8 @@ export default function ClientesPage() {
   const [form, setForm] = useState(emptyForm);
   const [isEditing, setIsEditing] = useState(false);
   const [cepLoading, setCepLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 15;
 
   const { data: profile } = useQuery({
     queryKey: ["profile", user?.id],
@@ -278,6 +281,10 @@ export default function ClientesPage() {
     );
   });
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const handleSearch = (v: string) => { setSearch(v); setPage(1); };
+
   const isSaving = createMutation.isPending || updateMutation.isPending;
 
   return (
@@ -287,7 +294,7 @@ export default function ClientesPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Clientes</h1>
-          <p className="text-sm text-muted-foreground">Gerencie todos os clientes do escritório</p>
+          <p className="text-sm text-muted-foreground">{clients.length} cliente{clients.length !== 1 ? "s" : ""} cadastrado{clients.length !== 1 ? "s" : ""}</p>
         </div>
         <Button onClick={openCreate} className="gap-2">
           <Plus className="h-4 w-4" /> Novo Cliente
@@ -298,7 +305,7 @@ export default function ClientesPage() {
         <CardContent className="flex items-center gap-3 p-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input placeholder="Buscar por nome, e-mail, telefone, documento ou empresa..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+            <Input placeholder="Buscar por nome, e-mail, telefone, documento ou empresa..." value={search} onChange={(e) => handleSearch(e.target.value)} className="pl-9" />
           </div>
         </CardContent>
       </Card>
@@ -306,55 +313,86 @@ export default function ClientesPage() {
       <Card className="border-border bg-card">
         <CardContent className="p-0">
           {isLoading ? (
-            <div className="flex items-center justify-center py-20"><span className="text-sm text-muted-foreground">Carregando...</span></div>
+            <div className="space-y-3 p-4">
+              {[1, 2, 3, 4, 5].map((n) => (
+                <div key={n} className="flex gap-4">
+                  <div className="h-5 w-40 rounded bg-muted/50 animate-pulse" />
+                  <div className="h-5 w-10 rounded bg-muted/50 animate-pulse" />
+                  <div className="h-5 w-36 rounded bg-muted/50 animate-pulse" />
+                  <div className="h-5 w-24 rounded bg-muted/50 animate-pulse" />
+                  <div className="h-5 flex-1 rounded bg-muted/50 animate-pulse" />
+                </div>
+              ))}
+            </div>
           ) : filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center">
               <Users className="mb-4 h-12 w-12 text-muted-foreground/30" />
-              <p className="text-sm text-muted-foreground">{clients.length === 0 ? "Nenhum cliente cadastrado. Cadastre o primeiro!" : "Nenhum cliente encontrado."}</p>
+              <p className="text-sm text-muted-foreground">{clients.length === 0 ? "Nenhum cliente cadastrado." : "Nenhum cliente encontrado."}</p>
+              {clients.length === 0 && (
+                <Button variant="outline" size="sm" className="mt-3 gap-1.5 text-xs" onClick={openCreate}>
+                  <Plus className="h-3 w-3" /> Cadastrar primeiro cliente
+                </Button>
+              )}
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead>E-mail</TableHead>
-                    <TableHead>Telefone</TableHead>
-                    <TableHead>CPF / CNPJ</TableHead>
-                    <TableHead>Cidade/UF</TableHead>
-                    <TableHead>Cadastrado</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filtered.map((c) => (
-                    <TableRow key={c.id}>
-                      <TableCell className="font-medium">{c.name}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="text-xs">
-                          {c.client_type === "pessoa_juridica" ? "PJ" : "PF"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">{c.email || "—"}</TableCell>
-                      <TableCell className="text-muted-foreground">{c.phone || "—"}</TableCell>
-                      <TableCell className="text-muted-foreground">{c.document || "—"}</TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {c.address_city && c.address_state ? `${c.address_city}/${c.address_state}` : "—"}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">{format(new Date(c.created_at), "dd/MM/yyyy", { locale: ptBR })}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center justify-end gap-1">
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => { setSelectedClient(c); setViewDialogOpen(true); }}><Eye className="h-4 w-4" /></Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => openEdit(c)}><Edit2 className="h-4 w-4" /></Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => { setSelectedClient(c); setDeleteDialogOpen(true); }}><Trash2 className="h-4 w-4" /></Button>
-                        </div>
-                      </TableCell>
+            <>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Tipo</TableHead>
+                      <TableHead>E-mail</TableHead>
+                      <TableHead>Telefone</TableHead>
+                      <TableHead>CPF / CNPJ</TableHead>
+                      <TableHead>Cidade/UF</TableHead>
+                      <TableHead>Cadastrado</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {paged.map((c) => (
+                      <TableRow key={c.id} className="hover:bg-muted/20">
+                        <TableCell className="font-medium">{c.name}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-xs">
+                            {c.client_type === "pessoa_juridica" ? "PJ" : "PF"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">{c.email || "—"}</TableCell>
+                        <TableCell className="text-muted-foreground">{c.phone || "—"}</TableCell>
+                        <TableCell className="text-muted-foreground">{c.document || "—"}</TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {c.address_city && c.address_state ? `${c.address_city}/${c.address_state}` : "—"}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">{format(new Date(c.created_at), "dd/MM/yyyy", { locale: ptBR })}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center justify-end gap-1">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => { setSelectedClient(c); setViewDialogOpen(true); }}><Eye className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => openEdit(c)}><Edit2 className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => { setSelectedClient(c); setDeleteDialogOpen(true); }}><Trash2 className="h-4 w-4" /></Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between border-t border-border/60 px-4 py-3">
+                  <p className="text-xs text-muted-foreground">
+                    {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} de {filtered.length} clientes
+                  </p>
+                  <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page === 1} onClick={() => setPage(1)}><ChevronsLeft className="h-3.5 w-3.5" /></Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page === 1} onClick={() => setPage(p => p - 1)}><ChevronLeft className="h-3.5 w-3.5" /></Button>
+                    <span className="px-3 text-xs font-medium">{page} / {totalPages}</span>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page === totalPages} onClick={() => setPage(p => p + 1)}><ChevronRight className="h-3.5 w-3.5" /></Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page === totalPages} onClick={() => setPage(totalPages)}><ChevronsRight className="h-3.5 w-3.5" /></Button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
