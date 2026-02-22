@@ -1,11 +1,7 @@
 -- 1. Permite o app_role 'cliente'
-DO $$
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_enum e ON t.oid = e.enumtypid WHERE t.typname = 'app_role' AND e.enumlabel = 'cliente') THEN
-    ALTER TYPE app_role ADD VALUE 'cliente';
-  END IF;
-END
-$$;
+-- Como Supabase executa dentro de uma transação, precisamos dar o commit antes para o ALTER TYPE ADD VALUE funcionar.
+COMMIT;
+ALTER TYPE app_role ADD VALUE IF NOT EXISTS 'cliente';
 
 -- 2. Vincula o cliente do CRM ao user real logado (para uso de RLS e JWT)
 ALTER TABLE public.clients ADD COLUMN IF NOT EXISTS auth_user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL;
