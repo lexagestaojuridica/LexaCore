@@ -145,6 +145,23 @@ export function useGoogleCalendar() {
     onError: (err: any) => toast.error(err.message || "Erro ao importar"),
   });
 
+  // Clear events from Google
+  const clearEvents = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke("google-calendar-sync", {
+        body: { action: "clear" },
+      });
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["eventos_agenda"] });
+      toast.success("Agenda importada limpa com sucesso");
+    },
+    onError: (err: any) => toast.error(err.message || "Erro ao limpar agenda"),
+  });
+
   // Export events to Google
   const exportEvents = useMutation({
     mutationFn: async () => {
@@ -173,6 +190,8 @@ export function useGoogleCalendar() {
     disconnecting: disconnect.isPending,
     importEvents: importEvents.mutate,
     importing: importEvents.isPending,
+    clearEvents: clearEvents.mutate,
+    clearing: clearEvents.isPending,
     exportEvents: exportEvents.mutate,
     exporting: exportEvents.isPending,
   };

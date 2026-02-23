@@ -894,14 +894,20 @@ export default function AgendaPage() {
                 {gcal.isConnected && <Badge variant="outline" className="text-[10px] text-emerald-600 border-emerald-300">Ativo</Badge>}
               </div>
               {gcal.isConnected ? (
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="gap-1.5 text-xs flex-1" onClick={() => gcal.importEvents()} disabled={gcal.importing}>
-                    {gcal.importing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />} Importar
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" className="gap-1.5 text-xs flex-1" onClick={() => gcal.importEvents()} disabled={gcal.importing}>
+                      {gcal.importing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />} Importar
+                    </Button>
+                    <Button variant="outline" size="sm" className="gap-1.5 text-xs flex-1" onClick={() => gcal.exportEvents()} disabled={gcal.exporting}>
+                      {gcal.exporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />} Exportar
+                    </Button>
+                    <Button variant="ghost" size="sm" className="text-xs text-destructive" onClick={() => gcal.disconnect()} title="Desconectar"><Unplug className="h-3.5 w-3.5" /></Button>
+                  </div>
+                  <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs border-destructive/30 text-destructive hover:bg-destructive/10" onClick={() => gcal.clearEvents()} disabled={gcal.clearing}>
+                    {gcal.clearing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                    Limpar Agenda Importada
                   </Button>
-                  <Button variant="outline" size="sm" className="gap-1.5 text-xs flex-1" onClick={() => gcal.exportEvents()} disabled={gcal.exporting}>
-                    {gcal.exporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />} Exportar
-                  </Button>
-                  <Button variant="ghost" size="sm" className="text-xs text-destructive" onClick={() => gcal.disconnect()}><Unplug className="h-3.5 w-3.5" /></Button>
                 </div>
               ) : (
                 <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs" onClick={() => gcal.connect()} disabled={gcal.connecting}>

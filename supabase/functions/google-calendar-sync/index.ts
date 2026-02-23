@@ -91,12 +91,13 @@ serve(async (req) => {
           category: "compromisso",
           user_id: user.id,
           organization_id: tokenRecord.organization_id,
+          google_event_id: e.id,
         }));
 
       if (events.length > 0) {
         const { error: insertError } = await supabaseAdmin
           .from("eventos_agenda")
-          .insert(events);
+          .upsert(events, { onConflict: 'user_id,google_event_id' });
         if (insertError) throw insertError;
       }
 
@@ -108,6 +109,21 @@ serve(async (req) => {
 
       return new Response(
         JSON.stringify({ imported: events.length }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (action === "clear") {
+      const { error: deleteError } = await supabaseAdmin
+        .from("eventos_agenda")
+        .delete()
+        .eq("user_id", user.id)
+        .not("google_event_id", "is", null);
+
+      if (deleteError) throw deleteError;
+
+      return new Response(
+        JSON.stringify({ success: true }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
