@@ -10,6 +10,7 @@ import {
     TrendingUp, Calendar, BarChart3, ChevronRight, PlayCircle, Target, Briefcase,
     Pause, RotateCcw, ChevronDown, History
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -83,6 +84,7 @@ const ACTION_LABELS: Record<string, { label: string; color: string }> = {
 export default function TimesheetPage() {
     const { user } = useAuth();
     const queryClient = useQueryClient();
+    const { t } = useTranslation();
 
     const [activeTimer, setActiveTimer] = useState<{
         processId: string | null; description: string; startedAt: Date; hourlyRate: string;
@@ -238,8 +240,11 @@ export default function TimesheetPage() {
             billing_status: "pendente",
         }).select("id").single();
 
-        if (inserted?.id) {
-            await logTimerAction(inserted.id, "stop");
+        if (inserted) {
+            const insertedId = (inserted as any).id;
+            if (insertedId) {
+                await logTimerAction(insertedId, "stop");
+            }
         }
 
         queryClient.invalidateQueries({ queryKey: ["timesheet"] });
@@ -308,11 +313,9 @@ export default function TimesheetPage() {
             {/* Header */}
             <motion.div variants={itemAnim} className="flex flex-col md:flex-row md:items-end justify-between gap-4 pt-2">
                 <div>
-                    <h1 className="text-3xl font-light tracking-tight text-foreground">
-                        Time<span className="font-semibold">sheet</span>
-                    </h1>
+                    <h1 className="text-2xl font-semibold tracking-tight text-foreground">{t("nav.timesheet")}</h1>
                     <p className="mt-1 text-muted-foreground text-sm flex items-center gap-2">
-                        <Timer className="h-4 w-4" />
+                        <Clock className="h-4 w-4" />
                         Registro e faturamento de horas
                     </p>
                 </div>

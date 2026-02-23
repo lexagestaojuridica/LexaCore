@@ -16,6 +16,7 @@ import {
   Filter, ExternalLink, Briefcase, ArrowRight, FileDown, Plus, Link2, CalendarDays,
   Clock, Edit, Trash2, Edit2, PlayCircle, Square, User, Bell
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -287,9 +288,8 @@ function DayView({ eventos, selectedDate, onEdit, onEventDrop, filteredCategorie
                   const CatIcon = cat.icon;
                   return (
                     <motion.div
-                      key={e.id}
                       draggable
-                      onDragStart={(evt) => evt.dataTransfer.setData("eventId", e.id)}
+                      onDragStart={(evt: any) => evt.dataTransfer.setData("eventId", e.id)}
                       initial={{ opacity: 0, x: 10 }}
                       animate={{ opacity: 1, x: 0 }}
                       className={cn(
@@ -397,6 +397,7 @@ function ListView({ eventos, filteredCategories, onEdit, onDelete }: {
 export default function AgendaPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>("month");
@@ -407,12 +408,13 @@ export default function AgendaPage() {
   const [filteredCategories, setFilteredCategories] = useState<string[]>([]);
   const gcal = useGoogleCalendar();
 
+  // Fix TS issue by asserting the returned array
   const { data: eventos = [], isLoading } = useQuery({
     queryKey: ["eventos_agenda"],
     queryFn: async () => {
       const { data, error } = await supabase.from("eventos_agenda").select("*").order("start_time", { ascending: true });
       if (error) throw error;
-      return data as Evento[];
+      return data as unknown as Evento[];
     },
   });
 
@@ -722,7 +724,7 @@ export default function AgendaPage() {
                         const cat = getCat(e.category);
                         const CatIcon = cat.icon;
                         return (
-                          <motion.div key={e.id} draggable onDragStart={(ev) => ev.dataTransfer.setData("eventId", e.id)} initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} transition={{ delay: idx * 0.04 }} className={cn("group rounded-lg border p-3 transition-all hover:shadow-sm cursor-grab", `bg-gradient-to-r ${cat.gradient} border-border/30`)} onClick={() => openEdit(e)}>
+                          <motion.div key={e.id} draggable onDragStart={(ev: any) => ev.dataTransfer.setData("eventId", e.id)} initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} transition={{ delay: idx * 0.04 }} className={cn("group rounded-lg border p-3 transition-all hover:shadow-sm cursor-grab", `bg-gradient-to-r ${cat.gradient} border-border/30`)} onClick={() => openEdit(e)}>
                             <div className="flex items-start gap-2.5">
                               <CatIcon className={cn("h-4 w-4 mt-0.5 shrink-0", cat.text)} />
                               <div className="min-w-0 flex-1">
@@ -859,7 +861,7 @@ export default function AgendaPage() {
           </div>
           <DialogFooter className="gap-2 sm:gap-0 mt-2">
             {editingEvent && (
-              <Button variant="destructive" variant="outline" className="mr-auto text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => { deleteMutation.mutate(editingEvent.id); closeDialog(); }}>
+              <Button variant="outline" className="mr-auto text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => { deleteMutation.mutate(editingEvent.id); closeDialog(); }}>
                 Excluir
               </Button>
             )}

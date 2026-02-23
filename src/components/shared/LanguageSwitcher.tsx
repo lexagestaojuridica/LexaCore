@@ -55,8 +55,6 @@ export function LanguageSwitcher() {
     const handleChangeLanguage = (code: string) => {
         i18n.changeLanguage(code);
         localStorage.setItem("lexa-lang", code);
-        // Force a re-render of the entire app
-        window.location.reload();
     };
 
     return (

@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import BudgetPerformanceTab from "@/components/financeiro/BudgetPerformanceTab";
 import { DasDarfPanel } from "@/components/financeiro/DasDarfPanel";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -44,6 +45,7 @@ function getMonthYearLabel(dateStr: string) {
 export default function FinanceiroPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
   const [tab, setTab] = useState("receber");
 
   const [search, setSearch] = useState("");
@@ -223,12 +225,12 @@ export default function FinanceiroPage() {
       {/* ── Minimal Header ── */}
       <motion.div variants={itemAnim} className="flex flex-col md:flex-row md:items-end justify-between gap-4 pt-2">
         <div>
-          <h1 className="text-3xl font-light tracking-tight text-foreground">
-            Gestão <span className="font-semibold">Financeira</span>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+            {t("financial.title")}
           </h1>
-          <p className="mt-1 text-muted-foreground text-sm flex items-center gap-2">
+          <p className="mt-1 text-sm text-muted-foreground flex items-center gap-2">
             <Wallet className="h-4 w-4" />
-            Controle de fluxo de caixa, pagamentos e recebimentos
+            {t("financial.subtitle")}
           </p>
         </div>
         <div className="flex gap-2">

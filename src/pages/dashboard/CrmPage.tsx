@@ -2,6 +2,7 @@ import { useState } from "react";
 import { TrendingUp, Users, Activity, Briefcase, Plus, Filter, Download, Search, BarChart3 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CrmProvider, useCrm } from "@/contexts/CrmContext";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import CrmPipelineBoard from "@/components/crm/CrmPipelineBoard";
@@ -22,6 +23,7 @@ const formatCurrency = (v: number) =>
 function CrmPageInner() {
     const [activeTab, setActiveTab] = useState("pipeline");
     const { leads, contacts, deals } = useCrm();
+    const { t } = useTranslation();
 
     const totalPipeline = leads.reduce((s, l) => s + l.value, 0);
     const activeDeals = deals.filter((d) => d.stage !== "Fechado/Ganho" && d.stage !== "Perdido");
@@ -46,8 +48,8 @@ function CrmPageInner() {
                         <TrendingUp className="h-4.5 w-4.5 text-primary" />
                     </div>
                     <div>
-                        <h1 className="text-xl font-semibold text-foreground tracking-tight">CRM</h1>
-                        <p className="text-xs text-muted-foreground">Gerencie seu pipeline de vendas e relacionamentos</p>
+                        <h1 className="text-2xl font-semibold text-foreground tracking-tight">{t("nav.crm")}</h1>
+                        <p className="text-sm text-muted-foreground">Gerencie seu pipeline de vendas e relacionamentos</p>
                     </div>
                 </div>
             </div>

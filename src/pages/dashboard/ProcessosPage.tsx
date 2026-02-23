@@ -11,6 +11,7 @@ import {
   ArrowUpDown, ArrowUp, ArrowDown, Receipt, Bot, SwitchCamera,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
@@ -200,6 +201,7 @@ function KanbanCard({ p, onEdit, onView, onDelete }: {
 export default function ProcessosPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -409,9 +411,9 @@ export default function ProcessosPage() {
       {/* ── Header ── */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">Processos Jurídicos</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">{t("processes.title")}</h1>
           <p className="text-sm text-muted-foreground">
-            {processos.length} processo{processos.length !== 1 ? "s" : ""} cadastrado{processos.length !== 1 ? "s" : ""}
+            {processos.length} {processos.length !== 1 ? t("processes.subtitle") + "s" : t("processes.subtitle")} {processos.length !== 1 ? t("common.registeredPlural") : t("common.registered")}
           </p>
         </div>
         <div className="flex items-center gap-2">

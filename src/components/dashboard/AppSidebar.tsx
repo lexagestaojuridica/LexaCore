@@ -18,76 +18,77 @@ import { resetOnboardingTour } from "./OnboardingTour";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
-import logoLexa from "@/assets/logo-lexa.png";
+import logoLexaWhite from "@/assets/logo-lexa-white.png";
 import iconLexa from "@/assets/icon-lexa.png";
 
 // ─── Nav structure grouped by journey ───────────────────────
 
 const navGroups = [
   {
-    label: "Início",
+    labelKey: "groups.main",
     defaultOpen: true,
     items: [
-      { title: "Meu Dia", url: "/dashboard", icon: LayoutDashboard },
+      { titleKey: "nav.dashboard", url: "/dashboard", icon: LayoutDashboard },
     ],
   },
   {
-    label: "Operacional",
+    labelKey: "groups.operational",
     defaultOpen: false,
     items: [
-      { title: "Processos", url: "/dashboard/processos", icon: Scale },
-      { title: "Agenda & Prazos", url: "/dashboard/agenda", icon: CalendarDays },
-      { title: "Timesheet", url: "/dashboard/timesheet", icon: Timer },
-      { title: "Chat Interno", url: "/dashboard/chat", icon: MessageSquare },
-      { title: "Workflow", url: "/dashboard/workflow", icon: GitBranch },
+      { titleKey: "nav.processes", url: "/dashboard/processos", icon: Scale },
+      { titleKey: "nav.agenda", url: "/dashboard/agenda", icon: CalendarDays },
+      { titleKey: "nav.timesheet", url: "/dashboard/timesheet", icon: Timer },
+      { titleKey: "nav.chat", url: "/dashboard/chat", icon: MessageSquare },
+      { titleKey: "nav.workflow", url: "/dashboard/workflow", icon: GitBranch },
     ],
   },
   {
-    label: "Relacionamento",
+    labelKey: "groups.relationship",
     defaultOpen: false,
     items: [
-      { title: "Clientes", url: "/dashboard/clientes", icon: Users },
-      { title: "CRM", url: "/dashboard/crm", icon: Target },
+      { titleKey: "nav.clients", url: "/dashboard/clientes", icon: Users },
+      { titleKey: "nav.crm", url: "/dashboard/crm", icon: Target },
     ],
   },
   {
-    label: "Documentos",
+    labelKey: "groups.documents",
     defaultOpen: false,
     items: [
-      { title: "Minutas & Contratos", url: "/dashboard/minutas", icon: FileEdit },
-      { title: "Certificados", url: "/dashboard/certificados", icon: Award },
-      { title: "Wiki Jurídica", url: "/dashboard/wiki", icon: BookOpen },
-      { title: "Calculadora", url: "/dashboard/calculadora", icon: Calculator },
+      { titleKey: "nav.minutas", url: "/dashboard/minutas", icon: FileEdit },
+      { titleKey: "nav.certificates", url: "/dashboard/certificados", icon: Award },
+      { titleKey: "nav.wiki", url: "/dashboard/wiki", icon: BookOpen },
+      { titleKey: "nav.calculator", url: "/dashboard/calculadora", icon: Calculator },
     ],
   },
   {
-    label: "Financeiro",
+    labelKey: "groups.financial",
     defaultOpen: false,
     items: [
-      { title: "Financeiro", url: "/dashboard/financeiro", icon: DollarSign },
+      { titleKey: "nav.financial", url: "/dashboard/financeiro", icon: DollarSign },
     ],
   },
   {
-    label: "Inteligência",
+    labelKey: "groups.intelligence",
     defaultOpen: false,
     items: [
-      { title: "BI & Relatórios", url: "/dashboard/bi", icon: BarChart3 },
-      { title: "ARUNA IA", url: "/dashboard/ia", icon: Bot },
-      { title: "Notícias Jurídicas", url: "/dashboard/noticias", icon: Newspaper },
+      { titleKey: "nav.bi", url: "/dashboard/bi", icon: BarChart3 },
+      { titleKey: "nav.ia", url: "/dashboard/ia", icon: Bot },
+      { titleKey: "nav.news", url: "/dashboard/noticias", icon: Newspaper },
     ],
   },
   {
-    label: "Administração",
+    labelKey: "groups.admin",
     defaultOpen: false,
     items: [
-      { title: "Unidades / Franquias", url: "/dashboard/unidades", icon: Building2 },
+      { titleKey: "nav.units", url: "/dashboard/unidades", icon: Building2 },
     ],
   },
 ];
 
 // ─── NavItem ─────────────────────────────────────────────────
 
-function NavItem({ item, collapsed }: { item: { title: string; url: string; icon: any }; collapsed: boolean }) {
+function NavItem({ item, collapsed, t }: { item: { titleKey: string; url: string; icon: any }; collapsed: boolean; t: (k: string) => string }) {
+  const title = t(item.titleKey);
   return (
     <Tooltip delayDuration={0}>
       <TooltipTrigger asChild>
@@ -100,12 +101,12 @@ function NavItem({ item, collapsed }: { item: { title: string; url: string; icon
           <item.icon className="sidebar-icon h-4 w-4 shrink-0" />
           {!collapsed && (
             <span className="truncate transition-transform duration-200 group-hover:translate-x-0.5">
-              {item.title}
+              {title}
             </span>
           )}
         </NavLink>
       </TooltipTrigger>
-      {collapsed && <TooltipContent side="right">{item.title}</TooltipContent>}
+      {collapsed && <TooltipContent side="right">{title}</TooltipContent>}
     </Tooltip>
   );
 }
@@ -115,9 +116,11 @@ function NavItem({ item, collapsed }: { item: { title: string; url: string; icon
 function NavGroup({
   group,
   collapsed,
+  t,
 }: {
   group: (typeof navGroups)[0];
   collapsed: boolean;
+  t: (k: string) => string;
 }) {
   const [open, setOpen] = useState(group.defaultOpen);
 
@@ -128,7 +131,7 @@ function NavGroup({
           onClick={() => setOpen((o) => !o)}
           className="flex w-full items-center justify-between px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/35 hover:text-sidebar-foreground/60 transition-colors"
         >
-          <span>{group.label}</span>
+          <span>{t(group.labelKey)}</span>
           <ChevronDown
             className={cn(
               "h-3 w-3 transition-transform duration-200",
@@ -143,7 +146,7 @@ function NavGroup({
       {(open || collapsed) && (
         <nav className="flex flex-col gap-0.5">
           {group.items.map((item) => (
-            <NavItem key={item.title} item={item} collapsed={collapsed} />
+            <NavItem key={item.titleKey} item={item} collapsed={collapsed} t={t} />
           ))}
         </nav>
       )}
@@ -175,14 +178,14 @@ export function AppSidebar() {
         {collapsed ? (
           <img src={iconLexa} alt="LEXA" className="h-8 w-8 object-contain" />
         ) : (
-          <img src={logoLexa} alt="LEXA" className="h-14 w-auto max-w-[140px] object-contain" />
+          <img src={logoLexaWhite} alt="LEXA" className="h-14 w-auto max-w-[140px] object-contain" />
         )}
       </div>
 
       {/* Nav Groups */}
       <SidebarContent className="flex-1 overflow-y-auto overflow-x-hidden px-2 py-3">
         {navGroups.map((group) => (
-          <NavGroup key={group.label} group={group} collapsed={collapsed} />
+          <NavGroup key={group.labelKey} group={group} collapsed={collapsed} t={t} />
         ))}
       </SidebarContent>
 
@@ -223,7 +226,7 @@ export function AppSidebar() {
                 </NavLink>
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="right">Configurações</TooltipContent>
+            <TooltipContent side="right">{t("nav.settings")}</TooltipContent>
           </Tooltip>
           <Tooltip delayDuration={0}>
             <TooltipTrigger asChild>
@@ -231,13 +234,13 @@ export function AppSidebar() {
                 variant="ghost"
                 size="icon"
                 className="h-7 w-7 shrink-0 text-sidebar-foreground/35 hover:text-sidebar-foreground hover:bg-sidebar-accent"
-                title="Rever tour de boas-vindas"
+                title={t("common.logout")}
                 onClick={() => { resetOnboardingTour(); window.location.reload(); }}
               >
                 <RotateCcw className="h-3.5 w-3.5" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="right">Rever Tour de Boas-Vindas</TooltipContent>
+            <TooltipContent side="right">{t("common.logout")}</TooltipContent>
           </Tooltip>
           <Tooltip delayDuration={0}>
             <TooltipTrigger asChild>
@@ -250,7 +253,7 @@ export function AppSidebar() {
                 <LogOut className="h-3.5 w-3.5" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="right">Sair</TooltipContent>
+            <TooltipContent side="right">{t("common.logout")}</TooltipContent>
           </Tooltip>
         </div>
       </SidebarFooter>

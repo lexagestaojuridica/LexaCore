@@ -1,12 +1,13 @@
 import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import {
   Settings, User, Building2, Shield, Save, Camera, MessageCircle,
   Crown, Sparkles, Check, Plus, Trash2, GripVertical, Layers, Users,
-  Briefcase, Phone, Mail, Hash, MapPin
+  Briefcase, Phone, Mail, Hash, MapPin, UserPlus, Minus
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,6 +47,7 @@ export default function ConfiguracoesPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const { t } = useTranslation();
 
   // ── Queries ──
   const { data: profile, isLoading } = useQuery({
@@ -148,6 +150,8 @@ export default function ConfiguracoesPage() {
   const [profileForm, setProfileForm] = useState({ full_name: "", phone: "" });
   const [orgForm, setOrgForm] = useState({ whatsapp_instance_id: "", whatsapp_token: "", whatsapp_enabled: false });
   const [formInitialized, setFormInitialized] = useState(false);
+  const [activeTab, setActiveTab] = useState("perfil");
+  const [addUsersSeats, setAddUsersSeats] = useState(1);
 
   const [empDialogOpen, setEmpDialogOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<string | null>(null);
@@ -302,371 +306,423 @@ export default function ConfiguracoesPage() {
   const filteredOptions = optFilterModule === "all" ? customOptions : customOptions.filter((o) => o.module === optFilterModule);
 
   if (isLoading) {
-    return <div className="flex items-center justify-center py-20"><span className="text-sm text-muted-foreground">Carregando...</span></div>;
+    return <div className="flex items-center justify-center py-20"><span className="text-sm text-muted-foreground">{t("common.loading")}</span></div>;
   }
 
   const planIcons = ["", "✨", "🚀", "👑"];
   const planColors = ["", "from-blue-500/10 to-indigo-500/10", "from-violet-500/10 to-purple-500/10", "from-amber-500/10 to-orange-500/10"];
 
+  const sidebarNavItems = [
+    { key: "perfil", icon: User, label: t("settings.profile") },
+    { key: "escritorio", icon: Building2, label: t("settings.office") },
+    { key: "equipe", icon: Users, label: t("settings.team") },
+    { key: "funcionarios", icon: Briefcase, label: t("settings.employees") },
+    { key: "planos", icon: Crown, label: t("settings.plans") },
+    { key: "usuarios", icon: UserPlus, label: t("settings.addUsers") },
+  ];
+
   return (
     <div className="space-y-6">
-      <LexaLoadingOverlay visible={uploadAvatarMutation.isPending} message="Atualizando foto..." />
+      <LexaLoadingOverlay visible={uploadAvatarMutation.isPending} message={t("common.loading")} />
 
       <div>
-        <h1 className="font-display text-2xl text-foreground">Configurações</h1>
-        <p className="text-sm text-muted-foreground">Gerencie seu perfil, escritório e preferências</p>
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">{t("settings.title")}</h1>
+        <p className="text-sm text-muted-foreground">{t("settings.subtitle")}</p>
       </div>
 
-      <Tabs defaultValue="perfil" className="w-full">
-        <TabsList className="mb-4 flex flex-wrap gap-1 w-full max-w-2xl h-auto">
-          <TabsTrigger value="perfil" className="gap-1.5 text-xs"><User className="h-3.5 w-3.5" /> Perfil</TabsTrigger>
-          <TabsTrigger value="escritorio" className="gap-1.5 text-xs"><Building2 className="h-3.5 w-3.5" /> Escritório</TabsTrigger>
-          <TabsTrigger value="equipe" className="gap-1.5 text-xs"><Users className="h-3.5 w-3.5" /> Equipe</TabsTrigger>
-          <TabsTrigger value="funcionarios" className="gap-1.5 text-xs"><Briefcase className="h-3.5 w-3.5" /> Funcionários</TabsTrigger>
-          <TabsTrigger value="planos" className="gap-1.5 text-xs"><Crown className="h-3.5 w-3.5" /> Planos</TabsTrigger>
-        </TabsList>
+      <div className="flex flex-col lg:flex-row gap-6">
+        {/* ── Vertical Sidebar Nav ── */}
+        <nav className="lg:w-56 shrink-0">
+          <div className="flex lg:flex-col gap-1 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0">
+            {sidebarNavItems.map((item) => (
+              <button
+                key={item.key}
+                onClick={() => setActiveTab(item.key)}
+                className={cn(
+                  "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-all whitespace-nowrap",
+                  activeTab === item.key
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                )}
+              >
+                <item.icon className="h-4 w-4 shrink-0" />
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </nav>
 
-        {/* ── Perfil Tab ── */}
-        <TabsContent value="perfil">
-          <Card className="border-border">
-            <CardHeader>
-              <CardTitle className="font-display text-lg">Meu Perfil</CardTitle>
-              <CardDescription>Atualize suas informações pessoais</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="relative group">
-                  {profile?.avatar_url ? (
-                    <img src={profile.avatar_url} alt="Avatar" className="h-16 w-16 rounded-full object-cover border-2 border-border" />
-                  ) : (
-                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary font-display text-2xl">
-                      {(profile?.full_name || user?.email || "U").charAt(0).toUpperCase()}
-                    </div>
-                  )}
-                  <button type="button" onClick={() => avatarInputRef.current?.click()} className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                    <Camera className="h-5 w-5 text-white" />
-                  </button>
-                  <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const file = e.target.files?.[0]; if (file) uploadAvatarMutation.mutate(file); }} />
-                </div>
-                <div>
-                  <p className="font-medium text-foreground">{profile?.full_name || user?.email}</p>
-                  <p className="text-sm text-muted-foreground">{user?.email}</p>
-                  <Badge variant="outline" className="mt-1 text-xs">{roleLabels[userRole?.role || "advogado"] || userRole?.role}</Badge>
-                </div>
-              </div>
-              <Separator />
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-1.5">
-                  <Label>Nome Completo</Label>
-                  <Input value={profileForm.full_name} onChange={(e) => setProfileForm((p) => ({ ...p, full_name: e.target.value }))} placeholder="Seu nome completo" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Telefone</Label>
-                  <Input value={profileForm.phone} onChange={(e) => setProfileForm((p) => ({ ...p, phone: e.target.value }))} placeholder="(00) 00000-0000" />
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <Label>E-mail</Label>
-                <Input value={user?.email || ""} disabled className="bg-muted" />
-                <p className="text-xs text-muted-foreground">O e-mail não pode ser alterado</p>
-              </div>
-              <div className="flex justify-end pt-2">
-                <Button onClick={() => updateProfileMutation.mutate(profileForm)} disabled={updateProfileMutation.isPending} className="gap-2">
-                  <Save className="h-4 w-4" /> Salvar Alterações
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* ── Escritório Tab ── */}
-        <TabsContent value="escritorio">
-          <Card className="border-border">
-            <CardHeader>
-              <CardTitle className="font-display text-lg">Dados do Escritório</CardTitle>
-              <CardDescription>Informações da organização</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-1.5">
-                <Label>Nome do Escritório</Label>
-                <Input value={org?.name || ""} disabled className="bg-muted" />
-                <p className="text-xs text-muted-foreground">Para alterar, entre em contato com o suporte</p>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-1.5">
-                  <Label>ID da Organização</Label>
-                  <Input value={org?.id || ""} disabled className="bg-muted font-mono text-xs" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Criado em</Label>
-                  <Input value={org?.created_at ? new Date(org.created_at).toLocaleDateString("pt-BR") : ""} disabled className="bg-muted" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* ── Equipe Tab (RBAC) ── */}
-        <TabsContent value="equipe">
-          <Card className="border-border">
-            <CardHeader>
-              <CardTitle className="font-display text-lg">Equipe</CardTitle>
-              <CardDescription>Membros com acesso ao sistema</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {teamMembers.map((member: any) => (
-                  <div key={member.id} className="flex items-center justify-between rounded-lg border border-border p-3">
-                    <div className="flex items-center gap-3">
-                      {member.avatar_url ? (
-                        <img src={member.avatar_url} alt="" className="h-9 w-9 rounded-full object-cover" />
-                      ) : (
-                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary text-sm font-medium">
-                          {(member.full_name || "U").charAt(0).toUpperCase()}
-                        </div>
-                      )}
-                      <div>
-                        <p className="text-sm font-medium text-foreground">{member.full_name || "Sem nome"}</p>
-                        <p className="text-xs text-muted-foreground">{member.phone || "Sem telefone"}</p>
+        {/* ── Content Area ── */}
+        <div className="flex-1 min-w-0">
+          {/* ── Perfil ── */}
+          {activeTab === "perfil" && (
+            <Card className="border-border">
+              <CardHeader>
+                <CardTitle className="font-display text-lg">{t("settings.myProfile")}</CardTitle>
+                <CardDescription>{t("settings.updatePersonalInfo")}</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="relative group">
+                    {profile?.avatar_url ? (
+                      <img src={profile.avatar_url} alt="Avatar" className="h-16 w-16 rounded-full object-cover border-2 border-border" />
+                    ) : (
+                      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary font-display text-2xl">
+                        {(profile?.full_name || user?.email || "U").charAt(0).toUpperCase()}
                       </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Select
-                        value={member.custom_role_id || "default"}
-                        onValueChange={(val) => { if (val !== "default") updateMemberRoleMutation.mutate({ userId: member.user_id, custom_role_id: val }); }}
-                      >
-                        <SelectTrigger className="w-[180px] h-8 text-xs bg-background"><SelectValue placeholder="Nível de Acesso" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="default" disabled className="text-xs">Cargo Original: {roleLabels[member.user_roles?.[0]?.role || "advogado"] || "Membro"}</SelectItem>
-                          {customRoles.map((r: any) => (<SelectItem key={r.id} value={r.id} className="text-xs">{r.name}</SelectItem>))}
-                        </SelectContent>
-                      </Select>
-                      <Badge variant="outline" className="text-[10px] hidden sm:inline-flex">
-                        {member.custom_roles?.name || roleLabels[member.user_roles?.[0]?.role || "advogado"] || "Membro"}
-                      </Badge>
-                    </div>
+                    )}
+                    <button type="button" onClick={() => avatarInputRef.current?.click()} className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                      <Camera className="h-5 w-5 text-white" />
+                    </button>
+                    <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const file = e.target.files?.[0]; if (file) uploadAvatarMutation.mutate(file); }} />
                   </div>
-                ))}
-                {teamMembers.length === 0 && <p className="text-sm text-muted-foreground text-center py-6">Nenhum membro encontrado</p>}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* ── Funcionários Tab (NEW) ── */}
-        <TabsContent value="funcionarios">
-          <Card className="border-border">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle className="font-display text-lg">Cadastro de Funcionários</CardTitle>
-                <CardDescription>{employees.length} funcionários cadastrados</CardDescription>
-              </div>
-              <Button size="sm" className="gap-2" onClick={() => { setEditingEmployee(null); setEmpForm(emptyEmployee); setEmpDialogOpen(true); }}>
-                <Plus className="h-4 w-4" /> Novo Funcionário
-              </Button>
-            </CardHeader>
-            <CardContent>
-              {employees.length === 0 ? (
-                <div className="flex flex-col items-center py-12 text-center">
-                  <Users className="h-10 w-10 text-muted-foreground/30 mb-3" />
-                  <p className="font-medium text-foreground">Nenhum funcionário cadastrado</p>
-                  <p className="text-sm text-muted-foreground mt-1">Clique em "Novo Funcionário" para começar.</p>
+                  <div>
+                    <p className="font-medium text-foreground">{profile?.full_name || user?.email}</p>
+                    <p className="text-sm text-muted-foreground">{user?.email}</p>
+                    <Badge variant="outline" className="mt-1 text-xs">{roleLabels[userRole?.role || "advogado"] || userRole?.role}</Badge>
+                  </div>
                 </div>
-              ) : (
-                <div className="space-y-2">
-                  {employees.map((emp) => (
-                    <div key={emp.id} className="flex items-center justify-between rounded-lg border border-border p-3 hover:bg-muted/20 transition-colors">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary text-sm font-medium shrink-0">
-                          {emp.full_name.charAt(0).toUpperCase()}
-                        </div>
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm font-medium text-foreground truncate">{emp.full_name}</p>
-                            {!emp.is_active && <Badge variant="secondary" className="text-[10px]">Inativo</Badge>}
+                <Separator />
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label>{t("settings.fullName")}</Label>
+                    <Input value={profileForm.full_name} onChange={(e) => setProfileForm((p) => ({ ...p, full_name: e.target.value }))} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>{t("common.phone")}</Label>
+                    <Input value={profileForm.phone} onChange={(e) => setProfileForm((p) => ({ ...p, phone: e.target.value }))} placeholder="(00) 00000-0000" />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>{t("common.email")}</Label>
+                  <Input value={user?.email || ""} disabled className="bg-muted" />
+                  <p className="text-xs text-muted-foreground">{t("settings.emailCannotChange")}</p>
+                </div>
+                <div className="flex justify-end pt-2">
+                  <Button onClick={() => updateProfileMutation.mutate(profileForm)} disabled={updateProfileMutation.isPending} className="gap-2">
+                    <Save className="h-4 w-4" /> {t("settings.saveChanges")}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* ── Escritório ── */}
+          {activeTab === "escritorio" && (
+            <Card className="border-border">
+              <CardHeader>
+                <CardTitle className="font-display text-lg">{t("settings.officeData")}</CardTitle>
+                <CardDescription>{t("settings.orgInfo")}</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label>{t("settings.officeName")}</Label>
+                  <Input value={org?.name || ""} disabled className="bg-muted" />
+                  <p className="text-xs text-muted-foreground">{t("settings.contactSupport")}</p>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label>{t("settings.orgId")}</Label>
+                    <Input value={org?.id || ""} disabled className="bg-muted font-mono text-xs" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>{t("settings.createdAt")}</Label>
+                    <Input value={org?.created_at ? new Date(org.created_at).toLocaleDateString("pt-BR") : ""} disabled className="bg-muted" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* ── Equipe ── */}
+          {activeTab === "equipe" && (
+            <Card className="border-border">
+              <CardHeader>
+                <CardTitle className="font-display text-lg">{t("settings.team")}</CardTitle>
+                <CardDescription>{t("settings.teamMembers")}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {teamMembers.map((member: any) => (
+                    <div key={member.id} className="flex items-center justify-between rounded-lg border border-border p-3">
+                      <div className="flex items-center gap-3">
+                        {member.avatar_url ? (
+                          <img src={member.avatar_url} alt="" className="h-9 w-9 rounded-full object-cover" />
+                        ) : (
+                          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary text-sm font-medium">
+                            {(member.full_name || "U").charAt(0).toUpperCase()}
                           </div>
-                          <div className="flex items-center gap-3 mt-0.5 text-xs text-muted-foreground">
-                            {emp.position && <span>{emp.position}</span>}
-                            {emp.department && <span>• {emp.department}</span>}
-                            {emp.oab_number && <span className="flex items-center gap-1"><Hash className="h-3 w-3" />OAB {emp.oab_number}</span>}
-                          </div>
+                        )}
+                        <div>
+                          <p className="text-sm font-medium text-foreground">{member.full_name || t("common.none")}</p>
+                          <p className="text-xs text-muted-foreground">{member.phone || t("common.none")}</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        {emp.hourly_rate && <Badge variant="outline" className="text-[10px]">R$ {emp.hourly_rate}/h</Badge>}
-                        <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => openEditEmployee(emp)}>Editar</Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => deleteEmployeeMutation.mutate(emp.id)}>
-                          <Trash2 className="h-3.5 w-3.5" />
+                      <div className="flex items-center gap-3">
+                        <Select
+                          value={member.custom_role_id || "default"}
+                          onValueChange={(val) => { if (val !== "default") updateMemberRoleMutation.mutate({ userId: member.user_id, custom_role_id: val }); }}
+                        >
+                          <SelectTrigger className="w-[180px] h-8 text-xs bg-background"><SelectValue placeholder={t("settings.accessLevel")} /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="default" disabled className="text-xs">{roleLabels[member.user_roles?.[0]?.role || "advogado"] || "Membro"}</SelectItem>
+                            {customRoles.map((r: any) => (<SelectItem key={r.id} value={r.id} className="text-xs">{r.name}</SelectItem>))}
+                          </SelectContent>
+                        </Select>
+                        <Badge variant="outline" className="text-[10px] hidden sm:inline-flex">
+                          {member.custom_roles?.name || roleLabels[member.user_roles?.[0]?.role || "advogado"] || "Membro"}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                  {teamMembers.length === 0 && <p className="text-sm text-muted-foreground text-center py-6">{t("common.noResults")}</p>}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* ── Funcionários ── */}
+          {activeTab === "funcionarios" && (
+            <Card className="border-border">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="font-display text-lg">{t("settings.registerEmployee")}</CardTitle>
+                  <CardDescription>{employees.length} {t("settings.employees").toLowerCase()}</CardDescription>
+                </div>
+                <Button size="sm" className="gap-2" onClick={() => { setEditingEmployee(null); setEmpForm(emptyEmployee); setEmpDialogOpen(true); }}>
+                  <Plus className="h-4 w-4" /> {t("settings.newEmployee")}
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {employees.length === 0 ? (
+                  <div className="flex flex-col items-center py-12 text-center">
+                    <Users className="h-10 w-10 text-muted-foreground/30 mb-3" />
+                    <p className="font-medium text-foreground">{t("settings.noEmployees")}</p>
+                    <p className="text-sm text-muted-foreground mt-1">{t("settings.noEmployeesHint")}</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {employees.map((emp) => (
+                      <div key={emp.id} className="flex items-center justify-between rounded-lg border border-border p-3 hover:bg-muted/20 transition-colors">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary text-sm font-medium shrink-0">
+                            {emp.full_name.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-medium text-foreground truncate">{emp.full_name}</p>
+                              {!emp.is_active && <Badge variant="secondary" className="text-[10px]">{t("common.inactive")}</Badge>}
+                            </div>
+                            <div className="flex items-center gap-3 mt-0.5 text-xs text-muted-foreground">
+                              {emp.position && <span>{emp.position}</span>}
+                              {emp.department && <span>• {emp.department}</span>}
+                              {emp.oab_number && <span className="flex items-center gap-1"><Hash className="h-3 w-3" />{t("settings.oabNumber")} {emp.oab_number}</span>}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          {emp.hourly_rate && <Badge variant="outline" className="text-[10px]">R$ {emp.hourly_rate}/h</Badge>}
+                          <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => openEditEmployee(emp)}>{t("common.edit")}</Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => deleteEmployeeMutation.mutate(emp.id)}>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* ── Planos ── */}
+          {activeTab === "planos" && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-lg font-semibold">{t("settings.availablePlans")}</h2>
+                <p className="text-sm text-muted-foreground">{t("settings.chooseBestPlan")}</p>
+              </div>
+              <div className="grid gap-4 md:grid-cols-3">
+                {plans.map((plan, i) => {
+                  const isCurrent = orgSubscription?.subscription_plans?.slug === plan.slug;
+                  return (
+                    <Card key={plan.id} className={cn("relative border-border overflow-hidden transition-shadow hover:shadow-md", isCurrent && "ring-2 ring-primary")}>
+                      {isCurrent && <Badge className="absolute top-3 right-3 text-[10px]">{t("settings.currentPlan")}</Badge>}
+                      <CardHeader className="pb-3">
+                        <div className="text-2xl mb-1">{planIcons[i + 1] || "✨"}</div>
+                        <CardTitle className="text-lg">{plan.name}</CardTitle>
+                        <div className="flex items-baseline gap-1 mt-1">
+                          <span className="text-3xl font-bold">R$ {plan.price_monthly}</span>
+                          <span className="text-sm text-muted-foreground">/mês</span>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <Separator className="mb-4" />
+                        <ul className="space-y-2">
+                          {plan.features.map((f, fi) => (
+                            <li key={fi} className="flex items-start gap-2 text-sm">
+                              <Check className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0" />
+                              <span>{f}</span>
+                            </li>
+                          ))}
+                        </ul>
+                        <Button variant={isCurrent ? "outline" : "default"} className="w-full mt-6" disabled={isCurrent}>
+                          {isCurrent ? t("settings.currentPlan") : t("settings.subscribe")}
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* ── Usuários Adicionais ── */}
+          {activeTab === "usuarios" && (
+            <div className="space-y-6">
+              <Card className="border-border">
+                <CardHeader>
+                  <CardTitle className="font-display text-lg flex items-center gap-2">
+                    <UserPlus className="h-5 w-5 text-primary" />
+                    {t("settings.addUsersTitle")}
+                  </CardTitle>
+                  <CardDescription>{t("settings.addUsersDesc")}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="rounded-xl border border-border bg-gradient-to-br from-primary/5 to-transparent p-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{t("settings.addUsersPrice")}</p>
+                        <p className="text-xs text-muted-foreground mt-1">{t("settings.addUsersInfo")}</p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-9 w-9"
+                          onClick={() => setAddUsersSeats(Math.max(1, addUsersSeats - 1))}
+                          disabled={addUsersSeats <= 1}
+                        >
+                          <Minus className="h-4 w-4" />
+                        </Button>
+                        <div className="flex flex-col items-center min-w-[60px]">
+                          <span className="text-3xl font-bold text-foreground">{addUsersSeats}</span>
+                          <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                            {addUsersSeats === 1 ? "usuário" : "usuários"}
+                          </span>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-9 w-9"
+                          onClick={() => setAddUsersSeats(addUsersSeats + 1)}
+                        >
+                          <Plus className="h-4 w-4" />
                         </Button>
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+                    <Separator className="my-4" />
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-muted-foreground">{t("common.total")}</p>
+                        <p className="text-2xl font-bold text-foreground">
+                          R$ {(addUsersSeats * 49.90).toFixed(2).replace(".", ",")}
+                          <span className="text-sm font-normal text-muted-foreground">/mês</span>
+                        </p>
+                      </div>
+                      <Button className="gap-2" onClick={() => toast.success(`${addUsersSeats} assento(s) adicionado(s)!`)}>
+                        <UserPlus className="h-4 w-4" /> {t("settings.confirmAddUsers")}
+                      </Button>
+                    </div>
+                  </div>
 
-        {/* ── Planos Tab ── */}
-        <TabsContent value="planos">
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-lg font-semibold">Planos & Preços</h2>
-              <p className="text-sm text-muted-foreground">Compare os planos e escolha o ideal para seu escritório. Usuários adicionais: R$49,90/mês.</p>
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <div className="rounded-lg border border-border p-4 text-center">
+                      <p className="text-2xl font-bold text-foreground">{teamMembers.length}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{t("settings.currentSeats")}</p>
+                    </div>
+                    <div className="rounded-lg border border-border p-4 text-center">
+                      <p className="text-2xl font-bold text-primary">+{addUsersSeats}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{t("settings.addSeat")}</p>
+                    </div>
+                    <div className="rounded-lg border border-border p-4 text-center">
+                      <p className="text-2xl font-bold text-emerald-600">{teamMembers.length + addUsersSeats}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{t("common.total")}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-
-            <div className="overflow-x-auto border border-border rounded-xl">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border bg-muted/30">
-                    <th className="text-left p-4 font-medium text-muted-foreground w-[40%]">Recurso</th>
-                    <th className="p-4 text-center">
-                      <div className="font-semibold text-foreground">Básico</div>
-                      <div className="text-2xl font-bold text-foreground mt-1">R$ 120<span className="text-xs font-normal text-muted-foreground">/mês</span></div>
-                      <div className="text-[10px] text-muted-foreground">Para advogados autônomos</div>
-                    </th>
-                    <th className="p-4 text-center bg-primary/5 border-x border-primary/10 relative">
-                      <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 text-[9px]">Mais Popular</Badge>
-                      <div className="font-semibold text-primary">PRO</div>
-                      <div className="text-2xl font-bold text-primary mt-1">R$ 390<span className="text-xs font-normal text-muted-foreground">/mês</span></div>
-                      <div className="text-[10px] text-muted-foreground">Para escritórios em crescimento</div>
-                    </th>
-                    <th className="p-4 text-center">
-                      <div className="font-semibold text-foreground">Business</div>
-                      <div className="text-2xl font-bold text-foreground mt-1">R$ 600<span className="text-xs font-normal text-muted-foreground">/mês</span></div>
-                      <div className="text-[10px] text-muted-foreground">Para escritórios de grande porte</div>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {[
-                    { feature: "Usuários inclusos", basico: "1", pro: "3", business: "5" },
-                    { feature: "Gestão de processos", basico: "Até 50", pro: "Ilimitados", business: "Ilimitados" },
-                    { feature: "Agenda integrada com alertas", basico: true, pro: true, business: true },
-                    { feature: "Calculadora jurídica", basico: true, pro: true, business: true },
-                    { feature: "Gestão de clientes", basico: "CRM básico", pro: "CRM avançado", business: "CRM avançado" },
-                    { feature: "ARUNA IA", basico: "50 consultas/mês", pro: "Ilimitado", business: "Ilimitado + Personalizada" },
-                    { feature: "Integração com tribunais", basico: false, pro: true, business: true },
-                    { feature: "Financeiro completo", basico: false, pro: true, business: true },
-                    { feature: "Transcrição de audiências", basico: false, pro: true, business: true },
-                    { feature: "Pesquisa de jurisprudência IA", basico: false, pro: true, business: true },
-                    { feature: "Relatórios e dashboards", basico: false, pro: true, business: true },
-                    { feature: "BI completo avançado", basico: false, pro: false, business: true },
-                    { feature: "API aberta para integrações", basico: false, pro: false, business: true },
-                    { feature: "Análise de documentos com IA", basico: false, pro: false, business: true },
-                    { feature: "Geração automática de peças", basico: false, pro: false, business: true },
-                    { feature: "Treinamento dedicado", basico: false, pro: false, business: true },
-                    { feature: "SLA garantido 99.9%", basico: false, pro: false, business: true },
-                    { feature: "Gerente de conta exclusivo", basico: false, pro: false, business: true },
-                    { feature: "Suporte", basico: "E-mail", pro: "Prioritário", business: "Dedicado" },
-                  ].map((row, i) => (
-                    <tr key={i} className={cn("border-b border-border/50 last:border-0", i % 2 === 0 ? "bg-background" : "bg-muted/10")}>
-                      <td className="p-3 pl-4 text-foreground font-medium text-[13px]">{row.feature}</td>
-                      {(["basico", "pro", "business"] as const).map((plan) => {
-                        const val = row[plan];
-                        return (
-                          <td key={plan} className={cn("p-3 text-center", plan === "pro" && "bg-primary/5 border-x border-primary/10")}>
-                            {val === true ? (
-                              <Check className="h-4 w-4 text-emerald-500 mx-auto" />
-                            ) : val === false ? (
-                              <span className="text-muted-foreground/30">—</span>
-                            ) : (
-                              <span className="text-xs font-medium text-foreground">{val}</span>
-                            )}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr className="border-t border-border bg-muted/20">
-                    <td className="p-4"></td>
-                    <td className="p-4 text-center">
-                      <Button variant="outline" size="sm" className="w-full text-xs">Começar Agora</Button>
-                    </td>
-                    <td className="p-4 text-center bg-primary/5 border-x border-primary/10">
-                      <Button size="sm" className="w-full text-xs">Escolher PRO</Button>
-                    </td>
-                    <td className="p-4 text-center">
-                      <Button variant="outline" size="sm" className="w-full text-xs">Falar com Consultor</Button>
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-          </div>
-        </TabsContent>
-
-
-      </Tabs>
+          )}
+        </div>
+      </div>
 
       {/* ── Employee Dialog ── */}
       <Dialog open={empDialogOpen} onOpenChange={setEmpDialogOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>{editingEmployee ? "Editar Funcionário" : "Novo Funcionário"}</DialogTitle>
+            <DialogTitle>{editingEmployee ? t("settings.editEmployee") : t("settings.newEmployee")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2 max-h-[60vh] overflow-y-auto">
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5 sm:col-span-2">
-                <Label>Nome Completo *</Label>
-                <Input value={empForm.full_name} onChange={(e) => setEmpForm((f) => ({ ...f, full_name: e.target.value }))} placeholder="Nome completo" />
+                <Label>{t("settings.fullName")} *</Label>
+                <Input value={empForm.full_name} onChange={(e) => setEmpForm((f) => ({ ...f, full_name: e.target.value }))} />
               </div>
               <div className="space-y-1.5">
-                <Label>E-mail</Label>
-                <Input value={empForm.email} onChange={(e) => setEmpForm((f) => ({ ...f, email: e.target.value }))} placeholder="email@exemplo.com" type="email" />
+                <Label>{t("common.email")}</Label>
+                <Input value={empForm.email} onChange={(e) => setEmpForm((f) => ({ ...f, email: e.target.value }))} type="email" />
               </div>
               <div className="space-y-1.5">
-                <Label>Telefone</Label>
+                <Label>{t("common.phone")}</Label>
                 <Input value={empForm.phone} onChange={(e) => setEmpForm((f) => ({ ...f, phone: e.target.value }))} placeholder="(00) 00000-0000" />
               </div>
               <div className="space-y-1.5">
-                <Label>Nº OAB</Label>
-                <Input value={empForm.oab_number} onChange={(e) => setEmpForm((f) => ({ ...f, oab_number: e.target.value }))} placeholder="Ex: 123456/SP" />
+                <Label>{t("settings.oabNumber")}</Label>
+                <Input value={empForm.oab_number} onChange={(e) => setEmpForm((f) => ({ ...f, oab_number: e.target.value }))} placeholder="123456/SP" />
               </div>
               <div className="space-y-1.5">
-                <Label>Cargo</Label>
-                <Input value={empForm.position} onChange={(e) => setEmpForm((f) => ({ ...f, position: e.target.value }))} placeholder="Ex: Advogado Sênior" />
+                <Label>{t("settings.position")}</Label>
+                <Input value={empForm.position} onChange={(e) => setEmpForm((f) => ({ ...f, position: e.target.value }))} />
               </div>
               <div className="space-y-1.5">
-                <Label>Departamento</Label>
-                <Input value={empForm.department} onChange={(e) => setEmpForm((f) => ({ ...f, department: e.target.value }))} placeholder="Ex: Cível" />
+                <Label>{t("settings.department")}</Label>
+                <Input value={empForm.department} onChange={(e) => setEmpForm((f) => ({ ...f, department: e.target.value }))} />
               </div>
               <div className="space-y-1.5">
-                <Label>Data de Admissão</Label>
+                <Label>{t("settings.hireDate")}</Label>
                 <Input type="date" value={empForm.hire_date} onChange={(e) => setEmpForm((f) => ({ ...f, hire_date: e.target.value }))} />
               </div>
               <div className="space-y-1.5">
-                <Label>Valor/Hora (R$)</Label>
-                <Input type="number" value={empForm.hourly_rate} onChange={(e) => setEmpForm((f) => ({ ...f, hourly_rate: e.target.value }))} placeholder="Ex: 350" />
+                <Label>{t("settings.hourlyRate")}</Label>
+                <Input type="number" value={empForm.hourly_rate} onChange={(e) => setEmpForm((f) => ({ ...f, hourly_rate: e.target.value }))} />
               </div>
               <div className="space-y-1.5">
-                <Label>Unidade</Label>
+                <Label>{t("settings.unit")}</Label>
                 <Select value={empForm.unit_id} onValueChange={(v) => setEmpForm((f) => ({ ...f, unit_id: v }))}>
-                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder={t("common.select")} /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">Sem unidade</SelectItem>
+                    <SelectItem value="none">{t("common.none")}</SelectItem>
                     {units.map((u: any) => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label>Observações</Label>
-              <Textarea value={empForm.notes} onChange={(e) => setEmpForm((f) => ({ ...f, notes: e.target.value }))} rows={2} placeholder="Notas internas sobre o funcionário" className="resize-none" />
+              <Label>{t("settings.notes")}</Label>
+              <Textarea value={empForm.notes} onChange={(e) => setEmpForm((f) => ({ ...f, notes: e.target.value }))} rows={2} className="resize-none" />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEmpDialogOpen(false)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => setEmpDialogOpen(false)}>{t("common.cancel")}</Button>
             <Button onClick={handleEmpSubmit} disabled={!empForm.full_name || createEmployeeMutation.isPending || updateEmployeeMutation.isPending}>
-              {editingEmployee ? "Salvar" : "Cadastrar"}
+              {editingEmployee ? t("common.save") : t("common.create")}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-
     </div>
   );
 }
+

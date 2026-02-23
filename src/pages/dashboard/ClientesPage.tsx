@@ -11,6 +11,7 @@ import {
   ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
 } from "lucide-react";
 import { ConflitosInteresseDialog } from "@/components/clientes/ConflitosInteresseDialog";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -99,6 +100,7 @@ const emptyForm: Record<string, string> = {
 export default function ClientesPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
@@ -326,8 +328,10 @@ export default function ClientesPage() {
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">Clientes</h1>
-          <p className="text-sm text-muted-foreground">{clients.length} cliente{clients.length !== 1 ? "s" : ""} cadastrado{clients.length !== 1 ? "s" : ""}</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">{t("clients.title")}</h1>
+          <p className="text-sm text-muted-foreground">
+            {clients.length} {clients.length !== 1 ? "clientes" : "cliente"} {clients.length !== 1 ? t("common.registeredPlural") : t("common.registered")}
+          </p>
         </div>
         <Button onClick={openCreate} className="gap-2">
           <Plus className="h-4 w-4" /> Novo Cliente
