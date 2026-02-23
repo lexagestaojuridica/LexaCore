@@ -93,13 +93,20 @@ export default function ConfiguracoesPage() {
     enabled: !!profile?.organization_id,
   });
 
-  const { data: plans = [] } = useQuery({
+  const FALLBACK_PLANS: Plan[] = [
+    { id: "free", name: "Free", slug: "free", price_monthly: 0, price_yearly: 0, max_users: 2, max_processes: 50, features: ["2 usuários", "50 processos", "Agenda básica", "Timesheet", "Chat interno"], is_active: true, sort_order: 1 },
+    { id: "pro", name: "Pro", slug: "pro", price_monthly: 197, price_yearly: 1970, max_users: 10, max_processes: 500, features: ["10 usuários", "500 processos", "Agenda avançada", "Timesheet + BI", "CRM completo", "Integrações", "ARUNA IA", "Suporte prioritário"], is_active: true, sort_order: 2 },
+    { id: "enterprise", name: "Enterprise", slug: "enterprise", price_monthly: 497, price_yearly: 4970, max_users: -1, max_processes: -1, features: ["Usuários ilimitados", "Processos ilimitados", "Multi-unidades", "Workflow avançado", "API dedicada", "IA personalizada", "SLA 99.9%", "Gerente de conta"], is_active: true, sort_order: 3 },
+  ];
+
+  const { data: dbPlans = [] } = useQuery({
     queryKey: ["subscription-plans"],
     queryFn: async () => {
       const { data } = await supabase.from("subscription_plans" as any).select("*").eq("is_active", true).order("sort_order");
       return (data ?? []) as unknown as Plan[];
     },
   });
+  const plans = dbPlans.length > 0 ? dbPlans : FALLBACK_PLANS;
 
   const { data: orgSubscription } = useQuery({
     queryKey: ["org-subscription", profile?.organization_id],
@@ -311,14 +318,12 @@ export default function ConfiguracoesPage() {
       </div>
 
       <Tabs defaultValue="perfil" className="w-full">
-        <TabsList className="mb-4 flex flex-wrap gap-1 w-full max-w-3xl h-auto">
+        <TabsList className="mb-4 flex flex-wrap gap-1 w-full max-w-2xl h-auto">
           <TabsTrigger value="perfil" className="gap-1.5 text-xs"><User className="h-3.5 w-3.5" /> Perfil</TabsTrigger>
           <TabsTrigger value="escritorio" className="gap-1.5 text-xs"><Building2 className="h-3.5 w-3.5" /> Escritório</TabsTrigger>
           <TabsTrigger value="equipe" className="gap-1.5 text-xs"><Users className="h-3.5 w-3.5" /> Equipe</TabsTrigger>
           <TabsTrigger value="funcionarios" className="gap-1.5 text-xs"><Briefcase className="h-3.5 w-3.5" /> Funcionários</TabsTrigger>
           <TabsTrigger value="planos" className="gap-1.5 text-xs"><Crown className="h-3.5 w-3.5" /> Planos</TabsTrigger>
-          <TabsTrigger value="opcoes" className="gap-1.5 text-xs"><Layers className="h-3.5 w-3.5" /> Opções</TabsTrigger>
-          <TabsTrigger value="integracoes" className="gap-1.5 text-xs"><MessageCircle className="h-3.5 w-3.5" /> Integrações</TabsTrigger>
         </TabsList>
 
         {/* ── Perfil Tab ── */}
@@ -572,105 +577,7 @@ export default function ConfiguracoesPage() {
           </div>
         </TabsContent>
 
-        {/* ── Opções Tab (NEW) ── */}
-        <TabsContent value="opcoes">
-          <Card className="border-border">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle className="font-display text-lg">Opções Personalizadas</CardTitle>
-                <CardDescription>Configure dropdowns e status customizáveis por módulo</CardDescription>
-              </div>
-              <Button size="sm" className="gap-2" onClick={() => { setOptForm(emptyOption); setOptDialogOpen(true); }}>
-                <Plus className="h-4 w-4" /> Nova Opção
-              </Button>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-3 mb-4">
-                <Select value={optFilterModule} onValueChange={setOptFilterModule}>
-                  <SelectTrigger className="w-48 h-8 text-xs"><SelectValue placeholder="Filtrar por módulo" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos os módulos</SelectItem>
-                    {MODULES.map((m) => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-                <span className="text-xs text-muted-foreground">{filteredOptions.length} opções</span>
-              </div>
 
-              {filteredOptions.length === 0 ? (
-                <div className="flex flex-col items-center py-10 text-center">
-                  <Layers className="h-10 w-10 text-muted-foreground/30 mb-3" />
-                  <p className="font-medium text-foreground">Nenhuma opção cadastrada</p>
-                  <p className="text-sm text-muted-foreground mt-1">Crie opções customizadas para seus módulos.</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {filteredOptions.map((opt) => (
-                    <div key={opt.id} className="flex items-center justify-between rounded-lg border border-border px-3 py-2">
-                      <div className="flex items-center gap-3">
-                        {opt.color && <div className="h-3 w-3 rounded-full" style={{ backgroundColor: opt.color }} />}
-                        <div>
-                          <p className="text-sm font-medium text-foreground">{opt.label}</p>
-                          <p className="text-[10px] text-muted-foreground">
-                            <Badge variant="outline" className="text-[9px] mr-1">{MODULES.find(m => m.value === opt.module)?.label || opt.module}</Badge>
-                            {opt.field_name}
-                          </p>
-                        </div>
-                      </div>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => deleteOptionMutation.mutate(opt.id)}>
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* ── Integrações Tab ── */}
-        <TabsContent value="integracoes">
-          <Card className="border-border">
-            <CardHeader>
-              <CardTitle className="font-display text-lg">Integrações de Notificação</CardTitle>
-              <CardDescription>Configure conexões com serviços externos</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="bg-muted/30 p-5 rounded-lg border border-border space-y-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-[#25D366]/10 text-[#25D366] rounded-md">
-                      <MessageCircle className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-base">WhatsApp (Via Z-API)</h4>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Envio automático de mensagens para alertar clientes sobre Prazos, PIX e Audiências.
-                      </p>
-                    </div>
-                  </div>
-                  <Switch checked={orgForm.whatsapp_enabled} onCheckedChange={(v) => setOrgForm({ ...orgForm, whatsapp_enabled: v })} />
-                </div>
-                {orgForm.whatsapp_enabled && (
-                  <div className="pt-4 border-t space-y-4 grid sm:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <Label>Instance ID</Label>
-                      <Input value={orgForm.whatsapp_instance_id} onChange={(e) => setOrgForm({ ...orgForm, whatsapp_instance_id: e.target.value })} placeholder="Ex: 3A1XXXXXXXXXXXXX" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label>Client Token</Label>
-                      <Input value={orgForm.whatsapp_token} onChange={(e) => setOrgForm({ ...orgForm, whatsapp_token: e.target.value })} type="password" placeholder="Ex: 730XXXXXXXXXXXXXXXXX" />
-                    </div>
-                    <div className="sm:col-span-2 flex justify-end">
-                      <Button onClick={() => updateOrgMutation.mutate({ whatsapp_instance_id: orgForm.whatsapp_instance_id, whatsapp_token: orgForm.whatsapp_token, whatsapp_enabled: orgForm.whatsapp_enabled })} disabled={updateOrgMutation.isPending}>
-                        Salvar Integração
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
 
       {/* ── Employee Dialog ── */}
@@ -738,43 +645,7 @@ export default function ConfiguracoesPage() {
         </DialogContent>
       </Dialog>
 
-      {/* ── Option Dialog ── */}
-      <Dialog open={optDialogOpen} onOpenChange={setOptDialogOpen}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Nova Opção</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-1.5">
-              <Label>Módulo</Label>
-              <Select value={optForm.module} onValueChange={(v) => setOptForm((f) => ({ ...f, module: v }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {MODULES.map((m) => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Nome do Campo</Label>
-              <Input value={optForm.field_name} onChange={(e) => setOptForm((f) => ({ ...f, field_name: e.target.value }))} placeholder="Ex: status, tipo, prioridade" />
-            </div>
-            <div className="grid grid-cols-[1fr_60px] gap-3">
-              <div className="space-y-1.5">
-                <Label>Label</Label>
-                <Input value={optForm.label} onChange={(e) => setOptForm((f) => ({ ...f, label: e.target.value }))} placeholder="Ex: Em Andamento" />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Cor</Label>
-                <Input type="color" value={optForm.color} onChange={(e) => setOptForm((f) => ({ ...f, color: e.target.value }))} className="h-10 p-1" />
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOptDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={handleOptSubmit} disabled={!optForm.label || !optForm.field_name || createOptionMutation.isPending}>Criar</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+
     </div>
   );
 }

@@ -46,14 +46,14 @@
     --champagne-light: 34 22% 82%;
     --champagne-glow: 34 16% 90%;
 
-    /* Sidebar — elegant warm navy with depth */
-    --sidebar-background: 222 30% 18%;
-    --sidebar-foreground: 220 20% 95%;
-    --sidebar-primary: 222 32% 26%;
+    /* Sidebar — clean, light, elegant */
+    --sidebar-background: 220 16% 97%;
+    --sidebar-foreground: 220 20% 28%;
+    --sidebar-primary: 220 42% 22%;
     --sidebar-primary-foreground: 220 16% 97%;
-    --sidebar-accent: 222 24% 24%;
-    --sidebar-accent-foreground: 220 16% 97%;
-    --sidebar-border: 222 20% 24%;
+    --sidebar-accent: 220 14% 92%;
+    --sidebar-accent-foreground: 220 20% 14%;
+    --sidebar-border: 220 12% 90%;
     --sidebar-ring: 220 42% 22%;
 
     --success: 158 40% 42%;
@@ -101,13 +101,13 @@
     --champagne-light: 34 25% 75%;
     --champagne-glow: 34 18% 40%;
 
-    --sidebar-background: 222 28% 10%;
-    --sidebar-foreground: 220 20% 92%;
-    --sidebar-primary: 222 30% 18%;
+    --sidebar-background: 222 18% 12%;
+    --sidebar-foreground: 220 14% 85%;
+    --sidebar-primary: 220 40% 55%;
     --sidebar-primary-foreground: 220 16% 97%;
-    --sidebar-accent: 222 22% 16%;
-    --sidebar-accent-foreground: 220 16% 97%;
-    --sidebar-border: 222 18% 18%;
+    --sidebar-accent: 222 16% 18%;
+    --sidebar-accent-foreground: 220 14% 90%;
+    --sidebar-border: 222 14% 18%;
     --sidebar-ring: 220 40% 55%;
 
     --success: 158 40% 50%;

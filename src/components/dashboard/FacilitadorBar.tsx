@@ -64,7 +64,11 @@ function saveLinks(links: FacilitadorLink[]) {
 
 export default function FacilitadorBar() {
     const [collapsed, setCollapsed] = useState(() => {
-        try { return localStorage.getItem(COLLAPSED_KEY) === "true"; } catch { return false; }
+        try {
+            const stored = localStorage.getItem(COLLAPSED_KEY);
+            // Default to collapsed (true) if never set
+            return stored === null ? true : stored === "true";
+        } catch { return true; }
     });
     const [links, setLinks] = useState<FacilitadorLink[]>(loadLinks);
     const [editOpen, setEditOpen] = useState(false);

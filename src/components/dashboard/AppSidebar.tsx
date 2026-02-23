@@ -17,7 +17,7 @@ import {
 import { resetOnboardingTour } from "./OnboardingTour";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import logoLexaWhite from "@/assets/logo-lexa-white.png";
+import logoLexa from "@/assets/logo-lexa.png";
 import iconLexa from "@/assets/icon-lexa.png";
 
 // ─── Nav structure grouped by journey ───────────────────────
@@ -173,7 +173,7 @@ export function AppSidebar() {
         {collapsed ? (
           <img src={iconLexa} alt="LEXA" className="h-8 w-8 object-contain" />
         ) : (
-          <img src={logoLexaWhite} alt="LEXA" className="h-14 w-auto max-w-[140px] object-contain" />
+          <img src={logoLexa} alt="LEXA" className="h-14 w-auto max-w-[140px] object-contain" />
         )}
       </div>
 
