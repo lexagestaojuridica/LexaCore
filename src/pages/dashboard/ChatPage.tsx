@@ -122,7 +122,7 @@ export default function ChatPage() {
                 .order("created_at", { ascending: true })
                 .limit(200);
             if (error) throw error;
-            return (data || []) as Message[];
+            return (data || []) as unknown as Message[];
         },
         enabled: !!selectedChannel,
     });

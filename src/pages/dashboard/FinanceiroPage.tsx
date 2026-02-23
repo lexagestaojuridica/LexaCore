@@ -139,7 +139,7 @@ export default function FinanceiroPage() {
     mutationFn: async (c: any) => {
       // Mock PIX API call / Asaas Gateway
       const mockPixCode = `00020126440014BR.GOV.BCB.PIX0122rodrigo@lexanova.com.br5204000053039865405${Number(c.amount).toFixed(2)}5802BR5915Lexa Nova Ltda6009Sao Paulo62070503***6304${Math.floor(Math.random() * 10000)}`;
-      const { error } = await supabase.from("contas_receber").update({
+      const { error } = await (supabase.from("contas_receber") as any).update({
         pix_code: mockPixCode,
         gateway_id: `pay_${Math.floor(Math.random() * 99999999)}`
       }).eq("id", c.id);
