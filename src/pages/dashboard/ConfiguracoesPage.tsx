@@ -89,7 +89,7 @@ export default function ConfiguracoesPage() {
   const { data: customRoles = [] } = useQuery({
     queryKey: ["custom-roles", profile?.organization_id],
     queryFn: async () => {
-      const { data } = await supabase.from("custom_roles").select("*").eq("organization_id", profile!.organization_id!);
+      const { data } = await (supabase.from("custom_roles") as any).select("*").eq("organization_id", profile!.organization_id!);
       return data ?? [];
     },
     enabled: !!profile?.organization_id,
@@ -164,9 +164,9 @@ export default function ConfiguracoesPage() {
   if (profile && org && !formInitialized) {
     setProfileForm({ full_name: profile.full_name || "", phone: profile.phone || "" });
     setOrgForm({
-      whatsapp_instance_id: org.whatsapp_instance_id || "",
-      whatsapp_token: org.whatsapp_token || "",
-      whatsapp_enabled: org.whatsapp_enabled || false,
+      whatsapp_instance_id: (org as any).whatsapp_instance_id || "",
+      whatsapp_token: (org as any).whatsapp_token || "",
+      whatsapp_enabled: (org as any).whatsapp_enabled || false,
     });
     setFormInitialized(true);
   }
@@ -183,7 +183,7 @@ export default function ConfiguracoesPage() {
 
   const updateOrgMutation = useMutation({
     mutationFn: async (payload: { whatsapp_instance_id: string; whatsapp_token: string; whatsapp_enabled: boolean }) => {
-      const { error } = await supabase.from("organizations").update(payload).eq("id", profile!.organization_id!);
+      const { error } = await (supabase.from("organizations") as any).update(payload).eq("id", profile!.organization_id!);
       if (error) throw error;
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["org"] }); toast.success("Organização atualizada"); },
@@ -206,7 +206,7 @@ export default function ConfiguracoesPage() {
 
   const updateMemberRoleMutation = useMutation({
     mutationFn: async ({ userId, custom_role_id }: { userId: string; custom_role_id: string }) => {
-      const { error } = await supabase.from("profiles").update({ custom_role_id }).eq("user_id", userId);
+      const { error } = await (supabase.from("profiles") as any).update({ custom_role_id }).eq("user_id", userId);
       if (error) throw error;
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["team-members"] }); toast.success("Nível de acesso atualizado"); },

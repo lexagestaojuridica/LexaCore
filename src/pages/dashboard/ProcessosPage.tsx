@@ -62,7 +62,7 @@ const statusBadge = (status: string) => {
   return <Badge variant={opt?.variant ?? "secondary"}>{opt?.label ?? status}</Badge>;
 };
 
-const emptyForm: Partial<TablesInsert<"processos_juridicos">> & { estimated_value_display?: string } = {
+const emptyForm: Record<string, any> = {
   title: "", number: "", court: "", subject: "", status: "ativo",
   estimated_value: null, notes: "", client_id: null, estimated_value_display: "",
   area_direito: null, tipo_acao: null, parte_contraria: null,
