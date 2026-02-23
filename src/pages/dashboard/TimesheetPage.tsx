@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -7,11 +7,12 @@ import { format, differenceInMinutes, parseISO, isToday, isYesterday } from "dat
 import { ptBR } from "date-fns/locale";
 import {
     Clock, Plus, Play, Square, Trash2, Timer,
-    TrendingUp, Calendar, BarChart3, ChevronRight, PlayCircle, Target, Briefcase
+    TrendingUp, Calendar, BarChart3, ChevronRight, PlayCircle, Target, Briefcase,
+    Pause, RotateCcw, ChevronDown, History
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -31,6 +32,14 @@ interface TimesheetEntry {
     hourly_rate: number | null;
     billing_status: string;
     created_at: string;
+}
+
+interface TimerLog {
+    id: string;
+    timesheet_entry_id: string;
+    action: string;
+    logged_at: string;
+    notes: string | null;
 }
 
 interface Processo { id: string; title: string; number: string | null; }
@@ -63,6 +72,13 @@ function getDayGroupLabel(dateStr: string) {
     return format(d, "EEEE, d 'de' MMMM", { locale: ptBR });
 }
 
+const ACTION_LABELS: Record<string, { label: string; color: string }> = {
+    start: { label: "Iniciado", color: "text-emerald-600" },
+    pause: { label: "Pausado", color: "text-amber-600" },
+    resume: { label: "Retomado", color: "text-blue-600" },
+    stop: { label: "Finalizado", color: "text-red-600" },
+};
+
 // ─── Main Page ────────────────────────────────────────────────
 export default function TimesheetPage() {
     const { user } = useAuth();
@@ -70,6 +86,7 @@ export default function TimesheetPage() {
 
     const [activeTimer, setActiveTimer] = useState<{
         processId: string | null; description: string; startedAt: Date; hourlyRate: string;
+        isPaused: boolean; pausedElapsed: number;
     } | null>(null);
     const [timerDescription, setTimerDescription] = useState("");
     const [timerProcess, setTimerProcess] = useState("none");
@@ -82,16 +99,17 @@ export default function TimesheetPage() {
     const [filterProcess, setFilterProcess] = useState("all");
     const [filterStatus, setFilterStatus] = useState("all");
     const [elapsed, setElapsed] = useState(0);
+    const [expandedEntry, setExpandedEntry] = useState<string | null>(null);
 
-    // Timer tick
-    useState(() => {
+    // ── Timer tick (FIXED: useEffect instead of useState) ──
+    useEffect(() => {
+        if (!activeTimer || activeTimer.isPaused) return;
         const interval = setInterval(() => {
-            if (activeTimer) {
-                setElapsed(Math.floor((Date.now() - activeTimer.startedAt.getTime()) / 1000));
-            }
+            const rawElapsed = Math.floor((Date.now() - activeTimer.startedAt.getTime()) / 1000);
+            setElapsed(rawElapsed + activeTimer.pausedElapsed);
         }, 1000);
         return () => clearInterval(interval);
-    });
+    }, [activeTimer]);
 
     const { data: profile } = useQuery({
         queryKey: ["profile", user?.id],
@@ -126,6 +144,20 @@ export default function TimesheetPage() {
         enabled: !!orgId,
     });
 
+    // ── Timer logs query ──
+    const { data: timerLogs = [] } = useQuery({
+        queryKey: ["timer-logs", expandedEntry],
+        queryFn: async () => {
+            const { data } = await supabase
+                .from("timesheet_timer_logs" as any)
+                .select("*")
+                .eq("timesheet_entry_id", expandedEntry!)
+                .order("logged_at", { ascending: true });
+            return (data ?? []) as unknown as TimerLog[];
+        },
+        enabled: !!expandedEntry,
+    });
+
     const createMutation = useMutation({
         mutationFn: async (payload: any) => {
             const { error } = await supabase.from("timesheet_entries" as any).insert(payload);
@@ -149,6 +181,14 @@ export default function TimesheetPage() {
         },
     });
 
+    const logTimerAction = async (entryId: string, action: string) => {
+        await supabase.from("timesheet_timer_logs" as any).insert({
+            timesheet_entry_id: entryId,
+            action,
+            logged_at: new Date().toISOString(),
+        });
+    };
+
     const startTimer = () => {
         if (!timerDescription.trim()) { toast.error("Descreva a atividade"); return; }
         setActiveTimer({
@@ -156,26 +196,55 @@ export default function TimesheetPage() {
             description: timerDescription,
             startedAt: new Date(),
             hourlyRate: timerRate,
+            isPaused: false,
+            pausedElapsed: 0,
         });
         setElapsed(0);
         toast.success("Timer iniciado!");
     };
 
+    const pauseTimer = () => {
+        if (!activeTimer || activeTimer.isPaused) return;
+        setActiveTimer({ ...activeTimer, isPaused: true, pausedElapsed: elapsed });
+        toast("Timer pausado", { icon: "⏸️" });
+    };
+
+    const resumeTimer = () => {
+        if (!activeTimer || !activeTimer.isPaused) return;
+        setActiveTimer({
+            ...activeTimer,
+            isPaused: false,
+            startedAt: new Date(),
+        });
+        toast("Timer retomado", { icon: "▶️" });
+    };
+
     const stopTimer = async () => {
         if (!activeTimer) return;
         const endedAt = new Date();
-        const durationMinutes = Math.max(1, Math.floor((endedAt.getTime() - activeTimer.startedAt.getTime()) / 60000));
-        await createMutation.mutateAsync({
+        const durationMinutes = Math.max(1, Math.floor(elapsed / 60));
+
+        const startedIso = new Date(endedAt.getTime() - elapsed * 1000).toISOString();
+
+        const { data: inserted } = await supabase.from("timesheet_entries" as any).insert({
             organization_id: orgId!,
             user_id: user!.id,
             process_id: activeTimer.processId,
             description: activeTimer.description,
-            started_at: activeTimer.startedAt.toISOString(),
+            started_at: startedIso,
             ended_at: endedAt.toISOString(),
             duration_minutes: durationMinutes,
             hourly_rate: activeTimer.hourlyRate ? Number(activeTimer.hourlyRate) : null,
             billing_status: "pendente",
-        });
+        }).select("id").single();
+
+        if (inserted?.id) {
+            await logTimerAction(inserted.id, "stop");
+        }
+
+        queryClient.invalidateQueries({ queryKey: ["timesheet"] });
+        toast.success("Lançamento registrado!");
+
         setActiveTimer(null);
         setTimerDescription("");
         setTimerProcess("none");
@@ -234,7 +303,7 @@ export default function TimesheetPage() {
     const itemAnim = { hidden: { opacity: 0, scale: 0.95 }, show: { opacity: 1, scale: 1 } };
 
     return (
-        <motion.div variants={containerAnim} initial="hidden" animate="show" className="max-w-6xl mx-auto space-y-8 pb-10">
+        <motion.div variants={containerAnim} initial="hidden" animate="show" className="max-w-6xl mx-auto space-y-6 pb-10">
 
             {/* Header */}
             <motion.div variants={itemAnim} className="flex flex-col md:flex-row md:items-end justify-between gap-4 pt-2">
@@ -248,38 +317,46 @@ export default function TimesheetPage() {
                     </p>
                 </div>
                 <div className="flex gap-2">
-                    <Button variant="outline" onClick={() => setDialogOpen(true)} className="h-10 gap-2 font-medium">
-                        <Plus className="h-4 w-4" /> Lançamento Manual
+                    <Button variant="outline" onClick={() => setDialogOpen(true)} className="h-9 gap-2 text-sm font-medium">
+                        <Plus className="h-4 w-4" /> Manual
                     </Button>
                 </div>
             </motion.div>
 
-            {/* ── Active Timer (Premium Card) ── */}
+            {/* ── Active Timer (Compact) ── */}
             <motion.div variants={itemAnim}>
                 <Card className={cn(
                     "border-border/50 relative overflow-hidden transition-all duration-500",
                     activeTimer ? "shadow-md ring-1 ring-primary/20 shadow-primary/10" : ""
                 )}>
-                    {/* Animated background if active */}
                     {activeTimer && (
                         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-primary/5 to-transparent animate-gradient-slow opacity-50" />
                     )}
 
-                    <CardContent className="p-5 sm:p-6 relative">
-                        <div className="flex flex-col gap-6 lg:flex-row lg:items-center justify-between">
-                            <div className="flex-1 max-w-2xl space-y-4">
+                    <CardContent className="p-4 relative">
+                        <div className="flex flex-col gap-4 lg:flex-row lg:items-center justify-between">
+                            <div className="flex-1 max-w-2xl space-y-3">
                                 <div className="flex items-center gap-2">
-                                    <div className={cn("h-2.5 w-2.5 rounded-full", activeTimer ? "bg-primary animate-pulse" : "bg-muted-foreground/30")} />
-                                    <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                                        {activeTimer ? "Timer em andamento" : "Iniciar nova atividade"}
+                                    <div className={cn(
+                                        "h-2 w-2 rounded-full",
+                                        activeTimer
+                                            ? activeTimer.isPaused
+                                                ? "bg-amber-500"
+                                                : "bg-primary animate-pulse"
+                                            : "bg-muted-foreground/30"
+                                    )} />
+                                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                                        {activeTimer
+                                            ? activeTimer.isPaused ? "Timer pausado" : "Timer em andamento"
+                                            : "Iniciar nova atividade"}
                                     </p>
                                 </div>
 
                                 {!activeTimer ? (
-                                    <div className="flex flex-col gap-3 sm:flex-row items-center">
-                                        <Input value={timerDescription} onChange={(e) => setTimerDescription(e.target.value)} placeholder="O que você está fazendo?" className="h-11 flex-1 bg-background/50 border-border/50 focus-visible:ring-primary/20" onKeyDown={(e) => e.key === "Enter" && startTimer()} />
+                                    <div className="flex flex-col gap-2 sm:flex-row items-center">
+                                        <Input value={timerDescription} onChange={(e) => setTimerDescription(e.target.value)} placeholder="O que você está fazendo?" className="h-10 flex-1 bg-background/50 border-border/50 focus-visible:ring-primary/20" onKeyDown={(e) => e.key === "Enter" && startTimer()} />
                                         <Select value={timerProcess} onValueChange={setTimerProcess}>
-                                            <SelectTrigger className="h-11 w-full sm:w-64 bg-background/50 border-border/50 focus:ring-primary/20">
+                                            <SelectTrigger className="h-10 w-full sm:w-56 bg-background/50 border-border/50 focus:ring-primary/20">
                                                 <SelectValue placeholder="Vincular Processo" />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -287,17 +364,17 @@ export default function TimesheetPage() {
                                                 {processos.map((p) => <SelectItem key={p.id} value={p.id}>{p.title}</SelectItem>)}
                                             </SelectContent>
                                         </Select>
-                                        <div className="relative w-full sm:w-32">
-                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">R$</span>
-                                            <Input value={timerRate} onChange={(e) => setTimerRate(e.target.value)} placeholder="0,00" className="h-11 pl-8 bg-background/50 border-border/50 focus-visible:ring-primary/20" type="number" />
+                                        <div className="relative w-full sm:w-28">
+                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">R$</span>
+                                            <Input value={timerRate} onChange={(e) => setTimerRate(e.target.value)} placeholder="0,00" className="h-10 pl-8 bg-background/50 border-border/50 focus-visible:ring-primary/20" type="number" />
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="space-y-1">
-                                        <p className="text-lg font-medium text-foreground">{activeTimer.description}</p>
+                                    <div className="space-y-0.5">
+                                        <p className="text-base font-medium text-foreground">{activeTimer.description}</p>
                                         {activeTimer.processId && (
-                                            <p className="text-sm text-primary/80 font-medium flex items-center gap-1.5">
-                                                <Briefcase className="h-3.5 w-3.5" />
+                                            <p className="text-xs text-primary/80 font-medium flex items-center gap-1.5">
+                                                <Briefcase className="h-3 w-3" />
                                                 {processos.find((p) => p.id === activeTimer.processId)?.title}
                                             </p>
                                         )}
@@ -305,62 +382,80 @@ export default function TimesheetPage() {
                                 )}
                             </div>
 
-                            <div className="flex items-center gap-6 shrink-0 bg-background/40 backdrop-blur border border-border/40 p-2 sm:p-3 pr-4 sm:pr-6 md:pr-4 rounded-2xl w-full sm:w-auto mt-2 lg:mt-0 justify-between sm:justify-end">
-                                <div className="text-4xl sm:text-5xl font-mono font-light tracking-tight text-foreground tabular-nums select-none ml-2">
+                            <div className="flex items-center gap-4 shrink-0 bg-background/40 backdrop-blur border border-border/40 p-2 pr-3 rounded-xl w-full sm:w-auto mt-1 lg:mt-0 justify-between sm:justify-end">
+                                <div className={cn(
+                                    "text-3xl sm:text-4xl font-mono font-light tracking-tight tabular-nums select-none ml-2",
+                                    activeTimer?.isPaused ? "text-amber-600" : "text-foreground"
+                                )}>
                                     {elapsedFmt}
                                 </div>
-                                <div className="h-12 w-px bg-border/50 hidden sm:block mx-2" />
-                                {!activeTimer ? (
-                                    <Button onClick={startTimer} className="h-12 w-12 sm:w-auto sm:px-6 rounded-xl shadow-lg gap-2 bg-primary hover:bg-primary/90 text-primary-foreground group">
-                                        <PlayCircle className="h-6 w-6 sm:h-5 sm:w-5 group-hover:scale-110 transition-transform" />
-                                        <span className="hidden sm:block font-medium">INICIAR</span>
-                                    </Button>
-                                ) : (
-                                    <Button variant="destructive" onClick={stopTimer} className="h-12 w-12 sm:w-auto sm:px-6 rounded-xl shadow-lg shadow-destructive/20 gap-2 bg-destructive hover:bg-destructive/90 text-white animate-in zoom-in duration-300">
-                                        <Square className="h-5 w-5 fill-current" />
-                                        <span className="hidden sm:block font-medium">PARAR</span>
-                                    </Button>
-                                )}
+                                <div className="h-10 w-px bg-border/50 hidden sm:block mx-1" />
+                                <div className="flex items-center gap-1.5">
+                                    {!activeTimer ? (
+                                        <Button onClick={startTimer} className="h-10 px-4 rounded-lg shadow-lg gap-2 bg-primary hover:bg-primary/90 text-primary-foreground group">
+                                            <PlayCircle className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                                            <span className="hidden sm:block text-sm font-medium">INICIAR</span>
+                                        </Button>
+                                    ) : (
+                                        <>
+                                            {activeTimer.isPaused ? (
+                                                <Button onClick={resumeTimer} className="h-10 px-4 rounded-lg gap-2 bg-blue-600 hover:bg-blue-700 text-white">
+                                                    <Play className="h-4 w-4" />
+                                                    <span className="hidden sm:block text-sm font-medium">RETOMAR</span>
+                                                </Button>
+                                            ) : (
+                                                <Button onClick={pauseTimer} variant="outline" className="h-10 px-4 rounded-lg gap-2 border-amber-500/40 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-500/10">
+                                                    <Pause className="h-4 w-4" />
+                                                    <span className="hidden sm:block text-sm font-medium">PAUSAR</span>
+                                                </Button>
+                                            )}
+                                            <Button variant="destructive" onClick={stopTimer} className="h-10 px-4 rounded-lg shadow-lg shadow-destructive/20 gap-2 bg-destructive hover:bg-destructive/90 text-white">
+                                                <Square className="h-4 w-4 fill-current" />
+                                                <span className="hidden sm:block text-sm font-medium">PARAR</span>
+                                            </Button>
+                                        </>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </CardContent>
                 </Card>
             </motion.div>
 
-            {/* KPIs */}
-            <motion.div variants={itemAnim} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* KPIs (Compact) */}
+            <motion.div variants={itemAnim} className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 {[
                     { label: "Total de Horas", val: fmtDuration(totalMinutes), icon: Clock, color: "text-blue-600" },
                     { label: "Lançamentos", val: String(filtered.length), icon: Calendar, color: "text-indigo-600" },
                     { label: "A Faturar", val: fmtCurrency(totalFaturavel), icon: TrendingUp, color: "text-amber-600" },
                     { label: "Já Recebido", val: fmtCurrency(totalPago), icon: BarChart3, color: "text-emerald-600" },
                 ].map((kpi, i) => (
-                    <div key={i} className="flex flex-col gap-3 bg-card border border-border/50 rounded-2xl p-4 shadow-sm hover:border-primary/20 transition-colors">
-                        <div className="flex items-center justify-between">
-                            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{kpi.label}</p>
-                            <div className={cn("p-2 rounded-lg bg-muted/50", kpi.color)}>
-                                <kpi.icon className="h-4 w-4" />
-                            </div>
+                    <div key={i} className="flex items-center gap-3 bg-card border border-border/50 rounded-xl p-3 shadow-sm hover:border-primary/20 transition-colors">
+                        <div className={cn("p-2 rounded-lg bg-muted/50", kpi.color)}>
+                            <kpi.icon className="h-4 w-4" />
                         </div>
-                        <p className="text-2xl font-bold tracking-tight text-foreground">{kpi.val}</p>
+                        <div>
+                            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{kpi.label}</p>
+                            <p className="text-lg font-bold tracking-tight text-foreground leading-tight">{kpi.val}</p>
+                        </div>
                     </div>
                 ))}
             </motion.div>
 
             {/* Filters + List */}
-            <motion.div variants={itemAnim} className="space-y-4 pt-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-muted/40 p-2 pl-4 border border-border/50 rounded-xl">
+            <motion.div variants={itemAnim} className="space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-muted/40 p-2 pl-4 border border-border/50 rounded-xl">
                     <h2 className="text-sm font-semibold text-foreground">Relatório de Horas</h2>
                     <div className="flex flex-wrap items-center gap-2">
                         <Select value={filterProcess} onValueChange={setFilterProcess}>
-                            <SelectTrigger className="h-9 w-44 bg-card border-none text-xs"><SelectValue placeholder="Processo" /></SelectTrigger>
+                            <SelectTrigger className="h-8 w-44 bg-card border-none text-xs"><SelectValue placeholder="Processo" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">Todos os processos</SelectItem>
                                 {processos.map((p) => <SelectItem key={p.id} value={p.id}>{p.title}</SelectItem>)}
                             </SelectContent>
                         </Select>
                         <Select value={filterStatus} onValueChange={setFilterStatus}>
-                            <SelectTrigger className="h-9 w-36 bg-card border-none text-xs"><SelectValue placeholder="Status" /></SelectTrigger>
+                            <SelectTrigger className="h-8 w-36 bg-card border-none text-xs"><SelectValue placeholder="Status" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">Todos os status</SelectItem>
                                 {BILLING_OPTIONS.map((b) => <SelectItem key={b.value} value={b.value}>{b.label}</SelectItem>)}
@@ -370,20 +465,20 @@ export default function TimesheetPage() {
                 </div>
 
                 {isLoading ? (
-                    <div className="space-y-4">
-                        {[1, 2].map((n) => <div key={n} className="h-32 rounded-xl bg-muted/30 animate-pulse border border-border/40" />)}
+                    <div className="space-y-3">
+                        {[1, 2].map((n) => <div key={n} className="h-28 rounded-xl bg-muted/30 animate-pulse border border-border/40" />)}
                     </div>
                 ) : filtered.length === 0 ? (
-                    <div className="flex flex-col items-center py-16 text-center border border-dashed border-border/60 rounded-2xl bg-muted/10">
-                        <Timer className="mb-4 h-12 w-12 text-muted-foreground/30" />
-                        <p className="text-base font-medium text-foreground">Nenhum lançamento encontrado</p>
-                        <p className="text-sm text-muted-foreground mt-1 max-w-sm">Inicie o cronômetro acima ou faça um lançamento manual para registrar suas horas.</p>
+                    <div className="flex flex-col items-center py-14 text-center border border-dashed border-border/60 rounded-2xl bg-muted/10">
+                        <Timer className="mb-3 h-10 w-10 text-muted-foreground/30" />
+                        <p className="text-sm font-medium text-foreground">Nenhum lançamento encontrado</p>
+                        <p className="text-xs text-muted-foreground mt-1 max-w-sm">Inicie o cronômetro ou faça um lançamento manual.</p>
                     </div>
                 ) : (
-                    <div className="space-y-8">
+                    <div className="space-y-6">
                         {Object.entries(groupedDays).map(([dayLabel, dayEntries]) => (
-                            <div key={dayLabel} className="space-y-3">
-                                <h3 className="text-xs font-semibold tracking-wider text-muted-foreground uppercase flex items-center gap-2">
+                            <div key={dayLabel} className="space-y-2">
+                                <h3 className="text-[10px] font-semibold tracking-wider text-muted-foreground uppercase flex items-center gap-2">
                                     {dayLabel}
                                     <span className="h-px bg-border/60 flex-1 ml-2" />
                                 </h3>
@@ -394,6 +489,7 @@ export default function TimesheetPage() {
                                                 const billing = getBillingMeta(entry.billing_status);
                                                 const processo = processos.find((p) => p.id === entry.process_id);
                                                 const value = entry.duration_minutes && entry.hourly_rate ? (entry.duration_minutes / 60) * entry.hourly_rate : null;
+                                                const isExpanded = expandedEntry === entry.id;
 
                                                 return (
                                                     <motion.div
@@ -402,54 +498,109 @@ export default function TimesheetPage() {
                                                         initial={{ opacity: 0 }}
                                                         animate={{ opacity: 1 }}
                                                         exit={{ opacity: 0 }}
-                                                        className="group flex flex-col sm:flex-row sm:items-center justify-between p-4 hover:bg-muted/30 transition-colors gap-4"
                                                     >
-                                                        <div className="flex items-start sm:items-center gap-4 min-w-0">
-                                                            <div className="flex flex-col items-center justify-center shrink-0 w-16 px-2 py-1.5 rounded-lg bg-muted text-center leading-tight">
-                                                                <span className="text-[10px] uppercase font-bold text-muted-foreground">Início</span>
-                                                                <span className="text-sm font-semibold text-foreground">{format(parseISO(entry.started_at), "HH:mm")}</span>
+                                                        <div
+                                                            className="group flex flex-col sm:flex-row sm:items-center justify-between p-3 hover:bg-muted/30 transition-colors gap-3 cursor-pointer"
+                                                            onClick={() => setExpandedEntry(isExpanded ? null : entry.id)}
+                                                        >
+                                                            <div className="flex items-start sm:items-center gap-3 min-w-0">
+                                                                <div className="flex flex-col items-center justify-center shrink-0 w-14 px-1.5 py-1 rounded-lg bg-muted text-center leading-tight">
+                                                                    <span className="text-[9px] uppercase font-bold text-muted-foreground">Início</span>
+                                                                    <span className="text-xs font-semibold text-foreground">{format(parseISO(entry.started_at), "HH:mm")}</span>
+                                                                </div>
+                                                                <div className="min-w-0">
+                                                                    <p className="text-sm font-medium text-foreground truncate">{entry.description || "Sem descrição"}</p>
+                                                                    {processo && (
+                                                                        <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1.5">
+                                                                            <Briefcase className="h-3 w-3 opacity-70" /> {processo.title}
+                                                                        </p>
+                                                                    )}
+                                                                </div>
                                                             </div>
-                                                            <div className="min-w-0">
-                                                                <p className="text-sm font-medium text-foreground truncate">{entry.description || "Sem descrição"}</p>
-                                                                {processo && (
-                                                                    <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5">
-                                                                        <Briefcase className="h-3.5 w-3.5 opacity-70" /> {processo.title}
+
+                                                            <div className="flex items-center justify-between sm:justify-end gap-4 shrink-0 ml-14 sm:ml-0">
+                                                                <div className="flex items-center gap-1.5">
+                                                                    <div className={cn("h-1.5 w-1.5 rounded-full", billing.dot)} />
+                                                                    <span className={cn("text-[10px] font-semibold tracking-wide uppercase", billing.color.split(" ")[0])}>
+                                                                        {billing.label}
+                                                                    </span>
+                                                                </div>
+                                                                <div className="text-right min-w-[70px]">
+                                                                    <p className="text-sm font-bold text-foreground">
+                                                                        {fmtDuration(entry.duration_minutes ?? 0)}
                                                                     </p>
-                                                                )}
+                                                                    {value != null && (
+                                                                        <p className="text-[10px] font-medium text-emerald-600/80">{fmtCurrency(value)}</p>
+                                                                    )}
+                                                                </div>
+                                                                <div className="flex items-center gap-1">
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        className="h-7 w-7 text-muted-foreground/30 hover:text-primary opacity-0 group-hover:opacity-100 transition-all"
+                                                                        onClick={(e) => { e.stopPropagation(); setExpandedEntry(isExpanded ? null : entry.id); }}
+                                                                    >
+                                                                        <History className="h-3.5 w-3.5" />
+                                                                    </Button>
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        className="h-7 w-7 text-muted-foreground/30 hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all"
+                                                                        onClick={(e) => { e.stopPropagation(); deleteMutation.mutate(entry.id); }}
+                                                                    >
+                                                                        <Trash2 className="h-3.5 w-3.5" />
+                                                                    </Button>
+                                                                </div>
                                                             </div>
                                                         </div>
 
-                                                        <div className="flex items-center justify-between sm:justify-end gap-6 shrink-0 ml-16 sm:ml-0">
-                                                            <div className="flex items-center gap-2">
-                                                                <div className={cn("h-2 w-2 rounded-full", billing.dot)} />
-                                                                <span className={cn("text-[11px] font-semibold tracking-wide uppercase", billing.color.split(" ")[0])}>
-                                                                    {billing.label}
-                                                                </span>
-                                                            </div>
-                                                            <div className="text-right min-w-[80px]">
-                                                                <p className="text-sm font-bold text-foreground">
-                                                                    {fmtDuration(entry.duration_minutes ?? 0)}
-                                                                </p>
-                                                                {value != null && (
-                                                                    <p className="text-[11px] font-medium text-emerald-600/80">{fmtCurrency(value)}</p>
-                                                                )}
-                                                            </div>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="h-8 w-8 text-muted-foreground/30 hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all -ml-2"
-                                                                onClick={() => deleteMutation.mutate(entry.id)}
-                                                            >
-                                                                <Trash2 className="h-4 w-4" />
-                                                            </Button>
-                                                        </div>
+                                                        {/* Timer Logs (expandable) */}
+                                                        <AnimatePresence>
+                                                            {isExpanded && (
+                                                                <motion.div
+                                                                    initial={{ height: 0, opacity: 0 }}
+                                                                    animate={{ height: "auto", opacity: 1 }}
+                                                                    exit={{ height: 0, opacity: 0 }}
+                                                                    className="overflow-hidden"
+                                                                >
+                                                                    <div className="px-4 pb-3 pt-1 bg-muted/20 border-t border-border/30">
+                                                                        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                                                            <History className="h-3 w-3" /> Log de atividade
+                                                                        </p>
+                                                                        {timerLogs.length === 0 ? (
+                                                                            <p className="text-xs text-muted-foreground italic">Nenhum log registrado para esta sessão.</p>
+                                                                        ) : (
+                                                                            <div className="space-y-1.5">
+                                                                                {timerLogs.map((log) => {
+                                                                                    const meta = ACTION_LABELS[log.action] ?? { label: log.action, color: "text-muted-foreground" };
+                                                                                    return (
+                                                                                        <div key={log.id} className="flex items-center gap-2 text-xs">
+                                                                                            <div className={cn("h-1.5 w-1.5 rounded-full",
+                                                                                                log.action === "start" ? "bg-emerald-500" :
+                                                                                                    log.action === "pause" ? "bg-amber-500" :
+                                                                                                        log.action === "resume" ? "bg-blue-500" : "bg-red-500"
+                                                                                            )} />
+                                                                                            <span className={cn("font-semibold", meta.color)}>{meta.label}</span>
+                                                                                            <span className="text-muted-foreground">
+                                                                                                {format(parseISO(log.logged_at), "HH:mm:ss")}
+                                                                                            </span>
+                                                                                            {log.notes && <span className="text-muted-foreground italic">— {log.notes}</span>}
+                                                                                        </div>
+                                                                                    );
+                                                                                })}
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                </motion.div>
+                                                            )}
+                                                        </AnimatePresence>
                                                     </motion.div>
                                                 );
                                             })}
                                         </AnimatePresence>
                                     </div>
                                     {/* Day Summary Footer */}
-                                    <div className="bg-muted/10 p-3 px-4 border-t border-border/40 flex justify-between items-center text-xs">
+                                    <div className="bg-muted/10 p-2.5 px-4 border-t border-border/40 flex justify-between items-center text-xs">
                                         <span className="text-muted-foreground font-medium">Resumo do dia</span>
                                         <span className="font-bold text-foreground">
                                             {fmtDuration(dayEntries.reduce((s, e) => s + (e.duration_minutes ?? 0), 0))}

@@ -224,10 +224,14 @@ function DayView({ eventos, selectedDate, onEdit, onEventDrop, filteredCategorie
   eventos: Evento[]; selectedDate: Date; onEdit: (e: Evento) => void;
   onEventDrop: (id: string, newStart: Date) => void; filteredCategories: string[];
 }) {
-  const hours = Array.from({ length: 16 }, (_, i) => i + 6); // 6am to 9pm
+  const hours = Array.from({ length: 17 }, (_, i) => i + 6); // 6am to 10pm
   const dayEvents = eventos
     .filter((e) => isSameDay(parseISO(e.start_time), selectedDate) && !filteredCategories.includes(e.category || ""))
     .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
+
+  const nowHour = new Date().getHours();
+  const nowMinute = new Date().getMinutes();
+  const showNowLine = isToday(selectedDate) && nowHour >= 6 && nowHour <= 22;
 
   return (
     <div className="space-y-0">
@@ -239,10 +243,11 @@ function DayView({ eventos, selectedDate, onEdit, onEventDrop, filteredCategorie
       <div className="relative">
         {hours.map((hour) => {
           const hourEvents = dayEvents.filter((e) => parseISO(e.start_time).getHours() === hour);
+          const isNowHour = showNowLine && nowHour === hour;
           return (
             <div
               key={hour}
-              className="flex min-h-[60px] border-t border-border/40 hover:bg-muted/10 transition-colors"
+              className="flex min-h-[60px] border-t border-border/40 hover:bg-muted/10 transition-colors relative"
               onDragOver={(e) => e.preventDefault()}
               onDrop={(e) => {
                 e.preventDefault();
@@ -254,7 +259,24 @@ function DayView({ eventos, selectedDate, onEdit, onEventDrop, filteredCategorie
                 }
               }}
             >
-              <div className="w-16 shrink-0 pr-3 pt-1 text-right text-xs text-muted-foreground">
+              {/* Current time indicator */}
+              {isNowHour && (
+                <div
+                  className="absolute left-14 right-0 z-20 flex items-center pointer-events-none"
+                  style={{ top: `${(nowMinute / 60) * 60}px` }}
+                >
+                  <div className="h-2.5 w-2.5 rounded-full bg-red-500 -ml-1 shrink-0 shadow-sm" />
+                  <div className="h-px flex-1 bg-red-500" />
+                  <span className="text-[9px] font-bold text-red-500 bg-red-500/10 px-1.5 py-0.5 rounded-full ml-1 shrink-0">
+                    {`${nowHour.toString().padStart(2, "0")}:${nowMinute.toString().padStart(2, "0")}`}
+                  </span>
+                </div>
+              )}
+
+              <div className={cn(
+                "w-16 shrink-0 pr-3 pt-1 text-right text-xs",
+                isNowHour ? "text-red-500 font-bold" : "text-muted-foreground"
+              )}>
                 {`${hour.toString().padStart(2, "0")}:00`}
               </div>
               <div className="flex-1 pl-3 border-l border-border/40 py-1 space-y-1">

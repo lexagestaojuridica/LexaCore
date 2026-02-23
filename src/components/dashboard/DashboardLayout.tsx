@@ -7,8 +7,13 @@ import FacilitadorBar from "./FacilitadorBar";
 import { OnboardingTour } from "./OnboardingTour";
 import { LanguageSwitcher } from "@/components/shared/LanguageSwitcher";
 import { useAuth } from "@/contexts/AuthContext";
-import { Search, Moon, Sun } from "lucide-react";
-import { useEffect, useCallback, useState } from "react";
+import {
+  Search, Moon, Sun, Scale, Users, CalendarDays, DollarSign,
+  Briefcase, FileText, BarChart3, Clock, Settings, MessageSquare,
+  Building2, Zap, BookOpen, Newspaper, Cpu, Calculator, Layers,
+  Award, Plus
+} from "lucide-react";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,6 +23,7 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
+  CommandSeparator,
 } from "@/components/ui/command";
 
 // ─── Page title map ────────────────────────────────────────────
@@ -46,23 +52,32 @@ const PAGE_TITLES: Record<string, string> = {
 // ─── Quick navigation items for Cmd+K ─────────────────────────
 
 const QUICK_NAV = [
-  { label: "Meu Dia", url: "/dashboard", group: "Navegação" },
-  { label: "Processos", url: "/dashboard/processos", group: "Navegação" },
-  { label: "Agenda & Prazos", url: "/dashboard/agenda", group: "Navegação" },
-  { label: "Clientes", url: "/dashboard/clientes", group: "Navegação" },
-  { label: "Financeiro", url: "/dashboard/financeiro", group: "Navegação" },
-  { label: "Workflow", url: "/dashboard/workflow", group: "Navegação" },
-  { label: "Minutas & Contratos", url: "/dashboard/minutas", group: "Navegação" },
-  { label: "BI & Relatórios", url: "/dashboard/bi", group: "Navegação" },
-  { label: "Timesheet", url: "/dashboard/timesheet", group: "Navegação" },
-  { label: "Certificados", url: "/dashboard/certificados", group: "Navegação" },
-  { label: "Wiki Jurídica", url: "/dashboard/wiki", group: "Navegação" },
-  { label: "CRM", url: "/dashboard/crm", group: "Navegação" },
-  { label: "ARUNA IA", url: "/dashboard/ia", group: "Navegação" },
-  { label: "Notícias Jurídicas", url: "/dashboard/noticias", group: "Navegação" },
-  { label: "Configurações", url: "/dashboard/configuracoes", group: "Navegação" },
-  { label: "Chat Interno", url: "/dashboard/chat", group: "Navegação" },
-  { label: "Unidades / Franquias", url: "/dashboard/unidades", group: "Navegação" },
+  { label: "Meu Dia", url: "/dashboard", group: "Navegação", icon: CalendarDays },
+  { label: "Processos", url: "/dashboard/processos", group: "Navegação", icon: Scale },
+  { label: "Agenda & Prazos", url: "/dashboard/agenda", group: "Navegação", icon: CalendarDays },
+  { label: "Clientes", url: "/dashboard/clientes", group: "Navegação", icon: Users },
+  { label: "Financeiro", url: "/dashboard/financeiro", group: "Navegação", icon: DollarSign },
+  { label: "Workflow", url: "/dashboard/workflow", group: "Navegação", icon: Layers },
+  { label: "Minutas & Contratos", url: "/dashboard/minutas", group: "Navegação", icon: FileText },
+  { label: "BI & Relatórios", url: "/dashboard/bi", group: "Navegação", icon: BarChart3 },
+  { label: "Timesheet", url: "/dashboard/timesheet", group: "Navegação", icon: Clock },
+  { label: "Certificados", url: "/dashboard/certificados", group: "Navegação", icon: Award },
+  { label: "Wiki Jurídica", url: "/dashboard/wiki", group: "Navegação", icon: BookOpen },
+  { label: "CRM", url: "/dashboard/crm", group: "Navegação", icon: Briefcase },
+  { label: "ARUNA IA", url: "/dashboard/ia", group: "Navegação", icon: Cpu },
+  { label: "Notícias Jurídicas", url: "/dashboard/noticias", group: "Navegação", icon: Newspaper },
+  { label: "Chat Interno", url: "/dashboard/chat", group: "Navegação", icon: MessageSquare },
+  { label: "Unidades / Franquias", url: "/dashboard/unidades", group: "Navegação", icon: Building2 },
+  { label: "Configurações", url: "/dashboard/configuracoes", group: "Navegação", icon: Settings },
+];
+
+const QUICK_ACTIONS = [
+  { label: "Novo Processo", url: "/dashboard/processos", group: "Ações Rápidas", icon: Plus, hint: "Criar processo jurídico" },
+  { label: "Novo Compromisso", url: "/dashboard/agenda", group: "Ações Rápidas", icon: CalendarDays, hint: "Agendar evento" },
+  { label: "Novo Cliente", url: "/dashboard/clientes", group: "Ações Rápidas", icon: Users, hint: "Cadastrar cliente" },
+  { label: "Iniciar Timer", url: "/dashboard/timesheet", group: "Ações Rápidas", icon: Clock, hint: "Registrar horas" },
+  { label: "Nova Minuta", url: "/dashboard/minutas", group: "Ações Rápidas", icon: FileText, hint: "Gerar documento" },
+  { label: "Perguntar à ARUNA", url: "/dashboard/ia", group: "Ações Rápidas", icon: Zap, hint: "Assistente IA" },
 ];
 
 // ─── GlobalSearch ─────────────────────────────────────────────
@@ -70,6 +85,7 @@ const QUICK_NAV = [
 function GlobalSearch() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
+  const isMac = typeof navigator !== "undefined" && /Mac|iPod|iPhone|iPad/.test(navigator.userAgent);
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -96,21 +112,36 @@ function GlobalSearch() {
         <Search className="h-3.5 w-3.5" />
         <span className="hidden sm:inline">Buscar...</span>
         <kbd className="hidden sm:inline-flex items-center gap-0.5 rounded border border-border/60 bg-background px-1.5 py-0.5 text-[10px] font-medium">
-          <span>⌘</span>K
+          <span>{isMac ? "⌘" : "Ctrl"}</span>K
         </kbd>
       </button>
 
       <CommandDialog open={open} onOpenChange={setOpen}>
-        <CommandInput placeholder="Buscar módulo, ação..." />
+        <CommandInput placeholder="Buscar módulo, ação, atalho..." />
         <CommandList>
           <CommandEmpty>Nenhum resultado encontrado.</CommandEmpty>
-          <CommandGroup heading="Navegação rápida">
+          <CommandGroup heading="⚡ Ações Rápidas">
+            {QUICK_ACTIONS.map((item) => (
+              <CommandItem
+                key={item.label}
+                onSelect={() => handleSelect(item.url)}
+                className="cursor-pointer"
+              >
+                <item.icon className="mr-2 h-4 w-4 text-primary" />
+                <span className="font-medium">{item.label}</span>
+                <span className="ml-auto text-[10px] text-muted-foreground">{item.hint}</span>
+              </CommandItem>
+            ))}
+          </CommandGroup>
+          <CommandSeparator />
+          <CommandGroup heading="📍 Navegação">
             {QUICK_NAV.map((item) => (
               <CommandItem
                 key={item.url}
                 onSelect={() => handleSelect(item.url)}
                 className="cursor-pointer"
               >
+                <item.icon className="mr-2 h-4 w-4 text-muted-foreground" />
                 {item.label}
               </CommandItem>
             ))}

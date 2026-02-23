@@ -7,21 +7,21 @@ import { useNavigate } from "react-router-dom";
 import {
   Scale, Users, CalendarDays, Clock, CheckCircle2,
   TrendingUp, Plus, Briefcase, FileText, ChevronRight,
-  Target, BarChart3, ChevronUp
+  Target, BarChart3, ChevronUp, MapPin, Video, Zap
 } from "lucide-react";
-import { format, formatDistanceToNow, isToday, isTomorrow, parseISO, addDays } from "date-fns";
+import { format, formatDistanceToNow, isToday, isTomorrow, parseISO, addDays, differenceInMinutes, isAfter, isBefore } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 
 // ─── Types ────────────────────────────────────────────────────
-interface Evento { id: string; title: string; start_time: string; end_time: string; category: string | null; }
+interface Evento { id: string; title: string; start_time: string; end_time: string; category: string | null; location?: string | null; description?: string | null; }
 interface Processo { id: string; title: string; status: string; number: string | null; updated_at: string; }
 
 // ─── Helpers ──────────────────────────────────────────────────
 const fmt = (v: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
 
-const categoryMeta: Record<string, { label: string; color: string; dot: string; }> = {
+const categoryMeta: Record<string, { label: string; color: string; dot: string }> = {
   audiencia: { label: "Audiência", color: "text-rose-600 bg-rose-500/10", dot: "bg-rose-500" },
   prazo: { label: "Prazo", color: "text-amber-600 bg-amber-500/10", dot: "bg-amber-500" },
   reuniao: { label: "Reunião", color: "text-blue-600 bg-blue-500/10", dot: "bg-blue-500" },
@@ -30,30 +30,86 @@ const categoryMeta: Record<string, { label: string; color: string; dot: string; 
 };
 function getCatMeta(cat: string | null) { return categoryMeta[cat ?? "compromisso"] ?? categoryMeta.lembrete; }
 
-function EventRow({ event, isUrgent = false }: { event: Evento; isUrgent?: boolean }) {
+function isHappeningNow(event: Evento) {
+  const now = new Date();
+  const start = parseISO(event.start_time);
+  const end = parseISO(event.end_time);
+  return isAfter(now, start) && isBefore(now, end);
+}
+
+function getDurationLabel(start: string, end: string): string {
+  const mins = differenceInMinutes(parseISO(end), parseISO(start));
+  if (mins < 60) return `${mins}min`;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return m > 0 ? `${h}h${m}min` : `${h}h`;
+}
+
+// ─── Enhanced Timeline Event ─────────────────────────────────
+
+function TimelineEvent({ event, isLast, onNavigate }: { event: Evento; isLast: boolean; onNavigate: () => void }) {
   const meta = getCatMeta(event.category);
   const start = parseISO(event.start_time);
+  const end = parseISO(event.end_time);
+  const happening = isHappeningNow(event);
+  const duration = getDurationLabel(event.start_time, event.end_time);
 
   return (
-    <div className={cn(
-      "group flex items-center justify-between py-3 border-b border-border/40 last:border-0 hover:bg-muted/20 px-3 -mx-3 rounded-lg transition-colors cursor-pointer",
-      isUrgent && "bg-destructive/5 hover:bg-destructive/10"
-    )}>
-      <div className="flex items-center gap-3 min-w-0">
-        <div className={cn("h-2 w-2 rounded-full shrink-0", meta.dot)} />
-        <div className="min-w-0">
-          <p className="text-sm font-medium text-foreground truncate leading-tight">{event.title}</p>
-          <div className="flex items-center gap-2 mt-1">
-            <span className={cn("text-[10px] uppercase font-semibold tracking-wider", meta.color.split(" ")[0])}>
-              {meta.label}
-            </span>
-            <span className="text-xs text-muted-foreground flex items-center gap-1">
-              <Clock className="h-3 w-3" /> {format(start, "HH:mm")}
-            </span>
+    <div className="flex gap-3 cursor-pointer group" onClick={onNavigate}>
+      {/* Timeline vertical line */}
+      <div className="flex flex-col items-center shrink-0">
+        <div className={cn(
+          "h-3 w-3 rounded-full border-2 mt-1 transition-all",
+          happening
+            ? "border-primary bg-primary animate-pulse"
+            : `border-current ${meta.dot.replace("bg-", "text-")} bg-background`
+        )} />
+        {!isLast && <div className="w-px flex-1 bg-border/60 mt-1" />}
+      </div>
+
+      {/* Content */}
+      <div className={cn(
+        "flex-1 pb-4 min-w-0",
+        happening && "relative"
+      )}>
+        {happening && (
+          <span className="absolute -top-1 right-0 text-[9px] font-bold uppercase tracking-widest text-primary bg-primary/10 px-2 py-0.5 rounded-full animate-pulse">
+            Agora
+          </span>
+        )}
+
+        <div className={cn(
+          "rounded-lg p-3 border transition-all",
+          happening
+            ? "border-primary/30 bg-primary/5 shadow-sm"
+            : "border-border/40 bg-card group-hover:border-primary/20 group-hover:bg-muted/20"
+        )}>
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-foreground truncate leading-tight">{event.title}</p>
+              <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                <span className={cn("text-[10px] uppercase font-semibold tracking-wider px-1.5 py-0.5 rounded-md", meta.color)}>
+                  {meta.label}
+                </span>
+                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  {format(start, "HH:mm")} — {format(end, "HH:mm")}
+                </span>
+                <span className="text-[10px] text-muted-foreground/70 bg-muted/50 px-1.5 py-0.5 rounded">
+                  {duration}
+                </span>
+              </div>
+              {event.location && (
+                <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1">
+                  {event.location.startsWith("http") ? <Video className="h-3 w-3" /> : <MapPin className="h-3 w-3" />}
+                  <span className="truncate">{event.location}</span>
+                </p>
+              )}
+            </div>
+            <ChevronRight className="h-4 w-4 text-muted-foreground/20 group-hover:text-primary/60 transition-all shrink-0 mt-0.5" />
           </div>
         </div>
       </div>
-      <ChevronRight className="h-4 w-4 text-muted-foreground/30 opacity-0 group-hover:opacity-100 transition-all shrink-0 ml-4" />
     </div>
   );
 }
@@ -129,6 +185,7 @@ export default function DashboardOverview() {
   const todayEvents = eventos.filter((e) => isToday(parseISO(e.start_time)));
   const futureEvents = eventos.filter((e) => !isToday(parseISO(e.start_time))).slice(0, 5);
   const urgentEvents = todayEvents.filter((e) => e.category === "audiencia" || e.category === "prazo");
+  const happeningNowCount = todayEvents.filter(isHappeningNow).length;
 
   // Animations
   const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.1 } } };
@@ -149,7 +206,6 @@ export default function DashboardOverview() {
           </p>
         </div>
 
-        {/* Quick action buttons - minimal */}
         <div className="flex gap-2">
           <Button variant="outline" size="sm" className="h-9 gap-1.5" onClick={() => navigate("/dashboard/processos")}>
             <Briefcase className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Processo</span>
@@ -168,7 +224,7 @@ export default function DashboardOverview() {
         {[
           { label: "Processos Ativos", val: stats?.totalProcessos, icon: Scale, color: "text-blue-600" },
           { label: "Clientes", val: stats?.totalClientes, icon: Users, color: "text-indigo-600" },
-          { label: "Eventos Hoje", val: todayEvents.length, icon: Clock, color: "text-emerald-600" },
+          { label: "Eventos Hoje", val: todayEvents.length, icon: Clock, color: "text-emerald-600", badge: happeningNowCount > 0 ? `${happeningNowCount} agora` : undefined },
           { label: "Receita Pendente", val: stats ? fmt(stats.aReceber) : "—", icon: TrendingUp, color: "text-amber-600" },
         ].map((kpi, i) => (
           <div key={i} className="flex items-center gap-4 bg-card border border-border/50 rounded-xl p-4 shadow-sm">
@@ -177,7 +233,14 @@ export default function DashboardOverview() {
             </div>
             <div>
               <p className="text-xs font-medium text-muted-foreground">{kpi.label}</p>
-              <p className="text-xl font-bold mt-0.5 leading-none">{kpi.val ?? "—"}</p>
+              <div className="flex items-center gap-2">
+                <p className="text-xl font-bold mt-0.5 leading-none">{kpi.val ?? "—"}</p>
+                {kpi.badge && (
+                  <span className="text-[9px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full animate-pulse">
+                    {kpi.badge}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         ))}
@@ -186,46 +249,59 @@ export default function DashboardOverview() {
       {/* ── Main Layout ── */}
       <div className="grid lg:grid-cols-[1fr_360px] gap-8">
 
-        {/* Left Column: Agenda Focus */}
+        {/* Left Column: Agenda Focus with Timeline */}
         <motion.div variants={item} className="space-y-8">
-          {/* Today */}
           <section>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold flex items-center gap-2">
                 <CalendarDays className="h-5 w-5 text-primary" />
                 Sua Agenda Hoje
               </h2>
-              {todayEvents.length > 0 && (
-                <span className="text-xs bg-muted px-2 py-1 rounded-md font-medium">{todayEvents.length} eventos</span>
-              )}
+              <div className="flex items-center gap-2">
+                {todayEvents.length > 0 && (
+                  <span className="text-xs bg-muted px-2 py-1 rounded-md font-medium">{todayEvents.length} compromissos</span>
+                )}
+                <Button variant="ghost" size="sm" className="text-xs text-primary h-7" onClick={() => navigate("/dashboard/agenda")}>
+                  Ver agenda <ChevronRight className="h-3 w-3 ml-0.5" />
+                </Button>
+              </div>
             </div>
 
-            <Card className="shadow-none border-border/50 bg-card overflow-hidden">
-              <CardContent className="p-0">
-                {todayEvents.length === 0 ? (
+            {todayEvents.length === 0 ? (
+              <Card className="shadow-none border-border/50 bg-card overflow-hidden">
+                <CardContent className="p-0">
                   <div className="flex flex-col items-center justify-center p-10 text-center text-muted-foreground">
                     <CheckCircle2 className="h-10 w-10 text-emerald-500/20 mb-3" />
                     <p className="font-medium text-foreground">Agenda livre por enquanto</p>
                     <p className="text-sm">Nenhum compromisso marcado para hoje.</p>
                   </div>
-                ) : (
-                  <div className="p-4 pt-1">
-                    {urgentEvents.length > 0 && (
-                      <div className="mb-2 p-3 bg-red-500/5 border border-red-500/20 rounded-lg flex items-start gap-3 mt-4">
-                        <div className="h-2 w-2 rounded-full bg-red-500 mt-1.5 animate-pulse" />
-                        <div>
-                          <p className="text-sm font-semibold text-red-700 dark:text-red-400">Atenção Prioritária</p>
-                          <p className="text-xs text-red-600/80 dark:text-red-300">Você tem {urgentEvents.length} prazo(s)/audiência(s) hoje.</p>
-                        </div>
-                      </div>
-                    )}
-                    {todayEvents.map((e) => (
-                      <EventRow key={e.id} event={e} isUrgent={e.category === "audiencia" || e.category === "prazo"} />
-                    ))}
+                </CardContent>
+              </Card>
+            ) : (
+              <div>
+                {urgentEvents.length > 0 && (
+                  <div className="mb-4 p-3 bg-red-500/5 border border-red-500/20 rounded-lg flex items-start gap-3">
+                    <div className="h-2 w-2 rounded-full bg-red-500 mt-1.5 animate-pulse" />
+                    <div>
+                      <p className="text-sm font-semibold text-red-700 dark:text-red-400">Atenção Prioritária</p>
+                      <p className="text-xs text-red-600/80 dark:text-red-300">Você tem {urgentEvents.length} prazo(s)/audiência(s) hoje.</p>
+                    </div>
                   </div>
                 )}
-              </CardContent>
-            </Card>
+
+                {/* Timeline View */}
+                <div className="pl-1">
+                  {todayEvents.map((e, i) => (
+                    <TimelineEvent
+                      key={e.id}
+                      event={e}
+                      isLast={i === todayEvents.length - 1}
+                      onNavigate={() => navigate("/dashboard/agenda")}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </section>
 
           {/* Upcoming */}
@@ -242,12 +318,15 @@ export default function DashboardOverview() {
                 {futureEvents.slice(0, 4).map((e) => {
                   const m = getCatMeta(e.category);
                   const d = parseISO(e.start_time);
+                  const endD = parseISO(e.end_time);
                   return (
                     <div key={e.id} className="bg-card border border-border/50 rounded-lg p-3 flex items-start gap-3 hover:border-primary/30 transition-colors cursor-pointer" onClick={() => navigate("/dashboard/agenda")}>
                       <div className={cn("p-2 rounded-md", m.color.split(" ")[1], m.color.split(" ")[0])}><Target className="h-4 w-4" /></div>
                       <div className="min-w-0">
                         <p className="text-sm font-medium truncate">{e.title}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">{isTomorrow(d) ? "Amanhã" : format(d, "EEE, dd/MM", { locale: ptBR })} às {format(d, "HH:mm")}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {isTomorrow(d) ? "Amanhã" : format(d, "EEE, dd/MM", { locale: ptBR })} • {format(d, "HH:mm")}–{format(endD, "HH:mm")}
+                        </p>
                       </div>
                     </div>
                   );
@@ -296,7 +375,7 @@ export default function DashboardOverview() {
             ) : (
               processos.map((p) => (
                 <div key={p.id} className="bg-card border border-border/50 rounded-lg p-3 hover:bg-muted/30 transition-colors cursor-pointer" onClick={() => navigate("/dashboard/processos")}>
-                  <p className="text-sm font-medium mb-1 line-clamp-1 group-hover:text-primary transition-colors">{p.title}</p>
+                  <p className="text-sm font-medium mb-1 line-clamp-1">{p.title}</p>
                   <div className="flex items-center justify-between text-[10px] text-muted-foreground">
                     <span>{p.number || "Sem numeração"}</span>
                     <span>{formatDistanceToNow(parseISO(p.updated_at), { locale: ptBR, addSuffix: true })}</span>
@@ -310,7 +389,6 @@ export default function DashboardOverview() {
           </div>
         </motion.div>
       </div>
-
     </motion.div>
   );
 }
