@@ -507,73 +507,94 @@ export default function ConfiguracoesPage() {
           </Card>
         </TabsContent>
 
-        {/* ── Planos Tab (NEW) ── */}
+        {/* ── Planos Tab ── */}
         <TabsContent value="planos">
           <div className="space-y-6">
-            <Card className="border-border">
-              <CardHeader>
-                <CardTitle className="font-display text-lg">Planos Disponíveis</CardTitle>
-                <CardDescription>Escolha o melhor plano para seu escritório</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-4 md:grid-cols-3">
-                  {plans.map((plan, i) => {
-                    const isCurrent = orgSubscription?.plan_id === plan.id;
-                    return (
-                      <motion.div
-                        key={plan.id}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.1 }}
-                        className={cn(
-                          "rounded-xl border-2 p-5 relative overflow-hidden transition-all",
-                          isCurrent ? "border-primary shadow-md" : "border-border hover:border-primary/30",
-                          `bg-gradient-to-br ${planColors[i + 1] || ""}`
-                        )}
-                      >
-                        {isCurrent && (
-                          <Badge className="absolute top-3 right-3 text-[10px]">Plano Atual</Badge>
-                        )}
-                        <div className="text-2xl mb-2">{planIcons[i + 1]}</div>
-                        <h3 className="text-lg font-bold text-foreground">{plan.name}</h3>
-                        <div className="mt-2 flex items-baseline gap-1">
-                          <span className="text-3xl font-bold text-foreground">
-                            {plan.price_monthly === 0 ? "Grátis" : `R$ ${plan.price_monthly}`}
-                          </span>
-                          {plan.price_monthly > 0 && <span className="text-sm text-muted-foreground">/mês</span>}
-                        </div>
-                        {plan.price_yearly > 0 && (
-                          <p className="text-xs text-muted-foreground mt-1">ou R$ {plan.price_yearly}/ano</p>
-                        )}
-                        <Separator className="my-4" />
-                        <ul className="space-y-2">
-                          <li className="text-xs text-muted-foreground flex items-center gap-2">
-                            <Users className="h-3.5 w-3.5" /> Até {plan.max_users} usuários
-                          </li>
-                          <li className="text-xs text-muted-foreground flex items-center gap-2">
-                            <Briefcase className="h-3.5 w-3.5" /> Até {plan.max_processes > 9000 ? "∞" : plan.max_processes} processos
-                          </li>
-                          {(plan.features as string[]).map((f, fi) => (
-                            <li key={fi} className="text-xs text-muted-foreground flex items-center gap-2">
-                              <Check className="h-3.5 w-3.5 text-emerald-500" /> {f}
-                            </li>
-                          ))}
-                        </ul>
-                        <div className="mt-5">
-                          <Button
-                            variant={isCurrent ? "outline" : "default"}
-                            className="w-full"
-                            disabled={isCurrent}
-                          >
-                            {isCurrent ? "Plano Atual" : plan.price_monthly === 0 ? "Selecionar" : "Assinar"}
-                          </Button>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
+            <div>
+              <h2 className="text-lg font-semibold">Planos & Preços</h2>
+              <p className="text-sm text-muted-foreground">Compare os planos e escolha o ideal para seu escritório. Usuários adicionais: R$49,90/mês.</p>
+            </div>
+
+            <div className="overflow-x-auto border border-border rounded-xl">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-muted/30">
+                    <th className="text-left p-4 font-medium text-muted-foreground w-[40%]">Recurso</th>
+                    <th className="p-4 text-center">
+                      <div className="font-semibold text-foreground">Básico</div>
+                      <div className="text-2xl font-bold text-foreground mt-1">R$ 120<span className="text-xs font-normal text-muted-foreground">/mês</span></div>
+                      <div className="text-[10px] text-muted-foreground">Para advogados autônomos</div>
+                    </th>
+                    <th className="p-4 text-center bg-primary/5 border-x border-primary/10 relative">
+                      <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 text-[9px]">Mais Popular</Badge>
+                      <div className="font-semibold text-primary">PRO</div>
+                      <div className="text-2xl font-bold text-primary mt-1">R$ 390<span className="text-xs font-normal text-muted-foreground">/mês</span></div>
+                      <div className="text-[10px] text-muted-foreground">Para escritórios em crescimento</div>
+                    </th>
+                    <th className="p-4 text-center">
+                      <div className="font-semibold text-foreground">Business</div>
+                      <div className="text-2xl font-bold text-foreground mt-1">R$ 600<span className="text-xs font-normal text-muted-foreground">/mês</span></div>
+                      <div className="text-[10px] text-muted-foreground">Para escritórios de grande porte</div>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    { feature: "Usuários inclusos", basico: "1", pro: "3", business: "5" },
+                    { feature: "Gestão de processos", basico: "Até 50", pro: "Ilimitados", business: "Ilimitados" },
+                    { feature: "Agenda integrada com alertas", basico: true, pro: true, business: true },
+                    { feature: "Calculadora jurídica", basico: true, pro: true, business: true },
+                    { feature: "Gestão de clientes", basico: "CRM básico", pro: "CRM avançado", business: "CRM avançado" },
+                    { feature: "ARUNA IA", basico: "50 consultas/mês", pro: "Ilimitado", business: "Ilimitado + Personalizada" },
+                    { feature: "Integração com tribunais", basico: false, pro: true, business: true },
+                    { feature: "Financeiro completo", basico: false, pro: true, business: true },
+                    { feature: "Transcrição de audiências", basico: false, pro: true, business: true },
+                    { feature: "Pesquisa de jurisprudência IA", basico: false, pro: true, business: true },
+                    { feature: "Relatórios e dashboards", basico: false, pro: true, business: true },
+                    { feature: "BI completo avançado", basico: false, pro: false, business: true },
+                    { feature: "API aberta para integrações", basico: false, pro: false, business: true },
+                    { feature: "Análise de documentos com IA", basico: false, pro: false, business: true },
+                    { feature: "Geração automática de peças", basico: false, pro: false, business: true },
+                    { feature: "Treinamento dedicado", basico: false, pro: false, business: true },
+                    { feature: "SLA garantido 99.9%", basico: false, pro: false, business: true },
+                    { feature: "Gerente de conta exclusivo", basico: false, pro: false, business: true },
+                    { feature: "Suporte", basico: "E-mail", pro: "Prioritário", business: "Dedicado" },
+                  ].map((row, i) => (
+                    <tr key={i} className={cn("border-b border-border/50 last:border-0", i % 2 === 0 ? "bg-background" : "bg-muted/10")}>
+                      <td className="p-3 pl-4 text-foreground font-medium text-[13px]">{row.feature}</td>
+                      {(["basico", "pro", "business"] as const).map((plan) => {
+                        const val = row[plan];
+                        return (
+                          <td key={plan} className={cn("p-3 text-center", plan === "pro" && "bg-primary/5 border-x border-primary/10")}>
+                            {val === true ? (
+                              <Check className="h-4 w-4 text-emerald-500 mx-auto" />
+                            ) : val === false ? (
+                              <span className="text-muted-foreground/30">—</span>
+                            ) : (
+                              <span className="text-xs font-medium text-foreground">{val}</span>
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="border-t border-border bg-muted/20">
+                    <td className="p-4"></td>
+                    <td className="p-4 text-center">
+                      <Button variant="outline" size="sm" className="w-full text-xs">Começar Agora</Button>
+                    </td>
+                    <td className="p-4 text-center bg-primary/5 border-x border-primary/10">
+                      <Button size="sm" className="w-full text-xs">Escolher PRO</Button>
+                    </td>
+                    <td className="p-4 text-center">
+                      <Button variant="outline" size="sm" className="w-full text-xs">Falar com Consultor</Button>
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
           </div>
         </TabsContent>
 

@@ -17,6 +17,7 @@ import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { Progress } from "@/components/ui/progress";
+import { useTranslation } from "react-i18next";
 
 // ─── Types ────────────────────────────────────────────────────
 interface Evento { id: string; title: string; start_time: string; end_time: string; category: string | null; }
@@ -113,9 +114,10 @@ function TimelineEvent({ event, isLast, onNavigate }: { event: Evento; isLast: b
 export default function DashboardOverview() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const displayName = user?.user_metadata?.full_name?.split(" ")[0] || "Advogado";
   const hour = new Date().getHours();
-  const greeting = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
+  const greeting = hour < 12 ? t("dashboard.greeting") : hour < 18 ? t("dashboard.greetingAfternoon") : t("dashboard.greetingEvening");
 
   // ── Fetch profile / org ──
   const { data: profile } = useQuery({
@@ -234,13 +236,13 @@ export default function DashboardOverview() {
 
         <div className="flex gap-2">
           <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs" onClick={() => navigate("/dashboard/processos")}>
-            <Plus className="h-3 w-3" /> Processo
+            <Plus className="h-3 w-3" /> {t("dashboard.process")}
           </Button>
           <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs" onClick={() => navigate("/dashboard/minutas")}>
-            <FileText className="h-3 w-3" /> Minuta
+            <FileText className="h-3 w-3" /> {t("dashboard.draft")}
           </Button>
           <Button size="sm" className="h-8 gap-1.5 text-xs" onClick={() => navigate("/dashboard/agenda")}>
-            <CalendarDays className="h-3 w-3" /> Compromisso
+            <CalendarDays className="h-3 w-3" /> {t("dashboard.appointment")}
           </Button>
         </div>
       </motion.div>
@@ -248,11 +250,11 @@ export default function DashboardOverview() {
       {/* ── KPIs Row ── */}
       <motion.div variants={item} className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         {[
-          { label: "Processos Ativos", val: stats?.totalProcessos ?? 0, icon: Scale, color: "text-blue-600 bg-blue-500/8" },
-          { label: "Clientes", val: stats?.totalClientes ?? 0, icon: Users, color: "text-indigo-600 bg-indigo-500/8" },
-          { label: "Eventos Hoje", val: todayEvents.length, icon: CalendarDays, color: "text-emerald-600 bg-emerald-500/8", badge: happeningNowCount > 0 ? `${happeningNowCount} agora` : undefined },
-          { label: "A Receber", val: stats ? fmt(stats.aReceber) : "—", icon: TrendingUp, color: "text-amber-600 bg-amber-500/8" },
-          { label: "A Pagar", val: stats ? fmt(stats.aPagar) : "—", icon: DollarSign, color: "text-rose-600 bg-rose-500/8" },
+          { label: t("dashboard.activeProcesses"), val: stats?.totalProcessos ?? 0, icon: Scale, color: "text-blue-600 bg-blue-500/8" },
+          { label: t("dashboard.clients"), val: stats?.totalClientes ?? 0, icon: Users, color: "text-indigo-600 bg-indigo-500/8" },
+          { label: t("dashboard.eventsToday"), val: todayEvents.length, icon: CalendarDays, color: "text-emerald-600 bg-emerald-500/8", badge: happeningNowCount > 0 ? `${happeningNowCount} ${t("dashboard.now")}` : undefined },
+          { label: t("dashboard.toReceive"), val: stats ? fmt(stats.aReceber) : "—", icon: TrendingUp, color: "text-amber-600 bg-amber-500/8" },
+          { label: t("dashboard.toPay"), val: stats ? fmt(stats.aPagar) : "—", icon: DollarSign, color: "text-rose-600 bg-rose-500/8" },
         ].map((kpi, i) => (
           <div key={i} className="flex items-center gap-3 bg-card border border-border/50 rounded-xl p-3.5 shadow-sm hover:shadow-md transition-shadow">
             <div className={cn("p-2 rounded-lg", kpi.color)}>
@@ -280,11 +282,11 @@ export default function DashboardOverview() {
             <AlertTriangle className="h-4 w-4 text-red-600" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-red-700 dark:text-red-400">Atenção Prioritária</p>
-            <p className="text-xs text-red-600/70">{urgentEvents.length} prazo(s)/audiência(s) urgente(s) hoje</p>
+            <p className="text-sm font-semibold text-red-700 dark:text-red-400">{t("dashboard.urgentAlert")}</p>
+            <p className="text-xs text-red-600/70">{urgentEvents.length} {t("dashboard.deadlinesToday")}</p>
           </div>
           <Button size="sm" variant="outline" className="border-red-500/30 text-red-600 hover:bg-red-500/10 shrink-0 h-8 text-xs" onClick={() => navigate("/dashboard/agenda")}>
-            Ver detalhes
+            {t("dashboard.seeDetails")}
           </Button>
         </motion.div>
       )}
@@ -297,10 +299,10 @@ export default function DashboardOverview() {
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold flex items-center gap-2">
               <CalendarDays className="h-4 w-4 text-primary" />
-              Agenda de Hoje
+              {t("dashboard.agendaToday")}
             </h2>
             <Button variant="ghost" size="sm" className="text-xs text-primary h-7" onClick={() => navigate("/dashboard/agenda")}>
-              Ver tudo <ChevronRight className="h-3 w-3 ml-0.5" />
+              {t("dashboard.viewAll")} <ChevronRight className="h-3 w-3 ml-0.5" />
             </Button>
           </div>
 
@@ -308,10 +310,10 @@ export default function DashboardOverview() {
             <Card className="shadow-none border-border/50 bg-card">
               <CardContent className="p-8 text-center">
                 <CheckCircle2 className="h-10 w-10 text-emerald-500/20 mx-auto mb-3" />
-                <p className="font-medium text-foreground">Agenda livre</p>
-                <p className="text-sm text-muted-foreground mt-1">Nenhum compromisso marcado para hoje.</p>
+                <p className="font-medium text-foreground">{t("dashboard.noEvents")}</p>
+                <p className="text-sm text-muted-foreground mt-1">{t("dashboard.noEventsDesc")}</p>
                 <Button size="sm" variant="outline" className="mt-4 text-xs" onClick={() => navigate("/dashboard/agenda")}>
-                  <Plus className="h-3 w-3 mr-1" /> Agendar compromisso
+                  <Plus className="h-3 w-3 mr-1" /> {t("dashboard.scheduleEvent")}
                 </Button>
               </CardContent>
             </Card>
@@ -332,7 +334,7 @@ export default function DashboardOverview() {
           {tomorrowEvents.length > 0 && (
             <div>
               <h3 className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
-                <ArrowRight className="h-3 w-3" /> Amanhã · {tomorrowEvents.length} compromisso{tomorrowEvents.length !== 1 ? "s" : ""}
+                <ArrowRight className="h-3 w-3" /> {t("dashboard.tomorrow")} · {tomorrowEvents.length} {t("dashboard.commitments")}
               </h3>
               <div className="space-y-2">
                 {tomorrowEvents.slice(0, 3).map((e) => {
@@ -358,7 +360,7 @@ export default function DashboardOverview() {
             <CardContent className="p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold flex items-center gap-2">
-                  <Timer className="h-4 w-4 text-primary" /> Horas Hoje
+                  <Timer className="h-4 w-4 text-primary" /> {t("dashboard.hoursToday")}
                 </h3>
                 <Button variant="ghost" size="sm" className="text-xs text-primary h-7" onClick={() => navigate("/dashboard/timesheet")}>
                   Timesheet <ChevronRight className="h-3 w-3 ml-0.5" />
@@ -373,8 +375,8 @@ export default function DashboardOverview() {
               </div>
               <Progress value={progressPct} className="h-1.5" />
               <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>{timesheetToday?.entries ?? 0} lançamentos</span>
-                <span>{progressPct}% da meta diária</span>
+                <span>{timesheetToday?.entries ?? 0} {t("dashboard.entries")}</span>
+                <span>{progressPct}% {t("dashboard.dailyGoal")}</span>
               </div>
             </CardContent>
           </Card>
@@ -383,12 +385,12 @@ export default function DashboardOverview() {
           <Card className="shadow-none border-border/50">
             <CardContent className="p-4 space-y-4">
               <h3 className="text-sm font-semibold flex items-center gap-2">
-                <BarChart3 className="h-4 w-4 text-primary" /> Desempenho
+                <BarChart3 className="h-4 w-4 text-primary" /> {t("dashboard.performance")}
               </h3>
               <div className="space-y-3">
                 <div>
                   <div className="flex justify-between text-xs mb-1">
-                    <span className="text-muted-foreground">Prazos cumpridos</span>
+                    <span className="text-muted-foreground">{t("dashboard.deadlinesMet")}</span>
                     <span className="font-medium text-emerald-600 flex items-center gap-0.5"><ChevronUp className="h-3 w-3" /> 82%</span>
                   </div>
                   <div className="h-1.5 bg-muted rounded-full overflow-hidden">
@@ -397,7 +399,7 @@ export default function DashboardOverview() {
                 </div>
                 <div>
                   <div className="flex justify-between text-xs mb-1">
-                    <span className="text-muted-foreground">Ocupação da agenda</span>
+                    <span className="text-muted-foreground">{t("dashboard.agendaOccupation")}</span>
                     <span className="font-medium">{Math.round((todayEvents.length / 10) * 100)}%</span>
                   </div>
                   <div className="h-1.5 bg-muted rounded-full overflow-hidden">
@@ -406,7 +408,7 @@ export default function DashboardOverview() {
                 </div>
                 <div>
                   <div className="flex justify-between text-xs mb-1">
-                    <span className="text-muted-foreground">Meta de horas</span>
+                    <span className="text-muted-foreground">{t("dashboard.hoursGoal")}</span>
                     <span className="font-medium">{progressPct}%</span>
                   </div>
                   <div className="h-1.5 bg-muted rounded-full overflow-hidden">
@@ -422,25 +424,25 @@ export default function DashboardOverview() {
             <CardContent className="p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold flex items-center gap-2">
-                  <DollarSign className="h-4 w-4 text-primary" /> Financeiro
+                  <DollarSign className="h-4 w-4 text-primary" /> {t("dashboard.financial")}
                 </h3>
                 <Button variant="ghost" size="sm" className="text-xs text-primary h-7" onClick={() => navigate("/dashboard/financeiro")}>
-                  Detalhes <ChevronRight className="h-3 w-3 ml-0.5" />
+                  {t("dashboard.seeDetails")} <ChevronRight className="h-3 w-3 ml-0.5" />
                 </Button>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-lg p-3">
-                  <p className="text-[10px] font-medium text-emerald-600 uppercase tracking-wider">A Receber</p>
+                  <p className="text-[10px] font-medium text-emerald-600 uppercase tracking-wider">{t("dashboard.toReceive")}</p>
                   <p className="text-lg font-bold text-emerald-700 dark:text-emerald-400 mt-0.5">{stats ? fmt(stats.aReceber) : "—"}</p>
                 </div>
                 <div className="bg-rose-500/5 border border-rose-500/10 rounded-lg p-3">
-                  <p className="text-[10px] font-medium text-rose-600 uppercase tracking-wider">A Pagar</p>
+                  <p className="text-[10px] font-medium text-rose-600 uppercase tracking-wider">{t("dashboard.toPay")}</p>
                   <p className="text-lg font-bold text-rose-700 dark:text-rose-400 mt-0.5">{stats ? fmt(stats.aPagar) : "—"}</p>
                 </div>
               </div>
               {stats && (stats.aReceber - stats.aPagar) !== 0 && (
                 <div className="text-xs text-muted-foreground text-center pt-1">
-                  Saldo: <span className={cn("font-semibold", stats.aReceber >= stats.aPagar ? "text-emerald-600" : "text-rose-600")}>
+                  {t("dashboard.balance")}: <span className={cn("font-semibold", stats.aReceber >= stats.aPagar ? "text-emerald-600" : "text-rose-600")}>
                     {fmt(stats.aReceber - stats.aPagar)}
                   </span>
                 </div>
@@ -456,7 +458,7 @@ export default function DashboardOverview() {
           {futureEvents.length > 0 && (
             <div>
               <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                <Eye className="h-4 w-4 text-primary" /> Próximos Dias
+                <Eye className="h-4 w-4 text-primary" /> {t("dashboard.upcoming")}
               </h3>
               <div className="space-y-2">
                 {futureEvents.map((e) => {
@@ -482,21 +484,21 @@ export default function DashboardOverview() {
           <div>
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-semibold flex items-center gap-2">
-                <Activity className="h-4 w-4 text-primary" /> Movimentações
+                <Activity className="h-4 w-4 text-primary" /> {t("dashboard.movements")}
               </h3>
               <Button variant="ghost" size="sm" className="text-xs text-primary h-6 px-2" onClick={() => navigate("/dashboard/processos")}>
-                Ver tudo
+                {t("dashboard.viewAll")}
               </Button>
             </div>
             {processos.length === 0 ? (
-              <p className="text-xs text-muted-foreground">Nenhuma movimentação recente.</p>
+              <p className="text-xs text-muted-foreground">{t("dashboard.noMovements")}</p>
             ) : (
               <div className="space-y-2">
                 {processos.map((p) => (
                   <div key={p.id} className="bg-card border border-border/40 rounded-lg p-2.5 hover:bg-muted/20 transition-colors cursor-pointer" onClick={() => navigate("/dashboard/processos")}>
                     <p className="text-xs font-medium line-clamp-1">{p.title}</p>
                     <div className="flex items-center justify-between text-[10px] text-muted-foreground mt-1">
-                      <span>{p.number || "Sem numeração"}</span>
+                      <span>{p.number || t("dashboard.noNumber")}</span>
                       <span>{formatDistanceToNow(parseISO(p.updated_at), { locale: ptBR, addSuffix: true })}</span>
                     </div>
                   </div>
@@ -509,13 +511,13 @@ export default function DashboardOverview() {
           <Card className="shadow-none border-border/50 bg-gradient-to-br from-primary/5 to-transparent">
             <CardContent className="p-4 space-y-2.5">
               <h3 className="text-sm font-semibold flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-primary" /> Atalhos
+                <Sparkles className="h-4 w-4 text-primary" /> {t("dashboard.shortcuts")}
               </h3>
               {[
-                { label: "Novo Processo", icon: Scale, path: "/dashboard/processos" },
-                { label: "Iniciar Timer", icon: Timer, path: "/dashboard/timesheet" },
-                { label: "Nova Minuta", icon: FileText, path: "/dashboard/minutas" },
-                { label: "CRM Pipeline", icon: Target, path: "/dashboard/crm" },
+                { label: t("dashboard.newProcess"), icon: Scale, path: "/dashboard/processos" },
+                { label: t("dashboard.startTimer"), icon: Timer, path: "/dashboard/timesheet" },
+                { label: t("dashboard.newDraft"), icon: FileText, path: "/dashboard/minutas" },
+                { label: t("dashboard.crmPipeline"), icon: Target, path: "/dashboard/crm" },
               ].map((action) => (
                 <Button
                   key={action.label}

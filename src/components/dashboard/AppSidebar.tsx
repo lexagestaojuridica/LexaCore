@@ -17,6 +17,7 @@ import {
 import { resetOnboardingTour } from "./OnboardingTour";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 import logoLexa from "@/assets/logo-lexa.png";
 import iconLexa from "@/assets/icon-lexa.png";
 
@@ -156,6 +157,7 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const { user, signOut } = useAuth();
+  const { t } = useTranslation();
 
   const displayName = user?.user_metadata?.full_name || user?.email || "";
   const avatarUrl = user?.user_metadata?.avatar_url;
