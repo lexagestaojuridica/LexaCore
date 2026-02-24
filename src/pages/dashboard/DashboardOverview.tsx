@@ -164,18 +164,25 @@ export default function DashboardOverview() {
   const { data: stats } = useQuery({
     queryKey: ["fin_meudia", orgId],
     queryFn: async () => {
-      const [{ data: receber }, { data: pagar }, { count: processos }, { count: clientes }] =
+      const [{ data: receber }, { data: pagar }, { count: processos }, { count: clientes }, { data: prazos }] =
         await Promise.all([
           supabase.from("contas_receber").select("amount").eq("organization_id", orgId!).eq("status", "pendente"),
           supabase.from("contas_pagar").select("amount").eq("organization_id", orgId!).eq("status", "pendente"),
           supabase.from("processos_juridicos").select("*", { count: "exact", head: true }).eq("organization_id", orgId!).eq("status", "ativo"),
           supabase.from("clients").select("*", { count: "exact", head: true }).eq("organization_id", orgId!),
+          supabase.from("eventos_agenda").select("status").eq("organization_id", orgId!).eq("category", "prazo"),
         ]);
+
+      const totalPrazos = prazos?.length || 0;
+      const prazosConcluidos = prazos?.filter(p => p.status === 'concluido').length || 0;
+      const deadlinesMetPct = totalPrazos > 0 ? Math.round((prazosConcluidos / totalPrazos) * 100) : 100;
+
       return {
         aReceber: receber?.reduce((s, c) => s + Number(c.amount), 0) ?? 0,
         aPagar: pagar?.reduce((s, c) => s + Number(c.amount), 0) ?? 0,
         totalProcessos: processos ?? 0,
         totalClientes: clientes ?? 0,
+        deadlinesMetPct,
       };
     },
     enabled: !!orgId,
@@ -391,10 +398,12 @@ export default function DashboardOverview() {
                 <div>
                   <div className="flex justify-between text-xs mb-1">
                     <span className="text-muted-foreground">{t("dashboard.deadlinesMet")}</span>
-                    <span className="font-medium text-emerald-600 flex items-center gap-0.5"><ChevronUp className="h-3 w-3" /> 82%</span>
+                    <span className={cn("font-medium flex items-center gap-0.5", (stats?.deadlinesMetPct || 0) >= 80 ? "text-emerald-600" : "text-amber-600")}>
+                      <ChevronUp className="h-3 w-3" /> {stats?.deadlinesMetPct || 0}%
+                    </span>
                   </div>
                   <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                    <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: "82%" }} />
+                    <div className={cn("h-full rounded-full transition-all", (stats?.deadlinesMetPct || 0) >= 80 ? "bg-emerald-500" : "bg-amber-500")} style={{ width: `${stats?.deadlinesMetPct || 0}%` }} />
                   </div>
                 </div>
                 <div>

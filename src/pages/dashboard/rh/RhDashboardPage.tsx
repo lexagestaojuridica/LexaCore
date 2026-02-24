@@ -7,13 +7,10 @@ export default function RhDashboardPage() {
     const { data: stats } = useQuery({
         queryKey: ["hr-dashboard-stats"],
         queryFn: async () => {
-            // @ts-ignore — hr_employees exists in DB but types not yet regenerated
             const { data, error } = await supabase.from("hr_employees").select("id, status");
             if (error) throw error;
 
-            // @ts-ignore
             const active = data?.filter(e => e.status === 'active').length || 0;
-            // @ts-ignore
             const onLeave = data?.filter(e => e.status === 'on_leave').length || 0;
 
             return { total: active + onLeave, active, onLeave };

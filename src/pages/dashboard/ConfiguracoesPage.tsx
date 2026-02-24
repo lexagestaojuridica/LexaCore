@@ -23,6 +23,8 @@ import { Textarea } from "@/components/ui/textarea";
 import LexaLoadingOverlay from "@/components/shared/LexaLoadingOverlay";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { useBilling } from "@/hooks/useBilling";
+
 
 // ─── Types ────────────────────────────────────────────────────
 interface Plan { id: string; name: string; slug: string; price_monthly: number; price_yearly: number; max_users: number; max_processes: number; features: string[]; is_active: boolean; sort_order: number; }
@@ -110,41 +112,26 @@ export default function ConfiguracoesPage() {
   });
   const plans = dbPlans.length > 0 ? dbPlans : FALLBACK_PLANS;
 
-  const { data: orgSubscription } = useQuery({
-    queryKey: ["org-subscription", profile?.organization_id],
-    queryFn: async () => {
-      const { data } = await supabase.from("organization_subscriptions" as any).select("*, subscription_plans(*)").eq("organization_id", profile!.organization_id!).single();
-      return data as any;
-    },
-    enabled: !!profile?.organization_id,
-  });
+  const {
+    subscription: orgSubscription,
+    isLoading: loadingSub,
+    createCheckout
+  } = useBilling();
 
-  const { data: customOptions = [] } = useQuery({
-    queryKey: ["custom-options", profile?.organization_id],
-    queryFn: async () => {
-      const { data } = await supabase.from("custom_options" as any).select("*").eq("organization_id", profile!.organization_id!).order("module").order("sort_order");
-      return (data ?? []) as unknown as CustomOption[];
-    },
-    enabled: !!profile?.organization_id,
-  });
-
-  const { data: employees = [] } = useQuery({
-    queryKey: ["employees", profile?.organization_id],
-    queryFn: async () => {
-      const { data } = await supabase.from("employees" as any).select("*").eq("organization_id", profile!.organization_id!).order("full_name");
-      return (data ?? []) as unknown as Employee[];
-    },
-    enabled: !!profile?.organization_id,
-  });
-
-  const { data: units = [] } = useQuery({
-    queryKey: ["units-list", profile?.organization_id],
-    queryFn: async () => {
-      const { data } = await supabase.from("units").select("id, name").eq("organization_id", profile!.organization_id!);
-      return data ?? [];
-    },
-    enabled: !!profile?.organization_id,
-  });
+  // ── Handlers ──
+  const handleSubscribe = (planSlug: string) => {
+    toast.promise(
+      new Promise((resolve, reject) => {
+        createCheckout({ planId: planSlug });
+        resolve(true);
+      }),
+      {
+        loading: "Iniciando checkout...",
+        success: "Redirecionando...",
+        error: "Erro ao iniciar pagamento",
+      }
+    );
+  };
 
   // ── State ──
   const [profileForm, setProfileForm] = useState({ full_name: "", phone: "" });
@@ -544,7 +531,7 @@ export default function ConfiguracoesPage() {
               </div>
               <div className="grid gap-4 md:grid-cols-3">
                 {plans.map((plan, i) => {
-                  const isCurrent = orgSubscription?.subscription_plans?.slug === plan.slug;
+                  const isCurrent = orgSubscription?.plans?.slug === plan.slug;
                   return (
                     <Card key={plan.id} className={cn("relative border-border overflow-hidden transition-shadow hover:shadow-md", isCurrent && "ring-2 ring-primary")}>
                       {isCurrent && <Badge className="absolute top-3 right-3 text-[10px]">{t("settings.currentPlan")}</Badge>}
@@ -566,7 +553,12 @@ export default function ConfiguracoesPage() {
                             </li>
                           ))}
                         </ul>
-                        <Button variant={isCurrent ? "outline" : "default"} className="w-full mt-6" disabled={isCurrent}>
+                        <Button
+                          variant={isCurrent ? "outline" : "default"}
+                          className="w-full mt-6"
+                          disabled={isCurrent}
+                          onClick={() => handleSubscribe(plan.slug)}
+                        >
                           {isCurrent ? t("settings.currentPlan") : t("settings.subscribe")}
                         </Button>
                       </CardContent>

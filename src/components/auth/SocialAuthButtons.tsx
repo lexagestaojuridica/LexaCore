@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { lovable } from "@/integrations/lovable/index";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 
@@ -8,8 +8,13 @@ const SocialAuthButtons = () => {
 
   const handleSocialLogin = async (provider: "google" | "apple") => {
     setLoading(provider);
-    const { error } = await lovable.auth.signInWithOAuth(provider, {
-      redirect_uri: window.location.origin,
+
+    // Using native Supabase Auth to avoid Lovable proxy 404 on localhost
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: window.location.origin,
+      },
     });
 
     if (error) {

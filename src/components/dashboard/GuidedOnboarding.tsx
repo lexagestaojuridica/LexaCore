@@ -3,94 +3,88 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
     Rocket, Building2, Users, FileText,
     CheckCircle2, ChevronRight, X, Sparkles,
-    ArrowRight, Scale, CalendarDays, DollarSign, BarChart3, ChevronLeft
+    ArrowRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 
-interface TourStep {
+interface Step {
     title: string;
     description: string;
     icon: any;
+    action: string;
 }
 
-const TOUR_STEPS: TourStep[] = [
+const STEPS: Step[] = [
     {
-        title: "Bem-vindo à LEXA! 🎉",
-        description: "Seu sistema completo de gestão jurídica com IA. Vamos configurar seu escritório agora.",
+        title: "Bem-vindo à LEXA",
+        description: "Vamos configurar seu escritório em menos de 2 minutos para você começar a operar com IA.",
         icon: Rocket,
+        action: "Começar agora"
     },
     {
         title: "Sua Organização",
-        description: "Configure o nome do seu escritório e sua logo para a White-label nas Configurações.",
+        description: "Configure o nome do seu escritório e sua logo para a White-label.",
         icon: Building2,
-    },
-    {
-        title: "Dashboard: Meu Dia",
-        description: "Veja prazos urgentes, KPIs e processos recentes em um só lugar.",
-        icon: BarChart3,
-    },
-    {
-        title: "Agenda & Prazos",
-        description: "Calendário com integração Google e alertas automáticos da ARUNA IA.",
-        icon: CalendarDays,
-    },
-    {
-        title: "Processos & Clientes",
-        description: "Gestão completa em modo Tabela ou Kanban com análise de risco por IA.",
-        icon: Scale,
+        action: "Configurar Perfil"
     },
     {
         title: "Monte sua Equipe",
-        description: "Convide advogados e gerencie o RH completo com ponto eletrônico.",
+        description: "Convide seus advogados e estagiários para colaborar em tempo real.",
         icon: Users,
+        action: "Gerenciar Equipe"
     },
     {
-        title: "Tudo pronto!",
-        description: "Você está pronto para começar. A ARUNA IA já está processando seus dados.",
-        icon: CheckCircle2,
-    },
+        title: "Primeiro Processo",
+        description: "Importe um processo para ver a ARUNA IA analisar os riscos automaticamente.",
+        icon: FileText,
+        action: "Importar Processo"
+    }
 ];
 
-const STORAGE_KEY = "lexa-tour-completed";
-
-export function OnboardingTour() {
-    const [visible, setVisible] = useState(false);
-    const [step, setStep] = useState(0);
+export function GuidedOnboarding() {
+    const [isOpen, setIsOpen] = useState(false);
+    const [currentStep, setCurrentStep] = useState(0);
 
     useEffect(() => {
-        const completed = localStorage.getItem(STORAGE_KEY);
-        if (!completed) {
-            const t = setTimeout(() => setVisible(true), 1500);
-            return () => clearTimeout(t);
+        const hasOnboarded = localStorage.getItem("lexa_onboarded");
+        if (!hasOnboarded) {
+            setIsOpen(true);
         }
     }, []);
 
-    const complete = () => {
-        localStorage.setItem(STORAGE_KEY, "true");
-        setVisible(false);
+    const handleNext = () => {
+        if (currentStep < STEPS.length - 1) {
+            setCurrentStep(currentStep + 1);
+        } else {
+            handleClose();
+        }
     };
 
-    const current = TOUR_STEPS[step];
-    const isFirst = step === 0;
-    const isLast = step === TOUR_STEPS.length - 1;
-    const progress = ((step + 1) / TOUR_STEPS.length) * 100;
-    const Icon = current.icon;
+    const handleClose = () => {
+        localStorage.setItem("lexa_onboarded", "true");
+        setIsOpen(false);
+    };
 
-    if (!visible) return null;
+    const step = STEPS[currentStep];
+    const Icon = step.icon;
+    const progress = ((currentStep + 1) / STEPS.length) * 100;
+
+    if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
             <AnimatePresence mode="wait">
                 <motion.div
-                    key={step}
+                    key={currentStep}
                     initial={{ opacity: 0, scale: 0.95, y: 20 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: -20 }}
                     className="w-full max-w-lg"
                 >
-                    <Card className="border-primary/20 shadow-2xl relative overflow-hidden bg-card/50 backdrop-blur-xl">
+                    <Card className="border-primary/20 shadow-2xl relative overflow-hidden">
                         <div className="absolute top-0 left-0 w-full h-1 bg-muted">
                             <motion.div
                                 className="h-full bg-primary"
@@ -100,7 +94,7 @@ export function OnboardingTour() {
                         </div>
 
                         <button
-                            onClick={complete}
+                            onClick={handleClose}
                             className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors"
                         >
                             <X className="h-4 w-4" />
@@ -111,37 +105,43 @@ export function OnboardingTour() {
                                 <Icon className="h-8 w-8" />
                             </div>
                             <CardTitle className="text-2xl font-display flex items-center justify-center gap-2">
-                                {current.title} {isFirst && <Sparkles className="h-5 w-5 text-amber-500 animate-pulse" />}
+                                {step.title} {currentStep === 0 && <Sparkles className="h-5 w-5 text-amber-500 animate-pulse" />}
                             </CardTitle>
                             <CardDescription className="text-base mt-2">
-                                {current.description}
+                                {step.description}
                             </CardDescription>
                         </CardHeader>
 
                         <CardContent className="pb-8 flex flex-col items-center gap-6">
                             <div className="flex gap-2">
-                                {TOUR_STEPS.map((_, i) => (
+                                {STEPS.map((_, i) => (
                                     <div
                                         key={i}
                                         className={cn(
                                             "h-1.5 rounded-full transition-all duration-300",
-                                            i === step ? "w-8 bg-primary" : "w-1.5 bg-muted"
+                                            i === currentStep ? "w-8 bg-primary" : "w-2 bg-muted"
                                         )}
                                     />
                                 ))}
                             </div>
 
                             <div className="flex gap-3 w-full sm:w-auto">
-                                {!isFirst && (
-                                    <Button variant="ghost" onClick={() => setStep(step - 1)}>
-                                        <ChevronLeft className="mr-2 h-4 w-4" /> Voltar
+                                {currentStep > 0 && (
+                                    <Button variant="ghost" onClick={() => setCurrentStep(currentStep - 1)}>
+                                        Voltar
                                     </Button>
                                 )}
-                                <Button className="flex-1 sm:flex-none gap-2 px-8" onClick={() => (isLast ? complete() : setStep(step + 1))}>
-                                    {isLast ? "Começar Agora" : "Próximo"}
+                                <Button className="flex-1 sm:flex-none gap-2 px-8" onClick={handleNext}>
+                                    {currentStep === STEPS.length - 1 ? "Concluir" : step.action}
                                     <ChevronRight className="h-4 w-4" />
                                 </Button>
                             </div>
+
+                            {currentStep === 0 && (
+                                <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold flex items-center gap-1.5 mt-2">
+                                    <CheckCircle2 className="h-3 w-3 text-emerald-500" /> Ativado para sua organização
+                                </p>
+                            )}
                         </CardContent>
                     </Card>
                 </motion.div>
@@ -149,8 +149,3 @@ export function OnboardingTour() {
         </div>
     );
 }
-
-export function resetOnboardingTour() {
-    localStorage.removeItem(STORAGE_KEY);
-}
-

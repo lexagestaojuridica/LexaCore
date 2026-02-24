@@ -134,6 +134,47 @@ async function cleanStaleCandidates(): Promise<TaskResult> {
     return result;
 }
 
+
+// ─── Task 4: Legal Deadline Alerts ──────────────────────────
+async function checkUpcomingLegalDeadlines(): Promise<TaskResult> {
+    const result: TaskResult = { task: "legal_deadline_alerts", processed: 0, errors: [] };
+
+    try {
+        const threeDaysFromNow = new Date();
+        threeDaysFromNow.setDate(threeDaysFromNow.getDate() + 3);
+
+        const { data: events, error } = await supabase
+            .from("eventos_agenda")
+            .select("id, title, start_time, organization_id, category")
+            .eq("category", "prazo")
+            .eq("status", "pendente")
+            .lte("start_time", threeDaysFromNow.toISOString())
+            .gte("start_time", new Date().toISOString());
+
+        if (error) {
+            result.errors.push(error.message);
+            return result;
+        }
+
+        for (const event of events || []) {
+            await supabase.from("notifications").insert({
+                organization_id: event.organization_id,
+                title: "Prazo Jurídico Próximo",
+                message: `O prazo "${event.title}" vence em ${new Date(event.start_time).toLocaleDateString("pt-BR")}.`,
+                type: "destructive",
+                module: "agenda",
+                reference_id: event.id,
+                reference_type: "eventos_agenda",
+            });
+            result.processed++;
+        }
+    } catch (err) {
+        result.errors.push(String(err));
+    }
+
+    return result;
+}
+
 // ─── Main Handler ────────────────────────────────────────────
 serve(async (req) => {
     try {
@@ -150,6 +191,7 @@ serve(async (req) => {
             checkExpiringContracts(),
             checkPendingLeaveRequests(),
             cleanStaleCandidates(),
+            checkUpcomingLegalDeadlines(),
         ]);
 
         const summary = {
