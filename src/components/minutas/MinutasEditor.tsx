@@ -1,4 +1,8 @@
-import { useRef, useCallback, useState } from "react";
+import { useCallback, useState, useEffect } from "react";
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import TipTapUnderline from '@tiptap/extension-underline';
+import TextAlign from '@tiptap/extension-text-align';
 import {
     Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight,
     List, ListOrdered, Heading1, Heading2, Heading3, Undo2, Redo2,
@@ -19,22 +23,41 @@ interface Props {
 
 export default function MinutasEditor({ document, onBack }: Props) {
     const { updateDocument, saveVersion } = useMinutas();
-    const editorRef = useRef<HTMLDivElement>(null);
     const [showVars, setShowVars] = useState(document.variables.length > 0);
     const [variables, setVariables] = useState(document.variables);
     const [historyOpen, setHistoryOpen] = useState(false);
     const [versionLabel, setVersionLabel] = useState("");
 
-    const exec = useCallback((command: string, value?: string) => {
-        window.document.execCommand(command, false, value || "");
-        editorRef.current?.focus();
-    }, []);
-
-    const handleSave = () => {
-        if (editorRef.current) {
-            updateDocument(document.id, { content: editorRef.current.innerHTML, variables });
+    const editor = useEditor({
+        extensions: [
+            StarterKit,
+            TipTapUnderline,
+            TextAlign.configure({ types: ['heading', 'paragraph'] }),
+        ],
+        content: document.content,
+        editorProps: {
+            attributes: {
+                class: 'prose prose-sm max-w-none min-h-[500px] outline-none p-10 mx-auto bg-card focus:outline-none transition-colors selection:bg-primary/20',
+                style: "font-family: 'Times New Roman', Georgia, serif; font-size: 14px; line-height: 1.8;"
+            }
         }
-    };
+    });
+
+    const handleSave = useCallback(() => {
+        if (editor) {
+            const html = editor.getHTML();
+            updateDocument(document.id, { content: html, variables });
+        }
+    }, [editor, document.id, variables, updateDocument]);
+
+    // 15s Auto-save debounce effect
+    useEffect(() => {
+        if (!editor) return;
+        const interval = setInterval(() => {
+            handleSave();
+        }, 15000);
+        return () => clearInterval(interval);
+    }, [editor, handleSave]);
 
     const handleSaveVersion = () => {
         handleSave();
@@ -44,23 +67,25 @@ export default function MinutasEditor({ document, onBack }: Props) {
     };
 
     const applyVariables = () => {
-        if (!editorRef.current) return;
+        if (!editor) return;
         let html = document.content;
         variables.forEach((v) => {
             if (v.value) {
                 const regex = new RegExp(`\\{\\{${v.key}\\}\\}`, "g");
-                html = html.replace(regex, `<span style="background:#fef3c7;padding:0 2px;border-radius:2px">${v.value}</span>`);
+                html = html.replace(regex, `<span style="background:#fef3c7;padding:0 3px;border-radius:2px;font-weight:600;">${v.value}</span>`);
             }
         });
-        editorRef.current.innerHTML = html;
+        editor.commands.setContent(html);
     };
 
-    const ToolbarBtn = ({ icon: Icon, cmd, value, active, title }: { icon: any; cmd: string; value?: string; active?: boolean; title?: string }) => (
-        <Button variant="ghost" size="icon" className={`h-8 w-8 rounded-md ${active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"}`}
-            title={title} onMouseDown={(e) => { e.preventDefault(); exec(cmd, value); }}>
-            <Icon className="h-3.5 w-3.5" />
+    const ToolbarBtn = ({ icon: Icon, onClick, active, title }: { icon: any; onClick: () => void; active?: boolean; title?: string }) => (
+        <Button variant="ghost" size="icon" className={`h-8 w-8 rounded-md transition-all duration-200 ${active ? "bg-primary/20 text-primary font-bold shadow-sm" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"}`}
+            title={title} onMouseDown={(e) => { e.preventDefault(); onClick(); }}>
+            <Icon className="h-4 w-4" />
         </Button>
     );
+
+    if (!editor) return null;
 
     return (
         <div className="space-y-3">
@@ -85,47 +110,31 @@ export default function MinutasEditor({ document, onBack }: Props) {
                 {/* Editor Area */}
                 <div className="flex-1 min-w-0">
                     {/* Toolbar */}
-                    <Card className="border-border/50 mb-3">
+                    <Card className="border-border/50 mb-3 shadow-sm sticky top-2 z-10 bg-card">
                         <div className="flex flex-wrap items-center gap-0.5 p-1.5">
-                            <ToolbarBtn icon={Bold} cmd="bold" title="Negrito" />
-                            <ToolbarBtn icon={Italic} cmd="italic" title="Itálico" />
-                            <ToolbarBtn icon={Underline} cmd="underline" title="Sublinhado" />
+                            <ToolbarBtn icon={Bold} onClick={() => editor.chain().focus().toggleBold().run()} active={editor.isActive('bold')} title="Negrito" />
+                            <ToolbarBtn icon={Italic} onClick={() => editor.chain().focus().toggleItalic().run()} active={editor.isActive('italic')} title="Itálico" />
+                            <ToolbarBtn icon={Underline} onClick={() => editor.chain().focus().toggleUnderline().run()} active={editor.isActive('underline')} title="Sublinhado" />
                             <Separator orientation="vertical" className="h-5 mx-1" />
-                            <ToolbarBtn icon={Heading1} cmd="formatBlock" value="h1" title="Título 1" />
-                            <ToolbarBtn icon={Heading2} cmd="formatBlock" value="h2" title="Título 2" />
-                            <ToolbarBtn icon={Heading3} cmd="formatBlock" value="h3" title="Título 3" />
+                            <ToolbarBtn icon={Heading1} onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} active={editor.isActive('heading', { level: 1 })} title="Título 1" />
+                            <ToolbarBtn icon={Heading2} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} active={editor.isActive('heading', { level: 2 })} title="Título 2" />
+                            <ToolbarBtn icon={Heading3} onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} active={editor.isActive('heading', { level: 3 })} title="Título 3" />
                             <Separator orientation="vertical" className="h-5 mx-1" />
-                            <ToolbarBtn icon={AlignLeft} cmd="justifyLeft" title="Alinhar esquerda" />
-                            <ToolbarBtn icon={AlignCenter} cmd="justifyCenter" title="Centralizar" />
-                            <ToolbarBtn icon={AlignRight} cmd="justifyRight" title="Alinhar direita" />
+                            <ToolbarBtn icon={AlignLeft} onClick={() => editor.chain().focus().setTextAlign('left').run()} active={editor.isActive({ textAlign: 'left' })} title="Alinhar esquerda" />
+                            <ToolbarBtn icon={AlignCenter} onClick={() => editor.chain().focus().setTextAlign('center').run()} active={editor.isActive({ textAlign: 'center' })} title="Centralizar" />
+                            <ToolbarBtn icon={AlignRight} onClick={() => editor.chain().focus().setTextAlign('right').run()} active={editor.isActive({ textAlign: 'right' })} title="Alinhar direita" />
                             <Separator orientation="vertical" className="h-5 mx-1" />
-                            <ToolbarBtn icon={List} cmd="insertUnorderedList" title="Lista" />
-                            <ToolbarBtn icon={ListOrdered} cmd="insertOrderedList" title="Lista numerada" />
+                            <ToolbarBtn icon={List} onClick={() => editor.chain().focus().toggleBulletList().run()} active={editor.isActive('bulletList')} title="Lista" />
+                            <ToolbarBtn icon={ListOrdered} onClick={() => editor.chain().focus().toggleOrderedList().run()} active={editor.isActive('orderedList')} title="Lista numerada" />
                             <Separator orientation="vertical" className="h-5 mx-1" />
-                            <ToolbarBtn icon={Undo2} cmd="undo" title="Desfazer" />
-                            <ToolbarBtn icon={Redo2} cmd="redo" title="Refazer" />
+                            <ToolbarBtn icon={Undo2} onClick={() => editor.chain().focus().undo().run()} title="Desfazer" />
+                            <ToolbarBtn icon={Redo2} onClick={() => editor.chain().focus().redo().run()} title="Refazer" />
                         </div>
                     </Card>
 
-                    {/* Content Editable */}
-                    <Card className="border-border/50 overflow-hidden">
-                        <div
-                            ref={editorRef}
-                            contentEditable
-                            suppressContentEditableWarning
-                            dangerouslySetInnerHTML={{ __html: document.content }}
-                            className="min-h-[500px] p-8 outline-none prose prose-sm max-w-none
-                [&_h1]:text-xl [&_h1]:font-bold [&_h1]:mb-4 [&_h1]:text-foreground
-                [&_h2]:text-lg [&_h2]:font-semibold [&_h2]:mb-3 [&_h2]:text-foreground
-                [&_h3]:text-base [&_h3]:font-semibold [&_h3]:mb-2 [&_h3]:text-foreground
-                [&_p]:mb-2 [&_p]:text-sm [&_p]:leading-relaxed [&_p]:text-foreground/80
-                [&_ul]:pl-6 [&_ul]:mb-3 [&_ul]:list-disc
-                [&_ol]:pl-6 [&_ol]:mb-3 [&_ol]:list-decimal
-                [&_li]:mb-1 [&_li]:text-sm [&_li]:text-foreground/80
-                [&_strong]:font-bold [&_strong]:text-foreground
-                bg-card"
-                            style={{ fontFamily: "'Times New Roman', Georgia, serif", fontSize: "14px", lineHeight: "1.8" }}
-                        />
+                    {/* TipTap Content */}
+                    <Card className="border-border/50 overflow-hidden shadow-sm">
+                        <EditorContent editor={editor} />
                     </Card>
                 </div>
 

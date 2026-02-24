@@ -8,7 +8,7 @@ import { ptBR } from "date-fns/locale";
 import {
     Clock, Plus, Play, Square, Trash2, Timer,
     TrendingUp, Calendar, BarChart3, ChevronRight, PlayCircle, Target, Briefcase,
-    Pause, RotateCcw, ChevronDown, History
+    Pause, RotateCcw, ChevronDown, History, Receipt
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -182,6 +182,41 @@ export default function TimesheetPage() {
             toast.success("Lançamento excluído");
         },
     });
+
+    const bilMutation = useMutation({
+        mutationFn: async ({ entryId, payload, entryUpdate }: { entryId: string, payload: any, entryUpdate: any }) => {
+            const { error: fError } = await supabase.from("contas_receber").insert(payload);
+            if (fError) throw fError;
+
+            const { error: tError } = await supabase.from("timesheet_entries" as any).update(entryUpdate).eq("id", entryId);
+            if (tError) throw tError;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["timesheet"] });
+            queryClient.invalidateQueries({ queryKey: ["contas_receber"] });
+            toast.success("Conta a Receber gerada com sucesso!");
+        },
+        onError: (e: any) => toast.error(`Erro ao faturar: ${e.message}`),
+    });
+
+    const handleBilling = (entry: TimesheetEntry, value: number) => {
+        if (!orgId || !user) return;
+
+        const payload = {
+            organization_id: orgId,
+            description: `Honorários (Timesheet): ${entry.description}`,
+            amount: value,
+            due_date: new Date().toISOString().split('T')[0],
+            status: "pendente",
+            category: "Honorários"
+        };
+
+        bilMutation.mutate({
+            entryId: entry.id,
+            payload,
+            entryUpdate: { billing_status: "faturado" }
+        });
+    };
 
     const logTimerAction = async (entryId: string, action: string) => {
         await supabase.from("timesheet_timer_logs" as any).insert({
@@ -537,6 +572,18 @@ export default function TimesheetPage() {
                                                                     )}
                                                                 </div>
                                                                 <div className="flex items-center gap-1">
+                                                                    {entry.billing_status === "pendente" && value && value > 0 && (
+                                                                        <Button
+                                                                            variant="ghost"
+                                                                            size="icon"
+                                                                            title="Faturar Honorários"
+                                                                            className="h-7 w-7 text-amber-600/60 hover:text-amber-600 hover:bg-amber-600/10 opacity-0 group-hover:opacity-100 transition-all"
+                                                                            onClick={(e) => { e.stopPropagation(); handleBilling(entry, value); }}
+                                                                            disabled={bilMutation.isPending}
+                                                                        >
+                                                                            <Receipt className="h-3.5 w-3.5" />
+                                                                        </Button>
+                                                                    )}
                                                                     <Button
                                                                         variant="ghost"
                                                                         size="icon"

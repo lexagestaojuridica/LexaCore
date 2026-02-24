@@ -8,7 +8,7 @@ import { ptBR } from "date-fns/locale";
 import {
   Scale, Plus, Search, Filter, Edit2, Trash2, Eye, Upload, Download, File, Calculator, X,
   LayoutList, LayoutGrid, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
-  ArrowUpDown, ArrowUp, ArrowDown, Receipt, Bot, SwitchCamera,
+  ArrowUpDown, ArrowUp, ArrowDown, Receipt, Bot, SwitchCamera, Share2, MessageCircle,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -39,7 +39,7 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Tables, TablesInsert } from "@/integrations/supabase/types";
 
-type Processo = Tables<"processos_juridicos">;
+type Processo = Tables<"processos_juridicos"> & { clients?: { id: string; name: string; phone: string | null; } | null };
 type Documento = { id: string; file_name: string; file_path: string; file_type: string | null; created_at: string };
 type SortField = "title" | "number" | "court" | "status" | "estimated_value" | "created_at";
 type SortDir = "asc" | "desc";
@@ -234,7 +234,7 @@ export default function ProcessosPage() {
     queryFn: async () => {
       let query = supabase
         .from("processos_juridicos")
-        .select("*", { count: "exact" })
+        .select("*, clients(id, name, phone)", { count: "exact" })
         .eq("organization_id", orgId!);
 
       // Apply Filters
@@ -305,6 +305,17 @@ export default function ProcessosPage() {
     },
     enabled: !!selectedProcesso?.id && viewDialogOpen,
   });
+
+  const handleShare = (p: Processo) => {
+    const token = (p as any).public_token;
+    if (!token) {
+      toast.error("Processo sem token público. Abra e salve-o novamente ou aplique a migração de banco.");
+      return;
+    }
+    const url = `${window.location.origin}/public/processo/${token}`;
+    navigator.clipboard.writeText(url);
+    toast.success("Link do Portal do Cliente copiado!");
+  };
 
   const createMutation = useMutation({
     mutationFn: async (payload: TablesInsert<"processos_juridicos">) => {
@@ -536,6 +547,18 @@ export default function ProcessosPage() {
                             <TableCell className="text-muted-foreground">{format(new Date(p.created_at), "dd/MM/yyyy", { locale: ptBR })}</TableCell>
                             <TableCell>
                               <div className="flex items-center justify-end gap-1">
+                                {p.clients?.phone && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    title="WhatsApp do Cliente"
+                                    className="h-8 w-8 text-emerald-500/80 hover:bg-emerald-500/10 hover:text-emerald-600"
+                                    onClick={() => window.open(`https://wa.me/55${p.clients?.phone?.replace(/\\D/g, '')}`, '_blank')}
+                                  >
+                                    <MessageCircle className="h-4 w-4" />
+                                  </Button>
+                                )}
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-primary hover:bg-primary/10 hover:text-primary" title="Copiar Link para o Cliente" onClick={() => handleShare(p)}><Share2 className="h-4 w-4" /></Button>
                                 <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => { setSelectedProcesso(p); setViewDialogOpen(true); }}><Eye className="h-4 w-4" /></Button>
                                 <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => openEdit(p)}><Edit2 className="h-4 w-4" /></Button>
                                 <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => { setSelectedProcesso(p); setDeleteDialogOpen(true); }}><Trash2 className="h-4 w-4" /></Button>

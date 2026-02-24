@@ -22,6 +22,8 @@ import logoLexaWhite from "@/assets/logo-lexa-white.png";
 import iconLexa from "@/assets/icon-lexa.png";
 import { GlobalSearch } from "@/components/shared/GlobalSearch";
 import { Search } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 // ─── Nav structure grouped by journey ───────────────────────
 
@@ -66,7 +68,7 @@ const navGroups = [
     labelKey: "groups.financial",
     defaultOpen: false,
     items: [
-      { titleKey: "nav.financial", url: "/dashboard/financeiro", icon: DollarSign },
+      { titleKey: "nav.financial", url: "/dashboard/financeiro", icon: DollarSign, allowedRoles: ["admin", "advogado", "financeiro"] },
     ],
   },
   {
@@ -82,17 +84,17 @@ const navGroups = [
     labelKey: "groups.admin",
     defaultOpen: false,
     items: [
-      { titleKey: "nav.units", url: "/dashboard/unidades", icon: Building2 },
+      { titleKey: "nav.units", url: "/dashboard/unidades", icon: Building2, allowedRoles: ["admin"] },
     ],
   },
   {
     labelKey: "RH / DHO",
     defaultOpen: false,
     items: [
-      { titleKey: "Dashboard RH", url: "/dashboard/rh", icon: BarChart3 },
-      { titleKey: "Colaboradores", url: "/dashboard/rh/colaboradores", icon: Users },
-      { titleKey: "Ponto Eletrônico", url: "/dashboard/rh/ponto", icon: Clock },
-      { titleKey: "Recrutamento", url: "/dashboard/rh/recrutamento", icon: Briefcase },
+      { titleKey: "Dashboard RH", url: "/dashboard/rh", icon: BarChart3, allowedRoles: ["admin", "advogado"] },
+      { titleKey: "Colaboradores", url: "/dashboard/rh/colaboradores", icon: Users, allowedRoles: ["admin", "advogado"] },
+      { titleKey: "Ponto Eletrônico", url: "/dashboard/rh/ponto", icon: Clock, allowedRoles: ["admin", "advogado"] },
+      { titleKey: "Recrutamento", url: "/dashboard/rh/recrutamento", icon: Briefcase, allowedRoles: ["admin", "advogado"] },
     ],
   },
 ];
@@ -174,6 +176,16 @@ export function AppSidebar() {
   const { user, signOut } = useAuth();
   const { t } = useTranslation();
 
+  const { data: userRoleData } = useQuery({
+    queryKey: ["user-role", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("user_roles").select("role").eq("user_id", user!.id).maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+  });
+  const role = (userRoleData?.role) ?? (user?.user_metadata?.app_role) ?? "admin";
+
   const displayName = user?.user_metadata?.full_name || user?.email || "";
   const avatarUrl = user?.user_metadata?.avatar_url;
   const initials = displayName
@@ -196,9 +208,16 @@ export function AppSidebar() {
 
       {/* Nav Groups */}
       <SidebarContent className="flex-1 overflow-y-auto overflow-x-hidden px-2 py-3">
-        {navGroups.map((group) => (
-          <NavGroup key={group.labelKey} group={group} collapsed={collapsed} t={t} />
-        ))}
+        {navGroups.map((group) => {
+          const filteredItems = group.items.filter((item: any) =>
+            !item.allowedRoles || item.allowedRoles.includes(role) || role === "admin"
+          );
+          if (filteredItems.length === 0) return null;
+          const filteredGroup = { ...group, items: filteredItems };
+          return (
+            <NavGroup key={group.labelKey} group={filteredGroup} collapsed={collapsed} t={t} />
+          );
+        })}
       </SidebarContent>
 
       {/* Global Search Component */}
@@ -254,21 +273,23 @@ export function AppSidebar() {
               </span>
             </div>
           )}
-          <Tooltip delayDuration={0}>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 shrink-0 text-sidebar-foreground/35 hover:text-sidebar-foreground hover:bg-sidebar-accent"
-                asChild
-              >
-                <NavLink to="/dashboard/configuracoes">
-                  <Settings className="h-3.5 w-3.5" />
-                </NavLink>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right">{t("nav.settings")}</TooltipContent>
-          </Tooltip>
+          {role === "admin" && (
+            <Tooltip delayDuration={0}>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 shrink-0 text-sidebar-foreground/35 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+                  asChild
+                >
+                  <NavLink to="/dashboard/configuracoes">
+                    <Settings className="h-3.5 w-3.5" />
+                  </NavLink>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">{t("nav.settings")}</TooltipContent>
+            </Tooltip>
+          )}
           <Tooltip delayDuration={0}>
             <TooltipTrigger asChild>
               <Button

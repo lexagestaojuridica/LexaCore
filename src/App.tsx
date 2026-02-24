@@ -2,8 +2,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import RoleGuard from "@/components/shared/RoleGuard";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
@@ -38,6 +39,7 @@ import PortalLogin from "@/pages/portal/PortalLogin";
 import PortalDashboard from "@/pages/portal/PortalDashboard";
 import PortalSignature from "@/pages/portal/PortalSignature";
 import NotFound from "./pages/NotFound";
+import ProcessPublicView from "./pages/public/ProcessPublicView";
 
 import ResetPassword from "./pages/auth/ResetPassword";
 import UpdatePassword from "./pages/auth/UpdatePassword";
@@ -63,6 +65,7 @@ const App = () => (
               <Route path="/portal" element={<PortalLogin />} />
               <Route path="/portal/dashboard" element={<ProtectedRoute><PortalDashboard /></ProtectedRoute>} />
               <Route path="/portal/assinatura/:token" element={<PortalSignature />} />
+              <Route path="/public/processo/:token" element={<ProcessPublicView />} />
               <Route
                 path="/dashboard"
                 element={
@@ -75,9 +78,9 @@ const App = () => (
                 <Route path="processos" element={<ProcessosPage />} />
                 <Route path="clientes" element={<ClientesPage />} />
                 <Route path="agenda" element={<AgendaPage />} />
-                <Route path="financeiro" element={<FinanceiroPage />} />
+                <Route path="financeiro" element={<RoleGuard allowedRoles={["admin", "advogado", "financeiro"]} fallback={<Navigate to="/dashboard" replace />}><FinanceiroPage /></RoleGuard>} />
                 <Route path="ia" element={<IAPage />} />
-                <Route path="configuracoes" element={<ConfiguracoesPage />} />
+                <Route path="configuracoes" element={<RoleGuard allowedRoles={["admin"]} fallback={<Navigate to="/dashboard" replace />}><ConfiguracoesPage /></RoleGuard>} />
                 <Route path="bi" element={<BIPage />} />
                 <Route path="calculadora" element={<CalculadoraPage />} />
                 <Route path="noticias" element={<NoticiasPage />} />
@@ -91,10 +94,10 @@ const App = () => (
                 <Route path="unidades" element={<UnidadesPage />} />
 
                 {/* HR Module */}
-                <Route path="rh" element={<RhDashboardPage />} />
-                <Route path="rh/colaboradores" element={<ColaboradoresPage />} />
-                <Route path="rh/ponto" element={<PontoEletronicoPage />} />
-                <Route path="rh/recrutamento" element={<RecrutamentoPage />} />
+                <Route path="rh" element={<RoleGuard allowedRoles={["admin", "advogado"]} fallback={<Navigate to="/dashboard" replace />}><RhDashboardPage /></RoleGuard>} />
+                <Route path="rh/colaboradores" element={<RoleGuard allowedRoles={["admin", "advogado"]} fallback={<Navigate to="/dashboard" replace />}><ColaboradoresPage /></RoleGuard>} />
+                <Route path="rh/ponto" element={<RoleGuard allowedRoles={["admin", "advogado"]} fallback={<Navigate to="/dashboard" replace />}><PontoEletronicoPage /></RoleGuard>} />
+                <Route path="rh/recrutamento" element={<RoleGuard allowedRoles={["admin", "advogado"]} fallback={<Navigate to="/dashboard" replace />}><RecrutamentoPage /></RoleGuard>} />
               </Route>
               <Route path="/crm-preview" element={<CrmPage />} />
               <Route path="/workflow-preview" element={<WorkflowPage />} />

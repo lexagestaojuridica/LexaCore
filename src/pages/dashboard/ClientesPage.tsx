@@ -7,7 +7,7 @@ import { ptBR } from "date-fns/locale";
 import {
   Users, Plus, Search, Edit2, Trash2, Eye, Mail, Phone, FileText, MapPin,
   Building2, User, Upload, Download, File, X, ShieldAlert,
-  ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
+  ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, MessageCircle,
 } from "lucide-react";
 import { ConflitosInteresseDialog } from "@/components/clientes/ConflitosInteresseDialog";
 import { useTranslation } from "react-i18next";
@@ -406,6 +406,17 @@ export default function ClientesPage() {
                         <TableCell className="text-muted-foreground">{format(new Date(c.created_at), "dd/MM/yyyy", { locale: ptBR })}</TableCell>
                         <TableCell>
                           <div className="flex items-center justify-end gap-1">
+                            {c.phone && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                title="Mandar Mensagem"
+                                className="h-8 w-8 text-muted-foreground hover:text-emerald-500 hover:bg-emerald-500/10"
+                                onClick={() => window.open(`https://wa.me/55${c.phone?.replace(/\\D/g, '')}`, '_blank')}
+                              >
+                                <MessageCircle className="h-4 w-4" />
+                              </Button>
+                            )}
                             <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => { setSelectedClient(c); setViewDialogOpen(true); }}><Eye className="h-4 w-4" /></Button>
                             <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => openEdit(c)}><Edit2 className="h-4 w-4" /></Button>
                             <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => { setSelectedClient(c); setDeleteDialogOpen(true); }}><Trash2 className="h-4 w-4" /></Button>

@@ -14,6 +14,245 @@ export type Database = {
   }
   public: {
     Tables: {
+      rh_colaboradores: {
+        Row: {
+          admission_date: string
+          base_salary: number | null
+          created_at: string
+          department: string
+          document_cpf: string | null
+          email: string | null
+          employment_type: string | null
+          full_name: string
+          id: string
+          organization_id: string
+          phone: string | null
+          position: string
+          rg: string | null
+          status: string | null
+          termination_date: string | null
+          updated_at: string
+          user_id: string | null
+          work_format: string | null
+        }
+        Insert: {
+          admission_date: string
+          base_salary?: number | null
+          created_at?: string
+          department: string
+          document_cpf?: string | null
+          email?: string | null
+          employment_type?: string | null
+          full_name: string
+          id?: string
+          organization_id: string
+          phone?: string | null
+          position: string
+          rg?: string | null
+          status?: string | null
+          termination_date?: string | null
+          updated_at?: string
+          user_id?: string | null
+          work_format?: string | null
+        }
+        Update: {
+          admission_date?: string
+          base_salary?: number | null
+          created_at?: string
+          department?: string
+          document_cpf?: string | null
+          email?: string | null
+          employment_type?: string | null
+          full_name?: string
+          id?: string
+          organization_id?: string
+          phone?: string | null
+          position?: string
+          rg?: string | null
+          status?: string | null
+          termination_date?: string | null
+          updated_at?: string
+          user_id?: string | null
+          work_format?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rh_colaboradores_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rh_colaboradores_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          }
+        ]
+      }
+      rh_ponto_registros: {
+        Row: {
+          created_at: string
+          device_info: string | null
+          employee_id: string
+          event_time: string
+          event_type: string
+          id: string
+          ip_address: string | null
+          location_data: Json | null
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          device_info?: string | null
+          employee_id: string
+          event_time?: string
+          event_type: string
+          id?: string
+          ip_address?: string | null
+          location_data?: Json | null
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          device_info?: string | null
+          employee_id?: string
+          event_time?: string
+          event_type?: string
+          id?: string
+          ip_address?: string | null
+          location_data?: Json | null
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rh_ponto_registros_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "rh_colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rh_ponto_registros_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      rh_recrutamento_candidatos: {
+        Row: {
+          created_at: string
+          email: string | null
+          full_name: string
+          id: string
+          job_id: string
+          notes: string | null
+          organization_id: string
+          phone: string | null
+          pipeline_stage: string | null
+          portfolio_url: string | null
+          rating: number | null
+          resume_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          full_name: string
+          id?: string
+          job_id: string
+          notes?: string | null
+          organization_id: string
+          phone?: string | null
+          pipeline_stage?: string | null
+          portfolio_url?: string | null
+          rating?: number | null
+          resume_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          full_name?: string
+          id?: string
+          job_id?: string
+          notes?: string | null
+          organization_id?: string
+          phone?: string | null
+          pipeline_stage?: string | null
+          portfolio_url?: string | null
+          rating?: number | null
+          resume_url?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rh_recrutamento_candidatos_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "rh_recrutamento_vagas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rh_recrutamento_candidatos_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      rh_recrutamento_vagas: {
+        Row: {
+          created_at: string
+          department: string
+          description: string | null
+          id: string
+          organization_id: string
+          requirements: string | null
+          status: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          department: string
+          description?: string | null
+          id?: string
+          organization_id: string
+          requirements?: string | null
+          status?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          department?: string
+          description?: string | null
+          id?: string
+          organization_id?: string
+          requirements?: string | null
+          status?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rh_recrutamento_vagas_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       automation_logs: {
         Row: {
           automation_id: string
