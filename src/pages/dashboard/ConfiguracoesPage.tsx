@@ -7,7 +7,8 @@ import { toast } from "sonner";
 import {
   Settings, User, Building2, Shield, Save, Camera, MessageCircle,
   Crown, Sparkles, Check, Plus, Trash2, GripVertical, Layers, Users,
-  Briefcase, Phone, Mail, Hash, MapPin, UserPlus, Minus
+  Briefcase, Phone, Mail, Hash, MapPin, UserPlus, Minus,
+  Globe, CreditCard, Link, ExternalLink, Key, Scale
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -112,6 +113,36 @@ export default function ConfiguracoesPage() {
   });
   const plans = dbPlans.length > 0 ? dbPlans : FALLBACK_PLANS;
 
+  const { data: employees = [] } = useQuery({
+    queryKey: ["employees", profile?.organization_id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("rh_colaboradores").select("*").eq("organization_id", profile!.organization_id!);
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!profile?.organization_id,
+  });
+
+  const { data: units = [] } = useQuery({
+    queryKey: ["units", profile?.organization_id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("units").select("*").eq("organization_id", profile!.organization_id!);
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!profile?.organization_id,
+  });
+
+  const { data: customOptions = [] } = useQuery({
+    queryKey: ["custom-options", profile?.organization_id],
+    queryFn: async () => {
+      // Usando 'custom_options' como tabela de fallback para configurações extras
+      const { data } = await (supabase.from("custom_options" as any)).select("*").eq("organization_id", profile!.organization_id!);
+      return data ?? [];
+    },
+    enabled: !!profile?.organization_id,
+  });
+
   const {
     subscription: orgSubscription,
     isLoading: loadingSub,
@@ -135,7 +166,16 @@ export default function ConfiguracoesPage() {
 
   // ── State ──
   const [profileForm, setProfileForm] = useState({ full_name: "", phone: "" });
-  const [orgForm, setOrgForm] = useState({ whatsapp_instance_id: "", whatsapp_token: "", whatsapp_enabled: false });
+  const [orgForm, setOrgForm] = useState({
+    whatsapp_instance_id: "",
+    whatsapp_token: "",
+    whatsapp_enabled: false,
+    asaas_api_key: "",
+    asaas_environment: "sandbox",
+    asaas_enabled: false,
+    jusbrasil_token: "",
+    escavador_token: "",
+  });
   const [formInitialized, setFormInitialized] = useState(false);
   const [activeTab, setActiveTab] = useState("perfil");
   const [addUsersSeats, setAddUsersSeats] = useState(1);
@@ -154,8 +194,31 @@ export default function ConfiguracoesPage() {
       whatsapp_instance_id: (org as any).whatsapp_instance_id || "",
       whatsapp_token: (org as any).whatsapp_token || "",
       whatsapp_enabled: (org as any).whatsapp_enabled || false,
+      asaas_api_key: "",
+      asaas_environment: "sandbox",
+      asaas_enabled: false,
+      jusbrasil_token: (org as any).jusbrasil_token || "",
+      escavador_token: (org as any).escavador_token || "",
     });
     setFormInitialized(true);
+  }
+
+  const { data: gatewaySettings } = useQuery({
+    queryKey: ["gateway-settings", profile?.organization_id],
+    queryFn: async () => {
+      const { data } = await supabase.from("gateway_settings").select("*").eq("organization_id", profile!.organization_id!).eq("gateway_name", "asaas").maybeSingle();
+      return data;
+    },
+    enabled: !!profile?.organization_id,
+  });
+
+  if (gatewaySettings && formInitialized && !orgForm.asaas_api_key && gatewaySettings.api_key) {
+    setOrgForm(prev => ({
+      ...prev,
+      asaas_api_key: gatewaySettings.api_key,
+      asaas_environment: gatewaySettings.environment || "sandbox",
+      asaas_enabled: gatewaySettings.status === "active"
+    }));
   }
 
   // ── Mutations ──
@@ -169,12 +232,12 @@ export default function ConfiguracoesPage() {
   });
 
   const updateOrgMutation = useMutation({
-    mutationFn: async (payload: { whatsapp_instance_id: string; whatsapp_token: string; whatsapp_enabled: boolean }) => {
+    mutationFn: async (payload: { whatsapp_instance_id: string; whatsapp_token: string; whatsapp_enabled: boolean; jusbrasil_token?: string; escavador_token?: string }) => {
       const { error } = await (supabase.from("organizations") as any).update(payload).eq("id", profile!.organization_id!);
       if (error) throw error;
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["org"] }); toast.success("Organização atualizada"); },
-    onError: () => toast.error("Erro ao atualizar as configurações da Organização"),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["org"] }); toast.success("Configurações salvas"); },
+    onError: () => toast.error("Erro ao atualizar as configurações"),
   });
 
   const uploadAvatarMutation = useMutation({
@@ -202,28 +265,29 @@ export default function ConfiguracoesPage() {
   // Employee mutations
   const createEmployeeMutation = useMutation({
     mutationFn: async (payload: any) => {
-      const { error } = await supabase.from("employees" as any).insert(payload);
+      const { error } = await supabase.from("rh_colaboradores").insert(payload);
       if (error) throw error;
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["employees"] }); toast.success("Funcionário cadastrado!"); setEmpDialogOpen(false); },
-    onError: () => toast.error("Erro ao cadastrar funcionário"),
+    onError: (err: any) => toast.error(`Erro ao cadastrar funcionário: ${err.message}`),
   });
 
   const updateEmployeeMutation = useMutation({
     mutationFn: async ({ id, ...payload }: any) => {
-      const { error } = await supabase.from("employees" as any).update(payload).eq("id", id);
+      const { error } = await supabase.from("rh_colaboradores").update(payload).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["employees"] }); toast.success("Funcionário atualizado!"); setEmpDialogOpen(false); },
-    onError: () => toast.error("Erro ao atualizar funcionário"),
+    onError: (err: any) => toast.error(`Erro ao atualizar funcionário: ${err.message}`),
   });
 
   const deleteEmployeeMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("employees" as any).delete().eq("id", id);
+      const { error } = await supabase.from("rh_colaboradores").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["employees"] }); toast.success("Funcionário removido"); },
+    onError: (err: any) => toast.error(`Erro ao remover funcionário: ${err.message}`),
   });
 
   // Option mutations
@@ -242,6 +306,36 @@ export default function ConfiguracoesPage() {
       if (error) throw error;
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["custom-options"] }); toast.success("Opção removida"); },
+  });
+
+  const updateGatewayMutation = useMutation({
+    mutationFn: async (payload: any) => {
+      const { data: existing } = await supabase.from("gateway_settings").select("id").eq("organization_id", profile!.organization_id!).eq("gateway_name", "asaas").maybeSingle();
+
+      if (existing) {
+        const { error } = await supabase.from("gateway_settings").update({
+          api_key: payload.asaas_api_key,
+          environment: payload.asaas_environment,
+          status: payload.asaas_enabled ? "active" : "inactive",
+          updated_at: new Date().toISOString()
+        }).eq("id", existing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("gateway_settings").insert({
+          organization_id: profile!.organization_id!,
+          gateway_name: "asaas",
+          api_key: payload.asaas_api_key,
+          environment: payload.asaas_environment,
+          status: payload.asaas_enabled ? "active" : "inactive"
+        });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["gateway-settings"] });
+      toast.success("Configurações de gateway salvas!");
+    },
+    onError: () => toast.error("Erro ao salvar configurações de gateway"),
   });
 
   // ── Handlers ──
@@ -288,6 +382,26 @@ export default function ConfiguracoesPage() {
     });
   };
 
+  const handleSaveIntegration = () => {
+    // Salva configurações do Gateway
+    if (orgForm.asaas_api_key) {
+      updateGatewayMutation.mutate({
+        asaas_api_key: orgForm.asaas_api_key,
+        asaas_environment: orgForm.asaas_environment,
+        asaas_enabled: orgForm.asaas_enabled,
+      });
+    }
+
+    // Salva configurações da Organização (Jusbrasil, Escavador, etc.)
+    updateOrgMutation.mutate({
+      whatsapp_instance_id: orgForm.whatsapp_instance_id,
+      whatsapp_token: orgForm.whatsapp_token,
+      whatsapp_enabled: orgForm.whatsapp_enabled,
+      jusbrasil_token: orgForm.jusbrasil_token || null,
+      escavador_token: orgForm.escavador_token || null,
+    } as any);
+  };
+
   const roleLabels: Record<string, string> = { admin: "Administrador", advogado: "Advogado", estagiario: "Estagiário", financeiro: "Financeiro" };
 
   const filteredOptions = optFilterModule === "all" ? customOptions : customOptions.filter((o) => o.module === optFilterModule);
@@ -305,6 +419,7 @@ export default function ConfiguracoesPage() {
     { key: "equipe", icon: Users, label: t("settings.team") },
     { key: "funcionarios", icon: Briefcase, label: t("settings.employees") },
     { key: "planos", icon: Crown, label: t("settings.plans") },
+    { key: "integracoes", icon: Globe, label: "Integrações" },
     { key: "usuarios", icon: UserPlus, label: t("settings.addUsers") },
   ];
 
@@ -567,6 +682,172 @@ export default function ConfiguracoesPage() {
                 })}
               </div>
             </div>
+          )}
+
+          {activeTab === "integracoes" && (
+            <Card className="border-border shadow-sm">
+              <CardHeader className="border-b border-border/50 bg-muted/5">
+                <CardTitle className="font-display text-lg flex items-center gap-2">
+                  <Globe className="h-5 w-5 text-primary" />
+                  Integrações e Conectividade
+                </CardTitle>
+                <CardDescription>Gerencie as conexões externas e chaves de API do seu escritório.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-8 pt-6">
+
+                {/* WHATSAPP */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-emerald-500/10 p-2.5 rounded-xl">
+                        <MessageCircle className="h-5 w-5 text-emerald-600" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-sm">WhatsApp Business (API)</p>
+                        <p className="text-xs text-muted-foreground">Envio automático de notificações e lembretes.</p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={orgForm.whatsapp_enabled}
+                      onCheckedChange={(v) => setOrgForm(prev => ({ ...prev, whatsapp_enabled: v }))}
+                    />
+                  </div>
+
+                  {orgForm.whatsapp_enabled && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="grid gap-4 pl-12"
+                    >
+                      <div className="grid sm:grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <Label className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">ID da Instância (WaAPI)</Label>
+                          <Input
+                            placeholder="instance_id"
+                            value={orgForm.whatsapp_instance_id || ""}
+                            onChange={(e) => setOrgForm(prev => ({ ...prev, whatsapp_instance_id: e.target.value }))}
+                            className="text-xs font-mono"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Token de Acesso</Label>
+                          <Input
+                            type="password"
+                            placeholder="token_..."
+                            value={orgForm.whatsapp_token || ""}
+                            onChange={(e) => setOrgForm(prev => ({ ...prev, whatsapp_token: e.target.value }))}
+                            className="text-xs font-mono"
+                          />
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
+
+                <Separator />
+
+                {/* ASAAS */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-primary/10 p-2.5 rounded-xl">
+                        <CreditCard className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-sm">Asaas Gateway</p>
+                        <p className="text-xs text-muted-foreground">Gestão financeira e cobranças automáticas.</p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={orgForm.asaas_enabled}
+                      onCheckedChange={(v) => setOrgForm(prev => ({ ...prev, asaas_enabled: v }))}
+                    />
+                  </div>
+
+                  {orgForm.asaas_enabled && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="grid gap-4 pl-12"
+                    >
+                      <div className="space-y-1.5">
+                        <Label className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">API Key</Label>
+                        <Input
+                          type="password"
+                          placeholder="$asaas_api_key_..."
+                          value={orgForm.asaas_api_key || ""}
+                          onChange={(e) => setOrgForm(prev => ({ ...prev, asaas_api_key: e.target.value }))}
+                          className="text-xs font-mono"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Ambiente</Label>
+                        <Select
+                          value={orgForm.asaas_environment || "sandbox"}
+                          onValueChange={(v) => setOrgForm(prev => ({ ...prev, asaas_environment: v }))}
+                        >
+                          <SelectTrigger className="h-9 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="sandbox">Sandbox (Teste)</SelectItem>
+                            <SelectItem value="production">Produção</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
+
+                <Separator />
+
+                {/* LEGAL DATA */}
+                <div className="space-y-6">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-amber-500/10 p-2.5 rounded-xl">
+                      <Scale className="h-5 w-5 text-amber-600" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm">Dados Jurídicos Automáticos</p>
+                      <p className="text-xs text-muted-foreground">Conexão com tribunais via Jusbrasil e Escavador.</p>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-6 pl-12">
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Token Jusbrasil</Label>
+                      <Input
+                        type="password"
+                        placeholder="Insira seu token Jusbrasil"
+                        value={orgForm.jusbrasil_token || ""}
+                        onChange={(e) => setOrgForm(prev => ({ ...prev, jusbrasil_token: e.target.value }))}
+                        className="text-xs font-mono"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Chave API Escavador</Label>
+                      <Input
+                        type="password"
+                        placeholder="Insira sua chave Escavador"
+                        value={orgForm.escavador_token || ""}
+                        onChange={(e) => setOrgForm(prev => ({ ...prev, escavador_token: e.target.value }))}
+                        className="text-xs font-mono"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-6 border-t border-border flex justify-end">
+                  <Button
+                    className="gap-2 px-8"
+                    onClick={() => handleSaveIntegration()}
+                    disabled={updateOrgMutation.isPending || updateGatewayMutation.isPending}
+                  >
+                    {updateOrgMutation.isPending || updateGatewayMutation.isPending ? "Salvando..." : <><Save className="h-4 w-4" /> Salvar Configurações</>}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           )}
 
           {/* ── Usuários Adicionais ── */}

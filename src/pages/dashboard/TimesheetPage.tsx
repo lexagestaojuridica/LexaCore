@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
+import { asaasService } from "@/services/asaasService";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -43,7 +44,7 @@ interface TimerLog {
     notes: string | null;
 }
 
-interface Processo { id: string; title: string; number: string | null; }
+interface Processo { id: string; title: string; number: string | null; client_id: string | null; clients?: { id: string; name: string; asaas_customer_id: string | null; }; }
 
 // ─── Helpers ──────────────────────────────────────────────────
 const fmtDuration = (minutes: number): string => {
@@ -140,8 +141,8 @@ export default function TimesheetPage() {
     const { data: processos = [] } = useQuery({
         queryKey: ["processos-ts", orgId],
         queryFn: async () => {
-            const { data } = await supabase.from("processos_juridicos").select("id, title, number").eq("organization_id", orgId!).eq("status", "ativo");
-            return (data ?? []) as Processo[];
+            const { data } = await supabase.from("processos_juridicos").select("id, title, number, client_id, clients(id, name, asaas_customer_id)").eq("organization_id", orgId!).eq("status", "ativo");
+            return (data ?? []) as unknown as Processo[];
         },
         enabled: !!orgId,
     });
@@ -199,16 +200,44 @@ export default function TimesheetPage() {
         onError: (e: any) => toast.error(`Erro ao faturar: ${e.message}`),
     });
 
-    const handleBilling = (entry: TimesheetEntry, value: number) => {
+    const handleBilling = async (entry: TimesheetEntry, value: number) => {
         if (!orgId || !user) return;
+
+        const processo = processos.find(p => p.id === entry.process_id);
+        const client = processo?.clients;
+
+        let asaas_id = null;
+        let asaas_url = null;
+
+        if (client?.asaas_customer_id) {
+            try {
+                toast.loading("Gerando cobrança no Asaas...");
+                const payment = await asaasService.createPayment(orgId, {
+                    customer: client.asaas_customer_id,
+                    billingType: "UNDEFINED", // Let the client choose in the checkout
+                    value,
+                    dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 days from now
+                    description: `Honorários (Timesheet): ${entry.description}`,
+                    externalReference: entry.id
+                });
+                asaas_id = payment.id;
+                asaas_url = payment.invoiceUrl;
+                toast.success("Cobrança gerada no Asaas!");
+            } catch (err: any) {
+                toast.error(`Erro no Asaas: ${err.message}. Criando apenas registro local.`);
+            }
+        }
 
         const payload = {
             organization_id: orgId,
+            client_id: client?.id || null,
             description: `Honorários (Timesheet): ${entry.description}`,
             amount: value,
             due_date: new Date().toISOString().split('T')[0],
             status: "pendente",
-            category: "Honorários"
+            category: "Honorários",
+            asaas_id: asaas_id,
+            asaas_billing_url: asaas_url
         };
 
         bilMutation.mutate({

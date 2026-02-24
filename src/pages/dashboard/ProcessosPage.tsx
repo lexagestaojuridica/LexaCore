@@ -8,7 +8,7 @@ import { ptBR } from "date-fns/locale";
 import {
   Scale, Plus, Search, Filter, Edit2, Trash2, Eye, Upload, Download, File, Calculator, X,
   LayoutList, LayoutGrid, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
-  ArrowUpDown, ArrowUp, ArrowDown, Receipt, Bot, SwitchCamera, Share2, MessageCircle,
+  ArrowUpDown, ArrowUp, ArrowDown, Receipt, Bot, SwitchCamera, Share2, MessageCircle, Sparkles,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -217,6 +217,7 @@ export default function ProcessosPage() {
   const [page, setPage] = useState(1);
   const [sortField, setSortField] = useState<SortField>("created_at");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [aiSummary, setAiSummary] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const { data: profile } = useQuery({
@@ -364,6 +365,21 @@ export default function ProcessosPage() {
       setTimeout(() => navigate("/dashboard/financeiro"), 1200);
     },
     onError: () => toast.error("Erro ao criar conta a receber"),
+  });
+
+  const aiSummaryMutation = useMutation({
+    mutationFn: async ({ processId, content }: { processId: string; content: string }) => {
+      const { data, error } = await supabase.functions.invoke("aruna-process-summary", {
+        body: { process_id: processId, content, organization_id: orgId },
+      });
+      if (error) throw error;
+      return data.summary;
+    },
+    onSuccess: (summary) => {
+      setAiSummary(summary);
+      toast.success("Sumário gerado com sucesso!");
+    },
+    onError: (err: any) => toast.error(`Erro ao gerar sumário: ${err.message}`),
   });
 
   const uploadDocMutation = useMutation({
@@ -808,9 +824,30 @@ export default function ProcessosPage() {
                       {selectedProcesso.title}
                     </SheetTitle>
                     <SheetDescription asChild>
-                      <div className="flex items-center justify-start gap-2 text-sm text-primary">
-                        <Scale className="h-4 w-4" />
-                        <span className="font-semibold">{selectedProcesso.number || "Sem Número (Administrativo)"}</span>
+                      <div className="flex items-center justify-between gap-2 text-sm text-primary">
+                        <div className="flex items-center gap-2">
+                          <Scale className="h-4 w-4" />
+                          <span className="font-semibold">{selectedProcesso.number || "Sem Número (Administrativo)"}</span>
+                        </div>
+                        {captures.length > 0 && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 gap-2 text-xs font-bold text-primary bg-primary/5 hover:bg-primary/10 rounded-full border border-primary/20 transition-all shadow-sm"
+                            onClick={() => {
+                              const content = captures.map((c: any) => `${format(new Date(c.capture_date), "dd/MM/yyyy")}: ${c.content}`).join("\n");
+                              aiSummaryMutation.mutate({ processId: selectedProcesso.id, content });
+                            }}
+                            disabled={aiSummaryMutation.isPending}
+                          >
+                            {aiSummaryMutation.isPending ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <Sparkles className="h-3.5 w-3.5" />
+                            )}
+                            Aruna IA
+                          </Button>
+                        )}
                       </div>
                     </SheetDescription>
                   </div>
@@ -895,12 +932,34 @@ export default function ProcessosPage() {
                           <h3 className="text-sm font-medium flex items-center gap-2">
                             <Bot className="h-4 w-4 text-emerald-500" /> Andamentos Robô
                           </h3>
-                          {selectedProcesso.auto_capture_enabled ? (
-                            <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[10px]">Captura ON</Badge>
-                          ) : (
-                            <Badge variant="outline" className="text-[10px]">Captura OFF</Badge>
-                          )}
+                          <div className="flex items-center gap-2">
+                            {selectedProcesso.auto_capture_enabled ? (
+                              <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[10px] h-6">Captura ON</Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-[10px] h-6 text-muted-foreground border-muted-foreground/30">Captura OFF</Badge>
+                            )}
+                          </div>
                         </div>
+
+                        {aiSummary && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            className="p-4 bg-primary/5 rounded-lg border border-primary/20 space-y-3"
+                          >
+                            <div className="flex items-center justify-between">
+                              <h4 className="text-xs font-bold text-primary uppercase tracking-wider flex items-center gap-1.5">
+                                <Sparkles className="h-3 w-3" /> Resumo Inteligente (Aruna)
+                              </h4>
+                              <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => setAiSummary(null)}>
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
+                            <div className="text-sm text-foreground/90 whitespace-pre-wrap font-sans prose prose-sm max-w-none prose-headings:text-primary prose-strong:text-primary/80">
+                              {aiSummary}
+                            </div>
+                          </motion.div>
+                        )}
 
                         {captures.length === 0 ? (
                           <div className="text-center py-12 bg-muted/20 rounded-lg border border-dashed border-border/60">

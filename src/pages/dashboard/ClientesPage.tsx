@@ -8,7 +8,9 @@ import {
   Users, Plus, Search, Edit2, Trash2, Eye, Mail, Phone, FileText, MapPin,
   Building2, User, Upload, Download, File, X, ShieldAlert,
   ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, MessageCircle,
+  RefreshCw, Link, CheckCircle2, ShieldCheck
 } from "lucide-react";
+import { asaasService } from "@/services/asaasService";
 import { ConflitosInteresseDialog } from "@/components/clientes/ConflitosInteresseDialog";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -59,6 +61,7 @@ type Client = {
   secondary_email: string | null;
   company_name: string | null;
   company_position: string | null;
+  asaas_customer_id: string | null;
 };
 
 type Documento = {
@@ -211,6 +214,40 @@ export default function ClientesPage() {
     onError: () => toast.error("Erro ao excluir cliente"),
   });
 
+  const requestSignatureMutation = useMutation({
+    mutationFn: async (doc: any) => {
+      if (!selectedClient) return;
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = crypto.randomUUID();
+
+      const { error } = await supabase.from("document_signatures").insert({
+        document_id: doc.id,
+        organization_id: orgId,
+        signer_name: selectedClient.name,
+        signer_email: selectedClient.email,
+        signer_document: selectedClient.document,
+        token: token,
+        status: 'pendente',
+        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days
+      });
+
+      if (error) throw error;
+
+      const signatureLink = `${window.location.origin}/portal/assinatura/${token}`;
+      return signatureLink;
+    },
+    onSuccess: (link) => {
+      if (link) {
+        navigator.clipboard.writeText(link);
+        toast.success("Link de assinatura copiado para a área de transferência!");
+        // Opcional: Abrir WhatsApp com o link
+        const win = window.open(`https://wa.me/${selectedClient?.phone?.replace(/\D/g, '')}?text=${encodeURIComponent(`Olá ${selectedClient?.name}, por favor assine o documento: ${link}`)}`, '_blank');
+        if (win) win.focus();
+      }
+    },
+    onError: (err: any) => toast.error(`Erro ao solicitar assinatura: ${err.message}`)
+  });
+
   const uploadDocMutation = useMutation({
     mutationFn: async ({ file, clientId }: { file: File; clientId: string }) => {
       const filePath = `${orgId}/${crypto.randomUUID()}-${file.name}`;
@@ -234,6 +271,53 @@ export default function ClientesPage() {
   });
 
   // Novo: Gerar Credenciais do Portal
+  // Asaas Sync Mutation
+  const syncAsaasMutation = useMutation({
+    mutationFn: async (client: Client) => {
+      if (!orgId) throw new Error("ID da organização não encontrado");
+
+      const customerData = {
+        name: client.name,
+        email: client.email || "",
+        phone: client.phone || "",
+        cpfCnpj: client.document || "",
+        externalReference: client.id,
+        address: client.address_street || "",
+        addressNumber: client.address_number || "",
+        complement: client.address_complement || "",
+        province: client.address_neighborhood || "",
+        postalCode: client.address_zip || "",
+      };
+
+      let asaasId = client.asaas_customer_id;
+
+      if (asaasId) {
+        // Update existing
+        await asaasService.updateCustomer(orgId, asaasId, customerData);
+        toast.success("Cliente atualizado no Asaas");
+      } else {
+        // Create new
+        const response = await asaasService.createCustomer(orgId, customerData);
+        asaasId = response.id;
+
+        // Update local client with asaas_id
+        const { error } = await supabase
+          .from("clients")
+          .update({ asaas_customer_id: asaasId })
+          .eq("id", client.id);
+
+        if (error) throw error;
+        toast.success("Cliente sincronizado com Asaas!");
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["clients"] });
+    },
+    onError: (err: any) => {
+      toast.error(`Erro ao sincronizar: ${err.message}`);
+    },
+  });
+
   const generatePortalAuth = useMutation({
     mutationFn: async (client: Client) => {
       if (!client.email) throw new Error("O cliente precisa de um e-mail cadastrado.");
@@ -417,6 +501,19 @@ export default function ClientesPage() {
                                 <MessageCircle className="h-4 w-4" />
                               </Button>
                             )}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              title={c.asaas_customer_id ? "Sincronizado com Asaas" : "Sincronizar com Asaas"}
+                              className={cn(
+                                "h-8 w-8",
+                                c.asaas_customer_id ? "text-emerald-500" : "text-muted-foreground hover:text-primary"
+                              )}
+                              onClick={() => syncAsaasMutation.mutate(c)}
+                              disabled={syncAsaasMutation.isPending && selectedClient?.id === c.id}
+                            >
+                              {c.asaas_customer_id ? <CheckCircle2 className="h-4 w-4" /> : <RefreshCw className={cn("h-4 w-4", syncAsaasMutation.isPending && selectedClient?.id === c.id && "animate-spin")} />}
+                            </Button>
                             <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => { setSelectedClient(c); setViewDialogOpen(true); }}><Eye className="h-4 w-4" /></Button>
                             <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => openEdit(c)}><Edit2 className="h-4 w-4" /></Button>
                             <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => { setSelectedClient(c); setDeleteDialogOpen(true); }}><Trash2 className="h-4 w-4" /></Button>
@@ -652,6 +749,16 @@ export default function ClientesPage() {
                 <ShieldAlert className="w-4 h-4 mr-2" />
                 {generatePortalAuth.isPending ? "Processando..." : "Portal"}
               </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => syncAsaasMutation.mutate(selectedClient!)}
+                disabled={syncAsaasMutation.isPending}
+                className={selectedClient?.asaas_customer_id ? "text-emerald-600" : ""}
+              >
+                <RefreshCw className={cn("w-4 h-4 mr-2", syncAsaasMutation.isPending && "animate-spin")} />
+                {selectedClient?.asaas_customer_id ? "Atualizar Asaas" : "Sincronizar Asaas"}
+              </Button>
               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setViewDialogOpen(false)}>
                 <X className="h-4 w-4" />
               </Button>
@@ -742,9 +849,21 @@ export default function ClientesPage() {
                           <span className="text-sm truncate max-w-[200px]">{doc.file_name}</span>
                           <span className="text-xs text-muted-foreground">{format(new Date(doc.created_at), "dd/MM/yy")}</span>
                         </div>
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDocDownload(doc)}>
-                          <Download className="h-3.5 w-3.5" />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            title="Solicitar Assinatura Eletrônica"
+                            className="h-7 w-7 text-primary hover:bg-primary/10"
+                            onClick={() => requestSignatureMutation.mutate(doc)}
+                            disabled={requestSignatureMutation.isPending || !selectedClient.email}
+                          >
+                            <ShieldCheck className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDocDownload(doc)}>
+                            <Download className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
                       </div>
                     ))}
                   </div>

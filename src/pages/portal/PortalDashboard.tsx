@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
@@ -9,12 +9,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Scale, LogOut, FileText, Calendar, Receipt, Download, Loader2, QrCode, Copy } from "lucide-react";
+import { Scale, LogOut, FileText, Calendar, Receipt, Download, Loader2, QrCode, Copy, ExternalLink, Upload, CheckCircle2 } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function PortalDashboard() {
     const { user, signOut } = useAuth();
+    const queryClient = useQueryClient();
 
     const [pixModalOpen, setPixModalOpen] = useState(false);
     const [selectedPix, setSelectedPix] = useState<any>(null);
@@ -78,6 +80,61 @@ export default function PortalDashboard() {
         },
         enabled: !!clientId,
     });
+
+    const uploadDocMutation = useMutation({
+        mutationFn: async ({ file }: { file: File }) => {
+            const orgId = clientUser?.organization_id;
+            if (!orgId) throw new Error("ID da organização não encontrado.");
+
+            const filePath = `${orgId}/${crypto.randomUUID()}-${file.name}`;
+            const { error: uploadError } = await supabase.storage.from("documentos").upload(filePath, file);
+            if (uploadError) throw uploadError;
+
+            const { error: dbError } = await supabase.from("documentos").insert({
+                file_name: file.name,
+                file_path: filePath,
+                file_type: file.type || null,
+                user_id: user!.id,
+                organization_id: orgId,
+                client_id: clientId,
+            });
+            if (dbError) throw dbError;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["portal-documentos"] });
+            toast.success("Documento enviado com sucesso! Seu advogado será notificado.");
+        },
+        onError: (err: any) => toast.error(`Erro ao enviar documento: ${err.message}`),
+    });
+
+    const triggerUpload = () => {
+        const input = document.createElement("input");
+        input.type = "file";
+        input.multiple = true;
+        input.onchange = (e: any) => {
+            const files = e.target.files;
+            if (files) {
+                Array.from(files).forEach((file: any) => {
+                    uploadDocMutation.mutate({ file });
+                });
+            }
+        };
+        input.click();
+    };
+
+    const getProgressValue = (fase: string | null) => {
+        if (!fase) return 10;
+        const PROGRESS_MAP: Record<string, number> = {
+            "Conhecimento": 20,
+            "Instrução": 40,
+            "Sentença": 60,
+            "Recursal": 80,
+            "Execução": 95,
+            "Cumprimento de Sentença": 100,
+            "Encerrado": 100,
+        };
+        return PROGRESS_MAP[fase] || 15;
+    };
 
     if (loadingClient || loadingProcs || loadingFaturas || loadingDocs) {
         return (
@@ -171,8 +228,19 @@ export default function PortalDashboard() {
                                                     </div>
                                                     <div>
                                                         <p className="text-muted-foreground text-xs mb-0.5">Assunto</p>
-                                                        <p className="font-medium line-clamp-1">{proc.assunto || "N/A"}</p>
+                                                        <p className="font-medium line-clamp-1">{proc.subject || proc.assunto || "N/A"}</p>
                                                     </div>
+                                                </div>
+                                                <div className="mt-4 space-y-1.5">
+                                                    <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">
+                                                        <span>Progresso do Processo</span>
+                                                        <span>{getProgressValue(proc.fase_processual)}%</span>
+                                                    </div>
+                                                    <Progress value={getProgressValue(proc.fase_processual)} className="h-1.5" />
+                                                    <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                                        <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                                                        Fase Atual: <span className="text-foreground font-medium">{proc.fase_processual || "Início"}</span>
+                                                    </p>
                                                 </div>
                                             </CardContent>
                                         </Card>
@@ -222,7 +290,18 @@ export default function PortalDashboard() {
                                                                     }
                                                                 }}
                                                             >
-                                                                {(fat as any).pix_code ? <QrCode className="w-3.5 h-3.5" /> : null} Pagar
+                                                                {(fat as any).pix_code || (fat as any).asaas_billing_url ? <QrCode className="w-3.5 h-3.5" /> : null} Pagar
+                                                            </Button>
+                                                        )}
+                                                        {(fat as any).asaas_billing_url && (
+                                                            <Button
+                                                                size="sm"
+                                                                variant="ghost"
+                                                                className="h-7 w-7 p-0 ml-1 text-blue-600"
+                                                                onClick={() => window.open((fat as any).asaas_billing_url, "_blank")}
+                                                                title="Abrir no Gateway"
+                                                            >
+                                                                <ExternalLink className="h-3.5 w-3.5" />
                                                             </Button>
                                                         )}
                                                     </div>
@@ -236,8 +315,18 @@ export default function PortalDashboard() {
 
                         {/* Documentos */}
                         <Card>
-                            <CardHeader className="pb-3 border-b border-border/50">
+                            <CardHeader className="pb-3 border-b border-border/50 flex flex-row items-center justify-between space-y-0">
                                 <CardTitle className="text-sm flex items-center gap-2"><FileText className="w-4 h-4 text-primary" /> Documentos</CardTitle>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-7 text-[10px] gap-1 px-2 border-primary/20 text-primary hover:bg-primary/5"
+                                    onClick={triggerUpload}
+                                    disabled={uploadDocMutation.isPending}
+                                >
+                                    {uploadDocMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
+                                    Upload
+                                </Button>
                             </CardHeader>
                             <CardContent className="p-0">
                                 {documentos?.length === 0 ? (

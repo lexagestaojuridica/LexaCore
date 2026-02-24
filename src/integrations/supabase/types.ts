@@ -430,6 +430,7 @@ export type Database = {
           address_state: string | null
           address_street: string | null
           address_zip: string | null
+          asaas_customer_id: string | null
           auth_user_id: string | null
           birth_date: string | null
           client_type: string | null
@@ -460,6 +461,7 @@ export type Database = {
           address_state?: string | null
           address_street?: string | null
           address_zip?: string | null
+          asaas_customer_id?: string | null
           auth_user_id?: string | null
           birth_date?: string | null
           client_type?: string | null
@@ -490,6 +492,7 @@ export type Database = {
           address_state?: string | null
           address_street?: string | null
           address_zip?: string | null
+          asaas_customer_id?: string | null
           auth_user_id?: string | null
           birth_date?: string | null
           client_type?: string | null
@@ -566,6 +569,8 @@ export type Database = {
       contas_receber: {
         Row: {
           amount: number
+          asaas_billing_id: string | null
+          asaas_invoice_url: string | null
           category: string | null
           client_id: string | null
           created_at: string
@@ -582,6 +587,8 @@ export type Database = {
         }
         Insert: {
           amount: number
+          asaas_billing_id?: string | null
+          asaas_invoice_url?: string | null
           category?: string | null
           client_id?: string | null
           created_at?: string
@@ -598,6 +605,8 @@ export type Database = {
         }
         Update: {
           amount?: number
+          asaas_billing_id?: string | null
+          asaas_invoice_url?: string | null
           category?: string | null
           client_id?: string | null
           created_at?: string
@@ -634,6 +643,50 @@ export type Database = {
             referencedRelation: "processos_juridicos"
             referencedColumns: ["id"]
           },
+        ]
+      }
+      gateway_settings: {
+        Row: {
+          api_key: string
+          created_at: string
+          environment: string | null
+          gateway_name: string
+          id: string
+          organization_id: string
+          status: string | null
+          updated_at: string
+          webhook_secret: string | null
+        }
+        Insert: {
+          api_key: string
+          created_at?: string
+          environment?: string | null
+          gateway_name?: string
+          id?: string
+          organization_id: string
+          status?: string | null
+          updated_at?: string
+          webhook_secret?: string | null
+        }
+        Update: {
+          api_key?: string
+          created_at?: string
+          environment?: string | null
+          gateway_name?: string
+          id?: string
+          organization_id?: string
+          status?: string | null
+          updated_at?: string
+          webhook_secret?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gateway_settings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          }
         ]
       }
       conversas_ia: {

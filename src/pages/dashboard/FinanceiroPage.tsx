@@ -7,8 +7,10 @@ import { format, parseISO, isPast, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   DollarSign, Plus, Search, Filter, Edit2, Trash2, TrendingUp, TrendingDown,
-  ArrowUpRight, ArrowDownRight, Wallet, Receipt, BarChart2, Bell, CheckCircle2, QrCode, Copy
+  ArrowUpRight, ArrowDownRight, Wallet, Receipt, BarChart2, Bell, CheckCircle2, QrCode, Copy,
+  RefreshCw, ExternalLink
 } from "lucide-react";
+import { asaasService } from "@/services/asaasService";
 import BudgetPerformanceTab from "@/components/financeiro/BudgetPerformanceTab";
 import { DasDarfPanel } from "@/components/financeiro/DasDarfPanel";
 import { useTranslation } from "react-i18next";
@@ -155,6 +157,44 @@ export default function FinanceiroPage() {
     onError: (e: any) => toast.error(`Erro ao gerar PIX: ${e.message}`)
   });
 
+  const reconcileAsaasMutation = useMutation({
+    mutationFn: async (c: any) => {
+      if (!orgId || !c.asaas_id) return;
+
+      const payment = await asaasService.getPayment(orgId, c.asaas_id);
+
+      if (payment.status === "RECEIVED" || payment.status === "CONFIRMED" || payment.status === "RECEIVED_IN_CASH") {
+        const { error } = await supabase.from(tableName).update({
+          status: "pago",
+          updated_at: new Date().toISOString()
+        }).eq("id", c.id);
+        if (error) throw error;
+        toast.success(`Pagamento de ${c.description} confirmado!`);
+      } else {
+        toast.info(`Status no Asaas: ${payment.status}`);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [tableName] });
+    },
+    onError: (err: any) => toast.error(`Erro ao reconciliar: ${err.message}`)
+  });
+
+  const reconcileAllAsaas = async () => {
+    const pendingAsaas = filtered.filter((c: any) => c.status === "pendente" && c.asaas_id);
+    if (pendingAsaas.length === 0) {
+      toast.info("Nenhuma conta do Asaas pendente para sincronizar.");
+      return;
+    }
+
+    toast.loading(`Sincronizando ${pendingAsaas.length} faturas...`);
+    for (const c of pendingAsaas) {
+      await reconcileAsaasMutation.mutateAsync(c);
+    }
+    toast.dismiss();
+    toast.success("Sincronização concluída.");
+  };
+
   const markAsPaid = (id: string) => {
     updateMutation.mutate({ id, status: "pago" });
   };
@@ -237,6 +277,11 @@ export default function FinanceiroPage() {
           <Button onClick={openCreate} className="h-10 gap-2 font-medium shadow-sm">
             <Plus className="h-4 w-4" /> Nova Transação
           </Button>
+          {tab === "receber" && (
+            <Button variant="outline" onClick={reconcileAllAsaas} className="h-10 gap-2 font-medium">
+              <RefreshCw className="h-4 w-4" /> Sincronizar Asaas
+            </Button>
+          )}
         </div>
       </motion.div>
 
@@ -405,6 +450,29 @@ export default function FinanceiroPage() {
                                             <QrCode className="h-4 w-4" />
                                           </Button>
                                         )}
+                                        {c.asaas_billing_url && (
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            title="Ver Fatura no Asaas"
+                                            className="h-8 w-8 text-blue-600 hover:bg-blue-500/10"
+                                            onClick={() => window.open(c.asaas_billing_url, "_blank")}
+                                          >
+                                            <ExternalLink className="h-4 w-4" />
+                                          </Button>
+                                        )}
+                                        {c.asaas_id && c.status === "pendente" && (
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            title="Verificar Pagamento"
+                                            className="h-8 w-8 text-amber-600 hover:bg-amber-500/10"
+                                            onClick={() => reconcileAsaasMutation.mutate(c)}
+                                            disabled={reconcileAsaasMutation.isPending}
+                                          >
+                                            <RefreshCw className={cn("h-4 w-4", reconcileAsaasMutation.isPending && "animate-spin")} />
+                                          </Button>
+                                        )}
                                         {c.status === "pendente" && (
                                           <Button
                                             variant="ghost"
@@ -552,6 +620,6 @@ export default function FinanceiroPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </motion.div>
+    </motion.div >
   );
 }

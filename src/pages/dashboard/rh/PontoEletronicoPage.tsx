@@ -4,13 +4,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Clock, MapPin, Fingerprint, Calendar, CheckCircle2, History } from "lucide-react";
+import { Clock, MapPin, Fingerprint, Calendar, CheckCircle2, History, Users } from "lucide-react";
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
@@ -43,11 +44,14 @@ export default function PontoEletronicoPage() {
         queryFn: async () => {
             const { data, error } = await supabase
                 .from("rh_colaboradores")
-                .select("id, full_name")
-                .eq("organization_id", orgId!)
-                .eq("status", "active");
+                .select("id, full_name, status")
+                .eq("organization_id", orgId!);
             if (error) throw error;
-            return data;
+            // Permitir tanto 'active' quanto 'ativo' (BR)
+            return data.filter(emp =>
+                emp.status?.toLowerCase() === 'active' ||
+                emp.status?.toLowerCase() === 'ativo'
+            );
         },
         enabled: !!orgId,
     });
