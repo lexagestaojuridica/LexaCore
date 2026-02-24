@@ -25,6 +25,36 @@ interface LoginFormProps {
 const LoginForm = ({ onSwitchToSignup }: LoginFormProps) => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [forgotLoading, setForgotLoading] = useState(false);
+
+  const handleForgotPassword = async () => {
+    const email = form.getValues("email");
+    if (!email || !z.string().email().safeParse(email).success) {
+      toast({
+        title: "Informe seu e-mail",
+        description: "Digite um e-mail válido no campo acima para receber o link de redefinição.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setForgotLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) {
+      toast({
+        title: "Erro",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "E-mail enviado!",
+        description: "Verifique sua caixa de entrada para redefinir sua senha.",
+      });
+    }
+    setForgotLoading(false);
+  };
 
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
@@ -94,8 +124,13 @@ const LoginForm = ({ onSwitchToSignup }: LoginFormProps) => {
               <FormItem>
                 <div className="flex items-center justify-between">
                   <FormLabel className="text-xs font-medium">Senha</FormLabel>
-                  <button type="button" className="text-xs text-primary hover:underline">
-                    Esqueceu a senha?
+                  <button
+                    type="button"
+                    onClick={handleForgotPassword}
+                    disabled={forgotLoading}
+                    className="text-xs text-primary hover:underline disabled:opacity-50"
+                  >
+                    {forgotLoading ? "Enviando..." : "Esqueceu a senha?"}
                   </button>
                 </div>
                 <FormControl>
