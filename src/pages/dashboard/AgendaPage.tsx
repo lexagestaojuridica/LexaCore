@@ -11,7 +11,7 @@ import {
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
-  ChevronLeft, ChevronRight, Gavel, Users, Timer, CheckCircle2, Loader2, Unplug,
+  ChevronLeft, ChevronRight, Gavel, Users, Timer, CheckCircle2, Loader2, Unplug, Scale,
   AlertTriangle, Flame, Calendar, LayoutGrid, List, Download, Upload,
   Filter, ExternalLink, Briefcase, ArrowRight, FileDown, Plus, Link2, CalendarDays,
   Clock, Edit, Trash2, Edit2, PlayCircle, Square, User, Bell
@@ -25,6 +25,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { KPISkeleton, CardSkeleton } from "@/components/shared/SkeletonLoaders";
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -71,16 +72,16 @@ function KPICard({ label, value, sub, icon: Icon, color }: {
   label: string; value: string | number; sub?: string; icon: any; color: string;
 }) {
   return (
-    <Card className="border-border/50 shadow-sm hover:border-primary/20 transition-colors">
+    <Card className="glass-card border-border/40 shadow-sm hover:translate-y-[-2px] transition-all duration-300">
       <CardContent className="p-4 flex gap-4 items-center">
-        <div className={cn("flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br", color)}>
-          <Icon className="h-5 w-5" />
+        <div className={cn("flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br shadow-sm ring-1 ring-white/20", color)}>
+          <Icon className="h-5 w-5 text-foreground" />
         </div>
         <div>
-          <p className="text-xs uppercase tracking-wider font-semibold text-muted-foreground mb-0.5">{label}</p>
+          <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground/70 mb-0.5">{label}</p>
           <div className="flex items-baseline gap-2">
-            <h3 className="text-2xl font-bold text-foreground">{value}</h3>
-            {sub && <span className="text-[10px] font-medium text-muted-foreground">{sub}</span>}
+            <h3 className="text-2xl font-bold text-foreground tracking-tight">{value}</h3>
+            {sub && <span className="text-[10px] font-medium text-muted-foreground/60">{sub}</span>}
           </div>
         </div>
       </CardContent>
@@ -100,23 +101,27 @@ function PrazosFataisBanner({ eventos, onSelectDate }: { eventos: Evento[]; onSe
   if (prazosCriticos.length === 0) return null;
 
   return (
-    <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="relative overflow-hidden rounded-xl bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/20 shadow-sm p-4">
-      <div className="absolute top-0 left-0 w-1 h-full bg-amber-500" />
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="relative overflow-hidden rounded-xl glass-card border-amber-500/20 shadow-xl shadow-amber-500/5 p-4"
+    >
+      <div className="absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b from-amber-500 to-orange-600" />
       <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
         <div className="flex items-center gap-3 shrink-0">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-500/20 text-amber-600">
-            <Flame className="h-5 w-5" />
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500/20 text-amber-600 ring-1 ring-amber-500/30 shadow-inner">
+            <Flame className="h-5 w-5 animate-pulse" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-amber-700 dark:text-amber-400">Prazos Fatais Iminentes</h3>
-            <p className="text-xs text-amber-600/80 font-medium">{prazosCriticos.length} eventos nas próximas 48h</p>
+            <h3 className="text-sm font-bold text-amber-800 dark:text-amber-400">Prazos Fatais Iminentes</h3>
+            <p className="text-xs text-amber-600/80 font-medium">{prazosCriticos.length} compromissos críticos nas próximas 48h</p>
           </div>
         </div>
         <div className="flex gap-2 min-w-0 overflow-x-auto pb-1 sm:pb-0 scrollbar-hide">
           {prazosCriticos.map((e) => (
-            <button key={e.id} onClick={() => onSelectDate(parseISO(e.start_time))} className="shrink-0 max-w-[200px] flex items-center justify-between gap-3 rounded-md bg-background/60 border border-amber-500/20 px-3 py-1.5 text-xs hover:bg-amber-500/10 transition-colors">
-              <span className="font-semibold truncate text-foreground">{e.title}</span>
-              <span className="text-amber-600 font-bold shrink-0">{format(parseISO(e.start_time), "dd/MM HH:mm")}</span>
+            <button key={e.id} onClick={() => onSelectDate(parseISO(e.start_time))} className="shrink-0 max-w-[220px] flex items-center justify-between gap-4 rounded-lg bg-white/40 dark:bg-black/20 border border-amber-500/10 px-3.5 py-2 text-xs hover:bg-amber-500/10 transition-all hover:scale-[1.02] shadow-sm">
+              <span className="font-bold truncate text-foreground">{e.title}</span>
+              <span className="text-amber-600 font-black shrink-0 tabular-nums">{format(parseISO(e.start_time), "dd/MM HH:mm")}</span>
             </button>
           ))}
         </div>
@@ -308,12 +313,18 @@ function DayView({ eventos, selectedDate, onEdit, onEventDrop, filteredCategorie
                         )}
                       </div>
 
-                      <div className="flex items-center gap-3 mt-1">
-                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                      <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                        <span className="text-[11px] font-bold text-muted-foreground flex items-center gap-1 bg-white/40 dark:bg-black/20 px-1.5 py-0.5 rounded">
                           <Clock className="h-3 w-3" />
                           {format(start, "HH:mm")} – {format(end, "HH:mm")}
                         </span>
-                        {e.description && <span className="text-xs text-muted-foreground truncate">{e.description}</span>}
+                        {e.process_id && (
+                          <span className="text-[11px] font-medium text-primary flex items-center gap-1 bg-primary/10 px-1.5 py-0.5 rounded">
+                            <Briefcase className="h-3 w-3" />
+                            Proc. {e.process_id.substring(0, 8)}...
+                          </span>
+                        )}
+                        {e.description && <span className="text-[11px] text-muted-foreground/80 italic truncate max-w-[200px]">{e.description}</span>}
                       </div>
                     </motion.div>
                   );
@@ -584,10 +595,21 @@ export default function AgendaPage() {
 
       {/* ── KPIs ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <KPICard label="Eventos este mês" value={thisMonth.length} sub={format(now, "MMMM", { locale: ptBR })} icon={CalendarDays} color="from-blue-500/10 to-blue-500/5" />
-        <KPICard label="Esta semana" value={thisWeek.length} sub="Todos os tipos" icon={Calendar} color="from-emerald-500/10 to-emerald-500/5" />
-        <KPICard label="Audiências" value={audiencias.length} sub="Este mês" icon={Gavel} color="from-rose-500/10 to-rose-500/5" />
-        <KPICard label="Próximos passos" value="Organize" sub="Arraste eventos para agendar" icon={AlertTriangle} color="from-amber-500/10 to-amber-500/5" />
+        {isLoading ? (
+          <>
+            <KPISkeleton />
+            <KPISkeleton />
+            <KPISkeleton />
+            <KPISkeleton />
+          </>
+        ) : (
+          <>
+            <KPICard label="Eventos este mês" value={thisMonth.length} sub={format(now, "MMMM", { locale: ptBR })} icon={CalendarDays} color="from-blue-500/10 to-blue-500/5" />
+            <KPICard label="Esta semana" value={thisWeek.length} sub="Todos os tipos" icon={Calendar} color="from-emerald-500/10 to-emerald-500/5" />
+            <KPICard label="Audiências" value={audiencias.length} sub="Este mês" icon={Gavel} color="from-rose-500/10 to-rose-500/5" />
+            <KPICard label="Próximos passos" value="Organize" sub="Arraste eventos para agendar" icon={AlertTriangle} color="from-amber-500/10 to-amber-500/5" />
+          </>
+        )}
       </div>
 
       {/* ── Prazos Fatais Banner ── */}
@@ -634,7 +656,7 @@ export default function AgendaPage() {
       {viewMode === "month" && (
         <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
           {/* Month Calendar */}
-          <Card className="border-border/50">
+          <Card className="glass-card border-border/40 shadow-xl shadow-black/5 overflow-hidden rounded-2xl">
             <CardContent className="p-3">
               <div className="grid grid-cols-7 mb-1">
                 {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((d) => (
@@ -698,7 +720,7 @@ export default function AgendaPage() {
 
           {/* Day detail panel */}
           <div className="space-y-4">
-            <Card className="border-border/50">
+            <Card className="glass-card border-border/40 shadow-xl shadow-black/5 overflow-hidden rounded-2xl">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-3">
                   <div>
@@ -755,7 +777,7 @@ export default function AgendaPage() {
       )}
 
       {viewMode === "week" && (
-        <Card className="border-border/50">
+        <Card className="glass-card border-border/40 shadow-xl shadow-black/5 overflow-hidden rounded-2xl">
           <CardContent className="p-3">
             <WeekView eventos={eventos} selectedDate={selectedDate} onSelectDate={setSelectedDate} onEdit={openEdit} onDelete={(id) => deleteMutation.mutate(id)} onEventDrop={handleEventDrop} filteredCategories={filteredCategories} />
           </CardContent>
@@ -763,7 +785,7 @@ export default function AgendaPage() {
       )}
 
       {viewMode === "day" && (
-        <Card className="border-border/50">
+        <Card className="glass-card border-border/40 shadow-xl shadow-black/5 overflow-hidden rounded-2xl">
           <CardContent className="p-5">
             <DayView eventos={eventos} selectedDate={selectedDate} onEdit={openEdit} onEventDrop={handleEventDrop} filteredCategories={filteredCategories} />
           </CardContent>
@@ -771,7 +793,7 @@ export default function AgendaPage() {
       )}
 
       {viewMode === "list" && (
-        <Card className="border-border/50">
+        <Card className="glass-card border-border/40 shadow-xl shadow-black/5 overflow-hidden rounded-2xl">
           <CardContent className="p-5">
             <ListView eventos={eventos} filteredCategories={filteredCategories} onEdit={openEdit} onDelete={(id) => deleteMutation.mutate(id)} />
           </CardContent>

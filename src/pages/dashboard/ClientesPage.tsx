@@ -8,8 +8,9 @@ import {
   Users, Plus, Search, Edit2, Trash2, Eye, Mail, Phone, FileText, MapPin,
   Building2, User, Upload, Download, File, X, ShieldAlert,
   ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, MessageCircle,
-  RefreshCw, Link, CheckCircle2, ShieldCheck
+  RefreshCw, Link, CheckCircle2, ShieldCheck, Timer, Clock, ArrowUpDown, ArrowUp, ArrowDown
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { asaasService } from "@/services/asaasService";
 import { ConflitosInteresseDialog } from "@/components/clientes/ConflitosInteresseDialog";
 import { useTranslation } from "react-i18next";
@@ -32,6 +33,8 @@ import { Separator } from "@/components/ui/separator";
 import FormField from "@/components/shared/FormField";
 import LexaLoadingOverlay from "@/components/shared/LexaLoadingOverlay";
 import { formatDocument, formatPhone, formatCEP, fetchAddressByCEP } from "@/lib/formatters";
+import { TableSkeleton } from "@/components/shared/SkeletonLoaders";
+import { cn } from "@/lib/utils";
 
 type Client = {
   id: string;
@@ -423,125 +426,133 @@ export default function ClientesPage() {
         </Button>
       </div>
 
-      <Card className="border-border bg-card">
-        <CardContent className="flex items-center gap-3 p-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input placeholder="Buscar por nome, e-mail, telefone, documento ou empresa..." value={search} onChange={(e) => handleSearch(e.target.value)} className="pl-9" />
-          </div>
-        </CardContent>
-      </Card>
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        <Card className="glass-card border-border/40 shadow-sm overflow-hidden">
+          <CardContent className="flex items-center gap-3 p-4">
+            <div className="relative flex-1 group">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" />
+              <Input
+                placeholder="Buscar por nome, e-mail, telefone, documento ou empresa..."
+                value={search}
+                onChange={(e) => handleSearch(e.target.value)}
+                className="pl-9 bg-white/50 dark:bg-card/50 border-border/40 focus-visible:ring-primary/20 transition-all"
+              />
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
 
-      <Card className="border-border bg-card">
-        <CardContent className="p-0">
-          {isLoading ? (
-            <div className="space-y-3 p-4">
-              {[1, 2, 3, 4, 5].map((n) => (
-                <div key={n} className="flex gap-4">
-                  <div className="h-5 w-40 rounded bg-muted/50 animate-pulse" />
-                  <div className="h-5 w-10 rounded bg-muted/50 animate-pulse" />
-                  <div className="h-5 w-36 rounded bg-muted/50 animate-pulse" />
-                  <div className="h-5 w-24 rounded bg-muted/50 animate-pulse" />
-                  <div className="h-5 flex-1 rounded bg-muted/50 animate-pulse" />
-                </div>
-              ))}
-            </div>
-          ) : clients.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <Users className="mb-4 h-12 w-12 text-muted-foreground/30" />
-              <p className="text-sm text-muted-foreground">{search ? "Nenhum cliente encontrado para sua pesquisa." : "Nenhum cliente cadastrado."}</p>
-              {!search && (
-                <Button variant="outline" size="sm" className="mt-3 gap-1.5 text-xs" onClick={openCreate}>
-                  <Plus className="h-3 w-3" /> Cadastrar primeiro cliente
-                </Button>
-              )}
-            </div>
-          ) : (
-            <>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Nome</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>E-mail</TableHead>
-                      <TableHead>Telefone</TableHead>
-                      <TableHead>CPF / CNPJ</TableHead>
-                      <TableHead>Cidade/UF</TableHead>
-                      <TableHead>Cadastrado</TableHead>
-                      <TableHead className="text-right">Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {clients.map((c) => (
-                      <TableRow key={c.id} className="hover:bg-muted/20">
-                        <TableCell className="font-medium">{c.name}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="text-xs">
-                            {c.client_type === "pessoa_juridica" ? "PJ" : "PF"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">{c.email || "—"}</TableCell>
-                        <TableCell className="text-muted-foreground">{c.phone || "—"}</TableCell>
-                        <TableCell className="text-muted-foreground">{c.document || "—"}</TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {c.address_city && c.address_state ? `${c.address_city}/${c.address_state}` : "—"}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">{format(new Date(c.created_at), "dd/MM/yyyy", { locale: ptBR })}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center justify-end gap-1">
-                            {c.phone && (
+      {/* Client Table Section */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.4, delay: 0.1 }}
+      >
+        <Card className="glass-card border-border/40 shadow-xl shadow-black/5 overflow-hidden rounded-xl">
+          <CardContent className="p-0">
+            {isLoading ? (
+              <TableSkeleton columns={8} rows={8} />
+            ) : clients.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 text-center">
+                <Users className="mb-4 h-12 w-12 text-muted-foreground/30" />
+                <p className="text-sm text-muted-foreground">{search ? "Nenhum cliente encontrado para sua pesquisa." : "Nenhum cliente cadastrado."}</p>
+                {!search && (
+                  <Button variant="outline" size="sm" className="mt-3 gap-1.5 text-xs" onClick={openCreate}>
+                    <Plus className="h-3 w-3" /> Cadastrar primeiro cliente
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Nome</TableHead>
+                        <TableHead>Tipo</TableHead>
+                        <TableHead>E-mail</TableHead>
+                        <TableHead>Telefone</TableHead>
+                        <TableHead>CPF / CNPJ</TableHead>
+                        <TableHead>Cidade/UF</TableHead>
+                        <TableHead>Cadastrado</TableHead>
+                        <TableHead className="text-right">Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {clients.map((c) => (
+                        <TableRow key={c.id} className="hover:bg-muted/20">
+                          <TableCell className="font-medium">{c.name}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-xs">
+                              {c.client_type === "pessoa_juridica" ? "PJ" : "PF"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">{c.email || "—"}</TableCell>
+                          <TableCell className="text-muted-foreground">{c.phone || "—"}</TableCell>
+                          <TableCell className="text-muted-foreground">{c.document || "—"}</TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {c.address_city && c.address_state ? `${c.address_city}/${c.address_state}` : "—"}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">{format(new Date(c.created_at), "dd/MM/yyyy", { locale: ptBR })}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center justify-end gap-1">
+                              {c.phone && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  title="Mandar Mensagem"
+                                  className="h-8 w-8 text-muted-foreground hover:text-emerald-500 hover:bg-emerald-500/10"
+                                  onClick={() => window.open(`https://wa.me/55${c.phone?.replace(/\\D/g, '')}`, '_blank')}
+                                >
+                                  <MessageCircle className="h-4 w-4" />
+                                </Button>
+                              )}
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                title="Mandar Mensagem"
-                                className="h-8 w-8 text-muted-foreground hover:text-emerald-500 hover:bg-emerald-500/10"
-                                onClick={() => window.open(`https://wa.me/55${c.phone?.replace(/\\D/g, '')}`, '_blank')}
+                                title={c.asaas_customer_id ? "Sincronizado com Asaas" : "Sincronizar com Asaas"}
+                                className={cn(
+                                  "h-8 w-8",
+                                  c.asaas_customer_id ? "text-emerald-500" : "text-muted-foreground hover:text-primary"
+                                )}
+                                onClick={() => syncAsaasMutation.mutate(c)}
+                                disabled={syncAsaasMutation.isPending && selectedClient?.id === c.id}
                               >
-                                <MessageCircle className="h-4 w-4" />
+                                {c.asaas_customer_id ? <CheckCircle2 className="h-4 w-4" /> : <RefreshCw className={cn("h-4 w-4", syncAsaasMutation.isPending && selectedClient?.id === c.id && "animate-spin")} />}
                               </Button>
-                            )}
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              title={c.asaas_customer_id ? "Sincronizado com Asaas" : "Sincronizar com Asaas"}
-                              className={cn(
-                                "h-8 w-8",
-                                c.asaas_customer_id ? "text-emerald-500" : "text-muted-foreground hover:text-primary"
-                              )}
-                              onClick={() => syncAsaasMutation.mutate(c)}
-                              disabled={syncAsaasMutation.isPending && selectedClient?.id === c.id}
-                            >
-                              {c.asaas_customer_id ? <CheckCircle2 className="h-4 w-4" /> : <RefreshCw className={cn("h-4 w-4", syncAsaasMutation.isPending && selectedClient?.id === c.id && "animate-spin")} />}
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => { setSelectedClient(c); setViewDialogOpen(true); }}><Eye className="h-4 w-4" /></Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => openEdit(c)}><Edit2 className="h-4 w-4" /></Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => { setSelectedClient(c); setDeleteDialogOpen(true); }}><Trash2 className="h-4 w-4" /></Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-              {totalPages > 1 && (
-                <div className="flex items-center justify-between border-t border-border/60 px-4 py-3 bg-muted/5">
-                  <p className="text-xs text-muted-foreground">
-                    Mostrando <span className="font-semibold text-foreground">{(page - 1) * PAGE_SIZE + 1}</span>–<span className="font-semibold text-foreground">{Math.min(page * PAGE_SIZE, totalCount)}</span> de <span className="font-semibold text-foreground">{totalCount}</span> clientes
-                  </p>
-                  <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page === 1} onClick={() => setPage(1)}><ChevronsLeft className="h-3.5 w-3.5" /></Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page === 1} onClick={() => setPage(p => p - 1)}><ChevronLeft className="h-3.5 w-3.5" /></Button>
-                    <span className="px-3 text-xs font-medium bg-muted/50 rounded-md py-1">{page} / {totalPages}</span>
-                    <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page === totalPages} onClick={() => setPage(p => p + 1)}><ChevronRight className="h-3.5 w-3.5" /></Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page === totalPages} onClick={() => setPage(totalPages)}><ChevronsRight className="h-3.5 w-3.5" /></Button>
-                  </div>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => { setSelectedClient(c); setViewDialogOpen(true); }}><Eye className="h-4 w-4" /></Button>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => openEdit(c)}><Edit2 className="h-4 w-4" /></Button>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => { setSelectedClient(c); setDeleteDialogOpen(true); }}><Trash2 className="h-4 w-4" /></Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </div>
-              )}
-            </>
-          )}
-        </CardContent>
-      </Card>
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between border-t border-border/60 px-4 py-3 bg-muted/5">
+                    <p className="text-xs text-muted-foreground">
+                      Mostrando <span className="font-semibold text-foreground">{(page - 1) * PAGE_SIZE + 1}</span>–<span className="font-semibold text-foreground">{Math.min(page * PAGE_SIZE, totalCount)}</span> de <span className="font-semibold text-foreground">{totalCount}</span> clientes
+                    </p>
+                    <div className="flex items-center gap-1">
+                      <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page === 1} onClick={() => setPage(1)}><ChevronsLeft className="h-3.5 w-3.5" /></Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page === 1} onClick={() => setPage(p => p - 1)}><ChevronLeft className="h-3.5 w-3.5" /></Button>
+                      <span className="px-3 text-xs font-medium bg-muted/50 rounded-md py-1">{page} / {totalPages}</span>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page === totalPages} onClick={() => setPage(p => p + 1)}><ChevronRight className="h-3.5 w-3.5" /></Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page === totalPages} onClick={() => setPage(totalPages)}><ChevronsRight className="h-3.5 w-3.5" /></Button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
 
       {/* Create / Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={(o) => { if (!o) closeDialog(); }}>

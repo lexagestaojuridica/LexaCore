@@ -8,7 +8,7 @@ import { ptBR } from "date-fns/locale";
 import {
   Scale, Plus, Search, Filter, Edit2, Trash2, Eye, Upload, Download, File, Calculator, X,
   LayoutList, LayoutGrid, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
-  ArrowUpDown, ArrowUp, ArrowDown, Receipt, Bot, SwitchCamera, Share2, MessageCircle, Sparkles,
+  ArrowUpDown, ArrowUp, ArrowDown, Receipt, Bot, SwitchCamera, Share2, MessageCircle, Sparkles, Timer, Clock
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -32,6 +32,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
+import { TableSkeleton } from "@/components/shared/SkeletonLoaders";
 import FormField from "@/components/shared/FormField";
 import LexaLoadingOverlay from "@/components/shared/LexaLoadingOverlay";
 import { formatCurrencyInput, parseCurrencyToNumber } from "@/lib/formatters";
@@ -492,136 +493,151 @@ export default function ProcessosPage() {
       </div>
 
       {/* ── Filters ── */}
-      <Card className="border-border bg-card">
-        <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input placeholder="Buscar por título, número, vara ou assunto..." value={search} onChange={(e) => handleSearch(e.target.value)} className="pl-9" />
-          </div>
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-muted-foreground" />
-            <Select value={statusFilter} onValueChange={handleStatusFilter}>
-              <SelectTrigger className="w-[160px]"><SelectValue placeholder="Status" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                {STATUS_OPTIONS.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        <Card className="glass-card border-border/40 shadow-sm overflow-hidden">
+          <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
+            <div className="relative flex-1 group">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" />
+              <Input
+                placeholder="Buscar por título, número, vara ou assunto..."
+                value={search}
+                onChange={(e) => handleSearch(e.target.value)}
+                className="pl-9 bg-white/50 dark:bg-card/50 border-border/40 focus-visible:ring-primary/20 transition-all"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <Select value={statusFilter} onValueChange={handleStatusFilter}>
+                <SelectTrigger className="w-[160px] bg-white/50 dark:bg-card/50 border-border/40">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent className="glass">
+                  <SelectItem value="all">Todos</SelectItem>
+                  {STATUS_OPTIONS.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
 
       {/* ── Table View ── */}
       {viewMode === "table" && (
-        <Card className="border-border bg-card">
-          <CardContent className="p-0">
-            {isLoading ? (
-              <div className="space-y-3 p-4">
-                {[1, 2, 3, 4, 5].map((n) => (
-                  <div key={n} className="flex gap-4">
-                    <div className="h-5 flex-1 rounded bg-muted/50 animate-pulse" />
-                    <div className="h-5 w-24 rounded bg-muted/50 animate-pulse" />
-                    <div className="h-5 w-20 rounded bg-muted/50 animate-pulse" />
-                    <div className="h-5 w-16 rounded bg-muted/50 animate-pulse" />
-                  </div>
-                ))}
-              </div>
-            ) : processos.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 text-center">
-                <Scale className="mb-4 h-12 w-12 text-muted-foreground/30" />
-                <p className="text-sm text-muted-foreground">{search || statusFilter !== 'all' ? "Nenhum processo encontrado para os filtros." : "Nenhum processo cadastrado."}</p>
-                {!search && statusFilter === 'all' && (
-                  <Button variant="outline" size="sm" className="mt-3 gap-1.5 text-xs" onClick={openCreate}>
-                    <Plus className="h-3 w-3" /> Criar primeiro processo
-                  </Button>
-                )}
-              </div>
-            ) : (
-              <>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <SortableHeader field="title" label="Título" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
-                        <SortableHeader field="number" label="Número" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
-                        <SortableHeader field="court" label="Vara / Tribunal" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
-                        <SortableHeader field="status" label="Status" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
-                        <SortableHeader field="estimated_value" label="Valor Estimado" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
-                        <SortableHeader field="created_at" label="Criado em" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
-                        <TableHead className="text-right">Ações</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      <AnimatePresence>
-                        {processos.map((p) => (
-                          <TableRow key={p.id} className="hover:bg-muted/20">
-                            <TableCell className="font-medium max-w-[200px] truncate">{p.title}</TableCell>
-                            <TableCell className="text-muted-foreground">{p.number || "—"}</TableCell>
-                            <TableCell className="text-muted-foreground max-w-[160px] truncate">{p.court || "—"}</TableCell>
-                            <TableCell>{statusBadge(p.status)}</TableCell>
-                            <TableCell>{p.estimated_value != null ? `R$ ${Number(p.estimated_value).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : "—"}</TableCell>
-                            <TableCell className="text-muted-foreground">{format(new Date(p.created_at), "dd/MM/yyyy", { locale: ptBR })}</TableCell>
-                            <TableCell>
-                              <div className="flex items-center justify-end gap-1">
-                                {p.clients?.phone && (
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    title="WhatsApp do Cliente"
-                                    className="h-8 w-8 text-emerald-500/80 hover:bg-emerald-500/10 hover:text-emerald-600"
-                                    onClick={() => window.open(`https://wa.me/55${p.clients?.phone?.replace(/\\D/g, '')}`, '_blank')}
-                                  >
-                                    <MessageCircle className="h-4 w-4" />
-                                  </Button>
-                                )}
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-primary hover:bg-primary/10 hover:text-primary" title="Copiar Link para o Cliente" onClick={() => handleShare(p)}><Share2 className="h-4 w-4" /></Button>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => { setSelectedProcesso(p); setViewDialogOpen(true); }}><Eye className="h-4 w-4" /></Button>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => openEdit(p)}><Edit2 className="h-4 w-4" /></Button>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => { setSelectedProcesso(p); setDeleteDialogOpen(true); }}><Trash2 className="h-4 w-4" /></Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </AnimatePresence>
-                    </TableBody>
-                  </Table>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.4, delay: 0.1 }}
+        >
+          <Card className="glass-card border-border/40 shadow-xl shadow-black/5 overflow-hidden rounded-xl">
+            <CardContent className="p-0">
+              {isLoading ? (
+                <TableSkeleton columns={6} rows={8} />
+              ) : processos.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 text-center">
+                  <Scale className="mb-4 h-12 w-12 text-muted-foreground/30" />
+                  <p className="text-sm text-muted-foreground">{search || statusFilter !== 'all' ? "Nenhum processo encontrado para os filtros." : "Nenhum processo cadastrado."}</p>
+                  {!search && statusFilter === 'all' && (
+                    <Button variant="outline" size="sm" className="mt-3 gap-1.5 text-xs" onClick={openCreate}>
+                      <Plus className="h-3 w-3" /> Criar primeiro processo
+                    </Button>
+                  )}
                 </div>
-
-                {/* Pagination */}
-                {totalPages > 1 && (
-                  <div className="flex items-center justify-between border-t border-border/60 px-4 py-3 bg-muted/5">
-                    <p className="text-xs text-muted-foreground">
-                      Mostrando <span className="font-semibold text-foreground">{(page - 1) * PAGE_SIZE + 1}</span>–<span className="font-semibold text-foreground">{Math.min(page * PAGE_SIZE, totalCount)}</span> de <span className="font-semibold text-foreground">{totalCount}</span> processos
-                    </p>
-                    <div className="flex items-center gap-1">
-                      <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page === 1} onClick={() => setPage(1)}><ChevronsLeft className="h-3.5 w-3.5" /></Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page === 1} onClick={() => setPage(p => p - 1)}><ChevronLeft className="h-3.5 w-3.5" /></Button>
-                      <span className="px-3 text-xs font-medium bg-muted/50 rounded-md py-1">{page} / {totalPages}</span>
-                      <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page === totalPages} onClick={() => setPage(p => p + 1)}><ChevronRight className="h-3.5 w-3.5" /></Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page === totalPages} onClick={() => setPage(totalPages)}><ChevronsRight className="h-3.5 w-3.5" /></Button>
-                    </div>
+              ) : (
+                <>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <SortableHeader field="title" label="Título" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                          <SortableHeader field="number" label="Número" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                          <SortableHeader field="court" label="Vara / Tribunal" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                          <SortableHeader field="status" label="Status" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                          <SortableHeader field="estimated_value" label="Valor Estimado" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                          <SortableHeader field="created_at" label="Criado em" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                          <TableHead className="text-right">Ações</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        <AnimatePresence>
+                          {processos.map((p) => (
+                            <TableRow key={p.id} className="hover:bg-muted/20">
+                              <TableCell className="font-medium max-w-[200px] truncate">{p.title}</TableCell>
+                              <TableCell className="text-muted-foreground">{p.number || "—"}</TableCell>
+                              <TableCell className="text-muted-foreground max-w-[160px] truncate">{p.court || "—"}</TableCell>
+                              <TableCell>{statusBadge(p.status)}</TableCell>
+                              <TableCell>{p.estimated_value != null ? `R$ ${Number(p.estimated_value).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : "—"}</TableCell>
+                              <TableCell className="text-muted-foreground">{format(new Date(p.created_at), "dd/MM/yyyy", { locale: ptBR })}</TableCell>
+                              <TableCell>
+                                <div className="flex items-center justify-end gap-1">
+                                  {p.clients?.phone && (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      title="WhatsApp do Cliente"
+                                      className="h-8 w-8 text-emerald-500/80 hover:bg-emerald-500/10 hover:text-emerald-600"
+                                      onClick={() => window.open(`https://wa.me/55${p.clients?.phone?.replace(/\\D/g, '')}`, '_blank')}
+                                    >
+                                      <MessageCircle className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-primary hover:bg-primary/10 hover:text-primary" title="Copiar Link para o Cliente" onClick={() => handleShare(p)}><Share2 className="h-4 w-4" /></Button>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => { setSelectedProcesso(p); setViewDialogOpen(true); }}><Eye className="h-4 w-4" /></Button>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => openEdit(p)}><Edit2 className="h-4 w-4" /></Button>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => { setSelectedProcesso(p); setDeleteDialogOpen(true); }}><Trash2 className="h-4 w-4" /></Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </AnimatePresence>
+                      </TableBody>
+                    </Table>
                   </div>
-                )}
-              </>
-            )}
-          </CardContent>
-        </Card>
+
+                  {/* Pagination */}
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-between border-t border-border/60 px-4 py-3 bg-muted/5">
+                      <p className="text-xs text-muted-foreground">
+                        Mostrando <span className="font-semibold text-foreground">{(page - 1) * PAGE_SIZE + 1}</span>–<span className="font-semibold text-foreground">{Math.min(page * PAGE_SIZE, totalCount)}</span> de <span className="font-semibold text-foreground">{totalCount}</span> processos
+                      </p>
+                      <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page === 1} onClick={() => setPage(1)}><ChevronsLeft className="h-3.5 w-3.5" /></Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page === 1} onClick={() => setPage(p => p - 1)}><ChevronLeft className="h-3.5 w-3.5" /></Button>
+                        <span className="px-3 text-xs font-medium bg-muted/50 rounded-md py-1">{page} / {totalPages}</span>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page === totalPages} onClick={() => setPage(p => p + 1)}><ChevronRight className="h-3.5 w-3.5" /></Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page === totalPages} onClick={() => setPage(totalPages)}><ChevronsRight className="h-3.5 w-3.5" /></Button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
       )}
 
       {/* ── Kanban View ── */}
       {viewMode === "kanban" && (
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
+        <motion.div
+          variants={container}
+          initial="hidden"
+          animate="show"
+          className="grid gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4"
+        >
           {KANBAN_COLUMNS.map((col) => {
             const colProcessos = processos.filter((p) => p.status === col.status);
             return (
-              <div key={col.status} className="flex flex-col gap-3">
-                <div className={cn("rounded-t-xl border-t-2 bg-muted/30 rounded-xl border border-border/60 overflow-hidden", col.color)}>
-                  <div className="flex items-center justify-between px-4 py-3">
-                    <span className="text-sm font-semibold text-foreground">{col.label}</span>
-                    <Badge variant="secondary" className="text-[10px]">{colProcessos.length}</Badge>
+              <motion.div variants={item} key={col.status} className="flex flex-col gap-4">
+                <div className={cn("rounded-xl border border-border/60 bg-muted/20 overflow-hidden shadow-sm", col.color, "border-t-4")}>
+                  <div className="flex items-center justify-between px-4 py-3 bg-white/40 dark:bg-card/40 backdrop-blur-sm">
+                    <span className="text-xs font-bold uppercase tracking-widest text-foreground/70">{col.label}</span>
+                    <Badge variant="secondary" className="text-[10px] font-bold bg-white/60 dark:bg-muted/60">{colProcessos.length}</Badge>
                   </div>
                 </div>
-                <div className="space-y-2 min-h-[100px]">
+                <div className="space-y-3 min-h-[200px] p-1">
                   <AnimatePresence>
                     {colProcessos.length === 0 ? (
                       <div className="flex items-center justify-center py-8 rounded-xl border border-dashed border-border/60">
@@ -640,10 +656,10 @@ export default function ProcessosPage() {
                     )}
                   </AnimatePresence>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
-        </div>
+        </motion.div>
       )}
 
       {/* ── Dialogs (Create/Edit, View, Delete) — unchanged ── */}

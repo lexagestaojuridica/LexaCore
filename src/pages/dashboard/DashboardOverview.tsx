@@ -1,7 +1,9 @@
 import { useAuth } from "@/contexts/AuthContext";
+import { useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton, KPISkeleton } from "@/components/shared/SkeletonLoaders";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
@@ -120,7 +122,7 @@ export default function DashboardOverview() {
   const greeting = hour < 12 ? t("dashboard.greeting") : hour < 18 ? t("dashboard.greetingAfternoon") : t("dashboard.greetingEvening");
 
   // ── Fetch profile / org ──
-  const { data: profile } = useQuery({
+  const { data: profile, isLoading: isProfileLoading } = useQuery({
     queryKey: ["profile", user?.id],
     queryFn: async () => {
       const { data } = await supabase.from("profiles").select("organization_id").eq("user_id", user!.id).single();
@@ -131,7 +133,7 @@ export default function DashboardOverview() {
   const orgId = profile?.organization_id;
 
   // ── All eventos ──
-  const { data: eventos = [] } = useQuery({
+  const { data: eventos = [], isLoading: isEventosLoading } = useQuery({
     queryKey: ["eventos_meudia", orgId],
     queryFn: async () => {
       const { data } = await supabase.from("eventos_agenda")
@@ -146,7 +148,7 @@ export default function DashboardOverview() {
   });
 
   // ── Processos recentes ──
-  const { data: processos = [] } = useQuery({
+  const { data: processos = [], isLoading: isProcessosLoading } = useQuery({
     queryKey: ["processos_meudia", orgId],
     queryFn: async () => {
       const { data } = await supabase.from("processos_juridicos")
@@ -161,7 +163,7 @@ export default function DashboardOverview() {
   });
 
   // ── Financial KPIs ──
-  const { data: stats } = useQuery({
+  const { data: stats, isLoading: isStatsLoading } = useQuery({
     queryKey: ["fin_meudia", orgId],
     queryFn: async () => {
       const [{ data: receber }, { data: pagar }, { count: processos }, { count: clientes }, { data: prazos }] =
@@ -189,7 +191,7 @@ export default function DashboardOverview() {
   });
 
   // ── Timesheet today ──
-  const { data: timesheetToday } = useQuery({
+  const { data: timesheetToday, isLoading: isTimesheetLoading } = useQuery({
     queryKey: ["timesheet_today", orgId, user?.id],
     queryFn: async () => {
       const { data } = await supabase.from("timesheet_entries")
@@ -205,36 +207,55 @@ export default function DashboardOverview() {
     enabled: !!user && !!orgId,
   });
 
+  const isLoading = isProfileLoading || isEventosLoading || isProcessosLoading || isStatsLoading || isTimesheetLoading;
+
   const todayEvents = eventos.filter((e) => isToday(parseISO(e.start_time)));
   const tomorrowEvents = eventos.filter((e) => isTomorrow(parseISO(e.start_time)));
   const futureEvents = eventos.filter((e) => !isToday(parseISO(e.start_time)) && !isTomorrow(parseISO(e.start_time))).slice(0, 4);
   const urgentEvents = todayEvents.filter((e) => e.category === "audiencia" || e.category === "prazo");
   const happeningNowCount = todayEvents.filter(isHappeningNow).length;
 
-  // Timesheet helpers
-  const totalHoursToday = timesheetToday ? Math.floor(timesheetToday.totalMins / 60) : 0;
-  const totalMinsRemainder = timesheetToday ? timesheetToday.totalMins % 60 : 0;
-  const targetDailyMinutes = 8 * 60; // 8h goal
-  const progressPct = timesheetToday ? Math.min(100, Math.round((timesheetToday.totalMins / targetDailyMinutes) * 100)) : 0;
+  const { totalHoursToday, totalMinsRemainder, progressPct, targetDailyMinutes } = useMemo(() => {
+    const totalHoursToday = timesheetToday ? Math.floor(timesheetToday.totalMins / 60) : 0;
+    const totalMinsRemainder = timesheetToday ? timesheetToday.totalMins % 60 : 0;
+    const targetDailyMinutes = 8 * 60; // 8h goal
+    const progressPct = timesheetToday ? Math.min(100, Math.round((timesheetToday.totalMins / targetDailyMinutes) * 100)) : 0;
+    return { totalHoursToday, totalMinsRemainder, progressPct, targetDailyMinutes };
+  }, [timesheetToday]);
 
   // Animations
-  const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.08 } } };
+  const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.05 } } };
   const item = { hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } };
 
+  if (isLoading) {
+    return (
+      <div className="max-w-7xl mx-auto space-y-6 pt-4">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+          {Array.from({ length: 5 }).map((_, i) => <KPISkeleton key={i} />)}
+        </div>
+        <div className="grid md:grid-cols-3 gap-6">
+          <Skeleton className="h-[400px] md:col-span-2 rounded-xl" />
+          <Skeleton className="h-[400px] rounded-xl" />
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className="max-w-7xl mx-auto space-y-6 pb-10">
+    <motion.div variants={container} initial="hidden" animate="show" className="max-w-7xl mx-auto space-y-6 pb-10 pt-4">
 
       {/* ── Compact Header ── */}
       <motion.div variants={item} className="flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            {greeting}, <span className="text-primary">{displayName}</span>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground flex items-center gap-2">
+            {greeting}, <span className="text-gradient-premium font-display">{displayName}</span>
+            <Sparkles className="h-4 w-4 text-amber-500 animate-pulse" />
           </h1>
           <p className="text-sm text-muted-foreground flex items-center gap-1.5 mt-0.5">
-            <CalendarDays className="h-3.5 w-3.5" />
-            {format(new Date(), "EEEE, d 'de' MMMM", { locale: ptBR })}
+            <CalendarDays className="h-3.5 w-3.5 text-primary/60" />
+            <span className="font-medium">{format(new Date(), "EEEE, d 'de' MMMM", { locale: ptBR })}</span>
             {todayEvents.length > 0 && (
-              <span className="ml-2 text-xs font-medium bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+              <span className="ml-2 text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary px-2 py-0.5 rounded-full border border-primary/10">
                 {todayEvents.length} compromisso{todayEvents.length !== 1 ? "s" : ""}
               </span>
             )}
@@ -242,14 +263,14 @@ export default function DashboardOverview() {
         </div>
 
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs" onClick={() => navigate("/dashboard/processos")}>
-            <Plus className="h-3 w-3" /> {t("dashboard.process")}
+          <Button variant="outline" size="sm" className="h-9 gap-1.5 text-xs glass-card hover:bg-muted/50" onClick={() => navigate("/dashboard/processos")}>
+            <Plus className="h-3.5 w-3.5" /> {t("dashboard.process")}
           </Button>
-          <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs" onClick={() => navigate("/dashboard/minutas")}>
-            <FileText className="h-3 w-3" /> {t("dashboard.draft")}
+          <Button variant="outline" size="sm" className="h-9 gap-1.5 text-xs glass-card hover:bg-muted/50" onClick={() => navigate("/dashboard/minutas")}>
+            <FileText className="h-3.5 w-3.5" /> {t("dashboard.draft")}
           </Button>
-          <Button size="sm" className="h-8 gap-1.5 text-xs" onClick={() => navigate("/dashboard/agenda")}>
-            <CalendarDays className="h-3 w-3" /> {t("dashboard.appointment")}
+          <Button size="sm" className="h-9 gap-1.5 text-xs bg-gradient-navy text-white shadow-lg shadow-primary/20" onClick={() => navigate("/dashboard/agenda")}>
+            <CalendarDays className="h-3.5 w-3.5" /> {t("dashboard.appointment")}
           </Button>
         </div>
       </motion.div>
@@ -263,28 +284,32 @@ export default function DashboardOverview() {
           { label: t("dashboard.toReceive"), val: stats ? fmt(stats.aReceber) : "—", icon: TrendingUp, color: "text-amber-600 bg-amber-500/8" },
           { label: t("dashboard.toPay"), val: stats ? fmt(stats.aPagar) : "—", icon: DollarSign, color: "text-rose-600 bg-rose-500/8" },
         ].map((kpi, i) => (
-          <div key={i} className="flex items-center gap-3 bg-card border border-border/50 rounded-xl p-3.5 shadow-sm hover:shadow-md transition-shadow">
+          <motion.div
+            key={i}
+            whileHover={{ y: -2 }}
+            className="flex items-center gap-3 glass-card border-border/40 rounded-xl p-3.5 transition-all hover:bg-white/90 dark:hover:bg-card/90"
+          >
             <div className={cn("p-2 rounded-lg", kpi.color)}>
               <kpi.icon className="h-4 w-4" />
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{kpi.label}</p>
+              <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest leading-none mb-1.5">{kpi.label}</p>
               <div className="flex items-center gap-1.5">
-                <p className="text-lg font-bold leading-none mt-0.5">{kpi.val}</p>
+                <p className="text-lg font-bold leading-none tracking-tight">{kpi.val}</p>
                 {kpi.badge && (
-                  <span className="text-[8px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full animate-pulse">
+                  <span className="text-[8px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full animate-pulse border border-primary/10">
                     {kpi.badge}
                   </span>
                 )}
               </div>
             </div>
-          </div>
+          </motion.div>
         ))}
       </motion.div>
 
       {/* ── Urgent Alert ── */}
       {urgentEvents.length > 0 && (
-        <motion.div variants={item} className="p-3 bg-red-500/5 border border-red-500/20 rounded-xl flex items-center gap-3">
+        <motion.div variants={item} className="p-3 bg-red-500/5 border border-red-500/20 rounded-xl flex items-center gap-3 glass-card">
           <div className="h-8 w-8 rounded-lg bg-red-500/10 flex items-center justify-center shrink-0">
             <AlertTriangle className="h-4 w-4 text-red-600" />
           </div>
@@ -292,256 +317,175 @@ export default function DashboardOverview() {
             <p className="text-sm font-semibold text-red-700 dark:text-red-400">{t("dashboard.urgentAlert")}</p>
             <p className="text-xs text-red-600/70">{urgentEvents.length} {t("dashboard.deadlinesToday")}</p>
           </div>
-          <Button size="sm" variant="outline" className="border-red-500/30 text-red-600 hover:bg-red-500/10 shrink-0 h-8 text-xs" onClick={() => navigate("/dashboard/agenda")}>
+          <Button size="sm" variant="outline" className="border-red-500/30 text-red-600 hover:bg-red-500/10 shrink-0 h-8 text-xs px-4 rounded-lg" onClick={() => navigate("/dashboard/agenda")}>
             {t("dashboard.seeDetails")}
           </Button>
         </motion.div>
       )}
 
-      {/* ── Main 3-Column Layout ── */}
-      <div className="grid lg:grid-cols-[1fr_1fr_320px] gap-6">
+      <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-6">
 
-        {/* ── Column 1: Agenda Today ── */}
-        <motion.div variants={item} className="space-y-5">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold flex items-center gap-2">
-              <CalendarDays className="h-4 w-4 text-primary" />
-              {t("dashboard.agendaToday")}
-            </h2>
-            <Button variant="ghost" size="sm" className="text-xs text-primary h-7" onClick={() => navigate("/dashboard/agenda")}>
-              {t("dashboard.viewAll")} <ChevronRight className="h-3 w-3 ml-0.5" />
+        {/* ── Left Column: Events & Processes ── */}
+        <div className="md:col-span-2 lg:col-span-3 space-y-6">
+
+          <div className="grid lg:grid-cols-5 gap-6">
+
+            {/* Timeline */}
+            <div className="lg:col-span-3 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                  <Clock className="h-3.5 w-3.5" /> {t("dashboard.timeline")}
+                </h3>
+                <Button variant="ghost" size="sm" className="h-7 text-[10px] font-bold uppercase tracking-widest text-primary/70 hover:text-primary transition-colors" onClick={() => navigate("/dashboard/agenda")}>
+                  {t("common.seeAll")}
+                </Button>
+              </div>
+
+              <div className="space-y-1">
+                {todayEvents.length === 0 && tomorrowEvents.length === 0 && (
+                  <div className="glass-card border-dashed p-10 text-center flex flex-col items-center justify-center rounded-xl bg-muted/5">
+                    <div className="h-12 w-12 rounded-full bg-muted/30 flex items-center justify-center mb-3">
+                      <CalendarDays className="h-6 w-6 text-muted-foreground/40" />
+                    </div>
+                    <p className="text-sm font-medium text-muted-foreground">{t("dashboard.noEvents")}</p>
+                    <Button variant="link" size="sm" className="mt-1" onClick={() => navigate("/dashboard/agenda")}>Agendar compromisso</Button>
+                  </div>
+                )}
+
+                {todayEvents.length > 0 && (
+                  <div className="space-y-3">
+                    <p className="text-[10px] font-bold text-primary/60 uppercase tracking-widest pl-6 mb-2">Hoje</p>
+                    {todayEvents.map((ev, i) => (
+                      <TimelineEvent key={ev.id} event={ev} isLast={i === todayEvents.length - 1 && tomorrowEvents.length === 0} onNavigate={() => navigate("/dashboard/agenda")} />
+                    ))}
+                  </div>
+                )}
+
+                {tomorrowEvents.length > 0 && (
+                  <div className="space-y-3 mt-6">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest pl-6 mb-2">Amanhã</p>
+                    {tomorrowEvents.map((ev, i) => (
+                      <TimelineEvent key={ev.id} event={ev} isLast={i === tomorrowEvents.length - 1} onNavigate={() => navigate("/dashboard/agenda")} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Recent Processes */}
+            <div className="lg:col-span-2 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                  <Activity className="h-3.5 w-3.5" /> {t("dashboard.recentActivity")}
+                </h3>
+              </div>
+
+              <div className="space-y-3">
+                {processos.length === 0 ? (
+                  <div className="glass-card border-dashed p-6 text-center rounded-xl">
+                    <p className="text-xs text-muted-foreground">Nenhum processo ativo recente.</p>
+                  </div>
+                ) : (
+                  processos.map((p) => (
+                    <motion.div
+                      key={p.id}
+                      whileHover={{ x: 3 }}
+                      onClick={() => navigate(`/dashboard/processos?id=${p.id}`)}
+                      className="glass-card p-3 rounded-xl border-border/40 cursor-pointer group hover:bg-white/80 dark:hover:bg-card/80 transition-all shadow-sm"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-semibold text-foreground truncate group-hover:text-primary transition-colors">{p.title}</p>
+                          <p className="text-[10px] text-muted-foreground mt-0.5 font-mono">{p.number || "Sem número"}</p>
+                        </div>
+                        <ChevronRight className="h-3 w-3 text-muted-foreground/30 group-hover:text-primary/50 shrink-0 self-center" />
+                      </div>
+                      <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/10">
+                        <span className="text-[9px] text-muted-foreground/60">{formatDistanceToNow(new Date(p.updated_at), { addSuffix: true, locale: ptBR })}</span>
+                        <Badge variant="outline" className="text-[8px] h-4 font-bold uppercase tracking-wider border-primary/20 text-primary/70">{p.status}</Badge>
+                      </div>
+                    </motion.div>
+                  ))
+                )}
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        {/* ── Right Column: Performance & Widgets ── */}
+        <div className="space-y-6">
+
+          {/* Productivity Widget */}
+          <Card className="glass-card border-border/40 overflow-hidden rounded-xl shadow-lg shadow-black/5">
+            <CardHeader className="p-4 pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+                  <Timer className="h-3.5 w-3.5 text-primary/70" /> {t("dashboard.productivity")}
+                </CardTitle>
+                {progressPct >= 100 && <Sparkles className="h-4 w-4 text-amber-500" />}
+              </div>
+            </CardHeader>
+            <CardContent className="p-4 pt-2 space-y-4">
+              <div className="flex items-baseline justify-between">
+                <div className="text-3xl font-display font-bold text-gradient-premium">
+                  {totalHoursToday}h{totalMinsRemainder}m
+                </div>
+                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">/ 8h {t("dashboard.goal")}</div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-[10px] uppercase font-bold tracking-wider text-muted-foreground/70">
+                  <span>Progresso Diário</span>
+                  <span>{progressPct}%</span>
+                </div>
+                <div className="h-2 w-full bg-muted/30 rounded-full overflow-hidden border border-border/10">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${progressPct}%` }}
+                    transition={{ duration: 1, ease: "easeOut" }}
+                    className={cn(
+                      "h-full rounded-full transition-all duration-500",
+                      progressPct >= 100 ? "bg-gradient-to-r from-amber-500 to-orange-500 shadow-[0_0_10px_rgba(245,158,11,0.3)]" : "bg-gradient-to-r from-primary to-primary-light"
+                    )}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 pt-2">
+                <div className="bg-muted/30 p-2 rounded-lg text-center">
+                  <p className="text-[9px] font-bold text-muted-foreground/60 uppercase tracking-tighter">Entradas</p>
+                  <p className="text-sm font-bold text-foreground">{timesheetToday?.entries ?? 0}</p>
+                </div>
+                <div className="bg-muted/30 p-2 rounded-lg text-center">
+                  <p className="text-[9px] font-bold text-muted-foreground/60 uppercase tracking-tighter">Faturável</p>
+                  <p className="text-sm font-bold text-emerald-600">{timesheetToday ? Math.floor(timesheetToday.billable / 60) : 0}h</p>
+                </div>
+              </div>
+
+              <Button variant="ghost" size="sm" className="w-full h-8 text-xs font-semibold text-primary hover:bg-primary/5 border border-primary/10 rounded-lg group" onClick={() => navigate("/dashboard/timesheet")}>
+                {t("dashboard.openTimesheet")} <ArrowRight className="ml-2 h-3 w-3 group-hover:translate-x-1 transition-transform" />
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Quick Actions / Tips */}
+          <div className="glass-card p-4 rounded-xl border-primary/10 bg-gradient-to-br from-primary/5 to-transparent relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition-opacity">
+              <Sparkles className="h-12 w-12 text-primary" />
+            </div>
+            <h4 className="text-xs font-bold uppercase tracking-widest text-primary/80 flex items-center gap-2 mb-3">
+              <Zap className="h-3.5 w-3.5" /> Dica da Aruna
+            </h4>
+            <p className="text-xs text-muted-foreground leading-relaxed italic relative z-10">
+              "Você tem 3 prazos vencendo amanhã. Que tal revisá-los agora para evitar urgências no final do dia?"
+            </p>
+            <Button variant="link" size="sm" className="p-0 h-auto text-[10px] uppercase font-bold tracking-widest text-primary mt-3 hover:text-primary-light transition-colors" onClick={() => navigate("/dashboard/chat")}>
+              Falar com Aruna
             </Button>
           </div>
 
-          {todayEvents.length === 0 ? (
-            <Card className="shadow-none border-border/50 bg-card">
-              <CardContent className="p-8 text-center">
-                <CheckCircle2 className="h-10 w-10 text-emerald-500/20 mx-auto mb-3" />
-                <p className="font-medium text-foreground">{t("dashboard.noEvents")}</p>
-                <p className="text-sm text-muted-foreground mt-1">{t("dashboard.noEventsDesc")}</p>
-                <Button size="sm" variant="outline" className="mt-4 text-xs" onClick={() => navigate("/dashboard/agenda")}>
-                  <Plus className="h-3 w-3 mr-1" /> {t("dashboard.scheduleEvent")}
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="pl-1">
-              {todayEvents.map((e, i) => (
-                <TimelineEvent
-                  key={e.id}
-                  event={e}
-                  isLast={i === todayEvents.length - 1}
-                  onNavigate={() => navigate("/dashboard/agenda")}
-                />
-              ))}
-            </div>
-          )}
-
-          {/* Tomorrow preview */}
-          {tomorrowEvents.length > 0 && (
-            <div>
-              <h3 className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
-                <ArrowRight className="h-3 w-3" /> {t("dashboard.tomorrow")} · {tomorrowEvents.length} {t("dashboard.commitments")}
-              </h3>
-              <div className="space-y-2">
-                {tomorrowEvents.slice(0, 3).map((e) => {
-                  const m = getCatMeta(e.category);
-                  return (
-                    <div key={e.id} className="bg-card border border-border/40 rounded-lg px-3 py-2 flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/20 transition-colors" onClick={() => navigate("/dashboard/agenda")}>
-                      <div className={cn("h-2 w-2 rounded-full shrink-0", m.dot)} />
-                      <span className="truncate flex-1">{e.title}</span>
-                      <span className="text-xs text-muted-foreground shrink-0">{format(parseISO(e.start_time), "HH:mm")}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </motion.div>
-
-        {/* ── Column 2: Productivity & Financeiro ── */}
-        <motion.div variants={item} className="space-y-5">
-
-          {/* Timesheet Today */}
-          <Card className="shadow-none border-border/50">
-            <CardContent className="p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold flex items-center gap-2">
-                  <Timer className="h-4 w-4 text-primary" /> {t("dashboard.hoursToday")}
-                </h3>
-                <Button variant="ghost" size="sm" className="text-xs text-primary h-7" onClick={() => navigate("/dashboard/timesheet")}>
-                  Timesheet <ChevronRight className="h-3 w-3 ml-0.5" />
-                </Button>
-              </div>
-              <div className="flex items-end gap-3">
-                <p className="text-3xl font-bold leading-none">
-                  {totalHoursToday}<span className="text-lg font-medium text-muted-foreground">h</span>
-                  {totalMinsRemainder > 0 && <span className="text-lg text-muted-foreground">{totalMinsRemainder}m</span>}
-                </p>
-                <span className="text-xs text-muted-foreground">de 8h</span>
-              </div>
-              <Progress value={progressPct} className="h-1.5" />
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>{timesheetToday?.entries ?? 0} {t("dashboard.entries")}</span>
-                <span>{progressPct}% {t("dashboard.dailyGoal")}</span>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Performance */}
-          <Card className="shadow-none border-border/50">
-            <CardContent className="p-4 space-y-4">
-              <h3 className="text-sm font-semibold flex items-center gap-2">
-                <BarChart3 className="h-4 w-4 text-primary" /> {t("dashboard.performance")}
-              </h3>
-              <div className="space-y-3">
-                <div>
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className="text-muted-foreground">{t("dashboard.deadlinesMet")}</span>
-                    <span className={cn("font-medium flex items-center gap-0.5", (stats?.deadlinesMetPct || 0) >= 80 ? "text-emerald-600" : "text-amber-600")}>
-                      <ChevronUp className="h-3 w-3" /> {stats?.deadlinesMetPct || 0}%
-                    </span>
-                  </div>
-                  <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                    <div className={cn("h-full rounded-full transition-all", (stats?.deadlinesMetPct || 0) >= 80 ? "bg-emerald-500" : "bg-amber-500")} style={{ width: `${stats?.deadlinesMetPct || 0}%` }} />
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className="text-muted-foreground">{t("dashboard.agendaOccupation")}</span>
-                    <span className="font-medium">{Math.round((todayEvents.length / 10) * 100)}%</span>
-                  </div>
-                  <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                    <div className="h-full bg-primary/70 rounded-full transition-all" style={{ width: `${Math.min(100, (todayEvents.length / 10) * 100)}%` }} />
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className="text-muted-foreground">{t("dashboard.hoursGoal")}</span>
-                    <span className="font-medium">{progressPct}%</span>
-                  </div>
-                  <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                    <div className="h-full bg-amber-500 rounded-full transition-all" style={{ width: `${progressPct}%` }} />
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Financial Overview */}
-          <Card className="shadow-none border-border/50">
-            <CardContent className="p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold flex items-center gap-2">
-                  <DollarSign className="h-4 w-4 text-primary" /> {t("dashboard.financial")}
-                </h3>
-                <Button variant="ghost" size="sm" className="text-xs text-primary h-7" onClick={() => navigate("/dashboard/financeiro")}>
-                  {t("dashboard.seeDetails")} <ChevronRight className="h-3 w-3 ml-0.5" />
-                </Button>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-lg p-3">
-                  <p className="text-[10px] font-medium text-emerald-600 uppercase tracking-wider">{t("dashboard.toReceive")}</p>
-                  <p className="text-lg font-bold text-emerald-700 dark:text-emerald-400 mt-0.5">{stats ? fmt(stats.aReceber) : "—"}</p>
-                </div>
-                <div className="bg-rose-500/5 border border-rose-500/10 rounded-lg p-3">
-                  <p className="text-[10px] font-medium text-rose-600 uppercase tracking-wider">{t("dashboard.toPay")}</p>
-                  <p className="text-lg font-bold text-rose-700 dark:text-rose-400 mt-0.5">{stats ? fmt(stats.aPagar) : "—"}</p>
-                </div>
-              </div>
-              {stats && (stats.aReceber - stats.aPagar) !== 0 && (
-                <div className="text-xs text-muted-foreground text-center pt-1">
-                  {t("dashboard.balance")}: <span className={cn("font-semibold", stats.aReceber >= stats.aPagar ? "text-emerald-600" : "text-rose-600")}>
-                    {fmt(stats.aReceber - stats.aPagar)}
-                  </span>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* ── Column 3: Sidebar — Processes & Quick Access ── */}
-        <motion.div variants={item} className="space-y-5">
-
-          {/* Upcoming events */}
-          {futureEvents.length > 0 && (
-            <div>
-              <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                <Eye className="h-4 w-4 text-primary" /> {t("dashboard.upcoming")}
-              </h3>
-              <div className="space-y-2">
-                {futureEvents.map((e) => {
-                  const m = getCatMeta(e.category);
-                  const d = parseISO(e.start_time);
-                  return (
-                    <div key={e.id} className="bg-card border border-border/40 rounded-lg p-2.5 flex items-start gap-2.5 hover:border-primary/20 transition-colors cursor-pointer" onClick={() => navigate("/dashboard/agenda")}>
-                      <div className={cn("h-2 w-2 rounded-full shrink-0 mt-1.5", m.dot)} />
-                      <div className="min-w-0 flex-1">
-                        <p className="text-xs font-medium truncate">{e.title}</p>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">
-                          {format(d, "EEE, dd/MM", { locale: ptBR })} · {format(d, "HH:mm")}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Recent Processes */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold flex items-center gap-2">
-                <Activity className="h-4 w-4 text-primary" /> {t("dashboard.movements")}
-              </h3>
-              <Button variant="ghost" size="sm" className="text-xs text-primary h-6 px-2" onClick={() => navigate("/dashboard/processos")}>
-                {t("dashboard.viewAll")}
-              </Button>
-            </div>
-            {processos.length === 0 ? (
-              <p className="text-xs text-muted-foreground">{t("dashboard.noMovements")}</p>
-            ) : (
-              <div className="space-y-2">
-                {processos.map((p) => (
-                  <div key={p.id} className="bg-card border border-border/40 rounded-lg p-2.5 hover:bg-muted/20 transition-colors cursor-pointer" onClick={() => navigate("/dashboard/processos")}>
-                    <p className="text-xs font-medium line-clamp-1">{p.title}</p>
-                    <div className="flex items-center justify-between text-[10px] text-muted-foreground mt-1">
-                      <span>{p.number || t("dashboard.noNumber")}</span>
-                      <span>{formatDistanceToNow(parseISO(p.updated_at), { locale: ptBR, addSuffix: true })}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Quick Actions */}
-          <Card className="shadow-none border-border/50 bg-gradient-to-br from-primary/5 to-transparent">
-            <CardContent className="p-4 space-y-2.5">
-              <h3 className="text-sm font-semibold flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-primary" /> {t("dashboard.shortcuts")}
-              </h3>
-              {[
-                { label: t("dashboard.newProcess"), icon: Scale, path: "/dashboard/processos" },
-                { label: t("dashboard.startTimer"), icon: Timer, path: "/dashboard/timesheet" },
-                { label: t("dashboard.newDraft"), icon: FileText, path: "/dashboard/minutas" },
-                { label: t("dashboard.crmPipeline"), icon: Target, path: "/dashboard/crm" },
-              ].map((action) => (
-                <Button
-                  key={action.label}
-                  variant="ghost"
-                  size="sm"
-                  className="w-full justify-start gap-2 text-xs h-8 hover:bg-card"
-                  onClick={() => navigate(action.path)}
-                >
-                  <action.icon className="h-3.5 w-3.5 text-primary" />
-                  {action.label}
-                </Button>
-              ))}
-            </CardContent>
-          </Card>
-        </motion.div>
+        </div>
       </div>
     </motion.div>
   );
