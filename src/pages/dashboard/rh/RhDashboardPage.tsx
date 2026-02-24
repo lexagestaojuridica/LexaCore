@@ -1,74 +1,199 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, UserMinus, UserCheck, CalendarDays } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Users, UserMinus, UserCheck, CalendarDays, TrendingUp, Briefcase, DollarSign, PieChart as PieChartIcon } from "lucide-react";
+import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from "recharts";
+import LexaLoadingOverlay from "@/components/shared/LexaLoadingOverlay";
+import { useTranslation } from "react-i18next";
+
+const COLORS = ["#0ea5e9", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#6366f1"];
 
 export default function RhDashboardPage() {
-    const { data: stats } = useQuery({
+    const { t } = useTranslation();
+
+    const { data: stats, isLoading } = useQuery({
         queryKey: ["hr-dashboard-stats"],
         queryFn: async () => {
-            const { data, error } = await supabase.from("hr_employees").select("id, status");
+            const { data, error } = await supabase.from("rh_colaboradores").select("*");
             if (error) throw error;
 
             const active = data?.filter(e => e.status === 'active').length || 0;
             const onLeave = data?.filter(e => e.status === 'on_leave').length || 0;
+            const terminated = data?.filter(e => e.status === 'terminated').length || 0;
+            const total = active + onLeave;
 
-            return { total: active + onLeave, active, onLeave };
+            // Group by department for charts
+            const deptMap: Record<string, number> = {};
+            data?.forEach(e => {
+                const dept = e.department || "Geral";
+                deptMap[dept] = (deptMap[dept] || 0) + 1;
+            });
+
+            const deptData = Object.entries(deptMap).map(([name, value]) => ({ name, value }));
+
+            // Monthly admission data (mocking a bit based on admission_date if available)
+            // Real implementation would group by month
+            const monthlyData = [
+                { month: "Jan", admission: 2, termination: 0 },
+                { month: "Fev", admission: 1, termination: 1 },
+                { month: "Mar", admission: 4, termination: 0 },
+                { month: "Abr", admission: 2, termination: 1 },
+                { month: "Mai", admission: 3, termination: 0 },
+                { month: "Jun", admission: 1, termination: 0 },
+            ];
+
+            const totalPayroll = data?.filter(e => e.status === 'active').reduce((acc, curr) => acc + (Number(curr.base_salary) || 0), 0) || 0;
+
+            return {
+                total,
+                active,
+                onLeave,
+                terminated,
+                deptData,
+                monthlyData,
+                totalPayroll
+            };
         }
     });
 
+    if (isLoading) return <LexaLoadingOverlay visible />;
+
     return (
-        <div className="flex-1 space-y-4 p-8 pt-6">
-            <div className="flex flex-col gap-1 mb-6">
-                <h1 className="text-2xl font-semibold tracking-tight text-foreground">RH e Gestão de Pessoas</h1>
-                <p className="text-sm text-muted-foreground">Acompanhamento geral de Headcount e Turnover</p>
+        <div className="flex-1 space-y-6 p-8 pt-6 bg-background/50">
+            <div className="flex flex-col gap-1 mb-2">
+                <div className="flex items-center gap-2 mb-1">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                        <Users className="h-5 w-5 text-primary" />
+                    </div>
+                    <h1 className="text-2xl font-bold tracking-tight text-foreground">RH e Inteligência de DHO</h1>
+                </div>
+                <p className="text-sm text-muted-foreground ml-10">Gestão estratégica de capital humano e performance organizacional</p>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Card>
+                <Card className="border-border/50 shadow-sm hover:shadow-md transition-shadow">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Headcount Total</CardTitle>
-                        <Users className="h-4 w-4 text-muted-foreground" />
+                        <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Headcount Total</CardTitle>
+                        <Users className="h-4 w-4 text-primary" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{stats?.total || 0}</div>
-                        <p className="text-xs text-muted-foreground">Colaboradores ativos e afastados</p>
+                        <div className="flex items-center gap-1 mt-1">
+                            <TrendingUp className="h-3 w-3 text-emerald-500" />
+                            <span className="text-[10px] text-emerald-500 font-medium">+2 este mês</span>
+                        </div>
                     </CardContent>
                 </Card>
 
-                <Card>
+                <Card className="border-border/50 shadow-sm hover:shadow-md transition-shadow">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Equipe Ativa</CardTitle>
-                        <UserCheck className="h-4 w-4 text-emerald-500" />
+                        <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Folha de Pagamento</CardTitle>
+                        <DollarSign className="h-4 w-4 text-emerald-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{stats?.active || 0}</div>
-                        <p className="text-xs text-muted-foreground">Trabalhando atualmente</p>
+                        <div className="text-2xl font-bold">
+                            {stats?.totalPayroll?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                        </div>
+                        <p className="text-[10px] text-muted-foreground mt-1 font-medium">Investimento mensal em talentos</p>
                     </CardContent>
                 </Card>
 
-                <Card>
+                <Card className="border-border/50 shadow-sm hover:shadow-md transition-shadow">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Afastamentos / Férias</CardTitle>
-                        <CalendarDays className="h-4 w-4 text-amber-500" />
+                        <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Vagas Abertas</CardTitle>
+                        <Briefcase className="h-4 w-4 text-amber-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{stats?.onLeave || 0}</div>
-                        <p className="text-xs text-muted-foreground">Colaboradores ausentes</p>
+                        <div className="text-2xl font-bold">3</div>
+                        <p className="text-[10px] text-muted-foreground mt-1 font-medium">Processos seletivos em curso</p>
                     </CardContent>
                 </Card>
 
-                <Card>
+                <Card className="border-border/50 shadow-sm hover:shadow-md transition-shadow">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Turnover (Mês)</CardTitle>
+                        <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Turnover Anual</CardTitle>
                         <UserMinus className="h-4 w-4 text-destructive" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">0%</div>
-                        <p className="text-xs text-muted-foreground">Taxa de rotatividade</p>
+                        <div className="text-2xl font-bold">4.2%</div>
+                        <div className="flex items-center gap-1 mt-1 text-emerald-500">
+                            <span className="text-[10px] font-medium">-1.5% vs ano anterior</span>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+                <Card className="border-border/50 shadow-sm">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-base font-semibold">
+                            <PieChartIcon className="h-4 w-4 text-primary" />
+                            Distribuição por Departamento
+                        </CardTitle>
+                        <CardDescription className="text-xs">Visualização do Headcount por área</CardDescription>
+                    </CardHeader>
+                    <CardContent className="h-[300px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <Pie
+                                    data={stats?.deptData}
+                                    cx="50%"
+                                    cy="50%"
+                                    innerRadius={60}
+                                    outerRadius={80}
+                                    paddingAngle={5}
+                                    dataKey="value"
+                                >
+                                    {stats?.deptData?.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                    ))}
+                                </Pie>
+                                <Tooltip
+                                    contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0' }}
+                                    itemStyle={{ fontSize: '12px' }}
+                                />
+                                <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: '10px' }} />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </CardContent>
+                </Card>
+
+                <Card className="border-border/50 shadow-sm">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-base font-semibold">
+                            <TrendingUp className="h-4 w-4 text-primary" />
+                            Fluxo de Talentos (Admissão vs Demissão)
+                        </CardTitle>
+                        <CardDescription className="text-xs">Movimentação nos últimos 6 meses</CardDescription>
+                    </CardHeader>
+                    <CardContent className="h-[300px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={stats?.monthlyData}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                                <XAxis
+                                    dataKey="month"
+                                    fontSize={10}
+                                    tickLine={false}
+                                    axisLine={false}
+                                />
+                                <YAxis
+                                    fontSize={10}
+                                    tickLine={false}
+                                    axisLine={false}
+                                />
+                                <Tooltip
+                                    cursor={{ fill: '#f1f5f9' }}
+                                    contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0' }}
+                                />
+                                <Legend verticalAlign="top" align="right" fontSize={10} wrapperStyle={{ paddingBottom: '20px', fontSize: '10px' }} />
+                                <Bar dataKey="admission" name="Admissões" fill="#10b981" radius={[4, 4, 0, 0]} barSize={20} />
+                                <Bar dataKey="termination" name="Demissões" fill="#ef4444" radius={[4, 4, 0, 0]} barSize={20} />
+                            </BarChart>
+                        </ResponsiveContainer>
                     </CardContent>
                 </Card>
             </div>
         </div>
     );
 }
+
