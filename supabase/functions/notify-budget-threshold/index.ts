@@ -4,7 +4,14 @@
 // Deploy: supabase functions deploy notify-budget-threshold
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { verify } from "https://esm.sh/@supabase/webhook-js@1.0.8";
+import { createHmac } from "https://deno.land/std@0.168.0/node/crypto.ts";
+
+function verifyWebhookSignature(payload: string, signature: string, secret: string): boolean {
+  const hmac = createHmac("sha256", secret);
+  hmac.update(payload);
+  const expected = hmac.digest("hex");
+  return expected === signature;
+}
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
@@ -23,7 +30,7 @@ serve(async (req) => {
         }
 
         const payloadStr = await req.text();
-        const isValid = await verify(payloadStr, signature, WEBHOOK_SECRET);
+        const isValid = verifyWebhookSignature(payloadStr, signature, WEBHOOK_SECRET);
 
         if (!isValid) {
             return new Response("Invalid signature", { status: 401 });
