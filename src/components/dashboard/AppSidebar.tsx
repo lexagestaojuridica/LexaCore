@@ -20,6 +20,8 @@ import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import logoLexaWhite from "@/assets/logo-lexa-white.png";
 import iconLexa from "@/assets/icon-lexa.png";
+import { GlobalSearch } from "@/components/shared/GlobalSearch";
+import { Search } from "lucide-react";
 
 // ─── Nav structure grouped by journey ───────────────────────
 
@@ -199,8 +201,37 @@ export function AppSidebar() {
         ))}
       </SidebarContent>
 
+      {/* Global Search Component */}
+      <GlobalSearch />
+
       {/* Footer */}
       <SidebarFooter className="shrink-0 border-t border-sidebar-border/50 p-2.5">
+
+        {/* Search Button for Mobile or Mouse user */}
+        <div className="flex items-center gap-2 mb-2">
+          <Button
+            variant="outline"
+            className={cn(
+              "w-full justify-between bg-sidebar-accent/30 border-sidebar-border/50 hover:bg-sidebar-accent/80 hover:text-sidebar-foreground",
+              collapsed ? "px-0 justify-center h-8" : "px-3 h-8"
+            )}
+            onClick={() => {
+              const e = new KeyboardEvent('keydown', { key: 'k', ctrlKey: true });
+              document.dispatchEvent(e);
+            }}
+          >
+            <div className="flex items-center gap-2 text-sidebar-foreground/60">
+              <Search className="h-3.5 w-3.5" />
+              {!collapsed && <span className="text-xs">Buscar...</span>}
+            </div>
+            {!collapsed && (
+              <kbd className="pointer-events-none inline-flex h-5 items-center gap-1 rounded border border-sidebar-border/50 bg-sidebar/50 px-1.5 font-mono text-[10px] font-medium text-sidebar-foreground/60">
+                <span className="text-xs">⌘</span>K
+              </kbd>
+            )}
+          </Button>
+        </div>
+
         <div className="flex items-center gap-2.5">
           {avatarUrl ? (
             <img

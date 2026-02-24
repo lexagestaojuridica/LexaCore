@@ -1,5 +1,4 @@
-import { useState, useCallback } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -129,19 +128,35 @@ export default function ClientesPage() {
 
   const orgId = profile?.organization_id;
 
-  const { data: clients = [], isLoading } = useQuery({
-    queryKey: ["clients", orgId],
+  const { data: clientsData, isLoading } = useQuery({
+    queryKey: ["clients", orgId, page, search],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("clients")
-        .select("*")
+        .select("*", { count: "exact" })
         .eq("organization_id", orgId!)
         .order("created_at", { ascending: false });
+
+      if (search) {
+        query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%,document.ilike.%${search}%,company_name.ilike.%${search}%`);
+      }
+
+      const from = (page - 1) * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+      query = query.range(from, to);
+
+      const { data, error, count } = await query;
       if (error) throw error;
-      return data as unknown as Client[];
+      return { data: data as Client[], count: count ?? 0 };
     },
     enabled: !!orgId,
+    placeholderData: keepPreviousData,
   });
+
+  const clients = clientsData?.data || [];
+  const totalCount = clientsData?.count || 0;
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+
 
   const { data: clientDocs = [] } = useQuery({
     queryKey: ["client-docs", selectedClient?.id],
@@ -294,20 +309,6 @@ export default function ClientesPage() {
     if (data?.signedUrl) window.open(data.signedUrl, "_blank");
   };
 
-  const filtered = clients.filter((c) => {
-    const q = search.toLowerCase();
-    if (!q) return true;
-    return (
-      c.name.toLowerCase().includes(q) ||
-      (c.email ?? "").toLowerCase().includes(q) ||
-      (c.phone ?? "").toLowerCase().includes(q) ||
-      (c.document ?? "").toLowerCase().includes(q) ||
-      (c.company_name ?? "").toLowerCase().includes(q)
-    );
-  });
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const handleSearch = (v: string) => { setSearch(v); setPage(1); };
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
@@ -330,7 +331,7 @@ export default function ClientesPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">{t("clients.title")}</h1>
           <p className="text-sm text-muted-foreground">
-            {clients.length} {clients.length !== 1 ? "clientes" : "cliente"} {clients.length !== 1 ? t("common.registeredPlural") : t("common.registered")}
+            {totalCount} {totalCount !== 1 ? "clientes" : "cliente"} {totalCount !== 1 ? t("common.registeredPlural") : t("common.registered")}
           </p>
         </div>
         <Button onClick={openCreate} className="gap-2">
@@ -361,11 +362,11 @@ export default function ClientesPage() {
                 </div>
               ))}
             </div>
-          ) : filtered.length === 0 ? (
+          ) : clients.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center">
               <Users className="mb-4 h-12 w-12 text-muted-foreground/30" />
-              <p className="text-sm text-muted-foreground">{clients.length === 0 ? "Nenhum cliente cadastrado." : "Nenhum cliente encontrado."}</p>
-              {clients.length === 0 && (
+              <p className="text-sm text-muted-foreground">{search ? "Nenhum cliente encontrado para sua pesquisa." : "Nenhum cliente cadastrado."}</p>
+              {!search && (
                 <Button variant="outline" size="sm" className="mt-3 gap-1.5 text-xs" onClick={openCreate}>
                   <Plus className="h-3 w-3" /> Cadastrar primeiro cliente
                 </Button>
@@ -388,7 +389,7 @@ export default function ClientesPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {paged.map((c) => (
+                    {clients.map((c) => (
                       <TableRow key={c.id} className="hover:bg-muted/20">
                         <TableCell className="font-medium">{c.name}</TableCell>
                         <TableCell>
@@ -416,14 +417,14 @@ export default function ClientesPage() {
                 </Table>
               </div>
               {totalPages > 1 && (
-                <div className="flex items-center justify-between border-t border-border/60 px-4 py-3">
+                <div className="flex items-center justify-between border-t border-border/60 px-4 py-3 bg-muted/5">
                   <p className="text-xs text-muted-foreground">
-                    {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} de {filtered.length} clientes
+                    Mostrando <span className="font-semibold text-foreground">{(page - 1) * PAGE_SIZE + 1}</span>–<span className="font-semibold text-foreground">{Math.min(page * PAGE_SIZE, totalCount)}</span> de <span className="font-semibold text-foreground">{totalCount}</span> clientes
                   </p>
                   <div className="flex items-center gap-1">
                     <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page === 1} onClick={() => setPage(1)}><ChevronsLeft className="h-3.5 w-3.5" /></Button>
                     <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page === 1} onClick={() => setPage(p => p - 1)}><ChevronLeft className="h-3.5 w-3.5" /></Button>
-                    <span className="px-3 text-xs font-medium">{page} / {totalPages}</span>
+                    <span className="px-3 text-xs font-medium bg-muted/50 rounded-md py-1">{page} / {totalPages}</span>
                     <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page === totalPages} onClick={() => setPage(p => p + 1)}><ChevronRight className="h-3.5 w-3.5" /></Button>
                     <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page === totalPages} onClick={() => setPage(totalPages)}><ChevronsRight className="h-3.5 w-3.5" /></Button>
                   </div>

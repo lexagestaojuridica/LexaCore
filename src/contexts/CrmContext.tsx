@@ -1,4 +1,4 @@
-import { createContext, useContext, ReactNode, useCallback } from "react";
+import { createContext, useContext, ReactNode, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -130,7 +130,7 @@ export function CrmProvider({ children }: { children: ReactNode }) {
     const { data: contacts = [], isLoading: loadingContacts } = useQuery({
         queryKey: ["crm_contacts"], enabled: !!uid,
         queryFn: async () => {
-            const { data, error } = await supabase.from("crm_contacts").select("*").order("created_at", { ascending: false });
+            const { data, error } = await supabase.from("crm_contacts").select("*").order("created_at", { ascending: false }).limit(300);
             if (error) throw error;
             return (data || []).map(mapContact);
         },
@@ -139,7 +139,7 @@ export function CrmProvider({ children }: { children: ReactNode }) {
     const { data: leads = [], isLoading: loadingLeads } = useQuery({
         queryKey: ["crm_leads"], enabled: !!uid,
         queryFn: async () => {
-            const { data, error } = await supabase.from("crm_leads").select("*").order("created_at", { ascending: false });
+            const { data, error } = await supabase.from("crm_leads").select("*").order("created_at", { ascending: false }).limit(300);
             if (error) throw error;
             return (data || []).map(mapLead);
         },
@@ -148,7 +148,7 @@ export function CrmProvider({ children }: { children: ReactNode }) {
     const { data: deals = [], isLoading: loadingDeals } = useQuery({
         queryKey: ["crm_deals"], enabled: !!uid,
         queryFn: async () => {
-            const { data, error } = await supabase.from("crm_deals").select("*").order("created_at", { ascending: false });
+            const { data, error } = await supabase.from("crm_deals").select("*").order("created_at", { ascending: false }).limit(300);
             if (error) throw error;
             return (data || []).map(mapDeal);
         },
@@ -157,14 +157,37 @@ export function CrmProvider({ children }: { children: ReactNode }) {
     const { data: activities = [], isLoading: loadingActivities } = useQuery({
         queryKey: ["crm_activities"], enabled: !!uid,
         queryFn: async () => {
-            const { data, error } = await supabase.from("crm_activities").select("*").order("created_at", { ascending: false });
+            const { data, error } = await supabase.from("crm_activities").select("*").order("created_at", { ascending: false }).limit(300);
             if (error) throw error;
             return (data || []).map(mapActivity);
         },
     });
 
     const isLoading = loadingContacts || loadingLeads || loadingDeals || loadingActivities;
-    const invalidate = (keys: string[]) => keys.forEach((k) => qc.invalidateQueries({ queryKey: [k] }));
+    const invalidate = useCallback((keys: string[]) => keys.forEach((k) => qc.invalidateQueries({ queryKey: [k] })), [qc]);
+
+    // ── Realtime Subscriptions ──
+    useEffect(() => {
+        if (!uid) return;
+        const channel = supabase.channel('crm_realtime_changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'crm_leads' }, () => {
+                invalidate(["crm_leads"]);
+            })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'crm_contacts' }, () => {
+                invalidate(["crm_contacts"]);
+            })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'crm_deals' }, () => {
+                invalidate(["crm_deals"]);
+            })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'crm_activities' }, () => {
+                invalidate(["crm_activities"]);
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [uid, invalidate]);
 
     // ── findOrCreateContact ──
     const findOrCreateContact = useCallback((name: string): CrmContact => {

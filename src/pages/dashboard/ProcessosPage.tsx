@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -21,6 +21,9 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
+} from "@/components/ui/sheet";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -226,15 +229,54 @@ export default function ProcessosPage() {
   });
   const orgId = profile?.organization_id;
 
-  const { data: processos = [], isLoading } = useQuery({
-    queryKey: ["processos", orgId],
+  const { data: processosData, isLoading } = useQuery({
+    queryKey: ["processos", orgId, page, search, statusFilter, sortField, sortDir],
     queryFn: async () => {
-      const { data, error } = await supabase.from("processos_juridicos").select("*").eq("organization_id", orgId!).order("created_at", { ascending: false });
+      let query = supabase
+        .from("processos_juridicos")
+        .select("*", { count: "exact" })
+        .eq("organization_id", orgId!);
+
+      // Apply Filters
+      if (statusFilter !== "all") {
+        query = query.eq("status", statusFilter);
+      }
+
+      if (search) {
+        // Busca textual em título, número de processo contendo a strig
+        query = query.or(`title.ilike.%${search}%,number.ilike.%${search}%,court.ilike.%${search}%,subject.ilike.%${search}%`);
+      }
+
+      // Apply Sorting
+      query = query.order(sortField, { ascending: sortDir === "asc" });
+
+      // Only paginate if we are in table mode (Kanban needs all for columns, or we can deal with kanban separately)
+      // Actually, standard practice for Kanban is also to limit, but let's apply the limit strictly here.
+      // Wait, Kanban mode expects 'filtered', which was all processes. If we paginate, Kanban only sees 15.
+      // We'll pass the unpaginated for Kanban in a separate hook if needed, or disable pagination on Kanban.
+      if (viewMode === "table") {
+        const from = (page - 1) * PAGE_SIZE;
+        const to = from + PAGE_SIZE - 1;
+        query = query.range(from, to);
+      } else {
+        // Hard limit for Kanban to prevent crash, e.g., 200 items max or no pagination.
+        query = query.limit(200);
+      }
+
+
+      const { data, error, count } = await query;
       if (error) throw error;
-      return data as Processo[];
+      return { data: data as Processo[], count: count ?? 0 };
     },
     enabled: !!orgId,
+    placeholderData: keepPreviousData,
   });
+
+  const processos = processosData?.data || [];
+  const totalCount = processosData?.count || 0;
+  // If view mode is table, we use the server's count. If Kanban, we might just use the array length.
+  const totalPages = viewMode === "table" ? Math.max(1, Math.ceil(totalCount / PAGE_SIZE)) : 1;
+
 
   const { data: clients = [] } = useQuery({
     queryKey: ["clients-list", orgId],
@@ -373,25 +415,9 @@ export default function ProcessosPage() {
   };
 
   // ── Filter, sort, paginate ──
-  const filtered = processos.filter((p) => {
-    const matchesStatus = statusFilter === "all" || p.status === statusFilter;
-    const q = search.toLowerCase();
-    const matchesSearch = !q || p.title.toLowerCase().includes(q) || (p.number ?? "").toLowerCase().includes(q) || (p.court ?? "").toLowerCase().includes(q) || (p.subject ?? "").toLowerCase().includes(q);
-    return matchesStatus && matchesSearch;
-  });
-
-  const sorted = [...filtered].sort((a, b) => {
-    let va: any = a[sortField as keyof Processo] ?? "";
-    let vb: any = b[sortField as keyof Processo] ?? "";
-    if (sortField === "estimated_value") { va = Number(va); vb = Number(vb); }
-    if (sortField === "created_at") { va = new Date(va).getTime(); vb = new Date(vb).getTime(); }
-    if (va < vb) return sortDir === "asc" ? -1 : 1;
-    if (va > vb) return sortDir === "asc" ? 1 : -1;
-    return 0;
-  });
-
-  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
-  const paged = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  // The 'processos' array is already filtered, sorted, and paginated by the server.
+  // We only need to compute totalPages based on totalCount for pagination UI.
+  // Note: For Kanban, 'processos' contains up to 200 items filtered by search/status.
 
   const handleSort = (field: SortField) => {
     if (sortField === field) setSortDir((d) => d === "asc" ? "desc" : "asc");
@@ -413,7 +439,7 @@ export default function ProcessosPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">{t("processes.title")}</h1>
           <p className="text-sm text-muted-foreground">
-            {processos.length} {processos.length !== 1 ? t("processes.subtitle") + "s" : t("processes.subtitle")} {processos.length !== 1 ? t("common.registeredPlural") : t("common.registered")}
+            {totalCount} {totalCount !== 1 ? t("processes.subtitle") + "s" : t("processes.subtitle")} {totalCount !== 1 ? t("common.registeredPlural") : t("common.registered")}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -473,11 +499,11 @@ export default function ProcessosPage() {
                   </div>
                 ))}
               </div>
-            ) : sorted.length === 0 ? (
+            ) : processos.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-center">
                 <Scale className="mb-4 h-12 w-12 text-muted-foreground/30" />
-                <p className="text-sm text-muted-foreground">{processos.length === 0 ? "Nenhum processo cadastrado." : "Nenhum processo encontrado."}</p>
-                {processos.length === 0 && (
+                <p className="text-sm text-muted-foreground">{search || statusFilter !== 'all' ? "Nenhum processo encontrado para os filtros." : "Nenhum processo cadastrado."}</p>
+                {!search && statusFilter === 'all' && (
                   <Button variant="outline" size="sm" className="mt-3 gap-1.5 text-xs" onClick={openCreate}>
                     <Plus className="h-3 w-3" /> Criar primeiro processo
                   </Button>
@@ -500,7 +526,7 @@ export default function ProcessosPage() {
                     </TableHeader>
                     <TableBody>
                       <AnimatePresence>
-                        {paged.map((p) => (
+                        {processos.map((p) => (
                           <TableRow key={p.id} className="hover:bg-muted/20">
                             <TableCell className="font-medium max-w-[200px] truncate">{p.title}</TableCell>
                             <TableCell className="text-muted-foreground">{p.number || "—"}</TableCell>
@@ -524,14 +550,14 @@ export default function ProcessosPage() {
 
                 {/* Pagination */}
                 {totalPages > 1 && (
-                  <div className="flex items-center justify-between border-t border-border/60 px-4 py-3">
+                  <div className="flex items-center justify-between border-t border-border/60 px-4 py-3 bg-muted/5">
                     <p className="text-xs text-muted-foreground">
-                      {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, sorted.length)} de {sorted.length} processos
+                      Mostrando <span className="font-semibold text-foreground">{(page - 1) * PAGE_SIZE + 1}</span>–<span className="font-semibold text-foreground">{Math.min(page * PAGE_SIZE, totalCount)}</span> de <span className="font-semibold text-foreground">{totalCount}</span> processos
                     </p>
                     <div className="flex items-center gap-1">
                       <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page === 1} onClick={() => setPage(1)}><ChevronsLeft className="h-3.5 w-3.5" /></Button>
                       <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page === 1} onClick={() => setPage(p => p - 1)}><ChevronLeft className="h-3.5 w-3.5" /></Button>
-                      <span className="px-3 text-xs font-medium">{page} / {totalPages}</span>
+                      <span className="px-3 text-xs font-medium bg-muted/50 rounded-md py-1">{page} / {totalPages}</span>
                       <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page === totalPages} onClick={() => setPage(p => p + 1)}><ChevronRight className="h-3.5 w-3.5" /></Button>
                       <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page === totalPages} onClick={() => setPage(totalPages)}><ChevronsRight className="h-3.5 w-3.5" /></Button>
                     </div>
@@ -547,7 +573,7 @@ export default function ProcessosPage() {
       {viewMode === "kanban" && (
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
           {KANBAN_COLUMNS.map((col) => {
-            const colProcessos = filtered.filter((p) => p.status === col.status);
+            const colProcessos = processos.filter((p) => p.status === col.status);
             return (
               <div key={col.status} className="flex flex-col gap-3">
                 <div className={cn("rounded-t-xl border-t-2 bg-muted/30 rounded-xl border border-border/60 overflow-hidden", col.color)}>
@@ -746,111 +772,191 @@ export default function ProcessosPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-        <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto p-0">
-          <div className="flex items-center justify-between border-b border-border bg-card px-6 py-4">
-            {selectedProcesso && (
-              <div>
-                <DialogTitle className="text-lg font-semibold">{selectedProcesso.title}</DialogTitle>
-                <div className="mt-1">{statusBadge(selectedProcesso.status)}</div>
-              </div>
-            )}
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setViewDialogOpen(false)}><X className="h-4 w-4" /></Button>
-          </div>
+      {/* VER PROCESSO (SHEET MODAL) */}
+      <Sheet open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
+        <SheetContent side="right" className="w-[95vw] sm:w-[600px] sm:max-w-[700px] overflow-y-auto p-0 border-l border-border/50 bg-background">
           {selectedProcesso && (
-            <div className="space-y-5 px-6 pb-6 pt-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div><span className="text-xs text-muted-foreground">Número</span><p className="font-medium">{selectedProcesso.number || "—"}</p></div>
-                <div><span className="text-xs text-muted-foreground">Vara / Tribunal</span><p className="font-medium">{selectedProcesso.court || "—"}</p></div>
-                <div><span className="text-xs text-muted-foreground">Assunto</span><p className="font-medium">{selectedProcesso.subject || "—"}</p></div>
-                <div><span className="text-xs text-muted-foreground">Valor Estimado</span><p className="font-medium">{selectedProcesso.estimated_value != null ? `R$ ${Number(selectedProcesso.estimated_value).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : "—"}</p></div>
-                <div><span className="text-xs text-muted-foreground">Criado em</span><p>{format(new Date(selectedProcesso.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}</p></div>
-                <div><span className="text-xs text-muted-foreground">Atualizado em</span><p>{format(new Date(selectedProcesso.updated_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}</p></div>
-              </div>
-              {(selectedProcesso.area_direito || selectedProcesso.tipo_acao || selectedProcesso.parte_contraria || selectedProcesso.instancia || selectedProcesso.fase_processual || selectedProcesso.comarca) && (
-                <>
-                  <Separator />
-                  <div>
-                    <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Dados Jurídicos</span>
-                    <div className="grid grid-cols-2 gap-4 text-sm mt-2">
-                      {selectedProcesso.area_direito && <div><span className="text-xs text-muted-foreground">Área do Direito</span><p className="font-medium">{selectedProcesso.area_direito}</p></div>}
-                      {selectedProcesso.tipo_acao && <div><span className="text-xs text-muted-foreground">Tipo da Ação</span><p className="font-medium">{selectedProcesso.tipo_acao}</p></div>}
-                      {selectedProcesso.parte_contraria && <div><span className="text-xs text-muted-foreground">Parte Contrária</span><p className="font-medium">{selectedProcesso.parte_contraria}</p></div>}
-                      {selectedProcesso.instancia && <div><span className="text-xs text-muted-foreground">Instância</span><p className="font-medium">{selectedProcesso.instancia}</p></div>}
-                      {selectedProcesso.fase_processual && <div><span className="text-xs text-muted-foreground">Fase Processual</span><p className="font-medium">{selectedProcesso.fase_processual}</p></div>}
-                      {(selectedProcesso.comarca || selectedProcesso.uf) && <div><span className="text-xs text-muted-foreground">Comarca / UF</span><p className="font-medium">{[selectedProcesso.comarca, selectedProcesso.uf].filter(Boolean).join(" — ")}</p></div>}
-                      {selectedProcesso.data_distribuicao && <div><span className="text-xs text-muted-foreground">Data Distribuição</span><p className="font-medium">{format(new Date(selectedProcesso.data_distribuicao + "T00:00"), "dd/MM/yyyy")}</p></div>}
-                    </div>
-                  </div>
-                </>
-              )}
-              {selectedProcesso.notes && (
-                <><Separator /><div><span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Observações</span><p className="mt-1 whitespace-pre-wrap text-sm">{selectedProcesso.notes}</p></div></>
-              )}
-              <Separator />
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Documentos</h4>
-                  <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => triggerFileUpload(selectedProcesso.id)}>
-                    <Upload className="h-3 w-3" /> Anexar
-                  </Button>
-                </div>
-                {processDocs.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">Nenhum documento vinculado</p>
-                ) : (
-                  <div className="space-y-2">
-                    {processDocs.map((doc) => (
-                      <div key={doc.id} className="flex items-center justify-between rounded-lg border border-border p-2.5">
-                        <div className="flex items-center gap-2">
-                          <File className="h-4 w-4 text-primary" />
-                          <span className="text-sm truncate max-w-[200px]">{doc.file_name}</span>
-                          <span className="text-xs text-muted-foreground">{format(new Date(doc.created_at), "dd/MM/yy")}</span>
-                        </div>
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDocDownload(doc)}><Download className="h-3.5 w-3.5" /></Button>
+            <div className="flex flex-col h-full bg-background">
+              {/* Header do Panel */}
+              <SheetHeader className="p-6 pb-4 border-b border-border/50 bg-muted/10 sticky top-0 z-10 backdrop-blur-md">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1 pr-6 flex-1 text-left">
+                    <SheetTitle className="text-xl font-bold leading-tight text-foreground text-left">
+                      {selectedProcesso.title}
+                    </SheetTitle>
+                    <SheetDescription asChild>
+                      <div className="flex items-center justify-start gap-2 text-sm text-primary">
+                        <Scale className="h-4 w-4" />
+                        <span className="font-semibold">{selectedProcesso.number || "Sem Número (Administrativo)"}</span>
                       </div>
-                    ))}
+                    </SheetDescription>
                   </div>
-                )}
-              </div>
-
-              <Separator />
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5"><Bot className="h-4 w-4" /> Andamentos Robô</h4>
-                  <Badge variant={selectedProcesso.auto_capture_enabled ? "default" : "secondary"} className="text-[10px]">
-                    {selectedProcesso.auto_capture_enabled ? "Monitoramento Ativo" : "Monitoramento Inativo"}
-                  </Badge>
                 </div>
-                {captures.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-4 bg-muted/20 rounded-lg border border-border border-dashed">Nenhum andamento ou publicação capturada até o momento.</p>
-                ) : (
-                  <div className="space-y-3 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-border before:to-transparent pt-2">
-                    {captures.map((cap: any) => (
-                      <div key={cap.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-                        <div className="flex items-center justify-center w-10 h-10 rounded-full border border-border bg-card shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10 text-primary">
-                          <Bot className="h-4 w-4" />
+
+                {/* Meta Bar */}
+                <div className="flex flex-wrap items-center gap-3 pt-4 mt-2 border-t border-border/40">
+                  {statusBadge(selectedProcesso.status)}
+                  {selectedProcesso.comarca && (
+                    <Badge variant="outline" className="text-[10px] bg-background">
+                      {selectedProcesso.comarca} {selectedProcesso.uf && `- ${selectedProcesso.uf}`}
+                    </Badge>
+                  )}
+                  {selectedProcesso.area_direito && (
+                    <Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-600 border-amber-500/20">
+                      {selectedProcesso.area_direito}
+                    </Badge>
+                  )}
+                  {selectedProcesso.fase_processual && (
+                    <Badge variant="outline" className="text-[10px] bg-blue-500/10 text-blue-600 border-blue-500/20">
+                      {selectedProcesso.fase_processual}
+                    </Badge>
+                  )}
+                </div>
+              </SheetHeader>
+
+              {/* Corpo do Conteúdo / Tabs */}
+              <div className="flex-1 p-6">
+                <Tabs defaultValue="detalhes" className="w-full">
+                  <TabsList className="w-full justify-start h-10 bg-transparent border-b border-border/50 rounded-none p-0 overflow-x-auto hide-scrollbar">
+                    <TabsTrigger value="detalhes" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 pb-2.5">Detalhes</TabsTrigger>
+                    <TabsTrigger value="timeline" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 pb-2.5 flex gap-1.5"><Bot className="w-3.5 h-3.5" /> Movimentações</TabsTrigger>
+                    <TabsTrigger value="docs" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 pb-2.5 flex gap-1.5"><File className="w-3.5 h-3.5" /> Docs ({processDocs.length})</TabsTrigger>
+                  </TabsList>
+
+                  <div className="mt-6">
+                    {/* TAB: DETALHES */}
+                    <TabsContent value="detalhes" className="space-y-6 mt-0">
+                      {/* Grid de Informações Básicas */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Cliente/Autor</span>
+                          <p className="text-sm font-medium">{selectedProcesso.cliente_nome || "Não informado"}</p>
                         </div>
-                        <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-3 rounded border border-border bg-card shadow-sm">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="font-bold text-xs text-foreground">{cap.source}</span>
-                            <span className="text-[10px] text-muted-foreground">{format(new Date(cap.capture_date), "dd/MM/yy HH:mm")}</span>
+                        <div className="space-y-1">
+                          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Parte Contrária</span>
+                          <p className="text-sm font-medium">{selectedProcesso.parte_contraria || "Não informada"}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Órgão / Vara</span>
+                          <p className="text-sm font-medium">{selectedProcesso.court || "Não informado"}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Instância</span>
+                          <p className="text-sm font-medium">{selectedProcesso.instancia || "1ª Instância"}</p>
+                        </div>
+                      </div>
+
+                      <Separator />
+
+                      {/* Assunto / Resumo */}
+                      <div className="space-y-2">
+                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Assunto Principal</span>
+                        <p className="text-sm leading-relaxed text-foreground/80">{selectedProcesso.subject || "Sem assunto definido"}</p>
+                      </div>
+
+                      {selectedProcesso.notes && (
+                        <div className="space-y-2 p-4 bg-amber-500/5 rounded-lg border border-amber-500/20">
+                          <span className="text-xs font-bold text-amber-600 uppercase tracking-wider flex items-center gap-1.5">Anotações Internas</span>
+                          <p className="text-sm text-foreground/80 whitespace-pre-wrap">{selectedProcesso.notes}</p>
+                        </div>
+                      )}
+
+                      <Separator />
+                      <ProcessCalculator estimatedValue={selectedProcesso.estimated_value} />
+                    </TabsContent>
+
+                    {/* TAB: TIMELINE CAPTURAS */}
+                    <TabsContent value="timeline" className="mt-0">
+                      <div className="space-y-6">
+                        <div className="flex items-center justify-between pb-4 border-b border-border/50">
+                          <h3 className="text-sm font-medium flex items-center gap-2">
+                            <Bot className="h-4 w-4 text-emerald-500" /> Andamentos Robô
+                          </h3>
+                          {selectedProcesso.auto_capture_enabled ? (
+                            <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[10px]">Captura ON</Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-[10px]">Captura OFF</Badge>
+                          )}
+                        </div>
+
+                        {captures.length === 0 ? (
+                          <div className="text-center py-12 bg-muted/20 rounded-lg border border-dashed border-border/60">
+                            <Search className="h-8 w-8 text-muted-foreground/30 mx-auto mb-3" />
+                            <p className="text-sm text-muted-foreground font-medium">Nenhuma movimentação capturada</p>
+                            <p className="text-xs text-muted-foreground/60 mt-1">Acione a Captura Automática na edição</p>
                           </div>
-                          <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed">{cap.content}</p>
-                        </div>
+                        ) : (
+                          <div className="relative before:absolute before:inset-y-0 before:left-3.5 before:w-0.5 before:bg-muted ml-0 space-y-8 pl-10 pr-2">
+                            {captures.map((cap: any) => (
+                              <div key={cap.id} className="relative">
+                                {/* Ponto na linha */}
+                                <div className="absolute left-[-2rem] top-1.5 h-3 w-3 rounded-full border-2 border-background bg-primary ring-2 ring-primary/20" />
+                                {/* Cartão de Movimentação */}
+                                <div className="flex flex-col gap-1 w-full bg-muted/20 border border-border/60 rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow">
+                                  <div className="flex items-center justify-between mb-1">
+                                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                                      {format(new Date(cap.capture_date), "dd MMM yyyy", { locale: ptBR })}
+                                    </span>
+                                    <span className="text-[9px] text-muted-foreground bg-muted/60 px-2 py-0.5 rounded">
+                                      {cap.source}
+                                    </span>
+                                  </div>
+                                  <p className="text-sm font-medium text-foreground leading-relaxed">{cap.content}</p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                    ))}
+                    </TabsContent>
+
+                    {/* TAB: DOCUMENTOS */}
+                    <TabsContent value="docs" className="mt-0">
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between pb-4">
+                          <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Peças do Processo</h3>
+                          <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5" onClick={() => triggerFileUpload(selectedProcesso.id)}>
+                            <Upload className="h-3 w-3" /> Upload PDF
+                          </Button>
+                        </div>
+                        {processDocs.length === 0 ? (
+                          <div className="text-center py-12 bg-muted/20 rounded-lg border border-dashed border-border/60">
+                            <File className="h-8 w-8 text-muted-foreground/30 mx-auto mb-3" />
+                            <p className="text-sm text-muted-foreground font-medium">Pasta vazia</p>
+                            <p className="text-xs text-muted-foreground/60 mt-1">Armazene petições e procurações aqui</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            {processDocs.map((doc) => (
+                              <div key={doc.id} className="flex items-center justify-between p-3 rounded-lg border border-border/50 bg-card hover:bg-muted/30 transition-colors group">
+                                <div className="flex items-center gap-3 overflow-hidden">
+                                  <div className="h-8 w-8 rounded bg-primary/10 flex items-center justify-center shrink-0">
+                                    <File className="h-4 w-4 text-primary" />
+                                  </div>
+                                  <div className="truncate">
+                                    <p className="text-sm font-medium truncate">{doc.file_name}</p>
+                                    <p className="text-[10px] text-muted-foreground">{format(new Date(doc.created_at), "dd/MM/yyyy")}</p>
+                                  </div>
+                                </div>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 transition-opacity" onClick={() => handleDocDownload(doc)}>
+                                  <Download className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </TabsContent>
                   </div>
-                )}
+                </Tabs>
               </div>
 
-              <Separator />
-              <ProcessCalculator estimatedValue={selectedProcesso.estimated_value} />
-              <div className="flex justify-end gap-2 pt-2">
-                <Button variant="outline" onClick={() => setViewDialogOpen(false)}>Fechar</Button>
+              {/* Botões do Rodapé Fixos */}
+              <div className="border-t border-border/50 bg-muted/10 p-4 sticky bottom-0 mt-auto flex justify-end gap-2 backdrop-blur-md">
                 {selectedProcesso?.estimated_value != null && orgId && (
                   <Button
                     variant="outline"
-                    className="gap-1.5 border-emerald-500/30 text-emerald-700 hover:bg-emerald-500/5"
+                    className="gap-1.5 border-emerald-500/30 text-emerald-700 hover:bg-emerald-500/5 mr-auto"
                     disabled={createContaMutation.isPending}
                     onClick={() => createContaMutation.mutate({
                       processoTitle: selectedProcesso.title,
@@ -859,15 +965,17 @@ export default function ProcessosPage() {
                     })}
                   >
                     <Receipt className="h-3.5 w-3.5" />
-                    {createContaMutation.isPending ? "Criando..." : "Gerar Conta a Receber"}
+                    Gerar C.R.
                   </Button>
                 )}
-                <Button onClick={() => { setViewDialogOpen(false); openEdit(selectedProcesso!); }}>Editar</Button>
+                <Button variant="outline" onClick={() => { setViewDialogOpen(false); openEdit(selectedProcesso!); }}>Editar</Button>
+                <Button onClick={() => setViewDialogOpen(false)}>Fechar Processo</Button>
               </div>
+
             </div>
           )}
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
 
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent className="max-w-sm">
