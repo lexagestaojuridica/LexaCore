@@ -30,60 +30,68 @@ import UnidadesPage from "@/pages/dashboard/UnidadesPage";
 import PortalLogin from "@/pages/portal/PortalLogin";
 import PortalDashboard from "@/pages/portal/PortalDashboard";
 import PortalSignature from "@/pages/portal/PortalSignature";
-import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
+
+import ResetPassword from "./pages/auth/ResetPassword";
+import UpdatePassword from "./pages/auth/UpdatePassword";
 
 const queryClient = new QueryClient();
 
+import { ThemeProvider } from "@/components/theme-provider";
+
+// ... inside App component ...
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/portal" element={<PortalLogin />} />
-            <Route path="/portal/dashboard" element={<ProtectedRoute><PortalDashboard /></ProtectedRoute>} />
-            <Route path="/portal/assinatura/:token" element={<PortalSignature />} />
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <DashboardLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<DashboardOverview />} />
-              <Route path="processos" element={<ProcessosPage />} />
-              <Route path="clientes" element={<ClientesPage />} />
-              <Route path="agenda" element={<AgendaPage />} />
-              <Route path="financeiro" element={<FinanceiroPage />} />
-              <Route path="ia" element={<IAPage />} />
-              <Route path="configuracoes" element={<ConfiguracoesPage />} />
-              <Route path="bi" element={<BIPage />} />
-              <Route path="calculadora" element={<CalculadoraPage />} />
-              <Route path="noticias" element={<NoticiasPage />} />
-              <Route path="crm" element={<CrmPage />} />
-              <Route path="workflow" element={<WorkflowPage />} />
-              <Route path="minutas" element={<MinutasPage />} />
-              <Route path="certificados" element={<CertificadosPage />} />
-              <Route path="timesheet" element={<TimesheetPage />} />
-              <Route path="wiki" element={<WikiJuridicaPage />} />
-              <Route path="chat" element={<ChatPage />} />
-              <Route path="unidades" element={<UnidadesPage />} />
-            </Route>
-            <Route path="/crm-preview" element={<CrmPage />} />
-            <Route path="/workflow-preview" element={<WorkflowPage />} />
-            <Route path="/minutas-preview" element={<MinutasPage />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
+    <ThemeProvider defaultTheme="system" storageKey="lexa-theme">
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AuthProvider>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/update-password" element={<UpdatePassword />} />
+              <Route path="/portal" element={<PortalLogin />} />
+              <Route path="/portal/dashboard" element={<ProtectedRoute><PortalDashboard /></ProtectedRoute>} />
+              <Route path="/portal/assinatura/:token" element={<PortalSignature />} />
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<DashboardOverview />} />
+                <Route path="processos" element={<ProcessosPage />} />
+                <Route path="clientes" element={<ClientesPage />} />
+                <Route path="agenda" element={<AgendaPage />} />
+                <Route path="financeiro" element={<FinanceiroPage />} />
+                <Route path="ia" element={<IAPage />} />
+                <Route path="configuracoes" element={<ConfiguracoesPage />} />
+                <Route path="bi" element={<BIPage />} />
+                <Route path="calculadora" element={<CalculadoraPage />} />
+                <Route path="noticias" element={<NoticiasPage />} />
+                <Route path="crm" element={<CrmPage />} />
+                <Route path="workflow" element={<WorkflowPage />} />
+                <Route path="minutas" element={<MinutasPage />} />
+                <Route path="certificados" element={<CertificadosPage />} />
+                <Route path="timesheet" element={<TimesheetPage />} />
+                <Route path="wiki" element={<WikiJuridicaPage />} />
+                <Route path="chat" element={<ChatPage />} />
+                <Route path="unidades" element={<UnidadesPage />} />
+              </Route>
+              <Route path="/crm-preview" element={<CrmPage />} />
+              <Route path="/workflow-preview" element={<WorkflowPage />} />
+              <Route path="/minutas-preview" element={<MinutasPage />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AuthProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 

@@ -4,17 +4,32 @@
 // Deploy: supabase functions deploy notify-budget-threshold
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { verify } from "https://esm.sh/@supabase/webhook-js@1.0.8";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+const WEBHOOK_SECRET = Deno.env.get("WEBHOOK_SECRET") ?? "";
 
 const THRESHOLD = 0.9; // 90%
 
 serve(async (req) => {
     try {
-        const payload = await req.json();
+        // 0. Verify Webhook Signature
+        const signature = req.headers.get("x-supabase-signature");
+        if (!signature || !WEBHOOK_SECRET) {
+            return new Response("Missing signature or secret", { status: 401 });
+        }
+
+        const payloadStr = await req.text();
+        const isValid = await verify(payloadStr, signature, WEBHOOK_SECRET);
+
+        if (!isValid) {
+            return new Response("Invalid signature", { status: 401 });
+        }
+
+        const payload = JSON.parse(payloadStr);
         // payload.record is the inserted/updated contas_pagar row
         const record = payload.record as {
             organization_id: string;

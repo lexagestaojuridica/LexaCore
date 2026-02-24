@@ -14,7 +14,9 @@ import {
   Award, Plus
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
 import {
   CommandDialog,
@@ -82,10 +84,14 @@ const QUICK_ACTIONS = [
 
 // ─── GlobalSearch ─────────────────────────────────────────────
 
+import { useGlobalSearch } from "@/hooks/useGlobalSearch";
+
 function GlobalSearch() {
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
   const navigate = useNavigate();
   const isMac = typeof navigator !== "undefined" && /Mac|iPod|iPhone|iPad/.test(navigator.userAgent);
+  const { results, isLoading } = useGlobalSearch(query);
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -101,6 +107,7 @@ function GlobalSearch() {
   const handleSelect = (url: string) => {
     navigate(url);
     setOpen(false);
+    setQuery("");
   };
 
   return (
@@ -117,35 +124,68 @@ function GlobalSearch() {
       </button>
 
       <CommandDialog open={open} onOpenChange={setOpen}>
-        <CommandInput placeholder="Buscar módulo, ação, atalho..." />
+        <CommandInput
+          placeholder="Buscar processos, clientes, wiki, ações..."
+          value={query}
+          onValueChange={setQuery}
+        />
         <CommandList>
-          <CommandEmpty>Nenhum resultado encontrado.</CommandEmpty>
-          <CommandGroup heading="⚡ Ações Rápidas">
-            {QUICK_ACTIONS.map((item) => (
-              <CommandItem
-                key={item.label}
-                onSelect={() => handleSelect(item.url)}
-                className="cursor-pointer"
-              >
-                <item.icon className="mr-2 h-4 w-4 text-primary" />
-                <span className="font-medium">{item.label}</span>
-                <span className="ml-auto text-[10px] text-muted-foreground">{item.hint}</span>
-              </CommandItem>
-            ))}
-          </CommandGroup>
-          <CommandSeparator />
-          <CommandGroup heading="📍 Navegação">
-            {QUICK_NAV.map((item) => (
-              <CommandItem
-                key={item.url}
-                onSelect={() => handleSelect(item.url)}
-                className="cursor-pointer"
-              >
-                <item.icon className="mr-2 h-4 w-4 text-muted-foreground" />
-                {item.label}
-              </CommandItem>
-            ))}
-          </CommandGroup>
+          {query.length >= 3 && isLoading ? (
+            <div className="p-4 text-center text-sm text-muted-foreground">Buscando no banco de dados...</div>
+          ) : (
+            <CommandEmpty>Nenhum resultado encontrado.</CommandEmpty>
+          )}
+
+          {results.length > 0 && (
+            <CommandGroup heading="⚡ Resultados do Banco">
+              {results.map((res) => (
+                <CommandItem
+                  key={res.id}
+                  onSelect={() => handleSelect(res.url)}
+                  className="cursor-pointer"
+                >
+                  {res.type === "processo" && <Scale className="mr-2 h-4 w-4 text-primary" />}
+                  {res.type === "cliente" && <Users className="mr-2 h-4 w-4 text-primary" />}
+                  {res.type === "wiki" && <BookOpen className="mr-2 h-4 w-4 text-primary" />}
+                  <div className="flex flex-col">
+                    <span className="font-medium text-sm">{res.title}</span>
+                    {res.subtitle && <span className="text-[10px] text-muted-foreground">{res.subtitle}</span>}
+                  </div>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          )}
+
+          {!query && (
+            <>
+              <CommandGroup heading="⚡ Ações Rápidas">
+                {QUICK_ACTIONS.map((item) => (
+                  <CommandItem
+                    key={item.label}
+                    onSelect={() => handleSelect(item.url)}
+                    className="cursor-pointer"
+                  >
+                    <item.icon className="mr-2 h-4 w-4 text-primary" />
+                    <span className="font-medium">{item.label}</span>
+                    <span className="ml-auto text-[10px] text-muted-foreground">{item.hint}</span>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+              <CommandSeparator />
+              <CommandGroup heading="📍 Navegação">
+                {QUICK_NAV.map((item) => (
+                  <CommandItem
+                    key={item.url}
+                    onSelect={() => handleSelect(item.url)}
+                    className="cursor-pointer"
+                  >
+                    <item.icon className="mr-2 h-4 w-4 text-muted-foreground" />
+                    {item.label}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </>
+          )}
         </CommandList>
       </CommandDialog>
     </>
@@ -155,24 +195,17 @@ function GlobalSearch() {
 // ─── DarkModeToggle ───────────────────────────────────────────
 
 function DarkModeToggle() {
-  const [dark, setDark] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return localStorage.getItem("lexa-dark") === "true" || document.documentElement.classList.contains("dark");
-  });
-
-  useEffect(() => {
-    if (dark) {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("lexa-dark", "true");
-    } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("lexa-dark", "false");
-    }
-  }, [dark]);
+  const { theme, setTheme } = useTheme();
+  const isDark = theme === "dark" || (theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
 
   return (
-    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => setDark((d) => !d)}>
-      {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+    <Button
+      variant="ghost"
+      size="icon"
+      className="h-8 w-8 text-muted-foreground hover:text-foreground"
+      onClick={() => setTheme(isDark ? "light" : "dark")}
+    >
+      {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
     </Button>
   );
 }
@@ -189,6 +222,7 @@ export default function DashboardLayout() {
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
         <AppSidebar />
+        <OnboardingTour />
         <div className="flex flex-1 flex-col min-w-0">
 
           {/* ── Header ── */}

@@ -1,14 +1,31 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import logoLexa from "@/assets/logo-lexa.png";
-import { ArrowRight, Menu, X, Shield, Sparkles, Scale } from "lucide-react";
+import { ArrowRight, Menu, X, Shield, Sparkles, Scale, Sun, Moon } from "lucide-react";
 import { useState } from "react";
+import { useTheme } from "@/components/theme-provider";
 
 const navLinks = [
   { href: "#funcionalidades", label: "Funcionalidades" },
   { href: "#aruna", label: "ARUNA IA" },
   { href: "#planos", label: "Planos" },
 ];
+
+function ThemeToggle() {
+  const { theme, setTheme } = useTheme();
+  const isDark = theme === "dark" || (theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      className="h-8 w-8 text-muted-foreground hover:text-foreground mr-2"
+      onClick={() => setTheme(isDark ? "light" : "dark")}
+    >
+      {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+    </Button>
+  );
+}
 
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -29,6 +46,7 @@ const Navbar = () => {
           ))}
         </div>
         <div className="hidden md:flex items-center gap-3">
+          <ThemeToggle />
           <Button variant="ghost" size="sm" className="nav-link-hover relative text-muted-foreground font-medium" asChild>
             <a href="/auth">Entrar</a>
           </Button>
@@ -39,9 +57,12 @@ const Navbar = () => {
             </a>
           </Button>
         </div>
-        <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMobileOpen(!mobileOpen)}>
-          {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </Button>
+        <div className="md:hidden flex items-center gap-2">
+          <ThemeToggle />
+          <Button variant="ghost" size="icon" onClick={() => setMobileOpen(!mobileOpen)}>
+            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </Button>
+        </div>
       </div>
       {mobileOpen && (
         <motion.div

@@ -148,33 +148,36 @@ export default function PortalDashboard() {
                             </Card>
                         ) : (
                             <div className="grid gap-4">
-                                {processos?.map((proc) => (
-                                    <Card key={proc.id} className="overflow-hidden hover:shadow-md transition-shadow">
-                                        <CardHeader className="bg-muted/30 pb-3">
-                                            <div className="flex justify-between items-start">
-                                                <div>
-                                                    <CardTitle className="text-base text-primary">{proc.title}</CardTitle>
-                                                    <CardDescription className="font-mono text-xs mt-1">{proc.number || "Sem numeração"}</CardDescription>
+                                {processos?.map((p_raw) => {
+                                    const proc = p_raw as any;
+                                    return (
+                                        <Card key={proc.id} className="overflow-hidden hover:shadow-md transition-shadow">
+                                            <CardHeader className="bg-muted/30 pb-3">
+                                                <div className="flex justify-between items-start">
+                                                    <div>
+                                                        <CardTitle className="text-base text-primary">{proc.title}</CardTitle>
+                                                        <CardDescription className="font-mono text-xs mt-1">{proc.numero_processo || "Sem numeração"}</CardDescription>
+                                                    </div>
+                                                    <Badge variant="outline" className={proc.status === 'ativo' ? 'bg-success/10 text-success border-success/20' : ''}>
+                                                        {proc.status?.toUpperCase() || "ATIVO"}
+                                                    </Badge>
                                                 </div>
-                                                <Badge variant="outline" className={proc.status === 'ativo' ? 'bg-success/10 text-success border-success/20' : ''}>
-                                                    {proc.status?.toUpperCase() || "ATIVO"}
-                                                </Badge>
-                                            </div>
-                                        </CardHeader>
-                                        <CardContent className="pt-4 pb-4">
-                                            <div className="grid grid-cols-2 gap-4 text-sm">
-                                                <div>
-                                                    <p className="text-muted-foreground text-xs mb-0.5">Tribunal/Órgão</p>
-                                                    <p className="font-medium">{proc.court || "N/A"}</p>
+                                            </CardHeader>
+                                            <CardContent className="pt-4 pb-4">
+                                                <div className="grid grid-cols-2 gap-4 text-sm">
+                                                    <div>
+                                                        <p className="text-muted-foreground text-xs mb-0.5">Tribunal/Órgão</p>
+                                                        <p className="font-medium">{proc.tribunal || "N/A"}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-muted-foreground text-xs mb-0.5">Assunto</p>
+                                                        <p className="font-medium line-clamp-1">{proc.assunto || "N/A"}</p>
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <p className="text-muted-foreground text-xs mb-0.5">Assunto</p>
-                                                    <p className="font-medium line-clamp-1">{proc.subject || "N/A"}</p>
-                                                </div>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                ))}
+                                            </CardContent>
+                                        </Card>
+                                    );
+                                })}
                             </div>
                         )}
                     </div>
@@ -247,7 +250,21 @@ export default function PortalDashboard() {
                                                     <div className="p-1.5 rounded bg-primary/10 text-primary shrink-0"><FileText className="w-3.5 h-3.5" /></div>
                                                     <span className="text-xs font-medium truncate" title={doc.file_name}>{doc.file_name}</span>
                                                 </div>
-                                                <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                    onClick={async () => {
+                                                        try {
+                                                            const { data, error } = await supabase.storage.from("documentos").createSignedUrl(doc.file_path, 60);
+                                                            if (error) throw error;
+                                                            window.open(data.signedUrl, '_blank');
+                                                        } catch (error) {
+                                                            toast.error("Erro ao baixar documento.");
+                                                            console.error(error);
+                                                        }
+                                                    }}
+                                                >
                                                     <Download className="w-3 h-3 text-muted-foreground" />
                                                 </Button>
                                             </div>

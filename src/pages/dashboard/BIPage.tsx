@@ -24,6 +24,8 @@ import { ptBR } from "date-fns/locale";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
+import { toast } from "sonner";
+
 const CHART_COLORS = [
   "hsl(220, 70%, 18%)",
   "hsl(45, 60%, 55%)",
@@ -99,7 +101,7 @@ const GrowthBadge = ({ current, previous }: { current: number; previous: number 
   );
 };
 
-// ─── Timesheet BI Tab ─────────────────────────────────────────
+// ... Timesheet BI Tab ...
 
 function TimesheetBITab({ orgId }: { orgId: string | null }) {
   const { data: entries = [], isLoading } = useQuery({
@@ -412,20 +414,56 @@ export default function BIPage() {
   const axisStyle = { fontSize: 11, fill: "hsl(220, 10%, 45%)" };
 
   return (
-    <div className="space-y-6">
+    <div id="bi-dashboard-container" className="space-y-6 bg-background rounded-lg p-1">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-display text-2xl text-foreground">Business Intelligence</h1>
           <p className="text-sm text-muted-foreground">Análise avançada de desempenho do escritório</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="gap-1.5 text-xs">
+        <div className="flex gap-2">
+          <Badge variant="outline" className="gap-1.5 text-xs h-8 items-center flex">
             <Activity className="h-3 w-3" /> Últimos 12 meses
           </Badge>
           <Button
             variant="outline"
             size="sm"
-            className="gap-1.5 text-xs"
+            className="gap-1.5 text-xs h-8"
+            onClick={async () => {
+              const { default: html2canvas } = await import("html2canvas");
+              const { jsPDF } = await import("jspdf");
+
+              const element = document.getElementById("bi-dashboard-container");
+              if (!element) return;
+
+              try {
+                toast.loading("Gerando PDF, aguarde...", { id: "pdf-export" });
+                const canvas = await html2canvas(element, {
+                  scale: 2,
+                  useCORS: true,
+                  logging: false,
+                  backgroundColor: "#ffffff"
+                });
+
+                const imgData = canvas.toDataURL("image/png");
+                const pdf = new jsPDF("p", "mm", "a4");
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+                pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+                pdf.save(`LEXA_BI_${format(new Date(), "yyyyMMdd")}.pdf`);
+                toast.success("PDF gerado com sucesso!", { id: "pdf-export" });
+              } catch (error) {
+                console.error(error);
+                toast.error("Erro ao gerar PDF", { id: "pdf-export" });
+              }
+            }}
+          >
+            <Download className="h-3.5 w-3.5" /> PDF
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5 text-xs h-8"
             onClick={() => {
               const rows = [
                 ["Mês", "Receita", "Despesa", "Lucro", "Margem %", "Honorários"],
@@ -448,7 +486,7 @@ export default function BIPage() {
               URL.revokeObjectURL(url);
             }}
           >
-            <Download className="h-3.5 w-3.5" /> Exportar CSV
+            <Download className="h-3.5 w-3.5" /> CSV
           </Button>
         </div>
       </div>
