@@ -12,7 +12,7 @@ import {
   LayoutDashboard, Scale, Users, CalendarDays, DollarSign, Bot,
   LogOut, Settings, BarChart3, Calculator, Newspaper, Target,
   GitBranch, FileEdit, ChevronDown, Award, Timer, BookOpen, RotateCcw,
-  MessageSquare, Building2,
+  MessageSquare, Building2, Briefcase, Clock,
 } from "lucide-react";
 import { resetOnboardingTour } from "./OnboardingTour";
 import { useState } from "react";
@@ -83,12 +83,22 @@ const navGroups = [
       { titleKey: "nav.units", url: "/dashboard/unidades", icon: Building2 },
     ],
   },
+  {
+    labelKey: "RH / DHO",
+    defaultOpen: false,
+    items: [
+      { titleKey: "Dashboard RH", url: "/dashboard/rh", icon: BarChart3 },
+      { titleKey: "Colaboradores", url: "/dashboard/rh/colaboradores", icon: Users },
+      { titleKey: "Ponto Eletrônico", url: "/dashboard/rh/ponto", icon: Clock },
+      { titleKey: "Recrutamento", url: "/dashboard/rh/recrutamento", icon: Briefcase },
+    ],
+  },
 ];
 
 // ─── NavItem ─────────────────────────────────────────────────
 
 function NavItem({ item, collapsed, t }: { item: { titleKey: string; url: string; icon: any }; collapsed: boolean; t: (k: string) => string }) {
-  const title = t(item.titleKey);
+  const title = item.titleKey.includes('.') ? t(item.titleKey) : item.titleKey;
   return (
     <Tooltip delayDuration={0}>
       <TooltipTrigger asChild>
@@ -131,7 +141,7 @@ function NavGroup({
           onClick={() => setOpen((o) => !o)}
           className="flex w-full items-center justify-between px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/35 hover:text-sidebar-foreground/60 transition-colors"
         >
-          <span>{t(group.labelKey)}</span>
+          <span>{group.labelKey.includes('.') ? t(group.labelKey) : group.labelKey}</span>
           <ChevronDown
             className={cn(
               "h-3 w-3 transition-transform duration-200",

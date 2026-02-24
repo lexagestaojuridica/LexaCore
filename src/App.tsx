@@ -27,6 +27,13 @@ import TimesheetPage from "@/pages/dashboard/TimesheetPage";
 import WikiJuridicaPage from "@/pages/dashboard/WikiJuridicaPage";
 import ChatPage from "@/pages/dashboard/ChatPage";
 import UnidadesPage from "@/pages/dashboard/UnidadesPage";
+
+// RH Module
+import RhDashboardPage from "@/pages/dashboard/rh/RhDashboardPage";
+import ColaboradoresPage from "@/pages/dashboard/rh/ColaboradoresPage";
+import PontoEletronicoPage from "@/pages/dashboard/rh/PontoEletronicoPage";
+import RecrutamentoPage from "@/pages/dashboard/rh/RecrutamentoPage";
+
 import PortalLogin from "@/pages/portal/PortalLogin";
 import PortalDashboard from "@/pages/portal/PortalDashboard";
 import PortalSignature from "@/pages/portal/PortalSignature";
@@ -82,6 +89,12 @@ const App = () => (
                 <Route path="wiki" element={<WikiJuridicaPage />} />
                 <Route path="chat" element={<ChatPage />} />
                 <Route path="unidades" element={<UnidadesPage />} />
+
+                {/* HR Module */}
+                <Route path="rh" element={<RhDashboardPage />} />
+                <Route path="rh/colaboradores" element={<ColaboradoresPage />} />
+                <Route path="rh/ponto" element={<PontoEletronicoPage />} />
+                <Route path="rh/recrutamento" element={<RecrutamentoPage />} />
               </Route>
               <Route path="/crm-preview" element={<CrmPage />} />
               <Route path="/workflow-preview" element={<WorkflowPage />} />
