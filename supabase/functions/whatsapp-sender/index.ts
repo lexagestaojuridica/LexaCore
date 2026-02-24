@@ -17,6 +17,7 @@ serve(async (req) => {
         return new Response("ok", { headers: corsHeaders });
     }
 
+    try {
         const authHeader = req.headers.get("Authorization");
         if (!authHeader) {
             return new Response(JSON.stringify({ error: "Unauthorized" }), {

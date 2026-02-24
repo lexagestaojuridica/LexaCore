@@ -22,14 +22,14 @@ export function useRealtimeNotifications() {
         queryKey: ["notifications", user?.id],
         queryFn: async () => {
             const { data, error } = await supabase
-                .from("notifications")
+                .from("notifications" as any)
                 .select("id, title, description, type, link, is_read, created_at")
                 .eq("is_read", false)
                 .order("created_at", { ascending: false })
                 .limit(20);
 
             if (error) throw error;
-            return data as RealtimeNotification[];
+            return (data ?? []) as unknown as RealtimeNotification[];
         },
         enabled: !!user?.id,
     });
@@ -85,7 +85,7 @@ export function useRealtimeNotifications() {
 
     const markAsRead = async (id: string) => {
         // Update no banco
-        await supabase.from("notifications").update({ is_read: true }).eq("id", id);
+        await supabase.from("notifications" as any).update({ is_read: true } as any).eq("id", id);
 
         // Update otimista na UI
         queryClient.setQueryData(["notifications", user?.id], (oldData: RealtimeNotification[] | undefined) => {
@@ -98,7 +98,7 @@ export function useRealtimeNotifications() {
         const unreadIds = notifications.map(n => n.id);
         if (unreadIds.length === 0) return;
 
-        await supabase.from("notifications").update({ is_read: true }).in("id", unreadIds);
+        await supabase.from("notifications" as any).update({ is_read: true } as any).in("id", unreadIds);
         queryClient.setQueryData(["notifications", user?.id], []);
     };
 
