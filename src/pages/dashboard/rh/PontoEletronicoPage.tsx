@@ -234,12 +234,13 @@ export default function PontoEletronicoPage() {
                                 </div>
                             ) : (
                                 <Table>
-                                    <TableHeader className="bg-muted/30">
-                                        <TableRow>
-                                            <TableHead className="text-xs font-bold">EVENTO</TableHead>
-                                            <TableHead className="text-xs font-bold">HORÁRIO</TableHead>
-                                            <TableHead className="text-xs font-bold">LOCALIZAÇÃO</TableHead>
-                                            <TableHead className="text-xs font-bold text-right">MÉTODO</TableHead>
+                                    <TableHeader className="bg-muted/5">
+                                        <TableRow className="hover:bg-transparent">
+                                            <TableHead className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Colaborador</TableHead>
+                                            <TableHead className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Data</TableHead>
+                                            <TableHead className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Entrada</TableHead>
+                                            <TableHead className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Saída</TableHead>
+                                            <TableHead className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Horas Trabalhadas</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>

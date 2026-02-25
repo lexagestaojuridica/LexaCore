@@ -458,7 +458,7 @@ export default function ClientesPage() {
             {isLoading ? (
               <TableSkeleton columns={8} rows={8} />
             ) : clients.length === 0 ? (
-              <div className="flex flex-col items-center justify-center p-12 text-center bg-muted/5 border-2 border-dashed border-border/50 rounded-lg m-4">
+              <div className="flex flex-col items-center justify-center p-12 text-center bg-muted/5 border-2 border-dashed border-border/50 rounded-lg m-6">
                 <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
                   <Users className="h-8 w-8 text-primary" />
                 </div>
@@ -478,16 +478,16 @@ export default function ClientesPage() {
               <>
                 <div className="overflow-x-auto">
                   <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Nome</TableHead>
-                        <TableHead>Tipo</TableHead>
-                        <TableHead>E-mail</TableHead>
-                        <TableHead>Telefone</TableHead>
-                        <TableHead>CPF / CNPJ</TableHead>
-                        <TableHead>Cidade/UF</TableHead>
-                        <TableHead>Cadastrado</TableHead>
-                        <TableHead className="text-right">Ações</TableHead>
+                    <TableHeader className="bg-muted/5">
+                      <TableRow className="hover:bg-transparent">
+                        <TableHead className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Nome</TableHead>
+                        <TableHead className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Tipo</TableHead>
+                        <TableHead className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">E-mail</TableHead>
+                        <TableHead className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Telefone</TableHead>
+                        <TableHead className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">CPF / CNPJ</TableHead>
+                        <TableHead className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Cidade/UF</TableHead>
+                        <TableHead className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Cadastrado</TableHead>
+                        <TableHead className="text-right text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Ações</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>

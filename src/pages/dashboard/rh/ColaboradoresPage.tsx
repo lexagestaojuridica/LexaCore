@@ -281,15 +281,14 @@ export default function ColaboradoresPage() {
                     ) : (
                         <div className="overflow-x-auto">
                             <Table>
-                                <TableHeader className="bg-muted/30">
-                                    <TableRow>
-                                        <TableHead className="w-[280px]">Colaborador</TableHead>
-                                        <TableHead>Cargo / Depto</TableHead>
-                                        <TableHead>Vínculo</TableHead>
-                                        <TableHead>Salário</TableHead>
-                                        <TableHead>Admissão</TableHead>
-                                        <TableHead>Status</TableHead>
-                                        <TableHead className="text-right">Ações</TableHead>
+                                <TableHeader className="bg-muted/5">
+                                    <TableRow className="hover:bg-transparent">
+                                        <TableHead className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Nome</TableHead>
+                                        <TableHead className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Cargo</TableHead>
+                                        <TableHead className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Departamento</TableHead>
+                                        <TableHead className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Status</TableHead>
+                                        <TableHead className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Data de Admissão</TableHead>
+                                        <TableHead className="text-right text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Ações</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>

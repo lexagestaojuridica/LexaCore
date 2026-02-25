@@ -279,25 +279,31 @@ export default function DashboardOverview() {
       <motion.div variants={item} className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         {[
           { label: t("dashboard.activeProcesses"), val: stats?.totalProcessos ?? 0, icon: Scale, color: "text-blue-600 bg-blue-500/8" },
-          { label: t("dashboard.clients"), val: stats?.totalClientes ?? 0, icon: Users, color: "text-indigo-600 bg-indigo-500/8" },
-          { label: t("dashboard.eventsToday"), val: todayEvents.length, icon: CalendarDays, color: "text-emerald-600 bg-emerald-500/8", badge: happeningNowCount > 0 ? `${happeningNowCount} ${t("dashboard.now")}` : undefined },
-          { label: t("dashboard.toReceive"), val: stats ? fmt(stats.aReceber) : "—", icon: TrendingUp, color: "text-amber-600 bg-amber-500/8" },
-          { label: t("dashboard.toPay"), val: stats ? fmt(stats.aPagar) : "—", icon: DollarSign, color: "text-rose-600 bg-rose-500/8" },
-        ].map((kpi, i) => (
-          <motion.div
-            key={i}
-            whileHover={{ y: -2 }}
-            className="flex items-center gap-3 glass-card border-border/40 rounded-xl p-3.5 transition-all hover:bg-white/90 dark:hover:bg-card/90"
-          >
-            <div className={cn("p-2 rounded-lg", kpi.color)}>
-              <kpi.icon className="h-4 w-4" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest leading-none mb-1.5">{kpi.label}</p>
-              <div className="flex items-center gap-1.5">
-                <p className="text-lg font-bold leading-none tracking-tight">{kpi.val}</p>
+          { title: t("dashboard.activeProcesses"), value: stats?.totalProcessos ?? 0, icon: Scale, color: "text-blue-600", trend: 0 },
+          { title: t("dashboard.clients"), value: stats?.totalClientes ?? 0, icon: Users, color: "text-indigo-600", trend: 0 },
+          { title: t("dashboard.eventsToday"), value: todayEvents.length, icon: CalendarDays, color: "text-emerald-600", badge: happeningNowCount > 0 ? `${happeningNowCount} ${t("dashboard.now")}` : undefined, trend: 0 },
+          { title: t("dashboard.toReceive"), value: stats ? fmt(stats.aReceber) : "—", icon: TrendingUp, color: "text-amber-600", trend: 0 },
+          { title: t("dashboard.toPay"), value: stats ? fmt(stats.aPagar) : "—", icon: DollarSign, color: "text-rose-600", trend: 0 },
+        ].map((kpi) => (
+          <motion.div variants={item} key={kpi.title}>
+            <div className={cn("glass-card overflow-hidden h-full rounded-xl transition-all duration-300 hover:shadow-md hover:-translate-y-1 hover:border-primary/20 cursor-default premium-shadow hover-lift")}>
+              <div className="p-4 flex flex-col h-full">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{kpi.title}</span>
+                  <div className={cn("p-1.5 rounded-md", "bg-primary/5 text-primary")}>
+                    <kpi.icon className="h-4 w-4" />
+                  </div>
+                </div>
+                <div className="mt-auto flex items-baseline gap-2">
+                  <span className="font-display text-2xl font-bold tracking-tight text-foreground">{kpi.value}</span>
+                  {kpi.trend !== 0 && (
+                    <span className={cn("text-xs font-semibold flex items-center", kpi.trend > 0 ? "text-emerald-500" : "text-rose-500")}>
+                      {kpi.trend > 0 ? "+" : ""}{kpi.trend}%
+                    </span>
+                  )}
+                </div>
                 {kpi.badge && (
-                  <span className="text-[8px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full animate-pulse border border-primary/10">
+                  <span className="mt-3 text-[10px] uppercase font-bold tracking-widest text-primary bg-primary/10 px-2 py-0.5 rounded-full w-fit">
                     {kpi.badge}
                   </span>
                 )}
@@ -389,16 +395,15 @@ export default function DashboardOverview() {
                   processos.map((p) => (
                     <motion.div
                       key={p.id}
-                      whileHover={{ x: 3 }}
                       onClick={() => navigate(`/dashboard/processos?id=${p.id}`)}
-                      className="glass-card p-3 rounded-xl border-border/40 cursor-pointer group hover:bg-white/80 dark:hover:bg-card/80 transition-all shadow-sm"
+                      className="glass-card p-3 rounded-xl border-border/40 cursor-pointer group hover:bg-white/80 dark:hover:bg-card/80 hover:-translate-y-0.5 hover:shadow-sm transition-all duration-200"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0 flex-1">
                           <p className="text-xs font-semibold text-foreground truncate group-hover:text-primary transition-colors">{p.title}</p>
                           <p className="text-[10px] text-muted-foreground mt-0.5 font-mono">{p.number || "Sem número"}</p>
                         </div>
-                        <ChevronRight className="h-3 w-3 text-muted-foreground/30 group-hover:text-primary/50 shrink-0 self-center" />
+                        <ChevronRight className="h-3 w-3 text-muted-foreground/30 group-hover:text-primary/50 shrink-0 self-center transition-transform group-hover:translate-x-0.5" />
                       </div>
                       <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/10">
                         <span className="text-[9px] text-muted-foreground/60">{formatDistanceToNow(new Date(p.updated_at), { addSuffix: true, locale: ptBR })}</span>
@@ -417,21 +422,21 @@ export default function DashboardOverview() {
         <div className="space-y-6">
 
           {/* Productivity Widget */}
-          <Card className="glass-card border-border/40 overflow-hidden rounded-xl shadow-lg shadow-black/5">
-            <CardHeader className="p-4 pb-2">
+          <Card className="glass-card border-border/40 overflow-hidden rounded-xl premium-shadow hover:-translate-y-1 transition-transform duration-300">
+            <CardHeader className="p-5 pb-2 border-b border-border/10 bg-muted/5">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
                   <Timer className="h-3.5 w-3.5 text-primary/70" /> {t("dashboard.productivity")}
                 </CardTitle>
-                {progressPct >= 100 && <Sparkles className="h-4 w-4 text-amber-500" />}
+                {progressPct >= 100 && <Sparkles className="h-4 w-4 text-amber-500 animate-pulse" />}
               </div>
             </CardHeader>
-            <CardContent className="p-4 pt-2 space-y-4">
-              <div className="flex items-baseline justify-between">
+            <CardContent className="p-5 pt-4 space-y-5">
+              <div className="flex items-baseline justify-between bg-primary/5 p-3 rounded-lg border border-primary/10">
                 <div className="text-3xl font-display font-bold text-primary">
                   {totalHoursToday}h{totalMinsRemainder}m
                 </div>
-                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">/ 8h {t("dashboard.goal")}</div>
+                <div className="text-[10px] font-bold text-primary/60 uppercase tracking-widest">/ 8h {t("dashboard.goal")}</div>
               </div>
 
               <div className="space-y-2">
@@ -452,35 +457,35 @@ export default function DashboardOverview() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 pt-2">
-                <div className="bg-muted/30 p-2 rounded-lg text-center">
+              <div className="grid grid-cols-2 gap-3 pt-3 border-t border-border/10">
+                <div className="bg-muted/30 p-2.5 rounded-lg text-center">
                   <p className="text-[9px] font-bold text-muted-foreground/60 uppercase tracking-tighter">Entradas</p>
                   <p className="text-sm font-bold text-foreground">{timesheetToday?.entries ?? 0}</p>
                 </div>
-                <div className="bg-muted/30 p-2 rounded-lg text-center">
+                <div className="bg-muted/30 p-2.5 rounded-lg text-center">
                   <p className="text-[9px] font-bold text-muted-foreground/60 uppercase tracking-tighter">Faturável</p>
                   <p className="text-sm font-bold text-emerald-600">{timesheetToday ? Math.floor(timesheetToday.billable / 60) : 0}h</p>
                 </div>
               </div>
 
-              <Button variant="ghost" size="sm" className="w-full h-8 text-xs font-semibold text-primary hover:bg-primary/5 border border-primary/10 rounded-lg group" onClick={() => navigate("/dashboard/timesheet")}>
-                {t("dashboard.openTimesheet")} <ArrowRight className="ml-2 h-3 w-3 group-hover:translate-x-1 transition-transform" />
+              <Button variant="ghost" size="sm" className="w-full h-9 mt-2 text-xs font-semibold text-primary hover:bg-primary/5 hover:text-primary-foreground border border-primary/10 hover:border-primary/30 rounded-lg group transition-colors" onClick={() => navigate("/dashboard/timesheet")}>
+                {t("dashboard.openTimesheet")} <ArrowRight className="ml-2 h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
               </Button>
             </CardContent>
           </Card>
 
           {/* Quick Actions / Tips */}
-          <div className="glass-card p-4 rounded-xl border-primary/10 bg-gradient-to-br from-primary/5 to-transparent relative overflow-hidden group">
-            <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition-opacity">
-              <Sparkles className="h-12 w-12 text-primary" />
+          <div className="glass-card p-5 rounded-xl border-primary/10 bg-gradient-to-br from-primary/5 to-transparent relative overflow-hidden group hover-lift premium-shadow">
+            <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 group-hover:scale-110 transition-all duration-300">
+              <Sparkles className="h-16 w-16 text-primary" />
             </div>
-            <h4 className="text-xs font-bold uppercase tracking-widest text-primary/80 flex items-center gap-2 mb-3">
-              <Zap className="h-3.5 w-3.5" /> Dica da Aruna
+            <h4 className="text-xs font-bold uppercase tracking-widest text-primary/80 flex items-center gap-2 mb-3 relative z-10">
+              <Zap className="h-3.5 w-3.5 text-amber-500" /> Dica da Aruna
             </h4>
-            <p className="text-xs text-muted-foreground leading-relaxed italic relative z-10">
+            <p className="text-xs text-muted-foreground leading-relaxed italic relative z-10 font-medium">
               "Você tem 3 prazos vencendo amanhã. Que tal revisá-los agora para evitar urgências no final do dia?"
             </p>
-            <Button variant="link" size="sm" className="p-0 h-auto text-[10px] uppercase font-bold tracking-widest text-primary mt-3 hover:text-primary-light transition-colors" onClick={() => navigate("/dashboard/chat")}>
+            <Button variant="link" size="sm" className="p-0 h-auto text-[10px] uppercase font-bold tracking-widest text-primary mt-4 hover:text-primary-light transition-colors relative z-10" onClick={() => navigate("/dashboard/chat")}>
               Falar com Aruna
             </Button>
           </div>

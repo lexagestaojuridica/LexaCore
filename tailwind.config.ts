@@ -117,6 +117,10 @@ export default {
           from: { opacity: "0", transform: "translateX(-20px)" },
           to: { opacity: "1", transform: "translateX(0)" },
         },
+        "hover-lift": {
+          "0%": { transform: "translateY(0)" },
+          "100%": { transform: "translateY(-4px)" }
+        }
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -125,6 +129,7 @@ export default {
         "pulse-glow": "pulse-glow 3s ease-in-out infinite",
         "fade-up": "fade-up 0.6s ease-out",
         "slide-in": "slide-in 0.4s ease-out",
+        "hover-lift": "hover-lift 0.3s ease forwards"
       },
     },
   },

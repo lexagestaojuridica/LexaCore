@@ -157,15 +157,15 @@ function SortableHeader({ field, label, sortField, sortDir, onSort }: {
   const active = sortField === field;
   return (
     <TableHead
-      className="cursor-pointer select-none hover:text-foreground"
+      className="cursor-pointer select-none hover:text-foreground text-[10px] uppercase font-bold tracking-wider text-muted-foreground transition-colors"
       onClick={() => onSort(field)}
     >
       <span className="flex items-center gap-1">
         {label}
         {active
           ? sortDir === "asc"
-            ? <ArrowUp className="h-3 w-3" />
-            : <ArrowDown className="h-3 w-3" />
+            ? <ArrowUp className="h-3 w-3 text-primary" />
+            : <ArrowDown className="h-3 w-3 text-primary" />
           : <ArrowUpDown className="h-3 w-3 opacity-30" />}
       </span>
     </TableHead>
@@ -535,19 +535,15 @@ export default function ProcessosPage() {
         </Card>
       </motion.div>
 
-      {/* ── Table View ── */}
+      {/* Table Section */}
       {viewMode === "table" && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.4, delay: 0.1 }}
-        >
-          <Card className="glass-card border-border/40 shadow-xl shadow-black/5 overflow-hidden rounded-xl">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4, delay: 0.1 }}>
+          <Card className="glass-card border-border/40 shadow-xl shadow-black/5 overflow-hidden rounded-xl premium-shadow">
             <CardContent className="p-0">
               {isLoading ? (
                 <TableSkeleton columns={6} rows={8} />
               ) : processos.length === 0 ? (
-                <div className="flex flex-col items-center justify-center p-12 text-center bg-muted/5 border-2 border-dashed border-border/50 rounded-lg m-4">
+                <div className="flex flex-col items-center justify-center p-12 text-center bg-muted/5 border-2 border-dashed border-border/50 rounded-lg m-6">
                   <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
                     <Scale className="h-8 w-8 text-primary" />
                   </div>
@@ -567,15 +563,15 @@ export default function ProcessosPage() {
                 <>
                   <div className="overflow-x-auto">
                     <Table>
-                      <TableHeader>
-                        <TableRow>
+                      <TableHeader className="bg-muted/5">
+                        <TableRow className="hover:bg-transparent">
                           <SortableHeader field="title" label="Título" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                           <SortableHeader field="number" label="Número" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                           <SortableHeader field="court" label="Vara / Tribunal" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                           <SortableHeader field="status" label="Status" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                           <SortableHeader field="estimated_value" label="Valor Estimado" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                           <SortableHeader field="created_at" label="Criado em" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
-                          <TableHead className="text-right">Ações</TableHead>
+                          <TableHead className="text-right text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Ações</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
