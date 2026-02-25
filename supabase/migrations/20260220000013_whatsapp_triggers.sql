@@ -14,7 +14,7 @@ BEGIN
   
   -- Para segurança local / fallback url mockada
   IF webhook_url IS NULL OR webhook_url = '' THEN
-    webhook_url := 'https://[YOUR_SUPABASE_REF].functions.supabase.co/whatsapp-sender';
+    webhook_url := 'https://vctzraffikmkhvpbkhtb.supabase.co/functions/v1/whatsapp-sender';
   END IF;
 
   -- Checar se a org ativou o zap
@@ -57,7 +57,7 @@ DECLARE
   req_body jsonb;
 BEGIN
   -- O mesmo fallback URL
-  webhook_url := 'https://[YOUR_SUPABASE_REF].functions.supabase.co/whatsapp-sender';
+  webhook_url := 'https://vctzraffikmkhvpbkhtb.supabase.co/functions/v1/whatsapp-sender';
 
   -- Checar se a org ativou o zap
   SELECT whatsapp_enabled INTO org_record FROM public.organizations WHERE id = NEW.organization_id;

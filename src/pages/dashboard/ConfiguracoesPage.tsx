@@ -8,7 +8,7 @@ import {
   Settings, User, Building2, Shield, Save, Camera, MessageCircle,
   Crown, Sparkles, Check, Plus, Trash2, GripVertical, Layers, Users,
   Briefcase, Phone, Mail, Hash, MapPin, UserPlus, Minus,
-  Globe, CreditCard, Link, ExternalLink, Key, Scale
+  Globe, CreditCard, Link, ExternalLink, Key, Scale, Link2, Bot, CalendarDays
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -414,13 +414,13 @@ export default function ConfiguracoesPage() {
   const planColors = ["", "from-blue-500/10 to-indigo-500/10", "from-violet-500/10 to-purple-500/10", "from-amber-500/10 to-orange-500/10"];
 
   const sidebarNavItems = [
-    { key: "perfil", icon: User, label: t("settings.profile") },
-    { key: "escritorio", icon: Building2, label: t("settings.office") },
-    { key: "equipe", icon: Users, label: t("settings.team") },
-    { key: "funcionarios", icon: Briefcase, label: t("settings.employees") },
-    { key: "planos", icon: Crown, label: t("settings.plans") },
-    { key: "integracoes", icon: Globe, label: "Integrações" },
-    { key: "usuarios", icon: UserPlus, label: t("settings.addUsers") },
+    { key: "perfil", icon: User, label: t("settings.profile") || "Meu Perfil" },
+    { key: "escritorio", icon: Building2, label: t("settings.office") || "Escritório" },
+    { key: "equipe", icon: Users, label: t("settings.team") || "Equipe" },
+    { key: "funcionarios", icon: Briefcase, label: t("settings.employees") || "Funcionários" },
+    { key: "planos", icon: Crown, label: t("settings.plans") || "Planos" },
+    { key: "usuarios", icon: UserPlus, label: t("settings.addUsers") || "Adicionar Usuários" },
+    { key: "integracoes", icon: Link2, label: "Integrações" },
   ];
 
   return (
@@ -925,6 +925,89 @@ export default function ConfiguracoesPage() {
                   </div>
                 </CardContent>
               </Card>
+            </div>
+          )}
+          {/* ── Integrações ── */}
+          {activeTab === "integracoes" && (
+            <div className="space-y-6">
+              <Card className="border-border">
+                <CardHeader>
+                  <CardTitle className="font-display text-lg flex items-center gap-2">
+                    <MessageCircle className="h-5 w-5 text-emerald-500" />
+                    WhatsApp (Z-API)
+                  </CardTitle>
+                  <CardDescription>Configure o disparo de mensagens via WhatsApp para o seu escritório.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/20">
+                    <div>
+                      <p className="font-medium">Habilitar Integração</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Permite automações workflow dispararem mensagens de WhatsApp.</p>
+                    </div>
+                    <Switch
+                      checked={orgForm.whatsapp_enabled}
+                      onCheckedChange={(v) => setOrgForm((f) => ({ ...f, whatsapp_enabled: v }))}
+                      className="data-[state=checked]:bg-emerald-500"
+                    />
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-1.5">
+                      <Label>Instance ID</Label>
+                      <Input
+                        value={orgForm.whatsapp_instance_id}
+                        onChange={(e) => setOrgForm((f) => ({ ...f, whatsapp_instance_id: e.target.value }))}
+                        placeholder="Ex: 3B2C1A..."
+                        disabled={!orgForm.whatsapp_enabled}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Token (Z-API)</Label>
+                      <Input
+                        value={orgForm.whatsapp_token}
+                        onChange={(e) => setOrgForm((f) => ({ ...f, whatsapp_token: e.target.value }))}
+                        type="password"
+                        placeholder="***************"
+                        disabled={!orgForm.whatsapp_enabled}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end pt-2">
+                    <Button onClick={() => updateOrgMutation.mutate(orgForm)} disabled={updateOrgMutation.isPending} className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white">
+                      <Save className="h-4 w-4" /> Salvar Credenciais
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Card className="border-border opacity-80 hover:opacity-100 transition-opacity">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="font-display text-base flex items-center gap-2">
+                      <Bot className="h-5 w-5 text-indigo-500" />
+                      Aruna IA (Inteligência Artificial)
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground mb-4">Potencializa a análise de contratos e minutas no sistema.</p>
+                    <Badge variant="outline" className="bg-indigo-500/10 text-indigo-500 border-indigo-500/20">Configurada via Supabase Secrets</Badge>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-border opacity-80 hover:opacity-100 transition-opacity">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="font-display text-base flex items-center gap-2">
+                      <CalendarDays className="h-5 w-5 text-blue-500" />
+                      Google Calendar
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground mb-4">Sincronização bidirecional de eventos e audiências.</p>
+                    <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/20">Gerenciado individualmente na Agenda</Badge>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           )}
         </div>

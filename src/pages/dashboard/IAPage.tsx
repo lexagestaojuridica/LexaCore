@@ -198,7 +198,7 @@ export default function IAPage() {
   useEffect(() => {
     if (dbMsgs.length > 0 && msgs.length === 0)
       setMsgs(dbMsgs.map((m) => ({ id: m.id, role: m.role as "user" | "assistant", content: m.content, created_at: m.created_at })));
-  }, [dbMsgs]);
+  }, [dbMsgs, msgs.length]);
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs, streaming]);
 
@@ -235,11 +235,11 @@ export default function IAPage() {
     }
     // flush
     if (buf.trim()) {
-      for (let raw of buf.split("\n")) {
+      for (const raw of buf.split("\n")) {
         if (!raw || !raw.replace("\r", "").startsWith("data: ")) continue;
         const js = raw.replace("\r", "").slice(6).trim();
         if (js === "[DONE]") continue;
-        try { const c = JSON.parse(js).choices?.[0]?.delta?.content; if (c) { content += c; setMsgs((p) => p.map((m) => m.id === aId ? { ...m, content } : m)); } } catch { }
+        try { const c = JSON.parse(js).choices?.[0]?.delta?.content; if (c) { content += c; setMsgs((p) => p.map((m) => m.id === aId ? { ...m, content } : m)); } } catch (e) { /* ignore */ }
       }
     }
     return content;

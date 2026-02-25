@@ -301,7 +301,7 @@ export default function ProcessosPage() {
   const { data: captures = [] } = useQuery({
     queryKey: ["process-captures", selectedProcesso?.id],
     queryFn: async () => {
-      // @ts-ignore - Supabase type reference
+      // @ts-expect-error - Supabase type reference
       const { data } = await supabase.from("process_captures").select("*").eq("process_id", selectedProcesso!.id).order("capture_date", { ascending: false });
       return data ?? [];
     },

@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { format, differenceInMinutes, parseISO, isToday, isYesterday } from "date-fns";
+import { format, differenceInMinutes, parseISO, isToday, isYesterday, isValid } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
     Clock, Plus, Play, Square, Trash2, Timer,
@@ -124,7 +124,7 @@ export default function TimesheetPage() {
     });
     const orgId = profile?.organization_id;
 
-    const { data: entries = [], isLoading } = useQuery({
+    const { data: rawEntries = [], isLoading } = useQuery({
         queryKey: ["timesheet", orgId],
         queryFn: async () => {
             const { data, error } = await supabase
@@ -138,6 +138,10 @@ export default function TimesheetPage() {
         enabled: !!orgId,
     });
 
+    const entries = useMemo(() => {
+        return rawEntries.filter(e => e.started_at && isValid(parseISO(e.started_at)));
+    }, [rawEntries]);
+
     const { data: processos = [] } = useQuery({
         queryKey: ["processos-ts", orgId],
         queryFn: async () => {
@@ -148,7 +152,7 @@ export default function TimesheetPage() {
     });
 
     // ── Timer logs query ──
-    const { data: timerLogs = [] } = useQuery({
+    const { data: rawTimerLogs = [] } = useQuery({
         queryKey: ["timer-logs", expandedEntry],
         queryFn: async () => {
             const { data } = await supabase
@@ -160,6 +164,10 @@ export default function TimesheetPage() {
         },
         enabled: !!expandedEntry,
     });
+
+    const timerLogs = useMemo(() => {
+        return rawTimerLogs.filter(log => log.logged_at && isValid(parseISO(log.logged_at)));
+    }, [rawTimerLogs]);
 
     const createMutation = useMutation({
         mutationFn: async (payload: any) => {

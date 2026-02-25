@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import {
   format, isSameDay, parseISO, addMonths, subMonths, addWeeks, subWeeks, addDays,
   startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isToday, isPast, isSameMonth,
-  differenceInHours, isAfter, differenceInMinutes, isWithinInterval
+  differenceInHours, isAfter, differenceInMinutes, isWithinInterval, isValid
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -420,7 +420,7 @@ export default function AgendaPage() {
   const gcal = useGoogleCalendar();
 
   // Fix TS issue by asserting the returned array
-  const { data: eventos = [], isLoading } = useQuery({
+  const { data: rawEventos = [], isLoading } = useQuery({
     queryKey: ["eventos_agenda"],
     queryFn: async () => {
       const { data, error } = await supabase.from("eventos_agenda").select("*").order("start_time", { ascending: true });
@@ -428,6 +428,10 @@ export default function AgendaPage() {
       return data as unknown as Evento[];
     },
   });
+
+  const eventos = useMemo(() => {
+    return rawEventos.filter(e => e.start_time && e.end_time && isValid(parseISO(e.start_time)) && isValid(parseISO(e.end_time)));
+  }, [rawEventos]);
 
   const { data: profileData } = useQuery({
     queryKey: ["profile", user?.id],
