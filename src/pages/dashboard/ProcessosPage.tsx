@@ -46,17 +46,17 @@ type SortField = "title" | "number" | "court" | "status" | "estimated_value" | "
 type SortDir = "asc" | "desc";
 
 const STATUS_OPTIONS = [
-  { value: "ativo", label: "Ativo", variant: "default" as const },
-  { value: "arquivado", label: "Arquivado", variant: "secondary" as const },
-  { value: "suspenso", label: "Suspenso", variant: "outline" as const },
-  { value: "encerrado", label: "Encerrado", variant: "destructive" as const },
+  { value: "ativo", label: "Ativo", className: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/25 border-emerald-500/20 font-semibold" },
+  { value: "arquivado", label: "Arquivado", className: "bg-muted text-muted-foreground hover:bg-muted/80 border-border font-semibold" },
+  { value: "suspenso", label: "Suspenso", className: "bg-amber-500/15 text-amber-700 dark:text-amber-400 hover:bg-amber-500/25 border-amber-500/20 font-semibold" },
+  { value: "encerrado", label: "Encerrado", className: "bg-rose-500/15 text-rose-700 dark:text-rose-400 hover:bg-rose-500/25 border-rose-500/20 font-semibold" },
 ];
 
 const KANBAN_COLUMNS = [
-  { status: "ativo", label: "Ativo", color: "border-t-emerald-500" },
-  { status: "suspenso", label: "Suspenso", color: "border-t-amber-500" },
+  { status: "ativo", label: "Ativo", color: "border-t-emerald-500 dark:border-t-emerald-400" },
+  { status: "suspenso", label: "Suspenso", color: "border-t-amber-500 dark:border-t-amber-400" },
   { status: "arquivado", label: "Arquivado", color: "border-t-muted-foreground" },
-  { status: "encerrado", label: "Encerrado", color: "border-t-destructive" },
+  { status: "encerrado", label: "Encerrado", color: "border-t-rose-500 dark:border-t-rose-400" },
 ];
 
 const PAGE_SIZE = 15;
@@ -73,7 +73,7 @@ const item = {
 
 const statusBadge = (status: string) => {
   const opt = STATUS_OPTIONS.find((o) => o.value === status);
-  return <Badge variant={opt?.variant ?? "secondary"}>{opt?.label ?? status}</Badge>;
+  return <Badge variant="outline" className={opt?.className ?? "bg-muted text-muted-foreground"}>{opt?.label ?? status}</Badge>;
 };
 
 const emptyForm: Record<string, any> = {
@@ -547,12 +547,19 @@ export default function ProcessosPage() {
               {isLoading ? (
                 <TableSkeleton columns={6} rows={8} />
               ) : processos.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 text-center">
-                  <Scale className="mb-4 h-12 w-12 text-muted-foreground/30" />
-                  <p className="text-sm text-muted-foreground">{search || statusFilter !== 'all' ? "Nenhum processo encontrado para os filtros." : "Nenhum processo cadastrado."}</p>
+                <div className="flex flex-col items-center justify-center p-12 text-center bg-muted/5 border-2 border-dashed border-border/50 rounded-lg m-4">
+                  <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                    <Scale className="h-8 w-8 text-primary" />
+                  </div>
+                  <h3 className="text-lg font-semibold tracking-tight mb-1">{search || statusFilter !== 'all' ? "Nenhum resultado" : "Nenhum processo cadastrado"}</h3>
+                  <p className="text-sm text-muted-foreground max-w-sm mb-6">
+                    {search || statusFilter !== 'all'
+                      ? "Sua pesquisa não retornou resultados. Tente limpar os filtros."
+                      : "Comece a organizar os casos do seu escritório adicionando um processo."}
+                  </p>
                   {!search && statusFilter === 'all' && (
-                    <Button variant="outline" size="sm" className="mt-3 gap-1.5 text-xs" onClick={openCreate}>
-                      <Plus className="h-3 w-3" /> Criar primeiro processo
+                    <Button size="sm" className="gap-2 shadow-sm" onClick={openCreate}>
+                      <Plus className="h-4 w-4" /> Criar primeiro processo
                     </Button>
                   )}
                 </div>

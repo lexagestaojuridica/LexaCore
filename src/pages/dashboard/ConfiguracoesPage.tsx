@@ -597,10 +597,12 @@ export default function ConfiguracoesPage() {
               </CardHeader>
               <CardContent>
                 {employees.length === 0 ? (
-                  <div className="flex flex-col items-center py-12 text-center">
-                    <Users className="h-10 w-10 text-muted-foreground/30 mb-3" />
-                    <p className="font-medium text-foreground">{t("settings.noEmployees")}</p>
-                    <p className="text-sm text-muted-foreground mt-1">{t("settings.noEmployeesHint")}</p>
+                  <div className="flex flex-col items-center justify-center p-12 text-center bg-muted/5 border-2 border-dashed border-border/50 rounded-lg m-4">
+                    <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                      <Users className="h-8 w-8 text-primary" />
+                    </div>
+                    <p className="text-lg font-semibold tracking-tight mb-1">{t("settings.noEmployees")}</p>
+                    <p className="text-sm text-muted-foreground max-w-sm mb-6 pb-2">{t("settings.noEmployeesHint")}</p>
                   </div>
                 ) : (
                   <div className="space-y-2">

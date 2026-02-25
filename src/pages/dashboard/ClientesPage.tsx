@@ -458,12 +458,19 @@ export default function ClientesPage() {
             {isLoading ? (
               <TableSkeleton columns={8} rows={8} />
             ) : clients.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 text-center">
-                <Users className="mb-4 h-12 w-12 text-muted-foreground/30" />
-                <p className="text-sm text-muted-foreground">{search ? "Nenhum cliente encontrado para sua pesquisa." : "Nenhum cliente cadastrado."}</p>
+              <div className="flex flex-col items-center justify-center p-12 text-center bg-muted/5 border-2 border-dashed border-border/50 rounded-lg m-4">
+                <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                  <Users className="h-8 w-8 text-primary" />
+                </div>
+                <h3 className="text-lg font-semibold tracking-tight mb-1">{search ? "Nenhum resultado" : "Nenhum cliente cadastrado"}</h3>
+                <p className="text-sm text-muted-foreground max-w-sm mb-6">
+                  {search
+                    ? "Sua pesquisa não retornou resultados. Tente usar outros termos."
+                    : "Comece a gerenciar os dados da sua operação adicionando seu primeiro cliente ao sistema."}
+                </p>
                 {!search && (
-                  <Button variant="outline" size="sm" className="mt-3 gap-1.5 text-xs" onClick={openCreate}>
-                    <Plus className="h-3 w-3" /> Cadastrar primeiro cliente
+                  <Button size="sm" className="gap-2 shadow-sm" onClick={openCreate}>
+                    <Plus className="h-4 w-4" /> Cadastrar primeiro cliente
                   </Button>
                 )}
               </div>
