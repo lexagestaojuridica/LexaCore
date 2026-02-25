@@ -61,6 +61,16 @@ const KANBAN_COLUMNS = [
 
 const PAGE_SIZE = 15;
 
+const container = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.1 } }
+};
+
+const item = {
+  hidden: { opacity: 0, y: 10 },
+  show: { opacity: 1, y: 0 }
+};
+
 const statusBadge = (status: string) => {
   const opt = STATUS_OPTIONS.find((o) => o.value === status);
   return <Badge variant={opt?.variant ?? "secondary"}>{opt?.label ?? status}</Badge>;

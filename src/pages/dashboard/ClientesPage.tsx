@@ -1,3 +1,4 @@
+import { useState, useCallback, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -187,7 +188,7 @@ export default function ClientesPage() {
       toast.success("Cliente criado com sucesso");
       closeDialog();
     },
-    onError: () => toast.error("Erro ao criar cliente"),
+    onError: (err: any) => toast.error(`Erro ao criar cliente: ${err.message}`),
   });
 
   const updateMutation = useMutation({
@@ -200,7 +201,7 @@ export default function ClientesPage() {
       toast.success("Cliente atualizado com sucesso");
       closeDialog();
     },
-    onError: () => toast.error("Erro ao atualizar cliente"),
+    onError: (err: any) => toast.error(`Erro ao atualizar cliente: ${err.message}`),
   });
 
   const deleteMutation = useMutation({
@@ -214,7 +215,7 @@ export default function ClientesPage() {
       setDeleteDialogOpen(false);
       setSelectedClient(null);
     },
-    onError: () => toast.error("Erro ao excluir cliente"),
+    onError: (err: any) => toast.error(`Erro ao excluir cliente: ${err.message}`),
   });
 
   const requestSignatureMutation = useMutation({
