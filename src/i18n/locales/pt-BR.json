@@ -68,7 +68,12 @@
         "startTimer": "Iniciar Timer",
         "newDraft": "Nova Minuta",
         "crmPipeline": "CRM Pipeline",
-        "noNumber": "Sem numeração"
+        "noNumber": "Sem numeração",
+        "timeline": "Linha do Tempo",
+        "recentActivity": "Atividades Recentes",
+        "productivity": "Produtividade",
+        "goal": "Meta",
+        "openTimesheet": "Abrir Timesheet"
     },
     "common": {
         "search": "Buscar",

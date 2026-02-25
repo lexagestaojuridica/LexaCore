@@ -248,7 +248,7 @@ export default function DashboardOverview() {
       <motion.div variants={item} className="flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground flex items-center gap-2">
-            {greeting}, <span className="text-gradient-premium font-display">{displayName}</span>
+            {greeting}, <span className="text-primary font-display">{displayName}</span>
             <Sparkles className="h-4 w-4 text-amber-500 animate-pulse" />
           </h1>
           <p className="text-sm text-muted-foreground flex items-center gap-1.5 mt-0.5">
@@ -269,7 +269,7 @@ export default function DashboardOverview() {
           <Button variant="outline" size="sm" className="h-9 gap-1.5 text-xs glass-card hover:bg-muted/50" onClick={() => navigate("/dashboard/minutas")}>
             <FileText className="h-3.5 w-3.5" /> {t("dashboard.draft")}
           </Button>
-          <Button size="sm" className="h-9 gap-1.5 text-xs bg-gradient-navy text-white shadow-lg shadow-primary/20" onClick={() => navigate("/dashboard/agenda")}>
+          <Button size="sm" className="h-9 gap-1.5 text-xs bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20" onClick={() => navigate("/dashboard/agenda")}>
             <CalendarDays className="h-3.5 w-3.5" /> {t("dashboard.appointment")}
           </Button>
         </div>
@@ -428,7 +428,7 @@ export default function DashboardOverview() {
             </CardHeader>
             <CardContent className="p-4 pt-2 space-y-4">
               <div className="flex items-baseline justify-between">
-                <div className="text-3xl font-display font-bold text-gradient-premium">
+                <div className="text-3xl font-display font-bold text-primary">
                   {totalHoursToday}h{totalMinsRemainder}m
                 </div>
                 <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">/ 8h {t("dashboard.goal")}</div>
@@ -446,7 +446,7 @@ export default function DashboardOverview() {
                     transition={{ duration: 1, ease: "easeOut" }}
                     className={cn(
                       "h-full rounded-full transition-all duration-500",
-                      progressPct >= 100 ? "bg-gradient-to-r from-amber-500 to-orange-500 shadow-[0_0_10px_rgba(245,158,11,0.3)]" : "bg-gradient-to-r from-primary to-primary-light"
+                      progressPct >= 100 ? "bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.3)]" : "bg-primary"
                     )}
                   />
                 </div>
