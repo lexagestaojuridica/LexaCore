@@ -419,20 +419,6 @@ export default function AgendaPage() {
   const [filteredCategories, setFilteredCategories] = useState<string[]>([]);
   const gcal = useGoogleCalendar();
 
-  // Fix TS issue by asserting the returned array
-  const { data: rawEventos = [], isLoading } = useQuery({
-    queryKey: ["eventos_agenda"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("eventos_agenda").select("*").order("start_time", { ascending: true });
-      if (error) throw error;
-      return data as unknown as Evento[];
-    },
-  });
-
-  const eventos = useMemo(() => {
-    return rawEventos.filter(e => e.start_time && e.end_time && isValid(parseISO(e.start_time)) && isValid(parseISO(e.end_time)));
-  }, [rawEventos]);
-
   const { data: profileData } = useQuery({
     queryKey: ["profile", user?.id],
     queryFn: async () => {
@@ -442,12 +428,36 @@ export default function AgendaPage() {
     enabled: !!user?.id,
   });
 
-  const { data: processos = [] } = useQuery({
-    queryKey: ["processos_select"],
+  // Fix TS issue by asserting the returned array
+  const { data: rawEventos = [], isLoading } = useQuery({
+    queryKey: ["eventos_agenda", profileData?.organization_id],
     queryFn: async () => {
-      const { data } = await supabase.from("processos_juridicos").select("id, title, number").order("title");
+      const { data, error } = await supabase
+        .from("eventos_agenda")
+        .select("*")
+        .eq("organization_id", profileData!.organization_id!)
+        .order("start_time", { ascending: true });
+      if (error) throw error;
+      return data as unknown as Evento[];
+    },
+    enabled: !!profileData?.organization_id,
+  });
+
+  const eventos = useMemo(() => {
+    return rawEventos.filter(e => e.start_time && e.end_time && isValid(parseISO(e.start_time)) && isValid(parseISO(e.end_time)));
+  }, [rawEventos]);
+
+  const { data: processos = [] } = useQuery({
+    queryKey: ["processos_select", profileData?.organization_id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("processos_juridicos")
+        .select("id, title, number")
+        .eq("organization_id", profileData!.organization_id!)
+        .order("title");
       return data || [];
     },
+    enabled: !!profileData?.organization_id,
   });
 
   // ─── KPIs ───

@@ -14,9 +14,17 @@ export function useGlobalSearch(query: string) {
     const { user } = useAuth();
     const [results, setResults] = useState<SearchResult[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [orgId, setOrgId] = useState<string | null>(null);
+
+    // Load org_id once
+    useEffect(() => {
+        if (!user?.id) return;
+        supabase.from("profiles").select("organization_id").eq("user_id", user.id).single()
+            .then(({ data }) => { if (data?.organization_id) setOrgId(data.organization_id); });
+    }, [user?.id]);
 
     useEffect(() => {
-        if (!query || query.length < 3) {
+        if (!query || query.length < 3 || !orgId) {
             setResults([]);
             return;
         }
@@ -26,21 +34,23 @@ export function useGlobalSearch(query: string) {
             try {
                 const searchTerm = `%${query}%`;
 
-                // Exemplo simplificado de múltiplas chamadas, idealmente seria uma rpc (função no supabase) para alta escala.
                 const [processosRes, clientesRes, wikiRes] = await Promise.all([
                     supabase
                         .from("processos_juridicos")
                         .select("id, title")
+                        .eq("organization_id", orgId)
                         .ilike("title", searchTerm)
                         .limit(5),
                     supabase
                         .from("clients")
                         .select("id, name")
+                        .eq("organization_id", orgId)
                         .ilike("name", searchTerm)
                         .limit(5),
                     supabase
                         .from("wiki_juridica")
                         .select("id, title, category")
+                        .eq("organization_id", orgId)
                         .or(`title.ilike.${searchTerm},content.ilike.${searchTerm}`)
                         .limit(5)
                 ]);
@@ -93,7 +103,7 @@ export function useGlobalSearch(query: string) {
 
         const timeoutId = setTimeout(fetchResults, 400); // 400ms debounce
         return () => clearTimeout(timeoutId);
-    }, [query, user?.id]);
+    }, [query, orgId]);
 
     return { results, isLoading };
 }

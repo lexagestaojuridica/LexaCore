@@ -239,13 +239,12 @@ export default function TimesheetPage() {
         const payload = {
             organization_id: orgId,
             client_id: client?.id || null,
-            description: `Honorários (Timesheet): ${entry.description}`,
+            description: `Honorários (Timesheet): ${entry.description}${asaas_url ? ` | Cobrança: ${asaas_url}` : ""}`,
             amount: value,
             due_date: new Date().toISOString().split('T')[0],
             status: "pendente",
             category: "Honorários",
             asaas_id: asaas_id,
-            asaas_billing_url: asaas_url
         };
 
         bilMutation.mutate({

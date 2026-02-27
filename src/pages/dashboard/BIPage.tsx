@@ -222,10 +222,11 @@ export default function BIPage() {
   const orgId = profile?.organization_id ?? null;
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (orgId) fetchData(orgId);
+  }, [orgId]);
 
-  const fetchData = async () => {
+  const fetchData = async (orgId: string) => {
+    setLoading(true);
     try {
       const [
         { data: processos },
@@ -235,12 +236,12 @@ export default function BIPage() {
         { data: eventos },
         { count: docCount },
       ] = await Promise.all([
-        supabase.from("processos_juridicos").select("*"),
-        supabase.from("clients").select("id"),
-        supabase.from("contas_receber").select("*"),
-        supabase.from("contas_pagar").select("*"),
-        supabase.from("eventos_agenda").select("*"),
-        supabase.from("documentos").select("*", { count: "exact", head: true }),
+        supabase.from("processos_juridicos").select("*").eq("organization_id", orgId),
+        supabase.from("clients").select("id").eq("organization_id", orgId),
+        supabase.from("contas_receber").select("*").eq("organization_id", orgId),
+        supabase.from("contas_pagar").select("*").eq("organization_id", orgId),
+        supabase.from("eventos_agenda").select("*").eq("organization_id", orgId),
+        supabase.from("documentos").select("*", { count: "exact", head: true }).eq("organization_id", orgId),
       ]);
 
       const procs = processos || [];

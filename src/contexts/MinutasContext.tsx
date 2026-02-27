@@ -261,12 +261,26 @@ export function MinutasProvider({ children }: { children: ReactNode }) {
 
     const invalidate = () => qc.invalidateQueries({ queryKey: ["minutas_documents"] });
 
+    // ── Fetch org_id once ──
+    const { data: orgProfile } = useQuery({
+        queryKey: ["minutas_org_profile", uid],
+        queryFn: async () => {
+            const { data } = await supabase.from("profiles").select("organization_id").eq("user_id", uid).single();
+            return data;
+        },
+        enabled: !!uid,
+    });
+    const orgId = orgProfile?.organization_id || "";
+
     // ── Fetch documents + versions ──
     const { data: documents = [], isLoading } = useQuery({
-        queryKey: ["minutas_documents"], enabled: !!uid,
+        queryKey: ["minutas_documents", orgId], enabled: !!orgId,
         queryFn: async () => {
             const { data: rows, error } = await supabase
-                .from("minutas_documents").select("*").order("updated_at", { ascending: false });
+                .from("minutas_documents")
+                .select("*")
+                .eq("organization_id", orgId)
+                .order("updated_at", { ascending: false });
             if (error) throw error;
             if (!rows?.length) return [];
 

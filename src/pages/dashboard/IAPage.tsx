@@ -93,7 +93,9 @@ const DOC_GEN_URL = `${BASE_URL}/functions/v1/aruna-generate-doc`;
 const JURIS_URL = `${BASE_URL}/functions/v1/aruna-jurisprudencia`;
 const ANALYZE_URL = `${BASE_URL}/functions/v1/aruna-analyze-doc`;
 const TRANSCRIBE_URL = `${BASE_URL}/functions/v1/aruna-transcribe`;
-const AUTH_HEADER = { Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` };
+const AUTH_HEADER = () => supabase.auth.getSession().then(({ data }) => ({
+  Authorization: `Bearer ${data.session?.access_token ?? ""}`,
+}));
 
 type Tool = null | "doc" | "juris" | "analyze" | "transcribe";
 
@@ -205,9 +207,10 @@ export default function IAPage() {
   /* ─── SSE Stream Helper ──────────────────────────── */
   const stream = useCallback(async (url: string, body: Record<string, unknown>, aId: string) => {
     let content = "";
+    const authHeader = await AUTH_HEADER();
     const resp = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json", ...AUTH_HEADER },
+      headers: { "Content-Type": "application/json", ...authHeader },
       body: JSON.stringify(body),
     });
     if (!resp.ok) { const e = await resp.json().catch(() => ({})); throw new Error(e.error || `Erro ${resp.status}`); }
@@ -299,7 +302,8 @@ export default function IAPage() {
     const aId = addAssistant();
     setMsgs((p) => p.map((m) => m.id === aId ? { ...m, content: "⏳ Estou redigindo o documento para você. Por favor, aguarde alguns segundos..." } : m));
     try {
-      const r = await fetch(DOC_GEN_URL, { method: "POST", headers: { "Content-Type": "application/json", ...AUTH_HEADER }, body: JSON.stringify({ doc_type: docType, instructions: docInstr, organization_id: orgId, user_id: user.id }) });
+      const authHeader = await AUTH_HEADER();
+      const r = await fetch(DOC_GEN_URL, { method: "POST", headers: { "Content-Type": "application/json", ...authHeader }, body: JSON.stringify({ doc_type: docType, instructions: docInstr, organization_id: orgId, user_id: user.id }) });
       if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || `Erro ${r.status}`);
       const res = await r.json();
       const c = `✅ **${res.document.file_name}** gerado com sucesso e salvo no seu módulo de **Documentos (GED)**.\n\n### Preview Rápido:\n${res.content_preview?.slice(0, 400)}...`;
@@ -361,7 +365,8 @@ export default function IAPage() {
       fd.append("organization_id", orgId);
       fd.append("user_id", user.id);
 
-      const resp = await fetch(TRANSCRIBE_URL, { method: "POST", headers: AUTH_HEADER, body: fd });
+      const authHeader = await AUTH_HEADER();
+      const resp = await fetch(TRANSCRIBE_URL, { method: "POST", headers: { ...authHeader }, body: fd });
       if (!resp.ok) throw new Error((await resp.json().catch(() => ({}))).error || `Erro ${resp.status}`);
       if (!resp.body) throw new Error("Sem resposta");
 

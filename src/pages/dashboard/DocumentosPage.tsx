@@ -170,6 +170,9 @@ export default function DocumentosPage() {
       if (!docToSign) throw new Error("Documento não selecionado");
       if (!signerName || !signerEmail) throw new Error("Nome e E-mail são obrigatórios");
 
+      const signingToken = crypto.randomUUID();
+      const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(); // 30 dias
+
       const { error } = await (supabase as any).from("document_signatures").insert({
         organization_id: orgId,
         document_id: docToSign.id,
@@ -177,11 +180,24 @@ export default function DocumentosPage() {
         signer_name: signerName,
         signer_email: signerEmail,
         signer_document: signerDoc,
+        signing_token: signingToken,
+        expires_at: expiresAt,
+        status: "pendente",
       });
       if (error) throw error;
+
+      const signingUrl = `${window.location.origin}/assinar?token=${signingToken}`;
+      return { signingUrl };
     },
-    onSuccess: () => {
-      toast.success("Solicitação de assinatura enviada com sucesso!");
+    onSuccess: ({ signingUrl }) => {
+      navigator.clipboard.writeText(signingUrl).catch(() => { });
+      toast.success(
+        "Solicitação de assinatura criada!",
+        {
+          duration: 8000,
+          description: "O link de assinatura foi copiado. Compartilhe com o signatário via WhatsApp ou e-mail.",
+        }
+      );
       setSignatureOpen(false);
       setDocToSign(null);
       setSignerName("");

@@ -109,6 +109,19 @@ export default function ColaboradoresPage() {
         onError: (err: any) => toast.error(`Erro: ${err.message}`),
     });
 
+    const deleteMutation = useMutation({
+        mutationFn: async (id: string) => {
+            const { error } = await supabase.from("rh_colaboradores").delete().eq("id", id);
+            if (error) throw error;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["colaboradores"] });
+            queryClient.invalidateQueries({ queryKey: ["hr-dashboard-stats"] });
+            toast.success("Colaborador removido.");
+        },
+        onError: (err: any) => toast.error(`Erro ao remover: ${err.message}`),
+    });
+
     const resetForm = () => {
         setForm(emptyForm);
         setEditingId(null);
@@ -333,7 +346,17 @@ export default function ColaboradoresPage() {
                                                     <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => handleEdit(col)}>
                                                         <Edit className="h-4 w-4" />
                                                     </Button>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                                        onClick={() => {
+                                                            if (window.confirm(`Deseja remover ${col.full_name}?`)) {
+                                                                deleteMutation.mutate(col.id);
+                                                            }
+                                                        }}
+                                                        disabled={deleteMutation.isPending}
+                                                    >
                                                         <Trash2 className="h-4 w-4" />
                                                     </Button>
                                                 </div>

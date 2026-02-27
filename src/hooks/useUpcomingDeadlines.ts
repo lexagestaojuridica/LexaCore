@@ -19,8 +19,18 @@ export interface DeadlineNotification {
 export function useUpcomingDeadlines() {
   const { user } = useAuth();
 
+  const { data: profile } = useQuery({
+    queryKey: ["profile-deadlines", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("profiles").select("organization_id").eq("user_id", user!.id).single();
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+  const orgId = profile?.organization_id;
+
   return useQuery({
-    queryKey: ["upcoming-deadlines", user?.id],
+    queryKey: ["upcoming-deadlines", orgId],
     queryFn: async () => {
       const now = new Date().toISOString();
       const in7Days = addDays(new Date(), 7).toISOString();
@@ -29,6 +39,7 @@ export function useUpcomingDeadlines() {
       const { data, error } = await supabase
         .from("eventos_agenda")
         .select("*")
+        .eq("organization_id", orgId!)
         .in("category", ["prazo", "audiencia"])
         .lte("start_time", in7Days)
         .order("start_time", { ascending: true });
@@ -69,7 +80,7 @@ export function useUpcomingDeadlines() {
 
       return notifications;
     },
-    enabled: !!user?.id,
+    enabled: !!orgId,
     refetchInterval: 60_000, // refresh every minute
   });
 }

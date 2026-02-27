@@ -204,12 +204,26 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
 
     const invalidate = () => qc.invalidateQueries({ queryKey: ["workflow_instances"] });
 
+    // ── Fetch org_id once ──
+    const { data: orgProfile } = useQuery({
+        queryKey: ["workflow_org_profile", uid],
+        queryFn: async () => {
+            const { data } = await supabase.from("profiles").select("organization_id").eq("user_id", uid).single();
+            return data;
+        },
+        enabled: !!uid,
+    });
+    const orgId = orgProfile?.organization_id || "";
+
     // ── Fetch instances + steps from Supabase ──
     const { data: instances = [], isLoading } = useQuery({
-        queryKey: ["workflow_instances"], enabled: !!uid,
+        queryKey: ["workflow_instances", orgId], enabled: !!orgId,
         queryFn: async () => {
             const { data: rows, error } = await supabase
-                .from("workflow_instances").select("*").order("created_at", { ascending: false });
+                .from("workflow_instances")
+                .select("*")
+                .eq("organization_id", orgId)
+                .order("created_at", { ascending: false });
             if (error) throw error;
             if (!rows?.length) return [];
 
@@ -240,8 +254,28 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
         },
     });
 
-    const getMember = useCallback((id: string) => SAMPLE_MEMBERS.find((m) => m.id === id), []);
+    // ── Fetch real members from rh_colaboradores ──
+    const { data: members = [] } = useQuery({
+        queryKey: ["workflow_members", orgId],
+        queryFn: async () => {
+            const { data } = await supabase
+                .from("rh_colaboradores")
+                .select("id, full_name, position")
+                .eq("organization_id", orgId)
+                .eq("status", "active");
+            return (data || []).map((c: any): Member => ({
+                id: c.id,
+                name: c.full_name,
+                role: c.position || "Colaborador",
+                avatar: (c.full_name as string).split(" ").map((n: string) => n[0]).slice(0, 2).join(""),
+            }));
+        },
+        enabled: !!orgId,
+    });
+
+    const getMember = useCallback((id: string) => members.find((m) => m.id === id), [members]);
     const getSector = useCallback((id: string) => sectors.find((s) => s.id === id), [sectors]);
+
 
     const addSector = useCallback((data: Omit<Sector, "id">) => {
         setSectors((prev) => [...prev, { ...data, id: crypto.randomUUID() }]);

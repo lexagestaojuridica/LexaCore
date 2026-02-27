@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -246,8 +246,13 @@ export default function CertificadosPage() {
         clientId: null as string | null,
     });
 
-    if (org?.name && !form.escritorioName) setForm((f) => ({ ...f, escritorioName: org.name }));
-    if (profile?.full_name && !form.signatoryName) setForm((f) => ({ ...f, signatoryName: profile.full_name ?? "" }));
+    useEffect(() => {
+        if (org?.name) setForm((f) => ({ ...f, escritorioName: org.name }));
+    }, [org?.name]);
+
+    useEffect(() => {
+        if (profile?.full_name) setForm((f) => ({ ...f, signatoryName: profile.full_name ?? "" }));
+    }, [profile?.full_name]);
 
     const setF = (key: string, value: string | null) => setForm((f) => ({ ...f, [key]: value }));
 

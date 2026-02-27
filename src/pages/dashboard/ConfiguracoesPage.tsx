@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
@@ -188,20 +188,23 @@ export default function ConfiguracoesPage() {
   const [optForm, setOptForm] = useState(emptyOption);
   const [optFilterModule, setOptFilterModule] = useState("all");
 
-  if (profile && org && !formInitialized) {
-    setProfileForm({ full_name: profile.full_name || "", phone: profile.phone || "" });
-    setOrgForm({
-      whatsapp_instance_id: (org as any).whatsapp_instance_id || "",
-      whatsapp_token: (org as any).whatsapp_token || "",
-      whatsapp_enabled: (org as any).whatsapp_enabled || false,
-      asaas_api_key: "",
-      asaas_environment: "sandbox",
-      asaas_enabled: false,
-      jusbrasil_token: (org as any).jusbrasil_token || "",
-      escavador_token: (org as any).escavador_token || "",
-    });
-    setFormInitialized(true);
-  }
+  useEffect(() => {
+    if (profile && org && !formInitialized) {
+      setProfileForm({ full_name: profile.full_name || "", phone: profile.phone || "" });
+      setOrgForm({
+        whatsapp_instance_id: (org as any).whatsapp_instance_id || "",
+        whatsapp_token: (org as any).whatsapp_token || "",
+        whatsapp_enabled: (org as any).whatsapp_enabled || false,
+        asaas_api_key: "",
+        asaas_environment: "sandbox",
+        asaas_enabled: false,
+        jusbrasil_token: (org as any).jusbrasil_token || "",
+        escavador_token: (org as any).escavador_token || "",
+      });
+      setFormInitialized(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile, org]);
 
   const { data: gatewaySettings } = useQuery({
     queryKey: ["gateway-settings", profile?.organization_id],
@@ -212,14 +215,17 @@ export default function ConfiguracoesPage() {
     enabled: !!profile?.organization_id,
   });
 
-  if (gatewaySettings && formInitialized && !orgForm.asaas_api_key && gatewaySettings.api_key) {
-    setOrgForm(prev => ({
-      ...prev,
-      asaas_api_key: gatewaySettings.api_key,
-      asaas_environment: gatewaySettings.environment || "sandbox",
-      asaas_enabled: gatewaySettings.status === "active"
-    }));
-  }
+  useEffect(() => {
+    if (gatewaySettings && formInitialized && !orgForm.asaas_api_key && gatewaySettings.api_key) {
+      setOrgForm(prev => ({
+        ...prev,
+        asaas_api_key: gatewaySettings.api_key,
+        asaas_environment: gatewaySettings.environment || "sandbox",
+        asaas_enabled: gatewaySettings.status === "active"
+      }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gatewaySettings, formInitialized]);
 
   // ── Mutations ──
   const updateProfileMutation = useMutation({

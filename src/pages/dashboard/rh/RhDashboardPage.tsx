@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Users, UserMinus, UserCheck, CalendarDays, TrendingUp, Briefcase, DollarSign, PieChart as PieChartIcon } from "lucide-react";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from "recharts";
@@ -10,11 +11,25 @@ const COLORS = ["#0ea5e9", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#6366f1"
 
 export default function RhDashboardPage() {
     const { t } = useTranslation();
+    const { user } = useAuth();
+
+    const { data: profile } = useQuery({
+        queryKey: ["profile-rh", user?.id],
+        queryFn: async () => {
+            const { data } = await supabase.from("profiles").select("organization_id").eq("user_id", user!.id).single();
+            return data;
+        },
+        enabled: !!user?.id,
+    });
+    const orgId = profile?.organization_id;
 
     const { data: stats, isLoading } = useQuery({
-        queryKey: ["hr-dashboard-stats"],
+        queryKey: ["hr-dashboard-stats", orgId],
         queryFn: async () => {
-            const { data, error } = await supabase.from("rh_colaboradores").select("*");
+            const { data, error } = await supabase
+                .from("rh_colaboradores")
+                .select("*")
+                .eq("organization_id", orgId!);
             if (error) throw error;
 
             const active = data?.filter(e => e.status === 'active').length || 0;
@@ -31,29 +46,30 @@ export default function RhDashboardPage() {
 
             const deptData = Object.entries(deptMap).map(([name, value]) => ({ name, value }));
 
-            // Monthly admission data (mocking a bit based on admission_date if available)
-            // Real implementation would group by month
-            const monthlyData = [
-                { month: "Jan", admission: 2, termination: 0 },
-                { month: "Fev", admission: 1, termination: 1 },
-                { month: "Mar", admission: 4, termination: 0 },
-                { month: "Abr", admission: 2, termination: 1 },
-                { month: "Mai", admission: 3, termination: 0 },
-                { month: "Jun", admission: 1, termination: 0 },
-            ];
+            // Build monthly admission data from real hire_date
+            const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+            const year = new Date().getFullYear();
+            const monthlyMap: Record<string, { admission: number; termination: number }> = {};
+            months.forEach((m) => { monthlyMap[m] = { admission: 0, termination: 0 }; });
+            data?.forEach(e => {
+                if (e.admission_date) {
+                    const d = new Date(e.admission_date);
+                    if (d.getFullYear() === year) {
+                        const m = months[d.getMonth()];
+                        monthlyMap[m].admission += 1;
+                    }
+                }
+            });
+            const monthlyData = months.slice(0, new Date().getMonth() + 1).map(m => ({ month: m, ...monthlyMap[m] }));
 
             const totalPayroll = data?.filter(e => e.status === 'active').reduce((acc, curr) => acc + (Number(curr.base_salary) || 0), 0) || 0;
 
             return {
-                total,
-                active,
-                onLeave,
-                terminated,
-                deptData,
-                monthlyData,
-                totalPayroll
+                total, active, onLeave, terminated,
+                deptData, monthlyData, totalPayroll
             };
-        }
+        },
+        enabled: !!orgId,
     });
 
     if (isLoading) return <LexaLoadingOverlay visible />;

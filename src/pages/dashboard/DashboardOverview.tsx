@@ -138,6 +138,7 @@ export default function DashboardOverview() {
     queryFn: async () => {
       const { data } = await supabase.from("eventos_agenda")
         .select("id, title, start_time, end_time, category")
+        .eq("organization_id", orgId!)
         .gte("start_time", startOfDay(new Date()).toISOString())
         .lte("start_time", addDays(new Date(), 14).toISOString())
         .order("start_time", { ascending: true })
@@ -197,10 +198,11 @@ export default function DashboardOverview() {
       const { data } = await supabase.from("timesheet_entries")
         .select("duration_minutes, billing_status")
         .eq("user_id", user!.id)
-        .gte("date", format(new Date(), "yyyy-MM-dd"))
-        .lte("date", format(new Date(), "yyyy-MM-dd"));
+        .eq("organization_id", orgId!)
+        .gte("started_at", startOfDay(new Date()).toISOString())
+        .lte("started_at", endOfDay(new Date()).toISOString());
       const totalMins = data?.reduce((s, e) => s + (e.duration_minutes || 0), 0) ?? 0;
-      const billable = data?.filter(e => e.billing_status === "a_faturar" || e.billing_status === "faturado")
+      const billable = data?.filter(e => e.billing_status === "faturado" || e.billing_status === "pendente")
         .reduce((s, e) => s + (e.duration_minutes || 0), 0) ?? 0;
       return { totalMins, billable, entries: data?.length ?? 0 };
     },
@@ -214,6 +216,29 @@ export default function DashboardOverview() {
   const futureEvents = eventos.filter((e) => !isToday(parseISO(e.start_time)) && !isTomorrow(parseISO(e.start_time))).slice(0, 4);
   const urgentEvents = todayEvents.filter((e) => e.category === "audiencia" || e.category === "prazo");
   const happeningNowCount = todayEvents.filter(isHappeningNow).length;
+
+  const fmtReceita = (v: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
+
+  const arunaTip = useMemo(() => {
+    const todayPrazos = todayEvents.filter(e => e.category === "prazo").length;
+    const tomorrowPrazos = tomorrowEvents.filter(e => e.category === "prazo").length;
+    const todayAudiencias = todayEvents.filter(e => e.category === "audiencia").length;
+    const aReceber = stats?.aReceber ?? 0;
+    const aPagar = stats?.aPagar ?? 0;
+
+    if (todayAudiencias > 0)
+      return `Você tem ${todayAudiencias} audiência${todayAudiencias > 1 ? "s" : ""} hoje. Verifique os processos antes de entrar na sala.`;
+    if (todayPrazos > 0)
+      return `Atenção: ${todayPrazos} prazo${todayPrazos > 1 ? "s" : ""} vence${todayPrazos === 1 ? "" : "m"} hoje. Não deixe para a última hora.`;
+    if (tomorrowPrazos > 0)
+      return `Você tem ${tomorrowPrazos} prazo${tomorrowPrazos > 1 ? "s" : ""} vencendo amanhã. Que tal revisá-${tomorrowPrazos === 1 ? "lo" : "los"} agora?`;
+    if (aReceber > 0 && aPagar > 0)
+      return `Você tem ${fmtReceita(aReceber)} a receber e ${fmtReceita(aPagar)} a pagar. Fique de olho no fluxo de caixa.`;
+    if (aReceber > 0)
+      return `Há ${fmtReceita(aReceber)} em honorários pendentes. Que tal gerar uma cobrança PIX para adiantar os recebimentos?`;
+    return "Tudo certo por aqui! Use o Timesheet para registrar seu tempo e manter a produtividade em dia.";
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [todayEvents, tomorrowEvents, stats]);
 
   const { totalHoursToday, totalMinsRemainder, progressPct, targetDailyMinutes } = useMemo(() => {
     const totalHoursToday = timesheetToday ? Math.floor(timesheetToday.totalMins / 60) : 0;
@@ -483,7 +508,7 @@ export default function DashboardOverview() {
               <Zap className="h-3.5 w-3.5 text-amber-500" /> Dica da Aruna
             </h4>
             <p className="text-xs text-muted-foreground leading-relaxed italic relative z-10 font-medium">
-              "Você tem 3 prazos vencendo amanhã. Que tal revisá-los agora para evitar urgências no final do dia?"
+              &ldquo;{arunaTip}&rdquo;
             </p>
             <Button variant="link" size="sm" className="p-0 h-auto text-[10px] uppercase font-bold tracking-widest text-primary mt-4 hover:text-primary-light transition-colors relative z-10" onClick={() => navigate("/dashboard/chat")}>
               Falar com Aruna

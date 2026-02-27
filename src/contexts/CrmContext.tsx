@@ -126,38 +126,49 @@ export function CrmProvider({ children }: { children: ReactNode }) {
     const qc = useQueryClient();
     const uid = user?.id || "";
 
+    // ── Fetch org_id once ──
+    const { data: orgProfile } = useQuery({
+        queryKey: ["crm_org_profile", uid],
+        queryFn: async () => {
+            const { data } = await supabase.from("profiles").select("organization_id").eq("user_id", uid).single();
+            return data;
+        },
+        enabled: !!uid,
+    });
+    const orgId = orgProfile?.organization_id || "";
+
     // ── Queries ──
     const { data: contacts = [], isLoading: loadingContacts } = useQuery({
-        queryKey: ["crm_contacts"], enabled: !!uid,
+        queryKey: ["crm_contacts", orgId], enabled: !!orgId,
         queryFn: async () => {
-            const { data, error } = await supabase.from("crm_contacts").select("*").order("created_at", { ascending: false }).limit(300);
+            const { data, error } = await supabase.from("crm_contacts").select("*").eq("organization_id", orgId).order("created_at", { ascending: false }).limit(300);
             if (error) throw error;
             return (data || []).map(mapContact);
         },
     });
 
     const { data: leads = [], isLoading: loadingLeads } = useQuery({
-        queryKey: ["crm_leads"], enabled: !!uid,
+        queryKey: ["crm_leads", orgId], enabled: !!orgId,
         queryFn: async () => {
-            const { data, error } = await supabase.from("crm_leads").select("*").order("created_at", { ascending: false }).limit(300);
+            const { data, error } = await supabase.from("crm_leads").select("*").eq("organization_id", orgId).order("created_at", { ascending: false }).limit(300);
             if (error) throw error;
             return (data || []).map(mapLead);
         },
     });
 
     const { data: deals = [], isLoading: loadingDeals } = useQuery({
-        queryKey: ["crm_deals"], enabled: !!uid,
+        queryKey: ["crm_deals", orgId], enabled: !!orgId,
         queryFn: async () => {
-            const { data, error } = await supabase.from("crm_deals").select("*").order("created_at", { ascending: false }).limit(300);
+            const { data, error } = await supabase.from("crm_deals").select("*").eq("organization_id", orgId).order("created_at", { ascending: false }).limit(300);
             if (error) throw error;
             return (data || []).map(mapDeal);
         },
     });
 
     const { data: activities = [], isLoading: loadingActivities } = useQuery({
-        queryKey: ["crm_activities"], enabled: !!uid,
+        queryKey: ["crm_activities", orgId], enabled: !!orgId,
         queryFn: async () => {
-            const { data, error } = await supabase.from("crm_activities").select("*").order("created_at", { ascending: false }).limit(300);
+            const { data, error } = await supabase.from("crm_activities").select("*").eq("organization_id", orgId).order("created_at", { ascending: false }).limit(300);
             if (error) throw error;
             return (data || []).map(mapActivity);
         },

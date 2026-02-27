@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import DOMPurify from "dompurify";
 
 const CATEGORIES = [
   { id: "all", label: "Todas" },
@@ -134,7 +135,7 @@ export default function NoticiasPage() {
                 [&_h3]:font-display [&_h3]:text-base [&_h3]:mt-4 [&_h3]:mb-2
                 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5
                 [&_blockquote]:border-l-2 [&_blockquote]:border-primary/30 [&_blockquote]:pl-4 [&_blockquote]:italic"
-              dangerouslySetInnerHTML={{ __html: selectedArticle.fullContent }}
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(selectedArticle.fullContent) }}
             />
           ) : (
             <div className="space-y-4">

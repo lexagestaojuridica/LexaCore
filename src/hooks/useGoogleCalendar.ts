@@ -28,67 +28,69 @@ export function useGoogleCalendar() {
   const lastSyncAt = connection?.last_sync_at;
   const syncEnabled = connection?.sync_enabled ?? false;
 
-  // Check URL for OAuth callback code on mount
+  // Check URL for OAuth callback code on mount (only once)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const handleCodeFromUrl = async () => {
       const searchParams = new URLSearchParams(window.location.search);
       const code = searchParams.get("code");
 
-      if (code && !connecting) {
-        setConnecting(true);
-        try {
-          // Remove code from URL immediately for clean UI
-          window.history.replaceState({}, document.title, window.location.pathname);
+      if (!code) return;
 
-          const redirectUri = `${window.location.origin}/dashboard/agenda`;
+      setConnecting(true);
+      try {
+        // Remove code from URL immediately for clean UI
+        window.history.replaceState({}, document.title, window.location.pathname);
 
-          const { data: tokenData, error } = await supabase.functions.invoke("google-calendar-auth", {
-            body: {
-              action: "exchange_code",
-              code,
-              redirect_uri: redirectUri,
-            },
-          });
+        const redirectUri = `${window.location.origin}/dashboard/agenda`;
 
-          if (error) throw error;
-          if (tokenData.error) throw new Error(tokenData.error);
+        const { data: tokenData, error } = await supabase.functions.invoke("google-calendar-auth", {
+          body: {
+            action: "exchange_code",
+            code,
+            redirect_uri: redirectUri,
+          },
+        });
 
-          // Get user profile for org_id
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("organization_id")
-            .eq("user_id", user!.id)
-            .single();
+        if (error) throw error;
+        if (tokenData.error) throw new Error(tokenData.error);
 
-          if (!profile?.organization_id) throw new Error("Organization not found");
+        // Get user profile for org_id
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("organization_id")
+          .eq("user_id", user!.id)
+          .single();
 
-          const expiresAt = new Date(Date.now() + tokenData.expires_in * 1000).toISOString();
+        if (!profile?.organization_id) throw new Error("Organization not found");
 
-          // Store tokens
-          const { error: insertError } = await supabase
-            .from("google_calendar_tokens" as any)
-            .upsert({
-              user_id: user!.id,
-              organization_id: profile.organization_id,
-              access_token: tokenData.access_token,
-              refresh_token: tokenData.refresh_token,
-              token_expires_at: expiresAt,
-            } as any);
+        const expiresAt = new Date(Date.now() + tokenData.expires_in * 1000).toISOString();
 
-          if (insertError) throw insertError;
+        // Store tokens
+        const { error: insertError } = await supabase
+          .from("google_calendar_tokens" as any)
+          .upsert({
+            user_id: user!.id,
+            organization_id: profile.organization_id,
+            access_token: tokenData.access_token,
+            refresh_token: tokenData.refresh_token,
+            token_expires_at: expiresAt,
+          } as any);
 
-          queryClient.invalidateQueries({ queryKey: ["google-calendar-connection"] });
-          toast.success("Google Calendar conectado com sucesso!");
-        } catch (err: any) {
-          toast.error(err.message || "Erro ao conectar Google Calendar");
-        } finally {
-          setConnecting(false);
-        }
+        if (insertError) throw insertError;
+
+        queryClient.invalidateQueries({ queryKey: ["google-calendar-connection"] });
+        toast.success("Google Calendar conectado com sucesso!");
+      } catch (err: any) {
+        toast.error(err.message || "Erro ao conectar Google Calendar");
+      } finally {
+        setConnecting(false);
       }
     };
 
     handleCodeFromUrl();
-  }, [user, queryClient, connecting]);
+    // Only run on mount + when user becomes available. Do NOT include 'connecting' — it changes inside the effect.
+  }, [user?.id, queryClient]);
 
   // Start OAuth flow
   const connect = useCallback(async () => {

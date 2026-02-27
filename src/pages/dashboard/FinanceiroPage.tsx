@@ -139,14 +139,43 @@ export default function FinanceiroPage() {
 
   const generatePixMutation = useMutation({
     mutationFn: async (c: any) => {
-      // Mock PIX API call / Asaas Gateway
-      const mockPixCode = `00020126440014BR.GOV.BCB.PIX0122rodrigo@lexanova.com.br5204000053039865405${Number(c.amount).toFixed(2)}5802BR5915Lexa Nova Ltda6009Sao Paulo62070503***6304${Math.floor(Math.random() * 10000)}`;
-      const { error } = await (supabase.from("contas_receber") as any).update({
-        pix_code: mockPixCode,
-        gateway_id: `pay_${Math.floor(Math.random() * 99999999)}`
+      if (!orgId) throw new Error("Organização não encontrada.");
+
+      // Check if Asaas is configured
+      const { data: settingsRaw } = await supabase
+        .from("gateway_settings" as any)
+        .select("status, api_key")
+        .eq("organization_id", orgId)
+        .eq("gateway_name", "asaas")
+        .maybeSingle();
+      const settings = settingsRaw as { api_key?: string; status?: string } | null;
+
+      if (!settings?.api_key || settings?.status !== "active") {
+        throw new Error(
+          "Integração com Asaas não configurada. Acesse Configurações > Integrações para ativar."
+        );
+      }
+
+      // Call real Asaas via asaasService (server-side safe only if used via Edge Function)
+      // For now, create via asaasService which routes through browser fetch
+      // Note: may fail CORS in prod — migrate to billing-gateway Edge Function when ready
+      const payment = await asaasService.createPayment(orgId, {
+        customer: c.asaas_customer_id || c.client_id || "",
+        billingType: "PIX",
+        value: Number(c.amount),
+        dueDate: c.due_date,
+        description: c.description,
+        externalReference: c.id,
+      });
+
+      const pixCode = payment.pixTransaction?.payload || payment.encodedImage || "";
+      const { error } = await supabase.from("contas_receber" as any).update({
+        pix_code: pixCode,
+        gateway_id: payment.id,
+        asaas_id: payment.id,
       }).eq("id", c.id);
       if (error) throw error;
-      return { ...c, pix_code: mockPixCode };
+      return { ...c, pix_code: pixCode };
     },
     onSuccess: (updatedData) => {
       queryClient.invalidateQueries({ queryKey: [tableName] });

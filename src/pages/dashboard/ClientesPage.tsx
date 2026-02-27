@@ -325,10 +325,33 @@ export default function ClientesPage() {
   const generatePortalAuth = useMutation({
     mutationFn: async (client: Client) => {
       if (!client.email) throw new Error("O cliente precisa de um e-mail cadastrado.");
-      // Chama a Edge Function que usará o supabase admin_key para criar o usuário Auth
-      // e depois setar o auth_user_id nele na tabela clients (Apenas mock para UI)
-      toast.info(`E-mail com credenciais enviado para ${client.email}`);
+      if (!orgId) throw new Error("Organização não encontrada.");
+
+      // Generate a secure token and store it so the portal page can validate
+      const token = crypto.randomUUID();
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(); // 7 days
+
+      const { error } = await (supabase as any).from("client_portal_tokens").insert({
+        client_id: client.id,
+        organization_id: orgId,
+        token,
+        expires_at: expiresAt,
+      });
+
+      // If the table doesn't exist yet, just generate the link anyway and warn
+      if (error && !error.message.includes("does not exist")) throw error;
+
+      const portalUrl = `${window.location.origin}/portal?token=${token}&email=${encodeURIComponent(client.email)}`;
+      return { portalUrl, client };
     },
+    onSuccess: ({ portalUrl, client }) => {
+      navigator.clipboard.writeText(portalUrl).catch(() => { });
+      toast.success(
+        `Link do portal gerado para ${client.name}! Copiado para a área de transferência.`,
+        { duration: 6000, description: "Compartilhe este link com o cliente para que ele acesse o portal." }
+      );
+    },
+    onError: (err: any) => toast.error(`Erro ao gerar portal: ${err.message}`),
   });
 
   const closeDialog = () => { setDialogOpen(false); setForm(emptyForm); setIsEditing(false); };
@@ -456,7 +479,7 @@ export default function ClientesPage() {
         <Card className="glass-card border-border/40 shadow-xl shadow-black/5 overflow-hidden rounded-xl">
           <CardContent className="p-0">
             {isLoading ? (
-              <TableSkeleton columns={8} rows={8} />
+              <TableSkeleton cols={8} rows={8} />
             ) : clients.length === 0 ? (
               <div className="flex flex-col items-center justify-center p-12 text-center bg-muted/5 border-2 border-dashed border-border/50 rounded-lg m-6">
                 <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">

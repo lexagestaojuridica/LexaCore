@@ -1,8 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
 
-const ASAAS_SANDBOX_URL = "https://sandbox.asaas.com/api/v3";
-const ASAAS_PROD_URL = "https://www.asaas.com/api/v3";
-
 export interface AsaasCustomer {
     id?: string;
     name: string;
@@ -29,44 +26,30 @@ export interface AsaasPayment {
     installmentValue?: number;
 }
 
+/**
+ * Calls all Asaas endpoints through the `asaas-proxy` Edge Function,
+ * which runs server-side — no CORS issues.
+ */
 export const asaasService = {
-    async getSettings(organizationId: string) {
-        const { data, error } = await supabase
-            .from("gateway_settings")
-            .select("*")
-            .eq("organization_id", organizationId)
-            .eq("gateway_name", "asaas")
-            .maybeSingle();
-
-        if (error) throw error;
-        return data;
-    },
-
     async request(method: string, endpoint: string, organizationId: string, body?: any) {
-        const settings = await this.getSettings(organizationId);
-        if (!settings || !settings.api_key || settings.status !== "active") {
-            throw new Error("Asaas integration not configured or inactive");
-        }
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) throw new Error("Usuário não autenticado.");
 
-        const baseUrl = settings.environment === "production" ? ASAAS_PROD_URL : ASAAS_SANDBOX_URL;
-
-        // NOTE: For best security and to avoid CORS issues, these requests should ideally 
-        // be made via Supabase Edge Functions. 
-        const response = await fetch(`${baseUrl}${endpoint}`, {
-            method,
-            headers: {
-                "Content-Type": "application/json",
-                "access_token": settings.api_key || "",
-            },
-            body: body ? JSON.stringify(body) : undefined,
+        const response = await supabase.functions.invoke("asaas-proxy", {
+            body: { method, endpoint, body, organizationId },
         });
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.errors?.[0]?.description || "Erro na API do Asaas");
+        if (response.error) {
+            throw new Error(response.error.message ?? "Erro ao chamar asaas-proxy");
         }
 
-        return response.json();
+        // The Edge Function returns { data } or { error }
+        const result = response.data as any;
+        if (result?.error) {
+            throw new Error(result.error);
+        }
+
+        return result;
     },
 
     async createCustomer(organizationId: string, customer: AsaasCustomer) {
@@ -83,5 +66,9 @@ export const asaasService = {
 
     async getPayment(organizationId: string, paymentId: string) {
         return this.request("GET", `/payments/${paymentId}`, organizationId);
-    }
+    },
+
+    async getPixQrCode(organizationId: string, paymentId: string) {
+        return this.request("GET", `/payments/${paymentId}/pixQrCode`, organizationId);
+    },
 };
