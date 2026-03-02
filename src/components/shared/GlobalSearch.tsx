@@ -126,13 +126,21 @@ export function GlobalSearch() {
                 <CommandSeparator />
 
                 <CommandGroup heading="Acesso Rápido">
+                    <CommandItem onSelect={() => onSelect("/dashboard/processos")}>
+                        <FileText className="mr-2 h-4 w-4" />
+                        <span>Processos</span>
+                    </CommandItem>
                     <CommandItem onSelect={() => onSelect("/dashboard/agenda")}>
                         <Calendar className="mr-2 h-4 w-4" />
                         <span>Ver Agenda</span>
                     </CommandItem>
-                    <CommandItem onSelect={() => onSelect("/dashboard/calculadora")}>
-                        <Calculator className="mr-2 h-4 w-4" />
-                        <span>Calculadora Jurídica</span>
+                    <CommandItem onSelect={() => onSelect("/dashboard/timesheet")}>
+                        <Calendar className="mr-2 h-4 w-4" />
+                        <span>Timesheet</span>
+                    </CommandItem>
+                    <CommandItem onSelect={() => onSelect("/dashboard/noticias")}>
+                        <Search className="mr-2 h-4 w-4" />
+                        <span>Lawletter</span>
                     </CommandItem>
                     <CommandItem onSelect={() => onSelect("/dashboard/configuracoes")}>
                         <Settings className="mr-2 h-4 w-4" />

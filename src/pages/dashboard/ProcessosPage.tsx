@@ -45,6 +45,25 @@ type Documento = { id: string; file_name: string; file_path: string; file_type: 
 type SortField = "title" | "number" | "court" | "status" | "estimated_value" | "created_at";
 type SortDir = "asc" | "desc";
 
+const formatCNJ = (value: string) => {
+  const digits = value.replace(/\D/g, "");
+  let formatted = digits.substring(0, 20);
+  if (formatted.length > 16) {
+    formatted = formatted.replace(/^(\d{7})(\d{2})(\d{4})(\d{1})(\d{2})(\d{4})$/, "$1-$2.$3.$4.$5.$6");
+  } else if (formatted.length > 7) {
+    formatted = formatted.replace(/^(\d{7})(\d{1,2})?(\d{1,4})?(\d{1})?(\d{1,2})?(\d{1,4})?/, (_, p1, p2, p3, p4, p5, p6) => {
+      let res = p1;
+      if (p2) res += `-${p2}`;
+      if (p3) res += `.${p3}`;
+      if (p4) res += `.${p4}`;
+      if (p5) res += `.${p5}`;
+      if (p6) res += `.${p6}`;
+      return res;
+    });
+  }
+  return formatted;
+};
+
 const STATUS_OPTIONS = [
   { value: "ativo", label: "Ativo", className: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/25 border-emerald-500/20 font-semibold" },
   { value: "arquivado", label: "Arquivado", className: "bg-muted text-muted-foreground hover:bg-muted/80 border-border font-semibold" },
@@ -547,15 +566,17 @@ export default function ProcessosPage() {
                   <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
                     <Scale className="h-8 w-8 text-primary" />
                   </div>
-                  <h3 className="text-lg font-semibold tracking-tight mb-1">{search || statusFilter !== 'all' ? "Nenhum resultado" : "Nenhum processo cadastrado"}</h3>
+                  <h3 className="text-lg font-semibold tracking-tight mb-1">
+                    {search || statusFilter !== 'all' ? "Nenhum resultado" : "Bem-vindo ao Módulo de Processos!"}
+                  </h3>
                   <p className="text-sm text-muted-foreground max-w-sm mb-6">
                     {search || statusFilter !== 'all'
-                      ? "Sua pesquisa não retornou resultados. Tente limpar os filtros."
-                      : "Comece a organizar os casos do seu escritório adicionando um processo."}
+                      ? "Sua pesquisa não retornou resultados. Tente limpar os filtros ou usar outros termos."
+                      : "Parece que sua organização ainda não possui processos cadastrados. Comece adicionando o primeiro caso do seu escritório."}
                   </p>
                   {!search && statusFilter === 'all' && (
                     <Button size="sm" className="gap-2 shadow-sm" onClick={openCreate}>
-                      <Plus className="h-4 w-4" /> Criar primeiro processo
+                      <Plus className="h-4 w-4" /> Cadastrar Meu Primeiro Processo
                     </Button>
                   )}
                 </div>
@@ -687,17 +708,16 @@ export default function ProcessosPage() {
           </div>
           <form onSubmit={handleSubmit} className="px-6 pb-6">
             <Tabs defaultValue="dados" className="w-full">
-              <TabsList className="my-4 grid w-full grid-cols-3">
+              <TabsList className="my-4 grid w-full grid-cols-2">
                 <TabsTrigger value="dados" className="text-xs">Dados</TabsTrigger>
-                <TabsTrigger value="documentos" className="text-xs">Documentos</TabsTrigger>
-                <TabsTrigger value="calculadora" className="text-xs">Calculadora</TabsTrigger>
+                <TabsTrigger value="documentos" className="text-xs">Anexos</TabsTrigger>
               </TabsList>
               <TabsContent value="dados" className="space-y-4">
                 <div className="rounded-lg border border-border/50 bg-muted/20 p-4 space-y-4">
                   <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Informações Principais</h3>
                   <FormField label="Título" value={form.title ?? ""} onChange={(v) => setField("title", v)} placeholder="Ex: Ação Trabalhista - João Silva" required />
                   <div className="grid grid-cols-2 gap-3">
-                    <FormField label="Número do Processo" value={form.number ?? ""} onChange={(v) => setField("number", v)} placeholder="0000000-00.0000.0.00.0000" />
+                    <FormField label="Número do Processo" value={form.number ?? ""} onChange={(v) => setField("number", formatCNJ(v))} placeholder="0000000-00.0000.0.00.0000" />
                     <FormField label="Vara / Tribunal" value={form.court ?? ""} onChange={(v) => setField("court", v)} placeholder="Ex: 1ª Vara Cível" />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
@@ -797,7 +817,7 @@ export default function ProcessosPage() {
               </TabsContent>
               <TabsContent value="documentos" className="space-y-4">
                 <div className="rounded-lg border border-border/50 bg-muted/20 p-4 space-y-4">
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Documentos do Processo</h3>
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Anexos do Processo</h3>
                   {isEditing && selectedProcesso ? (
                     <>
                       <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={() => triggerFileUpload(selectedProcesso.id)}>
@@ -827,9 +847,7 @@ export default function ProcessosPage() {
                   )}
                 </div>
               </TabsContent>
-              <TabsContent value="calculadora">
-                <ProcessCalculator estimatedValue={form.estimated_value ?? null} />
-              </TabsContent>
+
             </Tabs>
             <Separator className="my-4" />
             <div className="flex justify-end gap-2">
@@ -909,7 +927,7 @@ export default function ProcessosPage() {
                   <TabsList className="w-full justify-start h-10 bg-transparent border-b border-border/50 rounded-none p-0 overflow-x-auto hide-scrollbar">
                     <TabsTrigger value="detalhes" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 pb-2.5">Detalhes</TabsTrigger>
                     <TabsTrigger value="timeline" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 pb-2.5 flex gap-1.5"><Bot className="w-3.5 h-3.5" /> Movimentações</TabsTrigger>
-                    <TabsTrigger value="docs" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 pb-2.5 flex gap-1.5"><File className="w-3.5 h-3.5" /> Docs ({processDocs.length})</TabsTrigger>
+                    <TabsTrigger value="docs" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 pb-2.5 flex gap-1.5"><File className="w-3.5 h-3.5" /> Anexos ({processDocs.length})</TabsTrigger>
                   </TabsList>
 
                   <div className="mt-6">
@@ -950,8 +968,7 @@ export default function ProcessosPage() {
                         </div>
                       )}
 
-                      <Separator />
-                      <ProcessCalculator estimatedValue={selectedProcesso.estimated_value} />
+
                     </TabsContent>
 
                     {/* TAB: TIMELINE CAPTURAS */}

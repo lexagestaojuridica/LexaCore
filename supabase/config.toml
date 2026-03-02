@@ -23,3 +23,25 @@ verify_jwt = false
 
 [functions.rss-proxy]
 verify_jwt = false
+
+[functions.apple-calendar-auth]
+enabled = true
+verify_jwt = true
+import_map = "./functions/apple-calendar-auth/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/apple-calendar-auth/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/apple-calendar-auth/*.html" ]
+
+[functions.apple-calendar-sync]
+enabled = true
+verify_jwt = true
+import_map = "./functions/apple-calendar-sync/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/apple-calendar-sync/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/apple-calendar-sync/*.html" ]

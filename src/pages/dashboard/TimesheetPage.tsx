@@ -3,12 +3,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { format, differenceInMinutes, parseISO, isToday, isYesterday, isValid } from "date-fns";
+import { format, differenceInMinutes, parseISO, isToday, isYesterday, isValid, startOfDay, endOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
     Clock, Plus, Play, Square, Trash2, Timer,
     TrendingUp, Calendar, BarChart3, ChevronRight, PlayCircle, Target, Briefcase,
-    Pause, RotateCcw, ChevronDown, History, Receipt
+    Pause, RotateCcw, ChevronDown, History, Receipt, AlertTriangle, Zap, CalendarCheck
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -369,6 +369,71 @@ export default function TimesheetPage() {
     const totalFaturavel = faturavel.reduce((s, e) => s + ((e.duration_minutes ?? 0) / 60) * (e.hourly_rate ?? 0), 0);
     const totalPago = filtered.filter((e) => e.billing_status === "pago").reduce((s, e) => s + ((e.duration_minutes ?? 0) / 60) * (e.hourly_rate ?? 0), 0);
 
+    // ── Smart Features ──────────────────────────────────────
+
+    // Agenda-based suggestions: fetch today's events
+    const todayStr = format(new Date(), "yyyy-MM-dd");
+    const { data: agendaEvents = [] } = useQuery({
+        queryKey: ["agenda-suggestions", orgId, todayStr],
+        queryFn: async () => {
+            const dayStart = startOfDay(new Date()).toISOString();
+            const dayEnd = endOfDay(new Date()).toISOString();
+            const { data } = await supabase
+                .from("agenda_eventos")
+                .select("id, title, start_time, end_time")
+                .eq("organization_id", orgId!)
+                .gte("start_time", dayStart)
+                .lte("start_time", dayEnd)
+                .order("start_time");
+            return data || [];
+        },
+        enabled: !!orgId,
+    });
+
+    // Today's logged minutes
+    const todayMinutes = useMemo(() => {
+        return entries
+            .filter(e => {
+                try { return isToday(parseISO(e.started_at)); } catch { return false; }
+            })
+            .reduce((s, e) => s + (e.duration_minutes ?? 0), 0);
+    }, [entries]);
+
+    const MIN_DAILY_HOURS = 6;
+    const unloggedMinutes = Math.max(0, MIN_DAILY_HOURS * 60 - todayMinutes);
+    const hasUnloggedAlert = todayMinutes < MIN_DAILY_HOURS * 60;
+
+    // Suggestions: agenda events not yet in timesheet today
+    const suggestions = useMemo(() => {
+        const todayDescriptions = entries
+            .filter(e => { try { return isToday(parseISO(e.started_at)); } catch { return false; } })
+            .map(e => (e.description || "").toLowerCase());
+        return agendaEvents.filter((ev: any) => {
+            const title = (ev.title || "").toLowerCase();
+            return !todayDescriptions.some(d => d.includes(title) || title.includes(d));
+        });
+    }, [agendaEvents, entries]);
+
+    // Overlap/inconsistency detection
+    const overlaps = useMemo(() => {
+        const todayEntries = entries
+            .filter(e => { try { return isToday(parseISO(e.started_at)); } catch { return false; } })
+            .filter(e => e.ended_at)
+            .sort((a, b) => new Date(a.started_at).getTime() - new Date(b.started_at).getTime());
+
+        const issues: string[] = [];
+        for (let i = 0; i < todayEntries.length - 1; i++) {
+            const currEnd = new Date(todayEntries[i].ended_at!).getTime();
+            const nextStart = new Date(todayEntries[i + 1].started_at).getTime();
+            if (currEnd > nextStart) {
+                issues.push(
+                    `"${todayEntries[i].description || 'Sem desc.'}" sobrepõe "${todayEntries[i + 1].description || 'Sem desc.'}"`
+                );
+            }
+        }
+        return issues;
+    }, [entries]);
+
     // Format elapsed timer
     const elapsedH = Math.floor(elapsed / 3600);
     const elapsedM = Math.floor((elapsed % 3600) / 60);
@@ -514,6 +579,65 @@ export default function TimesheetPage() {
                         </div>
                     </div>
                 ))}
+            </motion.div>
+
+            {/* ── Smart Alerts & Suggestions ── */}
+            <motion.div variants={itemAnim} className="space-y-3">
+                {/* Unlogged hours alert */}
+                {hasUnloggedAlert && !activeTimer && (
+                    <div className="flex items-center gap-3 p-3 rounded-xl border border-amber-500/30 bg-amber-500/5">
+                        <div className="p-2 rounded-lg bg-amber-500/10">
+                            <AlertTriangle className="h-4 w-4 text-amber-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-foreground">Horas não lançadas hoje</p>
+                            <p className="text-xs text-muted-foreground">
+                                Você registrou {fmtDuration(todayMinutes)} de {MIN_DAILY_HOURS}h esperadas.
+                                Faltam <span className="font-bold text-amber-600">{fmtDuration(unloggedMinutes)}</span>.
+                            </p>
+                        </div>
+                    </div>
+                )}
+
+                {/* Time overlaps */}
+                {overlaps.length > 0 && (
+                    <div className="flex items-start gap-3 p-3 rounded-xl border border-red-500/30 bg-red-500/5">
+                        <div className="p-2 rounded-lg bg-red-500/10 shrink-0">
+                            <AlertTriangle className="h-4 w-4 text-red-600" />
+                        </div>
+                        <div>
+                            <p className="text-sm font-semibold text-foreground">Sobreposição de horários detectada</p>
+                            {overlaps.map((msg, i) => (
+                                <p key={i} className="text-xs text-muted-foreground mt-0.5">• {msg}</p>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Agenda suggestions */}
+                {suggestions.length > 0 && (
+                    <div className="p-3 rounded-xl border border-primary/20 bg-primary/5">
+                        <div className="flex items-center gap-2 mb-2">
+                            <Zap className="h-3.5 w-3.5 text-primary" />
+                            <p className="text-xs font-semibold text-foreground">Sugestões da Agenda</p>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                            {suggestions.slice(0, 5).map((ev: any) => (
+                                <button
+                                    key={ev.id}
+                                    className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg bg-background border border-border/50 hover:border-primary/40 hover:bg-primary/5 transition-all text-foreground font-medium"
+                                    onClick={() => {
+                                        setTimerDescription(ev.title);
+                                        toast.success(`"${ev.title}" preenchido. Clique INICIAR para registrar.`);
+                                    }}
+                                >
+                                    <CalendarCheck className="h-3 w-3 text-primary" />
+                                    {ev.title}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
             </motion.div>
 
             {/* Filters + List */}

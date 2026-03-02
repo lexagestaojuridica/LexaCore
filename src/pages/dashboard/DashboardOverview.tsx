@@ -19,7 +19,12 @@ import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { Progress } from "@/components/ui/progress";
+import { transform } from "framer-motion";
 import { useTranslation } from "react-i18next";
+import { useGoogleCalendar } from "@/hooks/useGoogleCalendar";
+import { useMicrosoftCalendar } from "@/hooks/useMicrosoftCalendar";
+import { useAppleCalendar } from "@/hooks/useAppleCalendar";
+import { CalendarEmptyState } from "@/components/dashboard/CalendarEmptyState";
 
 // ─── Types ────────────────────────────────────────────────────
 interface Evento { id: string; title: string; start_time: string; end_time: string; category: string | null; }
@@ -120,6 +125,10 @@ export default function DashboardOverview() {
   const displayName = user?.user_metadata?.full_name?.split(" ")[0] || "Advogado";
   const hour = new Date().getHours();
   const greeting = hour < 12 ? t("dashboard.greeting") : hour < 18 ? t("dashboard.greetingAfternoon") : t("dashboard.greetingEvening");
+
+  const gcal = useGoogleCalendar();
+  const mscal = useMicrosoftCalendar();
+  const appleCal = useAppleCalendar();
 
   // ── Fetch profile / org ──
   const { data: profile, isLoading: isProfileLoading } = useQuery({
@@ -303,7 +312,6 @@ export default function DashboardOverview() {
       {/* ── KPIs Row ── */}
       <motion.div variants={item} className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         {[
-          { label: t("dashboard.activeProcesses"), val: stats?.totalProcessos ?? 0, icon: Scale, color: "text-blue-600 bg-blue-500/8" },
           { title: t("dashboard.activeProcesses"), value: stats?.totalProcessos ?? 0, icon: Scale, color: "text-blue-600", trend: 0 },
           { title: t("dashboard.clients"), value: stats?.totalClientes ?? 0, icon: Users, color: "text-indigo-600", trend: 0 },
           { title: t("dashboard.eventsToday"), value: todayEvents.length, icon: CalendarDays, color: "text-emerald-600", badge: happeningNowCount > 0 ? `${happeningNowCount} ${t("dashboard.now")}` : undefined, trend: 0 },
@@ -368,19 +376,23 @@ export default function DashboardOverview() {
                   <Clock className="h-3.5 w-3.5" /> {t("dashboard.timeline")}
                 </h3>
                 <Button variant="ghost" size="sm" className="h-7 text-[10px] font-bold uppercase tracking-widest text-primary/70 hover:text-primary transition-colors" onClick={() => navigate("/dashboard/agenda")}>
-                  {t("common.seeAll")}
+                  {t("common.seeAll", "Ver todos")}
                 </Button>
               </div>
 
               <div className="space-y-1">
                 {todayEvents.length === 0 && tomorrowEvents.length === 0 && (
-                  <div className="glass-card border-dashed p-10 text-center flex flex-col items-center justify-center rounded-xl bg-muted/5">
-                    <div className="h-12 w-12 rounded-full bg-muted/30 flex items-center justify-center mb-3">
-                      <CalendarDays className="h-6 w-6 text-muted-foreground/40" />
+                  (!gcal.isConnected && !mscal.isConnected && !appleCal.isConnected) ? (
+                    <CalendarEmptyState showTitle={true} />
+                  ) : (
+                    <div className="glass-card border-dashed p-10 text-center flex flex-col items-center justify-center rounded-xl bg-muted/5">
+                      <div className="h-12 w-12 rounded-full bg-muted/30 flex items-center justify-center mb-3">
+                        <CalendarDays className="h-6 w-6 text-muted-foreground/40" />
+                      </div>
+                      <p className="text-sm font-medium text-muted-foreground">{t("dashboard.noEvents")}</p>
+                      <Button variant="link" size="sm" className="mt-1" onClick={() => navigate("/dashboard/agenda")}>Agendar compromisso</Button>
                     </div>
-                    <p className="text-sm font-medium text-muted-foreground">{t("dashboard.noEvents")}</p>
-                    <Button variant="link" size="sm" className="mt-1" onClick={() => navigate("/dashboard/agenda")}>Agendar compromisso</Button>
-                  </div>
+                  )
                 )}
 
                 {todayEvents.length > 0 && (

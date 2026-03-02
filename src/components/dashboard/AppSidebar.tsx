@@ -12,7 +12,7 @@ import {
   LayoutDashboard, Scale, Users, CalendarDays, DollarSign, Bot,
   LogOut, Settings, BarChart3, Calculator, Newspaper, Target,
   GitBranch, FileEdit, ChevronDown, Award, Timer, BookOpen, RotateCcw,
-  MessageSquare, Building2, Briefcase, Clock,
+  MessageSquare, Building2, Briefcase, Clock, ShieldAlert,
 } from "lucide-react";
 import { resetOnboardingTour } from "./OnboardingTour";
 import { useState } from "react";
@@ -33,6 +33,7 @@ const navGroups = [
     defaultOpen: true,
     items: [
       { titleKey: "nav.dashboard", url: "/dashboard", icon: LayoutDashboard },
+      { titleKey: "Lawletter", url: "/dashboard/noticias", icon: Newspaper }, // Renamed from Notícias Jurídicas, now at root
     ],
   },
   {
@@ -41,6 +42,7 @@ const navGroups = [
     items: [
       { titleKey: "nav.processes", url: "/dashboard/processos", icon: Scale },
       { titleKey: "nav.agenda", url: "/dashboard/agenda", icon: CalendarDays },
+      { titleKey: "nav.minutas", url: "/dashboard/minutas", icon: FileEdit }, // Moved from Documents
       { titleKey: "nav.timesheet", url: "/dashboard/timesheet", icon: Timer },
       { titleKey: "nav.chat", url: "/dashboard/chat", icon: MessageSquare },
       { titleKey: "nav.workflow", url: "/dashboard/workflow", icon: GitBranch },
@@ -55,42 +57,20 @@ const navGroups = [
     ],
   },
   {
-    labelKey: "groups.documents",
-    defaultOpen: false,
-    items: [
-      { titleKey: "nav.minutas", url: "/dashboard/minutas", icon: FileEdit },
-      { titleKey: "nav.certificates", url: "/dashboard/certificados", icon: Award },
-      { titleKey: "nav.wiki", url: "/dashboard/wiki", icon: BookOpen },
-      { titleKey: "nav.calculator", url: "/dashboard/calculadora", icon: Calculator },
-    ],
-  },
-  {
-    labelKey: "groups.financial",
-    defaultOpen: false,
-    items: [
-      { titleKey: "nav.financial", url: "/dashboard/financeiro", icon: DollarSign, allowedRoles: ["admin", "advogado", "financeiro"] },
-    ],
-  },
-  {
     labelKey: "groups.intelligence",
     defaultOpen: false,
     items: [
       { titleKey: "nav.bi", url: "/dashboard/bi", icon: BarChart3 },
       { titleKey: "nav.ia", url: "/dashboard/ia", icon: Bot },
-      { titleKey: "nav.news", url: "/dashboard/noticias", icon: Newspaper },
+      // Notícias removed from here
     ],
   },
   {
-    labelKey: "groups.admin",
+    labelKey: "Gerencial",
     defaultOpen: false,
     items: [
+      { titleKey: "nav.financial", url: "/dashboard/financeiro", icon: DollarSign, allowedRoles: ["admin", "advogado", "financeiro"] },
       { titleKey: "nav.units", url: "/dashboard/unidades", icon: Building2, allowedRoles: ["admin"] },
-    ],
-  },
-  {
-    labelKey: "RH / DHO",
-    defaultOpen: false,
-    items: [
       { titleKey: "Dashboard RH", url: "/dashboard/rh", icon: BarChart3, allowedRoles: ["admin", "advogado"] },
       { titleKey: "Colaboradores", url: "/dashboard/rh/colaboradores", icon: Users, allowedRoles: ["admin", "advogado"] },
       { titleKey: "Ponto Eletrônico", url: "/dashboard/rh/ponto", icon: Clock, allowedRoles: ["admin", "advogado"] },
@@ -220,104 +200,33 @@ export function AppSidebar() {
         })}
       </SidebarContent>
 
-      {/* Global Search Component */}
+      {/* Global Search Component is now in the TopBar, but we keep the listener here to catch the Cmd+K shortcut throughout the whole App */}
       <GlobalSearch />
 
       {/* Footer */}
       <SidebarFooter className="shrink-0 border-t border-sidebar-border/50 p-2.5">
-
-        {/* Search Button for Mobile or Mouse user */}
-        <div className="flex items-center gap-2 mb-2">
-          <Button
-            variant="outline"
-            className={cn(
-              "w-full justify-between bg-sidebar-accent/30 border-sidebar-border/50 hover:bg-sidebar-accent/80 hover:text-sidebar-foreground",
-              collapsed ? "px-0 justify-center h-8" : "px-3 h-8"
-            )}
-            onClick={() => {
-              const e = new KeyboardEvent('keydown', { key: 'k', ctrlKey: true });
-              document.dispatchEvent(e);
-            }}
-          >
-            <div className="flex items-center gap-2 text-sidebar-foreground/60">
-              <Search className="h-3.5 w-3.5" />
-              {!collapsed && <span className="text-xs">Buscar...</span>}
-            </div>
-            {!collapsed && (
-              <kbd className="pointer-events-none inline-flex h-5 items-center gap-1 rounded border border-sidebar-border/50 bg-sidebar/50 px-1.5 font-mono text-[10px] font-medium text-sidebar-foreground/60">
-                <span className="text-xs">⌘</span>K
-              </kbd>
-            )}
-          </Button>
-        </div>
-
-        <div className="flex items-center gap-2.5">
-          {avatarUrl ? (
-            <img
-              src={avatarUrl}
-              alt={displayName}
-              className="h-8 w-8 shrink-0 rounded-full object-cover ring-1 ring-sidebar-accent/50"
-            />
-          ) : (
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent/80 text-[11px] font-semibold text-accent-foreground">
-              {initials}
-            </div>
-          )}
-          {!collapsed && (
-            <div className="flex flex-1 flex-col overflow-hidden">
-              <span className="truncate text-xs font-medium text-sidebar-foreground">
-                {displayName}
-              </span>
-              <span className="truncate text-[10px] text-sidebar-foreground/35">
-                {user?.email}
-              </span>
-            </div>
-          )}
-          {role === "admin" && (
-            <Tooltip delayDuration={0}>
-              <TooltipTrigger asChild>
+        {/* Master Admin / Backoffice Link (Only visible to the Lexanova Founder) */}
+        {user?.email === "lexagestaojuridica@gmail.com" && (
+          <Tooltip delayDuration={0}>
+            <TooltipTrigger asChild>
+              <NavLink to="/admin/hq">
                 <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 shrink-0 text-sidebar-foreground/35 hover:text-sidebar-foreground hover:bg-sidebar-accent"
-                  asChild
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-between bg-rose-500/10 border-rose-500/20 hover:bg-rose-500/20 text-rose-500/80 hover:text-rose-400",
+                    collapsed ? "px-0 justify-center" : "px-3"
+                  )}
                 >
-                  <NavLink to="/dashboard/configuracoes">
-                    <Settings className="h-3.5 w-3.5" />
-                  </NavLink>
+                  <div className="flex items-center gap-2">
+                    <ShieldAlert className="h-4 w-4 shrink-0" />
+                    {!collapsed && <span className="text-sm font-medium">SaaS Backoffice</span>}
+                  </div>
                 </Button>
-              </TooltipTrigger>
-              <TooltipContent side="right">{t("nav.settings")}</TooltipContent>
-            </Tooltip>
-          )}
-          <Tooltip delayDuration={0}>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 shrink-0 text-sidebar-foreground/35 hover:text-sidebar-foreground hover:bg-sidebar-accent"
-                title={t("common.logout")}
-                onClick={() => { resetOnboardingTour(); window.location.reload(); }}
-              >
-                <RotateCcw className="h-3.5 w-3.5" />
-              </Button>
+              </NavLink>
             </TooltipTrigger>
-            <TooltipContent side="right">{t("common.logout")}</TooltipContent>
+            {collapsed && <TooltipContent side="right">SaaS Backoffice</TooltipContent>}
           </Tooltip>
-          <Tooltip delayDuration={0}>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 shrink-0 text-sidebar-foreground/35 hover:text-sidebar-foreground hover:bg-sidebar-accent"
-                onClick={signOut}
-              >
-                <LogOut className="h-3.5 w-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right">{t("common.logout")}</TooltipContent>
-          </Tooltip>
-        </div>
+        )}
       </SidebarFooter>
     </Sidebar>
   );

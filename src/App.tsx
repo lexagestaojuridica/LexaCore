@@ -18,14 +18,11 @@ import FinanceiroPage from "@/pages/dashboard/FinanceiroPage";
 import IAPage from "@/pages/dashboard/IAPage";
 import ConfiguracoesPage from "@/pages/dashboard/ConfiguracoesPage";
 import BIPage from "@/pages/dashboard/BIPage";
-import CalculadoraPage from "@/pages/dashboard/CalculadoraPage";
 import NoticiasPage from "@/pages/dashboard/NoticiasPage";
 import CrmPage from "@/pages/dashboard/CrmPage";
 import WorkflowPage from "@/pages/dashboard/WorkflowPage";
 import MinutasPage from "@/pages/dashboard/MinutasPage";
-import CertificadosPage from "@/pages/dashboard/CertificadosPage";
 import TimesheetPage from "@/pages/dashboard/TimesheetPage";
-import WikiJuridicaPage from "@/pages/dashboard/WikiJuridicaPage";
 import ChatPage from "@/pages/dashboard/ChatPage";
 import UnidadesPage from "@/pages/dashboard/UnidadesPage";
 
@@ -43,6 +40,13 @@ import ProcessPublicView from "./pages/public/ProcessPublicView";
 
 import ResetPassword from "./pages/auth/ResetPassword";
 import UpdatePassword from "./pages/auth/UpdatePassword";
+
+// SaaS Backoffice (Master Admin)
+import AdminGuard from "@/components/shared/AdminGuard";
+import AdminLayout from "@/components/admin/AdminLayout";
+import AdminDashboard from "@/pages/admin/AdminDashboard";
+import AdminOrganizations from "@/pages/admin/AdminOrganizations";
+import AdminPlans from "@/pages/admin/AdminPlans";
 
 const queryClient = new QueryClient();
 
@@ -82,14 +86,11 @@ const App = () => (
                 <Route path="ia" element={<IAPage />} />
                 <Route path="configuracoes" element={<RoleGuard allowedRoles={["admin"]} fallback={<Navigate to="/dashboard" replace />}><ConfiguracoesPage /></RoleGuard>} />
                 <Route path="bi" element={<BIPage />} />
-                <Route path="calculadora" element={<CalculadoraPage />} />
                 <Route path="noticias" element={<NoticiasPage />} />
                 <Route path="crm" element={<CrmPage />} />
                 <Route path="workflow" element={<WorkflowPage />} />
                 <Route path="minutas" element={<MinutasPage />} />
-                <Route path="certificados" element={<CertificadosPage />} />
                 <Route path="timesheet" element={<TimesheetPage />} />
-                <Route path="wiki" element={<WikiJuridicaPage />} />
                 <Route path="chat" element={<ChatPage />} />
                 <Route path="unidades" element={<UnidadesPage />} />
 
@@ -102,6 +103,25 @@ const App = () => (
               <Route path="/crm-preview" element={<CrmPage />} />
               <Route path="/workflow-preview" element={<WorkflowPage />} />
               <Route path="/minutas-preview" element={<MinutasPage />} />
+
+              {/* BACKOFFICE ADMIN HQ */}
+              <Route
+                path="/admin/hq"
+                element={
+                  <AdminGuard>
+                    <AdminLayout />
+                  </AdminGuard>
+                }
+              >
+                <Route index element={<AdminDashboard />} />
+                <Route path="organizations" element={<AdminOrganizations />} />
+                <Route path="plans" element={<AdminPlans />} />
+                {/* Fallback internal routes until built */}
+                <Route path="audit" element={<AdminDashboard />} />
+                <Route path="support" element={<AdminDashboard />} />
+                <Route path="settings" element={<AdminDashboard />} />
+              </Route>
+
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AuthProvider>
