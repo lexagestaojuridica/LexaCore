@@ -1,6 +1,6 @@
-import { useState, useMemo, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGoogleCalendar } from "@/hooks/useGoogleCalendar";
+import { useMicrosoftCalendar } from "@/hooks/useMicrosoftCalendar";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -418,6 +418,7 @@ export default function AgendaPage() {
   const [syncOpen, setSyncOpen] = useState(false);
   const [filteredCategories, setFilteredCategories] = useState<string[]>([]);
   const gcal = useGoogleCalendar();
+  const mscal = useMicrosoftCalendar();
 
   const { data: profileData } = useQuery({
     queryKey: ["profile", user?.id],
@@ -915,19 +916,20 @@ export default function AgendaPage() {
           <DialogHeader>
             <DialogTitle className="font-semibold">Integrações de Calendário</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 py-4">
-            <p className="text-sm text-muted-foreground">Conecte sua agenda com outros serviços ou exporte seus eventos.</p>
+          <div className="space-y-4 py-4">
+            <p className="text-sm text-muted-foreground mb-2">Conecte sua agenda com outros serviços ou exporte seus eventos.</p>
+
             {/* Google Calendar */}
-            <div className="rounded-lg border border-border p-4">
+            <div className="rounded-lg border border-border p-4 bg-card shadow-sm">
               <div className="flex items-center gap-3 mb-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-500/10">
-                  <CalendarDays className="h-5 w-5 text-red-500" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10">
+                  <CalendarDays className="h-5 w-5 text-blue-500" />
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-medium">Google Calendar</p>
                   <p className="text-xs text-muted-foreground">{gcal.isConnected ? "Conectado" : "Sincronize via OAuth"}</p>
                 </div>
-                {gcal.isConnected && <Badge variant="outline" className="text-[10px] text-emerald-600 border-emerald-300">Ativo</Badge>}
+                {gcal.isConnected && <Badge variant="outline" className="text-[10px] text-emerald-600 border-emerald-300 bg-emerald-500/10">Ativo</Badge>}
               </div>
               {gcal.isConnected ? (
                 <div className="space-y-2">
@@ -938,7 +940,7 @@ export default function AgendaPage() {
                     <Button variant="outline" size="sm" className="gap-1.5 text-xs flex-1" onClick={() => gcal.exportEvents()} disabled={gcal.exporting}>
                       {gcal.exporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />} Exportar
                     </Button>
-                    <Button variant="ghost" size="sm" className="text-xs text-destructive" onClick={() => gcal.disconnect()} title="Desconectar"><Unplug className="h-3.5 w-3.5" /></Button>
+                    <Button variant="ghost" size="sm" className="px-2 text-destructive hover:bg-destructive/10" onClick={() => gcal.disconnect()} title="Desconectar"><Unplug className="h-4 w-4" /></Button>
                   </div>
                   <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs border-destructive/30 text-destructive hover:bg-destructive/10" onClick={() => gcal.clearEvents()} disabled={gcal.clearing}>
                     {gcal.clearing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
@@ -946,12 +948,49 @@ export default function AgendaPage() {
                   </Button>
                 </div>
               ) : (
-                <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs" onClick={() => gcal.connect()} disabled={gcal.connecting}>
+                <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs border-blue-500/30 text-blue-600 hover:bg-blue-500/10" onClick={() => gcal.connect()} disabled={gcal.connecting}>
                   {gcal.connecting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ExternalLink className="h-3.5 w-3.5" />}
-                  Conectar Google Calendar
+                  Conectar Google Account
                 </Button>
               )}
             </div>
+
+            {/* Microsoft Calendar */}
+            <div className="rounded-lg border border-border p-4 bg-card shadow-sm">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/10">
+                  <CalendarDays className="h-5 w-5 text-indigo-500" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium">Microsoft Calendar</p>
+                  <p className="text-xs text-muted-foreground">{mscal.isConnected ? "Conectado" : "Microsoft 365 / Outlook"}</p>
+                </div>
+                {mscal.isConnected && <Badge variant="outline" className="text-[10px] text-emerald-600 border-emerald-300 bg-emerald-500/10">Ativo</Badge>}
+              </div>
+              {mscal.isConnected ? (
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" className="gap-1.5 text-xs flex-1" onClick={() => mscal.importEvents()} disabled={mscal.importing}>
+                      {mscal.importing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />} Importar
+                    </Button>
+                    <Button variant="outline" size="sm" className="gap-1.5 text-xs flex-1" onClick={() => mscal.exportEvents()} disabled={mscal.exporting}>
+                      {mscal.exporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />} Exportar
+                    </Button>
+                    <Button variant="ghost" size="sm" className="px-2 text-destructive hover:bg-destructive/10" onClick={() => mscal.disconnect()} title="Desconectar"><Unplug className="h-4 w-4" /></Button>
+                  </div>
+                  <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs border-destructive/30 text-destructive hover:bg-destructive/10" onClick={() => mscal.clearEvents()} disabled={mscal.clearing}>
+                    {mscal.clearing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                    Limpar Agenda Importada
+                  </Button>
+                </div>
+              ) : (
+                <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs border-indigo-500/30 text-indigo-600 hover:bg-indigo-500/10" onClick={() => mscal.connect()} disabled={mscal.connecting}>
+                  {mscal.connecting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ExternalLink className="h-3.5 w-3.5" />}
+                  Conectar Microsoft 365
+                </Button>
+              )}
+            </div>
+
           </div>
         </DialogContent>
       </Dialog>
