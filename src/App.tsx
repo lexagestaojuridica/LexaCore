@@ -47,10 +47,14 @@ import AdminLayout from "@/components/admin/AdminLayout";
 import AdminDashboard from "@/pages/admin/AdminDashboard";
 import AdminOrganizations from "@/pages/admin/AdminOrganizations";
 import AdminPlans from "@/pages/admin/AdminPlans";
+import AdminAudit from "@/pages/admin/AdminAudit";
+import AdminSupport from "@/pages/admin/AdminSupport";
+import AdminSettings from "@/pages/admin/AdminSettings";
 
 const queryClient = new QueryClient();
 
 import { ThemeProvider } from "@/components/theme-provider";
+import { CommandPalette } from "@/components/shared/CommandPalette";
 
 // ... inside App component ...
 const App = () => (
@@ -61,6 +65,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
+            <CommandPalette />
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
@@ -116,10 +121,9 @@ const App = () => (
                 <Route index element={<AdminDashboard />} />
                 <Route path="organizations" element={<AdminOrganizations />} />
                 <Route path="plans" element={<AdminPlans />} />
-                {/* Fallback internal routes until built */}
-                <Route path="audit" element={<AdminDashboard />} />
-                <Route path="support" element={<AdminDashboard />} />
-                <Route path="settings" element={<AdminDashboard />} />
+                <Route path="audit" element={<AdminAudit />} />
+                <Route path="support" element={<AdminSupport />} />
+                <Route path="settings" element={<AdminSettings />} />
               </Route>
 
               <Route path="*" element={<NotFound />} />

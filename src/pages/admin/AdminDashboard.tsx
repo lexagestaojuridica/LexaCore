@@ -29,7 +29,7 @@ export default function AdminDashboard() {
         queryKey: ["admin-active-subs"],
         queryFn: async () => {
             const { count } = await supabase
-                .from("organization_subscriptions")
+                .from("organization_subscriptions" as any)
                 .select("*", { count: "exact", head: true })
                 .eq("status", "active");
             return count || 0;
@@ -72,11 +72,11 @@ export default function AdminDashboard() {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
 
                 <Card className="bg-zinc-900 border-zinc-800">
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardHeader className="flex flex-row items-center justify-between pt-5 pb-2 px-5">
                         <CardTitle className="text-sm font-medium text-zinc-400">MRR Estimado</CardTitle>
-                        <CreditCard className="h-4 w-4 text-emerald-500" />
+                        <CreditCard className="h-4 w-4 text-indigo-500" />
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="px-5 pb-5">
                         <div className="text-2xl font-bold text-white">R$ 31.000,00</div>
                         <p className="text-xs text-emerald-500 mt-1 flex items-center gap-1">
                             <TrendingUp className="h-3 w-3" /> +17% em relação ao último mês
@@ -85,11 +85,11 @@ export default function AdminDashboard() {
                 </Card>
 
                 <Card className="bg-zinc-900 border-zinc-800">
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardHeader className="flex flex-row items-center justify-between pt-5 pb-2 px-5">
                         <CardTitle className="text-sm font-medium text-zinc-400">Inquilinos Pagantes</CardTitle>
-                        <Building2 className="h-4 w-4 text-indigo-500" />
+                        <Building2 className="h-4 w-4 text-emerald-500" />
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="px-5 pb-5">
                         <div className="text-2xl font-bold text-white">{activeSubs ?? "..."}</div>
                         <p className="text-xs text-zinc-500 mt-1">
                             De {orgsCount ?? "..."} escritórios registrados
@@ -98,11 +98,11 @@ export default function AdminDashboard() {
                 </Card>
 
                 <Card className="bg-zinc-900 border-zinc-800">
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardHeader className="flex flex-row items-center justify-between pt-5 pb-2 px-5">
                         <CardTitle className="text-sm font-medium text-zinc-400">Usuários Ativos</CardTitle>
                         <Users className="h-4 w-4 text-sky-500" />
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="px-5 pb-5">
                         <div className="text-2xl font-bold text-white">{usersCount ?? "..."}</div>
                         <p className="text-xs text-sky-500 mt-1 flex items-center gap-1">
                             <TrendingUp className="h-3 w-3" /> Crescimento constante
@@ -111,11 +111,11 @@ export default function AdminDashboard() {
                 </Card>
 
                 <Card className="bg-zinc-900 border-zinc-800">
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardHeader className="flex flex-row items-center justify-between pt-5 pb-2 px-5">
                         <CardTitle className="text-sm font-medium text-zinc-400">Saúde do Servidor</CardTitle>
                         <Activity className="h-4 w-4 text-emerald-500" />
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="px-5 pb-5">
                         <div className="text-2xl font-bold text-emerald-400">Excelente</div>
                         <p className="text-xs text-zinc-500 mt-1">
                             Zero erros reportados hoje

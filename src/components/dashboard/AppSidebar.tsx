@@ -205,28 +205,7 @@ export function AppSidebar() {
 
       {/* Footer */}
       <SidebarFooter className="shrink-0 border-t border-sidebar-border/50 p-2.5">
-        {/* Master Admin / Backoffice Link (Only visible to the Lexanova Founder) */}
-        {user?.email === "lexagestaojuridica@gmail.com" && (
-          <Tooltip delayDuration={0}>
-            <TooltipTrigger asChild>
-              <NavLink to="/admin/hq">
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-between bg-rose-500/10 border-rose-500/20 hover:bg-rose-500/20 text-rose-500/80 hover:text-rose-400",
-                    collapsed ? "px-0 justify-center" : "px-3"
-                  )}
-                >
-                  <div className="flex items-center gap-2">
-                    <ShieldAlert className="h-4 w-4 shrink-0" />
-                    {!collapsed && <span className="text-sm font-medium">SaaS Backoffice</span>}
-                  </div>
-                </Button>
-              </NavLink>
-            </TooltipTrigger>
-            {collapsed && <TooltipContent side="right">SaaS Backoffice</TooltipContent>}
-          </Tooltip>
-        )}
+        {/* Footer content removed, moved to User Profile Dropdown */}
       </SidebarFooter>
     </Sidebar>
   );

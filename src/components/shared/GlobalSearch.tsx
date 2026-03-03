@@ -22,6 +22,16 @@ export function GlobalSearch() {
     const navigate = useNavigate();
     const { t } = useTranslation();
     const { user } = useAuth();
+    const [orgId, setOrgId] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!user) return;
+        const fetchOrg = async () => {
+            const { data } = await supabase.from("profiles").select("organization_id").eq("user_id", user.id).single();
+            if (data?.organization_id) setOrgId(data.organization_id);
+        };
+        fetchOrg();
+    }, [user]);
 
     useEffect(() => {
         const down = (e: KeyboardEvent) => {
@@ -35,7 +45,7 @@ export function GlobalSearch() {
     }, []);
 
     useEffect(() => {
-        if (!searchTerm || searchTerm.length < 2 || !user) {
+        if (!searchTerm || searchTerm.length < 2 || !user || !orgId) {
             setResults({ clients: [], processes: [], leads: [] });
             return;
         }
@@ -47,6 +57,7 @@ export function GlobalSearch() {
                 const { data: clients } = await supabase
                     .from("clientes")
                     .select("id, nome, email")
+                    .eq("organization_id", orgId)
                     .ilike("nome", `%${searchTerm}%`)
                     .limit(3);
 
@@ -54,6 +65,7 @@ export function GlobalSearch() {
                 const { data: processes } = await supabase
                     .from("processos")
                     .select("id, numero_cnj, cliente_nome")
+                    .eq("organization_id", orgId)
                     .or(`numero_cnj.ilike.%${searchTerm}%,cliente_nome.ilike.%${searchTerm}%`)
                     .limit(3);
 
@@ -61,6 +73,7 @@ export function GlobalSearch() {
                 const { data: leads } = await supabase
                     .from("crm_leads")
                     .select("id, name, contact_name")
+                    .eq("organization_id", orgId)
                     .ilike("name", `%${searchTerm}%`)
                     .limit(3);
 

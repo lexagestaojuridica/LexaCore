@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import {
     Search, RefreshCcw, Bell, Moon, Sun,
-    Settings, LogOut, ChevronDown, User, Plus
+    Settings, LogOut, ChevronDown, User, Plus, ShieldAlert
 } from "lucide-react";
 import {
     DropdownMenu, DropdownMenuContent, DropdownMenuItem,
@@ -80,7 +80,7 @@ export function TopBar() {
         <header className="sticky top-0 z-40 flex h-14 w-full items-center justify-between border-b border-border bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
 
             {/* Left Axis: Sidebar Toggle + Title */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 w-1/3">
                 <SidebarTrigger className="shrink-0 text-muted-foreground hover:text-foreground" />
                 <div className="h-5 w-px bg-border/40" />
                 <h1 className="text-base font-semibold tracking-tight text-foreground md:text-lg">
@@ -88,23 +88,25 @@ export function TopBar() {
                 </h1>
             </div>
 
-            {/* Right Axis: Tools & Profile */}
-            <div className="flex items-center gap-1.5 md:gap-3">
-
-                {/* Global Search Button */}
+            {/* Center Axis: Global Search */}
+            <div className="flex-1 flex justify-center w-1/3">
                 <Button
                     variant="outline"
-                    className="hidden md:flex h-9 w-60 items-center justify-between bg-muted/50 px-3 text-muted-foreground hover:bg-muted/80 hover:text-foreground border-border/50 transition-colors"
+                    className="hidden md:flex h-9 w-64 lg:w-80 items-center justify-between bg-muted/50 px-3 text-muted-foreground hover:bg-muted/80 hover:text-foreground border-border/50 transition-colors"
                     onClick={openGlobalSearch}
                 >
-                    <div className="flex items-center gap-2">
-                        <Search className="h-4 w-4" />
-                        <span className="text-sm font-normal">{t("cmdK.searchPlaceholder")}</span>
+                    <div className="flex items-center gap-2 overflow-hidden mr-2">
+                        <Search className="h-4 w-4 shrink-0" />
+                        <span className="text-sm font-normal truncate">{t("cmdK.searchPlaceholder")}</span>
                     </div>
                     <kbd className="pointer-events-none inline-flex h-5 items-center gap-1 rounded border border-border/50 bg-background/50 px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
                         <span className="text-xs">⌘</span>K
                     </kbd>
                 </Button>
+            </div>
+
+            {/* Right Axis: Tools & Profile */}
+            <div className="flex items-center gap-1.5 md:gap-3">
 
                 <Button variant="ghost" size="icon" className="md:hidden h-9 w-9 text-muted-foreground hover:text-foreground" onClick={openGlobalSearch}>
                     <Search className="h-4 w-4" />
@@ -116,29 +118,33 @@ export function TopBar() {
                 <Button
                     variant="ghost"
                     size="icon"
-                    className="h-9 w-9 text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all active:rotate-180"
+                    className="hidden md:flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all active:rotate-180"
                     onClick={handleRefresh}
-                    title="Recarregar Dados"
+                    title="Refresh"
                 >
                     <RefreshCcw className="h-4 w-4" />
                 </Button>
 
                 {/* Facilitador (Quick Links) */}
-                <FacilitadorBar />
+                <div className="hidden md:block">
+                    <FacilitadorBar />
+                </div>
 
                 {/* Theme Toggle */}
                 <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-                    className="h-9 w-9 text-muted-foreground hover:text-foreground hover:bg-muted/80"
+                    className="hidden md:flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80"
                     title="Alternar Tema"
                 >
                     {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
                 </Button>
 
                 {/* Language Switcher */}
-                <LanguageSwitcher />
+                <div className="hidden md:block">
+                    <LanguageSwitcher />
+                </div>
 
                 {/* Notifications Dropdown */}
                 <NotificationsDropdown />
@@ -165,11 +171,13 @@ export function TopBar() {
                             <ChevronDown className="h-3.5 w-3.5 text-muted-foreground hidden md:block" />
                         </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-56" sideOffset={8}>
-                        <DropdownMenuLabel className="font-normal">
-                            <div className="flex flex-col space-y-1">
-                                <p className="text-sm font-medium leading-none text-foreground">{displayName}</p>
-                                <p className="text-xs leading-none text-muted-foreground truncate">{user?.email}</p>
+                    <DropdownMenuContent align="end" className="w-[280px] p-2" sideOffset={8}>
+                        <DropdownMenuLabel className="font-normal p-2.5">
+                            <div className="flex flex-col space-y-2">
+                                <p className="text-sm font-semibold leading-none text-foreground truncate">{displayName}</p>
+                                {displayName !== user?.email && (
+                                    <p className="text-xs leading-none text-muted-foreground truncate">{user?.email}</p>
+                                )}
                             </div>
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator />
@@ -177,8 +185,17 @@ export function TopBar() {
                             <Settings className="h-4 w-4 text-muted-foreground" />
                             <span>{t("nav.settings")}</span>
                         </DropdownMenuItem>
+                        {user?.email === "lexagestaojuridica@gmail.com" && (
+                            <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem className="cursor-pointer gap-2 text-rose-600 focus:text-rose-700 focus:bg-rose-500/10" onClick={() => navigate("/admin/hq")}>
+                                    <ShieldAlert className="h-4 w-4" />
+                                    <span>SaaS Backoffice</span>
+                                </DropdownMenuItem>
+                            </>
+                        )}
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem className="cursor-pointer gap-2 text-rose-500 focus:text-rose-600 focus:bg-rose-500/10" onClick={handleLogout}>
+                        <DropdownMenuItem className="cursor-pointer gap-2 text-destructive focus:text-destructive focus:bg-destructive/10" onClick={handleLogout}>
                             <LogOut className="h-4 w-4" />
                             <span>{t("common.logout")}</span>
                         </DropdownMenuItem>

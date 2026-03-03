@@ -33,7 +33,7 @@ export default function AdminPlans() {
                         Configure limites do sistema e valores das assinaturas para novos clientes.
                     </p>
                 </div>
-                <Button className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2">
+                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2">
                     <Plus className="h-4 w-4" /> Criar Novo Plano
                 </Button>
             </div>
@@ -41,9 +41,26 @@ export default function AdminPlans() {
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {isLoading ? (
                     Array.from({ length: 3 }).map((_, i) => (
-                        <Card key={i} className="bg-zinc-900 border-zinc-800 flex flex-col">
-                            <CardHeader><Skeleton className="h-6 w-1/2 bg-zinc-800" /></CardHeader>
-                            <CardContent className="flex-1"><Skeleton className="h-24 w-full bg-zinc-800" /></CardContent>
+                        <Card key={i} className="bg-zinc-900 border-zinc-800 flex flex-col overflow-hidden">
+                            <CardHeader className="gap-2">
+                                <Skeleton className="h-6 w-1/2 bg-zinc-800" />
+                                <Skeleton className="h-4 w-20 bg-emerald-500/10" />
+                            </CardHeader>
+                            <CardContent className="flex-1 flex flex-col gap-4">
+                                <Skeleton className="h-10 w-32 bg-zinc-800" />
+                                <div className="flex gap-2">
+                                    <Skeleton className="h-6 w-24 bg-zinc-800 rounded-full" />
+                                    <Skeleton className="h-6 w-24 bg-zinc-800 rounded-full" />
+                                </div>
+                                <div className="space-y-2 mt-2">
+                                    <Skeleton className="h-4 w-full bg-zinc-800" />
+                                    <Skeleton className="h-4 w-3/4 bg-zinc-800" />
+                                    <Skeleton className="h-4 w-5/6 bg-zinc-800" />
+                                </div>
+                            </CardContent>
+                            <CardFooter className="pt-4 mt-auto border-t border-zinc-800">
+                                <Skeleton className="h-10 w-full bg-zinc-800/50" />
+                            </CardFooter>
                         </Card>
                     ))
                 ) : plans?.length === 0 ? (

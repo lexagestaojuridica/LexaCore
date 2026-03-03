@@ -101,14 +101,14 @@ export default function AdminLayout() {
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <button className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-zinc-800 transition-colors">
-                                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-[10px] font-bold text-white">
+                                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-[10px] font-bold text-white shadow-sm ring-1 ring-zinc-950">
                                             {initials}
                                         </div>
-                                        <div className="hidden md:flex flex-col items-start">
-                                            <span className="text-xs font-semibold text-zinc-200 truncate max-w-[120px]">{displayName}</span>
-                                            <span className="text-[10px] text-indigo-400 font-medium">Master Admin</span>
+                                        <div className="hidden md:flex flex-col items-start leading-none">
+                                            <span className="text-sm font-semibold text-zinc-100 truncate max-w-[150px]">{displayName}</span>
+                                            <span className="text-[10px] text-indigo-400/80 font-medium">Master Admin</span>
                                         </div>
-                                        <ChevronDown className="h-3 w-3 text-zinc-500 hidden md:block" />
+                                        <ChevronDown className="h-4 w-4 text-zinc-500 hidden md:block ml-1 opacity-50" />
                                     </button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end" className="w-48 bg-zinc-900 border-zinc-800 text-zinc-200">

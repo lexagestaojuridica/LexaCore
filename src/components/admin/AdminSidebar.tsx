@@ -70,7 +70,7 @@ export function AdminSidebar() {
 
             {/* Nav Groups */}
             <SidebarContent className="flex-1 overflow-y-auto overflow-x-hidden px-2 py-4 bg-zinc-950">
-                <div className="mb-2 px-2.5 text-[10px] font-semibold tracking-wider text-zinc-500 uppercase">
+                <div className="mb-2 px-3 text-[10px] font-semibold tracking-wider text-zinc-500 uppercase">
                     {!collapsed && "Administração Master"}
                 </div>
                 <nav className="flex flex-col gap-1">
