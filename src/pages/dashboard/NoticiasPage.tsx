@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useDebounce } from "@/hooks/useDebounce";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -84,6 +85,7 @@ function getPlaceholderImage(index: number) {
 export default function NoticiasPage() {
   const [category, setCategory] = useState("all");
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 400);
   const [selectedArticle, setSelectedArticle] = useState<NewsItem | null>(null);
 
   const { data: news = [], isLoading, refetch, isFetching } = useQuery({
@@ -103,10 +105,10 @@ export default function NoticiasPage() {
 
   const filtered = useMemo(() => news.filter((n) => {
     const matchCat = category === "all" || n.category === category;
-    const q = search.toLowerCase();
+    const q = debouncedSearch.toLowerCase();
     const matchSearch = !q || n.title.toLowerCase().includes(q) || n.description.toLowerCase().includes(q);
     return matchCat && matchSearch;
-  }), [news, category, search]);
+  }), [news, category, debouncedSearch]);
 
   const heroArticle = filtered[0];
   const restArticles = filtered.slice(1);

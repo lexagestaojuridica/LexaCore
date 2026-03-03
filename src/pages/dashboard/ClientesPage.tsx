@@ -193,7 +193,10 @@ export default function ClientesPage() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, ...payload }: any) => {
-      const { error } = await supabase.from("clients").update(payload).eq("id", id);
+      delete payload.organization_id;
+      delete payload.created_at;
+
+      const { error } = await supabase.from("clients").update(payload).eq("id", id).eq("organization_id", orgId!);
       if (error) throw error;
     },
     onSuccess: () => {

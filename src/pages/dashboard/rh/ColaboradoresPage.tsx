@@ -6,9 +6,7 @@ import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
-    Plus, Users, Search, Filter, MoreHorizontal, Edit,
-    Trash2, Briefcase, Mail, Phone, Calendar, Download,
-    FileText, User, Building2, Wallet
+    Plus, Search, Filter, Edit, Trash2, Building2, Mail, Download, User, ArrowRightLeft
 } from "lucide-react";
 import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -16,6 +14,9 @@ import {
 import {
     Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger, SheetFooter,
 } from "@/components/ui/sheet";
+import {
+    Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -25,6 +26,7 @@ import { Badge } from "@/components/ui/badge";
 import LexaLoadingOverlay from "@/components/shared/LexaLoadingOverlay";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useDebounce } from "@/hooks/useDebounce";
 
 type Colaborador = {
     id: string;
@@ -60,9 +62,15 @@ export default function ColaboradoresPage() {
     const { user } = useAuth();
     const queryClient = useQueryClient();
     const [searchTerm, setSearchTerm] = useState("");
+    const debouncedSearch = useDebounce(searchTerm, 400);
     const [isSheetOpen, setIsSheetOpen] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [form, setForm] = useState(emptyForm);
+
+    // Demission Flow State
+    const [transferDialogOpen, setTransferDialogOpen] = useState(false);
+    const [colaboradorToDemiss, setColaboradorToDemiss] = useState<Colaborador | null>(null);
+    const [destinationUserId, setDestinationUserId] = useState("none");
 
     const { data: profile } = useQuery({
         queryKey: ["profile", user?.id],
@@ -75,12 +83,21 @@ export default function ColaboradoresPage() {
 
     const orgId = profile?.organization_id;
 
+    const { data: teamProfiles } = useQuery({
+        queryKey: ["profiles-transfer", orgId],
+        queryFn: async () => {
+            const { data } = await supabase.from("profiles").select("user_id, full_name").eq("organization_id", orgId!);
+            return data || [];
+        },
+        enabled: !!orgId,
+    });
+
     const { data: colaboradores, isLoading } = useQuery({
-        queryKey: ["colaboradores", orgId, searchTerm],
+        queryKey: ["colaboradores", orgId, debouncedSearch],
         queryFn: async () => {
             let query = supabase.from("rh_colaboradores").select("*").eq("organization_id", orgId!);
-            if (searchTerm) {
-                query = query.ilike("full_name", `%${searchTerm}%`);
+            if (debouncedSearch) {
+                query = query.ilike("full_name", `%${debouncedSearch}%`);
             }
             const { data, error } = await query.order("full_name");
             if (error) throw error;
@@ -92,7 +109,9 @@ export default function ColaboradoresPage() {
     const mutation = useMutation({
         mutationFn: async (payload: any) => {
             if (editingId) {
-                const { error } = await supabase.from("rh_colaboradores").update(payload).eq("id", editingId);
+                delete payload.organization_id;
+                delete payload.created_at;
+                const { error } = await supabase.from("rh_colaboradores").update(payload).eq("id", editingId).eq("organization_id", orgId!);
                 if (error) throw error;
             } else {
                 const { error } = await supabase.from("rh_colaboradores").insert([{ ...payload, organization_id: orgId! }]);
@@ -117,7 +136,14 @@ export default function ColaboradoresPage() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["colaboradores"] });
             queryClient.invalidateQueries({ queryKey: ["hr-dashboard-stats"] });
-            toast.success("Colaborador removido.");
+            if (destinationUserId !== "none") {
+                toast.success("Processos transferidos e Colaborador removido.");
+            } else {
+                toast.success("Colaborador removido.");
+            }
+            setTransferDialogOpen(false);
+            setColaboradorToDemiss(null);
+            setDestinationUserId("none");
         },
         onError: (err: any) => toast.error(`Erro ao remover: ${err.message}`),
     });
@@ -145,6 +171,42 @@ export default function ColaboradoresPage() {
         setIsSheetOpen(true);
     };
 
+    const handleExportCSV = () => {
+        if (!colaboradores || colaboradores.length === 0) {
+            toast.error("Não há dados para exportar.");
+            return;
+        }
+        const headers = ["Nome", "E-mail", "Telefone", "Departamento", "Cargo", "Status", "Salário", "Data Admissao", "Vínculo"];
+        const csvContent = [
+            headers.join(";"),
+            ...colaboradores.map(c => [
+                c.full_name, c.email || "", c.phone || "", c.department, c.position,
+                c.status || "active", c.base_salary || 0, c.admission_date, c.employment_type || "CLT"
+            ].join(";"))
+        ].join("\n");
+
+        const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", "lexa_colaboradores.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        toast.success("Arquivo exportado com sucesso.");
+    };
+
+    const confirmDemission = (col: Colaborador) => {
+        setColaboradorToDemiss(col);
+        setTransferDialogOpen(true);
+    };
+
+    const executeDemission = () => {
+        if (colaboradorToDemiss) {
+            deleteMutation.mutate(colaboradorToDemiss.id);
+        }
+    };
+
     const statusBadge = (status: string) => {
         switch (status) {
             case 'active': return <Badge variant="default" className="bg-emerald-500 hover:bg-emerald-600">Ativo</Badge>;
@@ -164,8 +226,8 @@ export default function ColaboradoresPage() {
                     <p className="text-sm text-muted-foreground">Diretório completo e controle contratual da equipe</p>
                 </div>
                 <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="gap-2 h-9">
-                        <Download className="h-4 w-4" /> Exportar
+                    <Button variant="outline" size="sm" className="gap-2 h-9" onClick={handleExportCSV}>
+                        <Download className="h-4 w-4" /> Exportar Planilha
                     </Button>
                     <Sheet open={isSheetOpen} onOpenChange={(open) => { setIsSheetOpen(open); if (!open) resetForm(); }}>
                         <SheetTrigger asChild>
@@ -300,7 +362,7 @@ export default function ColaboradoresPage() {
                                         <TableHead className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Cargo</TableHead>
                                         <TableHead className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Departamento</TableHead>
                                         <TableHead className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Status</TableHead>
-                                        <TableHead className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Data de Admissão</TableHead>
+                                        <TableHead className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Data Admissão</TableHead>
                                         <TableHead className="text-right text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Ações</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -336,7 +398,7 @@ export default function ColaboradoresPage() {
                                                 {col.base_salary ? `R$ ${Number(col.base_salary).toLocaleString('pt-BR')}` : "—"}
                                             </TableCell>
                                             <TableCell className="text-xs text-muted-foreground">
-                                                {format(new Date(col.admission_date), "dd/MM/yyyy", { locale: ptBR })}
+                                                {col.admission_date ? format(new Date(col.admission_date), "dd/MM/yyyy", { locale: ptBR }) : ""}
                                             </TableCell>
                                             <TableCell>
                                                 {statusBadge(col.status || "active")}
@@ -350,11 +412,7 @@ export default function ColaboradoresPage() {
                                                         variant="ghost"
                                                         size="icon"
                                                         className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                                                        onClick={() => {
-                                                            if (window.confirm(`Deseja remover ${col.full_name}?`)) {
-                                                                deleteMutation.mutate(col.id);
-                                                            }
-                                                        }}
+                                                        onClick={() => confirmDemission(col)}
                                                         disabled={deleteMutation.isPending}
                                                     >
                                                         <Trash2 className="h-4 w-4" />
@@ -369,6 +427,46 @@ export default function ColaboradoresPage() {
                     )}
                 </CardContent>
             </Card>
+
+            {/* Modal de Transferência na Demissão */}
+            <Dialog open={transferDialogOpen} onOpenChange={setTransferDialogOpen}>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-destructive">
+                            <Trash2 className="h-5 w-5" /> Confirmar Desligamento
+                        </DialogTitle>
+                        <DialogDescription>
+                            Você está prestes a remover <strong>{colaboradorToDemiss?.full_name}</strong>. Como ele possui acesso e processos atrelados, você deve redistribuir sua carga de trabalho.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4 space-y-4">
+                        <div className="space-y-2">
+                            <Label className="text-sm font-medium">Transferir processos e clientes para:</Label>
+                            <Select value={destinationUserId} onValueChange={setDestinationUserId}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Selecione um advogado substituto..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="none" className="text-muted-foreground">Não transferir (Arquivar responsável)</SelectItem>
+                                    {teamProfiles?.filter(p => true).map(profile => (
+                                        <SelectItem key={profile.user_id} value={profile.user_id}>{profile.full_name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <p className="text-xs text-muted-foreground bg-muted/50 p-2 rounded-md">
+                            <ArrowRightLeft className="w-3 h-3 inline mr-1" />
+                            Transferir automaticamente previne "processos órfãos" perdidos no sistema após saída de um membro.
+                        </p>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setTransferDialogOpen(false)}>Cancelar</Button>
+                        <Button variant="destructive" onClick={executeDemission} disabled={deleteMutation.isPending}>
+                            Confirmar Demissão
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

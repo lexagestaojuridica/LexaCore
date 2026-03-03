@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from "react";
+import { useDebounce } from "@/hooks/useDebounce";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -65,6 +66,7 @@ export default function DocumentosPage() {
 
   // States
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 400);
   const [filterType, setFilterType] = useState<string>("todos");
   const [uploadOpen, setUploadOpen] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -261,7 +263,7 @@ export default function DocumentosPage() {
   // ─── Filter & Search ───
   const filtered = documentos.filter((d) => {
     const inFolder = d.folder_path === currentFolder;
-    const matchesSearch = !search || d.file_name.toLowerCase().includes(search.toLowerCase());
+    const matchesSearch = !debouncedSearch || d.file_name.toLowerCase().includes(debouncedSearch.toLowerCase());
     const matchesFilter = filterType === "todos" || (filterType === "processo" && d.process_id) || (filterType === "cliente" && d.client_id) || (filterType === "avulso" && !d.process_id && !d.client_id);
     return matchesSearch && matchesFilter; // ignore folder scoping if searching or filtering specifically
   });

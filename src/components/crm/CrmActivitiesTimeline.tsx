@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useDebounce } from "@/hooks/useDebounce";
 import { Phone, Mail, Calendar, CheckCircle2, Plus, Filter, Clock, UserCircle, Trash2, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -24,12 +25,13 @@ export default function CrmActivitiesTimeline() {
     const { activities, contacts, addActivity, updateActivity, deleteActivity } = useCrm();
     const [filterType, setFilterType] = useState("todos");
     const [search, setSearch] = useState("");
+    const debouncedSearch = useDebounce(search, 400);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [form, setForm] = useState<FormState>(emptyForm);
 
     const filtered = activities.filter((a) => {
         const matchType = filterType === "todos" || a.type === filterType;
-        const q = search.toLowerCase();
+        const q = debouncedSearch.toLowerCase();
         const matchSearch = !q || a.title.toLowerCase().includes(q) || a.contactName.toLowerCase().includes(q);
         return matchType && matchSearch;
     });

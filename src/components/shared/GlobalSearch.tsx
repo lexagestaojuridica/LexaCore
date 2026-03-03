@@ -113,21 +113,21 @@ export function GlobalSearch() {
                 {(results.clients.length > 0 || results.processes.length > 0 || results.leads.length > 0) && (
                     <CommandGroup heading="Resultados do Banco">
                         {results.clients.map((c) => (
-                            <CommandItem key={c.id} onSelect={() => onSelect(`/dashboard/clientes?id=${c.id}`)}>
+                            <CommandItem key={c.id} value={`cliente-${c.id}-${c.nome}`} onSelect={() => onSelect(`/dashboard/clientes?id=${c.id}`)}>
                                 <User className="mr-2 h-4 w-4 text-blue-500" />
                                 <span>{c.nome}</span>
                                 <span className="ml-2 text-xs text-muted-foreground">{c.email}</span>
                             </CommandItem>
                         ))}
                         {results.processes.map((p) => (
-                            <CommandItem key={p.id} onSelect={() => onSelect(`/dashboard/processos?id=${p.id}`)}>
+                            <CommandItem key={p.id} value={`processo-${p.id}-${p.numero_cnj}`} onSelect={() => onSelect(`/dashboard/processos?id=${p.id}`)}>
                                 <FileText className="mr-2 h-4 w-4 text-orange-500" />
                                 <span>{p.numero_cnj || 'Sem CNJ'}</span>
                                 <span className="ml-2 text-xs text-muted-foreground">{p.cliente_nome}</span>
                             </CommandItem>
                         ))}
                         {results.leads.map((l) => (
-                            <CommandItem key={l.id} onSelect={() => onSelect(`/dashboard/crm`)}>
+                            <CommandItem key={l.id} value={`lead-${l.id}-${l.name}`} onSelect={() => onSelect(`/dashboard/crm`)}>
                                 <Search className="mr-2 h-4 w-4 text-emerald-500" />
                                 <span>{l.name}</span>
                                 <span className="ml-2 text-xs text-muted-foreground">{l.contact_name}</span>
@@ -139,23 +139,23 @@ export function GlobalSearch() {
                 <CommandSeparator />
 
                 <CommandGroup heading="Acesso Rápido">
-                    <CommandItem onSelect={() => onSelect("/dashboard/processos")}>
+                    <CommandItem value="Processos" onSelect={() => onSelect("/dashboard/processos")}>
                         <FileText className="mr-2 h-4 w-4" />
                         <span>Processos</span>
                     </CommandItem>
-                    <CommandItem onSelect={() => onSelect("/dashboard/agenda")}>
+                    <CommandItem value="Ver Agenda" onSelect={() => onSelect("/dashboard/agenda")}>
                         <Calendar className="mr-2 h-4 w-4" />
                         <span>Ver Agenda</span>
                     </CommandItem>
-                    <CommandItem onSelect={() => onSelect("/dashboard/timesheet")}>
+                    <CommandItem value="Timesheet" onSelect={() => onSelect("/dashboard/timesheet")}>
                         <Calendar className="mr-2 h-4 w-4" />
                         <span>Timesheet</span>
                     </CommandItem>
-                    <CommandItem onSelect={() => onSelect("/dashboard/noticias")}>
+                    <CommandItem value="Lawletter Noticias" onSelect={() => onSelect("/dashboard/noticias")}>
                         <Search className="mr-2 h-4 w-4" />
                         <span>Lawletter</span>
                     </CommandItem>
-                    <CommandItem onSelect={() => onSelect("/dashboard/configuracoes")}>
+                    <CommandItem value="Configuracoes Settings" onSelect={() => onSelect("/dashboard/configuracoes")}>
                         <Settings className="mr-2 h-4 w-4" />
                         <span>Configurações</span>
                         <CommandShortcut>⌘S</CommandShortcut>

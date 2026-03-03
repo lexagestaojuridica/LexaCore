@@ -285,7 +285,7 @@ export default function ConfiguracoesPage() {
 
   const updateEmployeeMutation = useMutation({
     mutationFn: async ({ id, ...payload }: any) => {
-      const { error } = await supabase.from("rh_colaboradores").update(payload).eq("id", id);
+      const { error } = await supabase.from("rh_colaboradores").update(payload).eq("id", id).eq("organization_id", profile!.organization_id!);
       if (error) throw error;
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["employees"] }); toast.success("Funcionário atualizado!"); setEmpDialogOpen(false); },
@@ -294,7 +294,7 @@ export default function ConfiguracoesPage() {
 
   const deleteEmployeeMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("rh_colaboradores").delete().eq("id", id);
+      const { error } = await supabase.from("rh_colaboradores").delete().eq("id", id).eq("organization_id", profile!.organization_id!);
       if (error) throw error;
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["employees"] }); toast.success("Funcionário removido"); },
@@ -313,7 +313,7 @@ export default function ConfiguracoesPage() {
 
   const deleteOptionMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("custom_options" as any).delete().eq("id", id);
+      const { error } = await supabase.from("custom_options" as any).delete().eq("id", id).eq("organization_id", profile!.organization_id!);
       if (error) throw error;
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["custom-options"] }); toast.success("Opção removida"); },

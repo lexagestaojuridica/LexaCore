@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useDebounce } from "@/hooks/useDebounce";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -47,6 +48,7 @@ export default function UnidadesPage() {
     const { user } = useAuth();
     const queryClient = useQueryClient();
     const [search, setSearch] = useState("");
+    const debouncedSearch = useDebounce(search, 400);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
@@ -89,7 +91,10 @@ export default function UnidadesPage() {
 
     const updateMutation = useMutation({
         mutationFn: async ({ id, ...payload }: any) => {
-            const { error } = await supabase.from("units").update(payload).eq("id", id);
+            delete payload.organization_id;
+            delete payload.created_at;
+
+            const { error } = await supabase.from("units").update(payload).eq("id", id).eq("organization_id", orgId!);
             if (error) throw error;
         },
         onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["units"] }); toast.success("Unidade atualizada!"); closeDialog(); },
@@ -135,7 +140,7 @@ export default function UnidadesPage() {
     const generateSlug = (name: string) => name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
     const filtered = units.filter((u) => {
-        const q = search.toLowerCase();
+        const q = debouncedSearch.toLowerCase();
         if (!q) return true;
         return u.name.toLowerCase().includes(q) || u.slug.includes(q) || (u.city || "").toLowerCase().includes(q);
     });

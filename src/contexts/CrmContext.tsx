@@ -258,7 +258,8 @@ export function CrmProvider({ children }: { children: ReactNode }) {
             if (data.tags !== undefined) payload.tags = data.tags;
             if (data.score !== undefined) payload.score = data.score;
             if (data.notes !== undefined) payload.notes = data.notes;
-            const { error } = await supabase.from("crm_contacts").update(payload).eq("id", id);
+            const orgId = await getOrgId(uid);
+            const { error } = await supabase.from("crm_contacts").update(payload).eq("id", id).eq("organization_id", orgId);
             if (error) throw error;
         },
         onSuccess: () => invalidate(["crm_contacts"]),
@@ -307,7 +308,8 @@ export function CrmProvider({ children }: { children: ReactNode }) {
             if (data.date !== undefined) payload.date = data.date;
             if (data.notes !== undefined) payload.notes = data.notes;
             if (data.stageId !== undefined) payload.stage_id = data.stageId;
-            const { error } = await supabase.from("crm_leads").update(payload).eq("id", id);
+            const orgId = await getOrgId(uid);
+            const { error } = await supabase.from("crm_leads").update(payload).eq("id", id).eq("organization_id", orgId);
             if (error) throw error;
         },
         onSuccess: () => invalidate(["crm_leads"]),
@@ -356,7 +358,8 @@ export function CrmProvider({ children }: { children: ReactNode }) {
             if (data.stage !== undefined) payload.stage = data.stage;
             if (data.dueDate !== undefined) payload.due_date = data.dueDate;
             if (data.notes !== undefined) payload.notes = data.notes;
-            const { error } = await supabase.from("crm_deals").update(payload).eq("id", id);
+            const orgId = await getOrgId(uid);
+            const { error } = await supabase.from("crm_deals").update(payload).eq("id", id).eq("organization_id", orgId);
             if (error) throw error;
         },
         onSuccess: () => invalidate(["crm_deals"]),
@@ -400,7 +403,8 @@ export function CrmProvider({ children }: { children: ReactNode }) {
             if (data.date !== undefined) payload.date = data.date;
             if (data.time !== undefined) payload.time = data.time;
             if (data.completed !== undefined) payload.completed = data.completed;
-            const { error } = await supabase.from("crm_activities").update(payload).eq("id", id);
+            const orgId = await getOrgId(uid);
+            const { error } = await supabase.from("crm_activities").update(payload).eq("id", id).eq("organization_id", orgId);
             if (error) throw error;
         },
         onSuccess: () => invalidate(["crm_activities"]),

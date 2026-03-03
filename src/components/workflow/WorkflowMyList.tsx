@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useDebounce } from "@/hooks/useDebounce";
 import { Clock, CheckCircle2, AlertTriangle, Inbox, Search, Filter, Calendar, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,12 +25,13 @@ const PRIORITY_CONFIG: Record<string, { label: string; className: string; dot: s
 export default function WorkflowMyList() {
     const { instances, sectors, getSector, deleteWorkflow } = useWorkflow();
     const [search, setSearch] = useState("");
+    const debouncedSearch = useDebounce(search, 400);
     const [statusFilter, setStatusFilter] = useState("todos");
     const [selectedInstance, setSelectedInstance] = useState<WorkflowInstance | null>(null);
     const [detailOpen, setDetailOpen] = useState(false);
 
     const filtered = instances.filter((w) => {
-        const q = search.toLowerCase();
+        const q = debouncedSearch.toLowerCase();
         const matchSearch = !q || w.templateName.toLowerCase().includes(q) || w.assignedToName.toLowerCase().includes(q);
         const matchStatus = statusFilter === "todos" || w.status === statusFilter;
         return matchSearch && matchStatus;

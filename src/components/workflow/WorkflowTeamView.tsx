@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useDebounce } from "@/hooks/useDebounce";
 import { Search, Filter, Eye, UserCircle, ArrowRightLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +23,7 @@ const PRIORITY_DOT: Record<string, string> = { alta: "bg-red-500", media: "bg-am
 export default function WorkflowTeamView() {
     const { instances, sectors, members, getSector, reassignWorkflow } = useWorkflow();
     const [search, setSearch] = useState("");
+    const debouncedSearch = useDebounce(search, 400);
     const [sectorFilter, setSectorFilter] = useState("todos");
     const [statusFilter, setStatusFilter] = useState("todos");
     const [selectedInstance, setSelectedInstance] = useState<WorkflowInstance | null>(null);
@@ -30,7 +32,7 @@ export default function WorkflowTeamView() {
     const [reassignTarget, setReassignTarget] = useState("");
 
     const filtered = instances.filter((w) => {
-        const q = search.toLowerCase();
+        const q = debouncedSearch.toLowerCase();
         const matchSearch = !q || w.templateName.toLowerCase().includes(q) || w.assignedToName.toLowerCase().includes(q);
         const matchSector = sectorFilter === "todos" || w.sectorId === sectorFilter;
         const matchStatus = statusFilter === "todos" || w.status === statusFilter;

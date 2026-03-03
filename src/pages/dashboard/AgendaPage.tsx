@@ -1,3 +1,5 @@
+import { useState, useMemo, useCallback } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import { useGoogleCalendar } from "@/hooks/useGoogleCalendar";
 import { useMicrosoftCalendar } from "@/hooks/useMicrosoftCalendar";
 import { useAppleCalendar } from "@/hooks/useAppleCalendar";
@@ -20,6 +22,8 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { CalendarEmptyState } from "@/components/dashboard/CalendarEmptyState";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { AsyncProcessCombobox } from "@/components/dashboard/AsyncProcessCombobox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -91,15 +95,19 @@ function KPICard({ label, value, sub, icon: Icon, color }: {
 }
 
 // ─── Prazos Fatais Banner ─────────────────────────────────────
-function PrazosFataisBanner({ eventos, onSelectDate }: { eventos: Evento[]; onSelectDate: (d: Date) => void }) {
-  const prazosCriticos = eventos.filter((e) => {
-    if (e.category !== "prazo") return false;
-    const dt = parseISO(e.start_time);
+import { useUpcomingDeadlines } from "@/hooks/useUpcomingDeadlines";
+
+function PrazosFataisBanner({ onSelectDate }: { onSelectDate: (d: Date) => void }) {
+  const { deadlines, isLoading } = useUpcomingDeadlines();
+
+  // Filter only the critical ones (within next 48h)
+  const prazosCriticos = (deadlines || []).filter((e) => {
+    const dt = new Date(e.start_time);
     const diff = differenceInHours(dt, new Date());
     return diff >= 0 && diff <= 48;
   }).sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
 
-  if (prazosCriticos.length === 0) return null;
+  if (isLoading || prazosCriticos.length === 0) return null;
 
   return (
     <motion.div
@@ -120,9 +128,9 @@ function PrazosFataisBanner({ eventos, onSelectDate }: { eventos: Evento[]; onSe
         </div>
         <div className="flex gap-2 min-w-0 overflow-x-auto pb-1 sm:pb-0 scrollbar-hide">
           {prazosCriticos.map((e) => (
-            <button key={e.id} onClick={() => onSelectDate(parseISO(e.start_time))} className="shrink-0 max-w-[220px] flex items-center justify-between gap-4 rounded-lg bg-white/40 dark:bg-black/20 border border-amber-500/10 px-3.5 py-2 text-xs hover:bg-amber-500/10 transition-all hover:scale-[1.02] shadow-sm">
+            <button key={e.id} onClick={() => onSelectDate(new Date(e.start_time))} className="shrink-0 max-w-[220px] flex items-center justify-between gap-4 rounded-lg bg-white/40 dark:bg-black/20 border border-amber-500/10 px-3.5 py-2 text-xs hover:bg-amber-500/10 transition-all hover:scale-[1.02] shadow-sm">
               <span className="font-bold truncate text-foreground">{e.title}</span>
-              <span className="text-amber-600 font-black shrink-0 tabular-nums">{format(parseISO(e.start_time), "dd/MM HH:mm")}</span>
+              <span className="text-amber-600 font-black shrink-0 tabular-nums">{format(new Date(e.start_time), "dd/MM HH:mm")}</span>
             </button>
           ))}
         </div>
@@ -227,6 +235,72 @@ function WeekView({ eventos, selectedDate, onSelectDate, onEdit, onDelete, onEve
 }
 
 // ─── Day View ─────────────────────────────────────────────────
+// Helper to calculate overlapping groups
+function calculateEventCollisions(events: Evento[]) {
+  const sorted = [...events].sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
+
+  // Array of groups. Each group is an array of columns. Each column is an array of events
+  const groups: Evento[][][] = [];
+  let currentGroup: Evento[][] = [];
+  let groupEnd = new Date(0);
+
+  sorted.forEach(evt => {
+    const start = parseISO(evt.start_time);
+    const end = parseISO(evt.end_time);
+
+    // If event starts after the current group ends, start a new group
+    if (start >= groupEnd) {
+      if (currentGroup.length > 0) groups.push(currentGroup);
+      currentGroup = [[evt]];
+      groupEnd = end;
+    } else {
+      // Find the first column where this event can fit
+      let placed = false;
+      for (let i = 0; i < currentGroup.length; i++) {
+        const lastEvtInCol = currentGroup[i][currentGroup[i].length - 1];
+        if (start >= parseISO(lastEvtInCol.end_time)) {
+          currentGroup[i].push(evt);
+          placed = true;
+          break;
+        }
+      }
+
+      // If it doesn't fit in any existing column, create a new one
+      if (!placed) {
+        currentGroup.push([evt]);
+      }
+
+      // Update the group's end time if this event ends later
+      if (end > groupEnd) {
+        groupEnd = end;
+      }
+    }
+  });
+
+  if (currentGroup.length > 0) {
+    groups.push(currentGroup);
+  }
+
+  // Flatten and map to attach positioned logic
+  const positionedEvents = new Map<string, { width: number; left: number }>();
+
+  groups.forEach(group => {
+    const columnsCount = group.length;
+    const widthPercentage = 100 / columnsCount;
+
+    group.forEach((column, colIndex) => {
+      column.forEach(evt => {
+        positionedEvents.set(evt.id, {
+          width: widthPercentage,
+          left: colIndex * widthPercentage
+        });
+      });
+    });
+  });
+
+  return positionedEvents;
+}
+
 function DayView({ eventos, selectedDate, onEdit, onEventDrop, filteredCategories }: {
   eventos: Evento[]; selectedDate: Date; onEdit: (e: Evento) => void;
   onEventDrop: (id: string, newStart: Date) => void; filteredCategories: string[];
@@ -240,6 +314,9 @@ function DayView({ eventos, selectedDate, onEdit, onEventDrop, filteredCategorie
   const nowMinute = new Date().getMinutes();
   const showNowLine = isToday(selectedDate) && nowHour >= 6 && nowHour <= 22;
 
+  // Calculate visual collisions for event layout
+  const eventLayouts = useMemo(() => calculateEventCollisions(dayEvents), [dayEvents]);
+
   return (
     <div className="space-y-0">
       <div className="text-center pb-4">
@@ -247,14 +324,14 @@ function DayView({ eventos, selectedDate, onEdit, onEventDrop, filteredCategorie
         <p className="text-sm text-muted-foreground">{format(selectedDate, "d 'de' MMMM 'de' yyyy", { locale: ptBR })}</p>
       </div>
 
-      <div className="relative">
-        {hours.map((hour) => {
-          const hourEvents = dayEvents.filter((e) => parseISO(e.start_time).getHours() === hour);
+      <div className="relative border-b border-border/40 pb-6" style={{ height: `${hours.length * 80}px` }}>
+        {hours.map((hour, idx) => {
           const isNowHour = showNowLine && nowHour === hour;
           return (
             <div
               key={hour}
-              className="flex min-h-[60px] border-t border-border/40 hover:bg-muted/10 transition-colors relative"
+              className="absolute w-full flex border-t border-border/40 transition-colors"
+              style={{ top: `${idx * 80}px`, height: '80px' }}
               onDragOver={(e) => e.preventDefault()}
               onDrop={(e) => {
                 e.preventDefault();
@@ -270,7 +347,7 @@ function DayView({ eventos, selectedDate, onEdit, onEventDrop, filteredCategorie
               {isNowHour && (
                 <div
                   className="absolute left-14 right-0 z-20 flex items-center pointer-events-none"
-                  style={{ top: `${(nowMinute / 60) * 60}px` }}
+                  style={{ top: `${(nowMinute / 60) * 80}px` }}
                 >
                   <div className="h-2.5 w-2.5 rounded-full bg-red-500 -ml-1 shrink-0 shadow-sm" />
                   <div className="h-px flex-1 bg-red-500" />
@@ -281,59 +358,95 @@ function DayView({ eventos, selectedDate, onEdit, onEventDrop, filteredCategorie
               )}
 
               <div className={cn(
-                "w-16 shrink-0 pr-3 pt-1 text-right text-xs",
+                "w-16 shrink-0 pr-3 pt-1 text-right text-xs bg-background/50 z-10",
                 isNowHour ? "text-red-500 font-bold" : "text-muted-foreground"
               )}>
                 {`${hour.toString().padStart(2, "0")}:00`}
               </div>
-              <div className="flex-1 pl-3 border-l border-border/40 py-1 space-y-1">
-                {hourEvents.map((e) => {
-                  const cat = getCat(e.category);
-                  const start = parseISO(e.start_time);
-                  const end = parseISO(e.end_time);
-                  const CatIcon = cat.icon;
-                  return (
-                    <motion.div
-                      draggable
-                      onDragStart={(evt: any) => evt.dataTransfer.setData("eventId", e.id)}
-                      initial={{ opacity: 0, x: 10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      className={cn(
-                        "group rounded-lg px-3 py-2.5 cursor-pointer border transition-all hover:shadow-md",
-                        `bg-gradient-to-r ${cat.gradient} border-border/30`
-                      )}
-                      onClick={() => onEdit(e)}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <CatIcon className={cn("h-3.5 w-3.5 shrink-0", cat.text)} />
-                          <span className="text-sm font-medium text-foreground">{e.title}</span>
-                        </div>
-                        {e.recurrence_rule && e.recurrence_rule !== "none" && (
-                          <Badge variant="outline" className="text-[9px] bg-background/50 h-4">Recorrente</Badge>
-                        )}
-                      </div>
 
-                      <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-                        <span className="text-[11px] font-bold text-muted-foreground flex items-center gap-1 bg-white/40 dark:bg-black/20 px-1.5 py-0.5 rounded">
-                          <Clock className="h-3 w-3" />
-                          {format(start, "HH:mm")} – {format(end, "HH:mm")}
-                        </span>
-                        {e.process_id && (
-                          <span className="text-[11px] font-medium text-primary flex items-center gap-1 bg-primary/10 px-1.5 py-0.5 rounded">
-                            <Briefcase className="h-3 w-3" />
-                            Proc. {e.process_id.substring(0, 8)}...
-                          </span>
-                        )}
-                        {e.description && <span className="text-[11px] text-muted-foreground/80 italic truncate max-w-[200px]">{e.description}</span>}
-                      </div>
-                    </motion.div>
-                  );
-                })}
+              {/* Event Container Track */}
+              <div className="flex-1 pl-3 border-l border-border/40 relative h-full">
+                {/* Empty slot for drag and drop hover styling if needed */}
               </div>
             </div>
           );
         })}
+
+        {/* Absolute Events Layer over the timeline */}
+        <div className="absolute left-[76px] right-2 top-0 bottom-0 pointer-events-none">
+          {dayEvents.map((e) => {
+            const cat = getCat(e.category);
+            const start = parseISO(e.start_time);
+            const end = parseISO(e.end_time);
+
+            // Calculate absolute Y position
+            const startHour = start.getHours() + (start.getMinutes() / 60);
+            const endHour = end.getHours() + (end.getMinutes() / 60);
+
+            // Offset logic based on our start hour (6am)
+            const minHour = hours[0];
+            const topPx = Math.max(0, (startHour - minHour) * 80);
+            const durationPx = Math.max(24, (endHour - startHour) * 80); // Min height of 24px
+
+            // Layout dimensions
+            const layout = eventLayouts.get(e.id) || { width: 100, left: 0 };
+
+            const CatIcon = cat.icon;
+
+            // If the event spans outside the visible hours block, we might trim it, but let's assume valid data for now
+            if (startHour > hours[hours.length - 1] + 1 || endHour < minHour) return null;
+
+            return (
+              <motion.div
+                key={e.id}
+                draggable
+                onDragStart={(evt: any) => evt.dataTransfer.setData("eventId", e.id)}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                style={{
+                  top: `${topPx}px`,
+                  height: `${durationPx}px`,
+                  left: `${layout.left}%`,
+                  width: `calc(${layout.width}% - 4px)`, // Subtract 4px for a tiny gap between colliding cards
+                }}
+                className={cn(
+                  "absolute group rounded-md px-3 py-2 cursor-pointer border transition-shadow hover:shadow-lg hover:z-30 z-20 pointer-events-auto overflow-hidden",
+                  `bg-gradient-to-br ${cat.gradient} border-${cat.dot.replace('bg-', '')}/40`
+                )}
+                onClick={() => onEdit(e)}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-1.5 truncate">
+                    <CatIcon className={cn("h-3.5 w-3.5 shrink-0", cat.text)} />
+                    <span className="text-sm font-semibold text-foreground truncate">{e.title}</span>
+                  </div>
+                  {e.recurrence_rule && e.recurrence_rule !== "none" && (
+                    <Badge variant="outline" className="text-[8px] px-1 py-0 h-3.5 leading-none shrink-0 bg-background/50 border-blue-500/30">Recorrente</Badge>
+                  )}
+                </div>
+
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-[10px] font-bold text-muted-foreground flex items-center gap-1">
+                    <Clock className="h-2.5 w-2.5" />
+                    {format(start, "HH:mm")} – {format(end, "HH:mm")}
+                  </span>
+
+                  {durationPx > 50 && e.process_id && (
+                    <span className="text-[10px] font-medium text-primary flex items-center gap-1 mt-1 truncate">
+                      <Briefcase className="h-2.5 w-2.5" />
+                      Proc. {e.process_id.substring(0, 8)}...
+                    </span>
+                  )}
+                  {durationPx > 70 && e.description && (
+                    <span className="text-[10px] text-muted-foreground/80 italic truncate w-full mt-1">
+                      {e.description}
+                    </span>
+                  )}
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
@@ -415,6 +528,7 @@ export default function AgendaPage() {
   const [viewMode, setViewMode] = useState<ViewMode>("month");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Evento | null>(null);
+  const [eventToDelete, setEventToDelete] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [syncOpen, setSyncOpen] = useState(false);
   const [filteredCategories, setFilteredCategories] = useState<string[]>([]);
@@ -433,12 +547,16 @@ export default function AgendaPage() {
 
   // Fix TS issue by asserting the returned array
   const { data: rawEventos = [], isLoading } = useQuery({
-    queryKey: ["eventos_agenda", profileData?.organization_id],
+    queryKey: ["eventos_agenda", profileData?.organization_id, currentMonth.getFullYear(), currentMonth.getMonth()],
     queryFn: async () => {
+      const startWindow = subMonths(currentMonth, 2).toISOString();
+      const endWindow = addMonths(currentMonth, 2).toISOString();
       const { data, error } = await supabase
         .from("eventos_agenda")
         .select("*")
         .eq("organization_id", profileData!.organization_id!)
+        .gte("start_time", startWindow)
+        .lte("start_time", endWindow)
         .order("start_time", { ascending: true });
       if (error) throw error;
       return data as unknown as Evento[];
@@ -450,27 +568,14 @@ export default function AgendaPage() {
     return rawEventos.filter(e => e.start_time && e.end_time && isValid(parseISO(e.start_time)) && isValid(parseISO(e.end_time)));
   }, [rawEventos]);
 
-  const { data: processos = [] } = useQuery({
-    queryKey: ["processos_select", profileData?.organization_id],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("processos_juridicos")
-        .select("id, title, number")
-        .eq("organization_id", profileData!.organization_id!)
-        .order("title");
-      return data || [];
-    },
-    enabled: !!profileData?.organization_id,
-  });
-
   // ─── KPIs ───
-  const now = new Date();
-  const thisMonth = eventos.filter((e) => isSameMonth(parseISO(e.start_time), now));
-  const thisWeek = eventos.filter((e) => {
+  const now = useMemo(() => new Date(), []);
+  const thisMonth = useMemo(() => eventos.filter((e) => isSameMonth(parseISO(e.start_time), now)), [eventos, now]);
+  const thisWeek = useMemo(() => eventos.filter((e) => {
     const dt = parseISO(e.start_time);
     return isWithinInterval(dt, { start: startOfWeek(now, { locale: ptBR }), end: endOfWeek(now, { locale: ptBR }) });
-  });
-  const audiencias = thisMonth.filter((e) => e.category === "audiencia");
+  }), [eventos, now]);
+  const audiencias = useMemo(() => thisMonth.filter((e) => e.category === "audiencia"), [thisMonth]);
 
   // ─── Calendar ───
   const calendarDays = useMemo(() => {
@@ -507,7 +612,7 @@ export default function AgendaPage() {
       const { error } = await supabase.from("eventos_agenda").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["eventos_agenda"] }); toast.success("Excluído"); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["eventos_agenda"] }); setEventToDelete(null); toast.success("Excluído"); closeDialog(); },
     onError: (err: any) => toast.error(err.message),
   });
 
@@ -537,11 +642,26 @@ export default function AgendaPage() {
   const handleSubmit = useCallback(() => {
     if (!form.title.trim() || !form.start_date) { toast.error("Preencha título e data"); return; }
     if (!profileData?.organization_id) { toast.error("Organização não encontrada"); return; }
-    const start_time = `${form.start_date}T${form.start_hour}:00`;
-    const end_time = `${form.start_date}T${form.end_hour}:00`;
+
+    // Convert to local dates to prevent timezone issues
+    const [year, month, day] = form.start_date.split('-').map(Number);
+    const [startH, startM] = form.start_hour.split(':').map(Number);
+    const [endH, endM] = form.end_hour.split(':').map(Number);
+
+    const start_time = new Date(year, month - 1, day, startH, startM);
+    const end_time = new Date(year, month - 1, day, endH, endM);
+
+    if (end_time < start_time) {
+      toast.error("A hora de término não pode ser anterior à hora de início.");
+      return;
+    }
+
+    const start_time_iso = start_time.toISOString();
+    const end_time_iso = end_time.toISOString();
+
     const payload: any = {
       title: form.title, description: form.description || null,
-      start_time, end_time, category: form.category,
+      start_time: start_time_iso, end_time: end_time_iso, category: form.category,
       process_id: form.process_id || null,
       recurrence_rule: form.recurrence_rule === "none" ? null : form.recurrence_rule,
     };
@@ -555,6 +675,10 @@ export default function AgendaPage() {
   const handleEventDrop = useCallback((id: string, newStart: Date) => {
     const evento = eventos.find(e => e.id === id);
     if (!evento) return;
+    if (evento.recurrence_rule && evento.recurrence_rule !== "none") {
+      toast.error("Para mover eventos recorrentes, edite-o manualmente.");
+      return;
+    }
     const oldStart = parseISO(evento.start_time);
     const oldEnd = parseISO(evento.end_time);
     const durationMin = differenceInMinutes(oldEnd, oldStart);
@@ -630,7 +754,7 @@ export default function AgendaPage() {
       </div>
 
       {/* ── Prazos Fatais Banner ── */}
-      <PrazosFataisBanner eventos={eventos} onSelectDate={setSelectedDate} />
+      <PrazosFataisBanner onSelectDate={setSelectedDate} />
 
       {/* ── View Controls ── */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -800,7 +924,7 @@ export default function AgendaPage() {
       {viewMode === "week" && (
         <Card className="glass-card border-border/40 shadow-xl shadow-black/5 overflow-hidden rounded-2xl">
           <CardContent className="p-3">
-            <WeekView eventos={eventos} selectedDate={selectedDate} onSelectDate={setSelectedDate} onEdit={openEdit} onDelete={(id) => deleteMutation.mutate(id)} onEventDrop={handleEventDrop} filteredCategories={filteredCategories} />
+            <WeekView eventos={eventos} selectedDate={selectedDate} onSelectDate={setSelectedDate} onEdit={openEdit} onDelete={(id) => setEventToDelete(id)} onEventDrop={handleEventDrop} filteredCategories={filteredCategories} />
           </CardContent>
         </Card>
       )}
@@ -816,7 +940,7 @@ export default function AgendaPage() {
       {viewMode === "list" && (
         <Card className="glass-card border-border/40 shadow-xl shadow-black/5 overflow-hidden rounded-2xl">
           <CardContent className="p-5">
-            <ListView eventos={eventos} filteredCategories={filteredCategories} onEdit={openEdit} onDelete={(id) => deleteMutation.mutate(id)} />
+            <ListView eventos={eventos} filteredCategories={filteredCategories} onEdit={openEdit} onDelete={(id) => setEventToDelete(id)} />
           </CardContent>
         </Card>
       )}
@@ -869,7 +993,7 @@ export default function AgendaPage() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="mb-1.5 block text-xs font-medium text-muted-foreground uppercase tracking-wider">Recorrência</label>
-                <Select value={form.recurrence_rule} onValueChange={(v) => setForm({ ...form, recurrence_rule: v })}>
+                <Select value={form.recurrence_rule} onValueChange={(v) => setForm({ ...form, recurrence_rule: v })} disabled={editingEvent?.recurrence_rule && !RECURRENCE_OPTIONS.some(o => o.value === editingEvent.recurrence_rule)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {RECURRENCE_OPTIONS.map((o) => (
@@ -877,23 +1001,17 @@ export default function AgendaPage() {
                     ))}
                   </SelectContent>
                 </Select>
+                {editingEvent?.recurrence_rule && !RECURRENCE_OPTIONS.some(o => o.value === editingEvent.recurrence_rule) && (
+                  <p className="text-[10px] text-amber-500 mt-1">Regra avançada do provedor de origem.</p>
+                )}
               </div>
               <div>
                 <label className="mb-1.5 block text-xs font-medium text-muted-foreground uppercase tracking-wider">Vincular Processo</label>
-                <Select value={form.process_id ?? "none"} onValueChange={(v) => setForm({ ...form, process_id: v === "none" ? null : v })}>
-                  <SelectTrigger><SelectValue placeholder="Nenhum" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Sem Vínculo</SelectItem>
-                    {processos.map((p: any) => (
-                      <SelectItem key={p.id} value={p.id}>
-                        <span className="flex items-center gap-1.5">
-                          <Briefcase className="h-3 w-3 text-muted-foreground" />
-                          {p.title} {p.number && <span className="text-muted-foreground">({p.number})</span>}
-                        </span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <AsyncProcessCombobox
+                  organizationId={profileData?.organization_id}
+                  value={form.process_id}
+                  onChange={(v) => setForm({ ...form, process_id: v })}
+                />
               </div>
             </div>
 
@@ -904,7 +1022,7 @@ export default function AgendaPage() {
           </div>
           <DialogFooter className="gap-2 sm:gap-0 mt-2">
             {editingEvent && (
-              <Button variant="outline" className="mr-auto text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => { deleteMutation.mutate(editingEvent.id); closeDialog(); }}>
+              <Button variant="outline" className="mr-auto text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => { setEventToDelete(editingEvent.id); closeDialog(); }}>
                 Excluir
               </Button>
             )}
@@ -1035,6 +1153,27 @@ export default function AgendaPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* ── Alert Dialog for Deletion ── */}
+      <AlertDialog open={!!eventToDelete} onOpenChange={(open) => !open && setEventToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Evento</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir este evento? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => eventToDelete && deleteMutation.mutate(eventToDelete)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

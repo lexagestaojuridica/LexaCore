@@ -332,7 +332,8 @@ export function MinutasProvider({ children }: { children: ReactNode }) {
             if (data.tags !== undefined) payload.tags = data.tags;
             if (data.favorite !== undefined) payload.favorite = data.favorite;
             if (data.usageCount !== undefined) payload.usage_count = data.usageCount;
-            const { error } = await supabase.from("minutas_documents").update(payload).eq("id", id);
+            const orgId = await getOrgId(uid);
+            const { error } = await supabase.from("minutas_documents").update(payload).eq("id", id).eq("organization_id", orgId);
             if (error) throw error;
         },
         onSuccess: () => invalidate(),

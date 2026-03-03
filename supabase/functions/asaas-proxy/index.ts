@@ -70,6 +70,9 @@ serve(async (req) => {
         const baseUrl = gateway.environment === "production" ? ASAAS_PROD : ASAAS_SANDBOX;
         const url = `${baseUrl}${endpoint}`;
 
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+
         const response = await fetch(url, {
             method,
             headers: {
@@ -78,7 +81,9 @@ serve(async (req) => {
                 "User-Agent": "LEXA-Nova/1.0",
             },
             body: body && method !== "GET" ? JSON.stringify(body) : undefined,
+            signal: controller.signal,
         });
+        clearTimeout(timeoutId);
 
         const responseData = await response.json();
 
@@ -89,8 +94,11 @@ serve(async (req) => {
 
         return json(responseData);
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("asaas-proxy error:", error);
+        if (error.name === "AbortError") {
+            return json({ error: "Gateway Timeout (Asaas API took too long)" }, 504);
+        }
         return new Response(
             JSON.stringify({ error: error?.message ?? "Internal error" }),
             { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

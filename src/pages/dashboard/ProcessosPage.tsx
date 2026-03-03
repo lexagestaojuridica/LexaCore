@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useDebounce } from "@/hooks/useDebounce";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
@@ -260,8 +261,10 @@ export default function ProcessosPage() {
   });
   const orgId = profile?.organization_id;
 
+  const debouncedSearch = useDebounce(search, 400);
+
   const { data: processosData, isLoading } = useQuery({
-    queryKey: ["processos", orgId, page, search, statusFilter, sortField, sortDir],
+    queryKey: ["processos", orgId, page, debouncedSearch, statusFilter, sortField, sortDir],
     queryFn: async () => {
       let query = supabase
         .from("processos_juridicos")
@@ -273,9 +276,9 @@ export default function ProcessosPage() {
         query = query.eq("status", statusFilter);
       }
 
-      if (search) {
+      if (debouncedSearch) {
         // Busca textual em título, número de processo contendo a strig
-        query = query.or(`title.ilike.%${search}%,number.ilike.%${search}%,court.ilike.%${search}%,subject.ilike.%${search}%`);
+        query = query.or(`title.ilike.%${debouncedSearch}%,number.ilike.%${debouncedSearch}%,court.ilike.%${debouncedSearch}%,subject.ilike.%${debouncedSearch}%`);
       }
 
       // Apply Sorting
@@ -359,7 +362,13 @@ export default function ProcessosPage() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, ...payload }: Partial<Processo> & { id: string }) => {
-      const { error } = await supabase.from("processos_juridicos").update(payload).eq("id", id);
+      // Security FIX: DOR (Direct Object Reference) Prevention. 
+      // Force removal of sensitive infrastructure keys from client payload before updating
+      delete payload.organization_id;
+      delete payload.created_at;
+      delete payload.responsible_user_id;
+
+      const { error } = await supabase.from("processos_juridicos").update(payload).eq("id", id).eq("organization_id", orgId!); // Extra enforcement layer
       if (error) throw error;
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["processos"] }); toast.success("Processo atualizado"); closeDialog(); },
@@ -451,6 +460,17 @@ export default function ProcessosPage() {
     const { estimated_value_display, ...rest } = form;
     if (isEditing && selectedProcesso) {
       updateMutation.mutate({ id: selectedProcesso.id, ...rest });
+
+      // UX AUTOMATION: Prompt for invoicing when case is closed
+      if (rest.status === "encerrado" && selectedProcesso.status !== "encerrado" && rest.estimated_value) {
+        if (window.confirm(`Processo encerrado! Deseja dar baixa e Faturar Honorários no valor estimado agora?`)) {
+          createContaMutation.mutate({
+            processoTitle: rest.title || selectedProcesso.title,
+            value: Number(rest.estimated_value),
+            orgId: orgId!
+          });
+        }
+      }
     } else {
       createMutation.mutate({ ...rest, title: rest.title!, organization_id: orgId!, responsible_user_id: user!.id } as TablesInsert<"processos_juridicos">);
     }
@@ -1083,8 +1103,7 @@ export default function ProcessosPage() {
               <div className="border-t border-border/50 bg-muted/10 p-4 sticky bottom-0 mt-auto flex justify-end gap-2 backdrop-blur-md">
                 {selectedProcesso?.estimated_value != null && orgId && (
                   <Button
-                    variant="outline"
-                    className="gap-1.5 border-emerald-500/30 text-emerald-700 hover:bg-emerald-500/5 mr-auto"
+                    className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium mr-auto shadow-sm"
                     disabled={createContaMutation.isPending}
                     onClick={() => createContaMutation.mutate({
                       processoTitle: selectedProcesso.title,
@@ -1092,8 +1111,8 @@ export default function ProcessosPage() {
                       orgId,
                     })}
                   >
-                    <Receipt className="h-3.5 w-3.5" />
-                    Gerar C.R.
+                    <Receipt className="h-4 w-4" />
+                    Faturar Honorários
                   </Button>
                 )}
                 <Button variant="outline" onClick={() => { setViewDialogOpen(false); openEdit(selectedProcesso!); }}>Editar</Button>

@@ -94,6 +94,8 @@ serve(async (req) => {
             if (!asaasCustomerId) {
                 // Fetch user email
                 const { data: { user: authUser } } = await supabase.auth.admin.getUserById(user.id);
+                const controllerCust = new AbortController();
+                const timeoutCust = setTimeout(() => controllerCust.abort(), 15000);
                 const customerRes = await fetch(`${baseUrl}/customers`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json", "access_token": gateway.api_key },
@@ -102,7 +104,9 @@ serve(async (req) => {
                         email: authUser?.email ?? "",
                         externalReference: orgId,
                     }),
+                    signal: controllerCust.signal,
                 });
+                clearTimeout(timeoutCust);
                 const customer = await customerRes.json();
                 asaasCustomerId = customer.id;
                 if (asaasCustomerId) {
@@ -113,6 +117,8 @@ serve(async (req) => {
             if (!asaasCustomerId) throw new Error("Não foi possível criar o cliente no Asaas.");
 
             // Create payment link (subscription)
+            const controllerLink = new AbortController();
+            const timeoutLink = setTimeout(() => controllerLink.abort(), 15000);
             const linkRes = await fetch(`${baseUrl}/paymentLinks`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json", "access_token": gateway.api_key },
@@ -128,7 +134,9 @@ serve(async (req) => {
                     subscriptionCycle: interval === "YEARLY" ? "YEARLY" : "MONTHLY",
                     externalReference: `${orgId}:${planId}`,
                 }),
+                signal: controllerLink.signal,
             });
+            clearTimeout(timeoutLink);
             const link = await linkRes.json();
             const checkoutUrl = link.url ?? link.paymentLink?.url;
 
@@ -164,9 +172,13 @@ serve(async (req) => {
                 return json({ url: `${appOrigin}/dashboard/configuracoes?tab=planos` });
             }
 
+            const controllerPortal = new AbortController();
+            const timeoutPortal = setTimeout(() => controllerPortal.abort(), 15000);
             const portalRes = await fetch(`${baseUrl}/customers/${asaasCustomerId}/portalLink`, {
                 headers: { "access_token": gateway.api_key },
+                signal: controllerPortal.signal,
             });
+            clearTimeout(timeoutPortal);
             const portalData = await portalRes.json();
             const portalUrl = portalData.portalLink ?? `${appOrigin}/dashboard/configuracoes?tab=planos`;
 
@@ -175,8 +187,11 @@ serve(async (req) => {
 
         return json({ error: "Invalid action" }, 400);
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("billing-gateway error:", error);
+        if (error.name === "AbortError") {
+            return json({ error: "Gateway Timeout (Asaas API took too long)" }, 504);
+        }
         return new Response(
             JSON.stringify({ error: error?.message ?? "Internal error" }),
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }

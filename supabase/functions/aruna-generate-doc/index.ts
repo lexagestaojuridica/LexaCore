@@ -55,6 +55,9 @@ ${instructions ? `\nInstruções adicionais: ${instructions}` : ""}
 \nGere o documento completo em Markdown.`;
 
     // Call AI to generate the document (non-streaming)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 45000); // 45s for generative AI
+
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -69,7 +72,9 @@ ${instructions ? `\nInstruções adicionais: ${instructions}` : ""}
         ],
         stream: false,
       }),
+      signal: controller.signal,
     });
+    clearTimeout(timeoutId);
 
     if (!aiResponse.ok) {
       if (aiResponse.status === 429) {
@@ -149,8 +154,14 @@ ${instructions ? `\nInstruções adicionais: ${instructions}` : ""}
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
-  } catch (e) {
+  } catch (e: any) {
     console.error("aruna-generate-doc error:", e);
+    if (e.name === "AbortError") {
+      return new Response(
+        JSON.stringify({ error: "O provedor de IA demorou muito para responder (Timeout). Tente novamente." }),
+        { status: 504, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
     return new Response(
       JSON.stringify({ error: e instanceof Error ? e.message : "Erro desconhecido" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

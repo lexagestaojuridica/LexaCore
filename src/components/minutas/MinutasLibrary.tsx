@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useDebounce } from "@/hooks/useDebounce";
 import { Search, Download, ExternalLink, Filter, BookOpen, TrendingUp, Library } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,13 +11,14 @@ import { useMinutas, CATEGORY_CONFIG, DocumentCategory } from "@/contexts/Minuta
 export default function MinutasLibrary({ onOpenEditor }: { onOpenEditor: (id: string) => void }) {
     const { library, duplicateFromLibrary } = useMinutas();
     const [search, setSearch] = useState("");
+    const debouncedSearch = useDebounce(search, 400);
     const [catFilter, setCatFilter] = useState("todos");
     const [areaFilter, setAreaFilter] = useState("todos");
 
     const areas = [...new Set(library.map((t) => t.area))];
 
     const filtered = library.filter((t) => {
-        const q = search.toLowerCase();
+        const q = debouncedSearch.toLowerCase();
         const matchSearch = !q || t.title.toLowerCase().includes(q) || t.description.toLowerCase().includes(q);
         const matchCat = catFilter === "todos" || t.category === catFilter;
         const matchArea = areaFilter === "todos" || t.area === areaFilter;

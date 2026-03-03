@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useDebounce } from "@/hooks/useDebounce";
 import { Search, Star, Grid2X2, List, Plus, Trash2, Edit2, Copy, Eye, FileText, Heart, Clock, BarChart3, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +14,7 @@ import { useMinutas, CATEGORY_CONFIG, DocumentCategory } from "@/contexts/Minuta
 export default function MinutasMyDocuments({ onOpenEditor }: { onOpenEditor: (id: string) => void }) {
     const { documents, createDocument, updateDocument, deleteDocument, toggleFavorite } = useMinutas();
     const [search, setSearch] = useState("");
+    const debouncedSearch = useDebounce(search, 400);
     const [catFilter, setCatFilter] = useState("todos");
     const [favFilter, setFavFilter] = useState(false);
     const [createOpen, setCreateOpen] = useState(false);
@@ -20,7 +22,7 @@ export default function MinutasMyDocuments({ onOpenEditor }: { onOpenEditor: (id
     const [form, setForm] = useState({ title: "", category: "peticoes" as DocumentCategory, tags: "" });
 
     const filtered = documents.filter((d) => {
-        const q = search.toLowerCase();
+        const q = debouncedSearch.toLowerCase();
         const matchSearch = !q || d.title.toLowerCase().includes(q) || d.tags.some((t) => t.toLowerCase().includes(q));
         const matchCat = catFilter === "todos" || d.category === catFilter;
         const matchFav = !favFilter || d.favorite;

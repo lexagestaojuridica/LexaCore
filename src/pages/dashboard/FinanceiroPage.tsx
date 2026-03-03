@@ -14,6 +14,7 @@ import { asaasService } from "@/services/asaasService";
 import BudgetPerformanceTab from "@/components/financeiro/BudgetPerformanceTab";
 import { DasDarfPanel } from "@/components/financeiro/DasDarfPanel";
 import { useTranslation } from "react-i18next";
+import { useDebounce } from "@/hooks/useDebounce";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -52,6 +53,7 @@ export default function FinanceiroPage() {
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const debouncedSearch = useDebounce(search, 400);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -121,7 +123,10 @@ export default function FinanceiroPage() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, ...payload }: any) => {
-      const { error } = await supabase.from(tableName).update(payload).eq("id", id);
+      delete payload.organization_id;
+      delete payload.created_at;
+
+      const { error } = await supabase.from(tableName).update(payload).eq("id", id).eq("organization_id", orgId!);
       if (error) throw error;
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: [tableName] }); queryClient.invalidateQueries({ queryKey: ["contas_receber"] }); queryClient.invalidateQueries({ queryKey: ["contas_pagar"] }); toast.success("Conta atualizada"); closeDialog(); },
@@ -269,7 +274,7 @@ export default function FinanceiroPage() {
 
   const filtered = contas.filter((c: any) => {
     const matchStatus = statusFilter === "all" || c.status === statusFilter;
-    const q = search.toLowerCase();
+    const q = debouncedSearch.toLowerCase();
     const matchSearch = !q || c.description.toLowerCase().includes(q) || (c.category ?? "").toLowerCase().includes(q);
     return matchStatus && matchSearch;
   });

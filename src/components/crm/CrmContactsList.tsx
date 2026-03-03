@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useDebounce } from "@/hooks/useDebounce";
 import {
     Users, Search, Phone, Mail, Building2, MapPin, Star, Eye,
     LayoutGrid, List, MessageSquarePlus, Filter, Plus, Edit2, Trash2,
@@ -45,6 +46,7 @@ const emptyContact: { name: string; email: string; phone: string; type: "pessoa_
 export default function CrmContactsList() {
     const { contacts, leads, deals, activities, addContact, updateContact, deleteContact, addActivity } = useCrm();
     const [search, setSearch] = useState("");
+    const debouncedSearch = useDebounce(search, 400);
     const [typeFilter, setTypeFilter] = useState("todos");
     const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -58,7 +60,7 @@ export default function CrmContactsList() {
     const [activityType, setActivityType] = useState("ligacao");
 
     const filtered = contacts.filter((c) => {
-        const q = search.toLowerCase();
+        const q = debouncedSearch.toLowerCase();
         const matchSearch = !q || c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q) || c.phone.includes(q) || c.company.toLowerCase().includes(q);
         const matchType = typeFilter === "todos" || c.type === typeFilter;
         return matchSearch && matchType;
