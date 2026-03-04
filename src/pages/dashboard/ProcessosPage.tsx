@@ -13,6 +13,9 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useDebounce } from "@/hooks/useDebounce";
+import { ProcessKanban } from "@/features/processos/components/ProcessKanban";
+import { ProcessCalculator } from "@/features/processos/components/ProcessCalculator";
+import type { Processo, Documento } from "@/features/processos/types";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
@@ -39,10 +42,7 @@ import LexaLoadingOverlay from "@/components/shared/LexaLoadingOverlay";
 import { formatCurrencyInput, parseCurrencyToNumber } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-import type { Tables, TablesInsert } from "@/integrations/supabase/types";
 
-type Processo = Tables<"processos_juridicos"> & { clients?: { id: string; name: string; phone: string | null; } | null };
-type Documento = { id: string; file_name: string; file_path: string; file_type: string | null; created_at: string };
 type SortField = "title" | "number" | "court" | "status" | "estimated_value" | "created_at";
 type SortDir = "asc" | "desc";
 
@@ -72,24 +72,7 @@ const STATUS_OPTIONS = [
   { value: "encerrado", label: "Encerrado", className: "bg-rose-500/15 text-rose-700 dark:text-rose-400 hover:bg-rose-500/25 border-rose-500/20 font-semibold" },
 ];
 
-const KANBAN_COLUMNS = [
-  { status: "ativo", label: "Ativo", color: "border-t-emerald-500 dark:border-t-emerald-400" },
-  { status: "suspenso", label: "Suspenso", color: "border-t-amber-500 dark:border-t-amber-400" },
-  { status: "arquivado", label: "Arquivado", color: "border-t-muted-foreground" },
-  { status: "encerrado", label: "Encerrado", color: "border-t-rose-500 dark:border-t-rose-400" },
-];
-
 const PAGE_SIZE = 15;
-
-const container = {
-  hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.1 } }
-};
-
-const item = {
-  hidden: { opacity: 0, y: 10 },
-  show: { opacity: 1, y: 0 }
-};
 
 const statusBadge = (status: string) => {
   const opt = STATUS_OPTIONS.find((o) => o.value === status);
@@ -126,48 +109,6 @@ const UFS = [
   "SP", "SE", "TO",
 ];
 
-function ProcessCalculator({ estimatedValue }: { estimatedValue: number | null }) {
-  const [percentual, setPercentual] = useState("20");
-  const [horas, setHoras] = useState("");
-  const [valorHora, setValorHora] = useState("");
-  const valor = Number(estimatedValue) || 0;
-  const honorariosExito = valor * (Number(percentual) / 100);
-  const honorariosHora = Number(horas) * Number(valorHora) || 0;
-  const fmtCurrency = (v: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
-
-  return (
-    <div className="rounded-lg border border-border/50 bg-muted/20 p-4 space-y-4">
-      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-        <Calculator className="h-3.5 w-3.5" /> Calculadora do Processo
-      </h3>
-      <div className="grid grid-cols-2 gap-3 text-sm">
-        <div><span className="text-xs text-muted-foreground">Valor da Causa</span><p className="font-medium">{valor ? fmtCurrency(valor) : "Não informado"}</p></div>
-        <div>
-          <span className="text-xs text-muted-foreground">Honorários (%)</span>
-          <Input type="number" value={percentual} onChange={(e) => setPercentual(e.target.value)} className="h-8 mt-1" />
-        </div>
-      </div>
-      <Separator />
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1">
-          <label className="text-xs text-muted-foreground">Horas estimadas</label>
-          <Input type="number" value={horas} onChange={(e) => setHoras(e.target.value)} className="h-8" placeholder="40" />
-        </div>
-        <div className="space-y-1">
-          <label className="text-xs text-muted-foreground">Valor/hora</label>
-          <Input type="number" value={valorHora} onChange={(e) => setValorHora(e.target.value)} className="h-8" placeholder="R$ 250" />
-        </div>
-      </div>
-      <div className="rounded-lg bg-primary/5 p-3 space-y-1.5">
-        <div className="flex justify-between text-sm"><span className="text-muted-foreground">Honorários Êxito</span><span className="font-medium">{fmtCurrency(honorariosExito)}</span></div>
-        {honorariosHora > 0 && <div className="flex justify-between text-sm"><span className="text-muted-foreground">Honorários Hora</span><span className="font-medium">{fmtCurrency(honorariosHora)}</span></div>}
-        <Separator />
-        <div className="flex justify-between text-sm font-bold"><span>Total</span><span className="text-primary">{fmtCurrency(honorariosExito + honorariosHora)}</span></div>
-      </div>
-    </div>
-  );
-}
-
 // ─── SortableHeader ──────────────────────────────────────────
 
 function SortableHeader({ field, label, sortField, sortDir, onSort }: {
@@ -189,44 +130,6 @@ function SortableHeader({ field, label, sortField, sortDir, onSort }: {
           : <ArrowUpDown className="h-3 w-3 opacity-30" />}
       </span>
     </TableHead>
-  );
-}
-
-// ─── KanbanCard ────────────────────────────────────────────────
-
-function KanbanCard({ p, onEdit, onView, onDelete }: {
-  p: Processo;
-  onEdit: (p: Processo) => void;
-  onView: (p: Processo) => void;
-  onDelete: (p: Processo) => void;
-}) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="group rounded-xl border border-border/60 bg-card p-3.5 hover:border-primary/30 hover:shadow-sm transition-all cursor-pointer space-y-2"
-      onClick={() => onView(p)}
-    >
-      <p className="text-sm font-medium text-foreground leading-tight line-clamp-2">{p.title}</p>
-      {p.number && <p className="text-xs text-muted-foreground">Nº {p.number}</p>}
-      {p.court && <p className="text-xs text-muted-foreground truncate">{p.court}</p>}
-      {p.estimated_value != null && (
-        <p className="text-xs font-medium text-primary">
-          R$ {Number(p.estimated_value).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-        </p>
-      )}
-      <div className="flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity pt-1 border-t border-border/40 mt-1">
-        <span className="text-[10px] text-muted-foreground">{format(new Date(p.created_at), "dd/MM/yy", { locale: ptBR })}</span>
-        <div className="flex gap-0.5">
-          <button onClick={(e) => { e.stopPropagation(); onEdit(p); }} className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
-            <Edit2 className="h-3 w-3" />
-          </button>
-          <button onClick={(e) => { e.stopPropagation(); onDelete(p); }} className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors">
-            <Trash2 className="h-3 w-3" />
-          </button>
-        </div>
-      </div>
-    </motion.div>
   );
 }
 
@@ -268,7 +171,7 @@ export default function ProcessosPage() {
     queryFn: async () => {
       let query = supabase
         .from("processos_juridicos")
-        .select("*, clients(id, name, phone)", { count: "exact" })
+        .select("*, clients(id, name, phone, asaas_customer_id)", { count: "exact" })
         .eq("organization_id", orgId!);
 
       // Apply Filters
@@ -385,25 +288,31 @@ export default function ProcessosPage() {
   });
 
   const createContaMutation = useMutation({
-    mutationFn: async ({ processoTitle, value, orgId: oid }: { processoTitle: string; value: number; orgId: string }) => {
+    mutationFn: async ({ processoTitle, value, clientId, asaasCustomerId }: { processoTitle: string; value: number; clientId: string | null; asaasCustomerId: string | null }) => {
       const dueDate = new Date();
       dueDate.setDate(dueDate.getDate() + 30);
-      const { error } = await supabase.from("contas_receber").insert({
-        description: `Honorários — ${processoTitle}`,
-        amount: value,
-        due_date: dueDate.toISOString().split("T")[0],
-        status: "pendente",
-        category: "Honorários",
-        organization_id: oid,
+
+      const { data: res, error } = await supabase.functions.invoke("billing-gateway", {
+        body: {
+          action: "create-charge",
+          customerId: asaasCustomerId,
+          clientId: clientId,
+          value,
+          dueDate: dueDate.toISOString().split("T")[0],
+          description: `Honorários — ${processoTitle}`,
+          createOnlyLocal: !asaasCustomerId
+        }
       });
+
       if (error) throw error;
+      if (res?.error) throw new Error(res.error);
     },
     onSuccess: () => {
-      toast.success("Conta a Receber criada! Redirecionando para o Financeiro...");
+      toast.success("Fatura de Honorários criada! Redirecionando para o Financeiro...");
       setViewDialogOpen(false);
       setTimeout(() => navigate("/dashboard/financeiro"), 1200);
     },
-    onError: () => toast.error("Erro ao criar conta a receber"),
+    onError: (err: any) => toast.error(`Erro ao faturar: ${err.message}`),
   });
 
   const aiSummaryMutation = useMutation({
@@ -463,11 +372,19 @@ export default function ProcessosPage() {
 
       // UX AUTOMATION: Prompt for invoicing when case is closed
       if (rest.status === "encerrado" && selectedProcesso.status !== "encerrado" && rest.estimated_value) {
-        if (window.confirm(`Processo encerrado! Deseja dar baixa e Faturar Honorários no valor estimado agora?`)) {
+        // @ts-ignore
+        const isAsaasConfigured = !!selectedProcesso.clients?.asaas_customer_id;
+        const msg = isAsaasConfigured
+          ? `Processo encerrado! Deseja faturar Honorários no valor de ${rest.estimated_value_display} com cobrança no Asaas?`
+          : `Processo encerrado! Deseja registrar os Honorários (${rest.estimated_value_display}) no Financeiro local?`;
+
+        if (window.confirm(msg)) {
           createContaMutation.mutate({
             processoTitle: rest.title || selectedProcesso.title,
             value: Number(rest.estimated_value),
-            orgId: orgId!
+            clientId: selectedProcesso.client_id,
+            // @ts-ignore
+            asaasCustomerId: selectedProcesso.clients?.asaas_customer_id || null
           });
         }
       }
@@ -675,45 +592,12 @@ export default function ProcessosPage() {
 
       {/* ── Kanban View ── */}
       {viewMode === "kanban" && (
-        <motion.div
-          variants={container}
-          initial="hidden"
-          animate="show"
-          className="grid gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4"
-        >
-          {KANBAN_COLUMNS.map((col) => {
-            const colProcessos = processos.filter((p) => p.status === col.status);
-            return (
-              <motion.div variants={item} key={col.status} className="flex flex-col gap-4">
-                <div className={cn("rounded-xl border border-border/60 bg-muted/20 overflow-hidden shadow-sm", col.color, "border-t-4")}>
-                  <div className="flex items-center justify-between px-4 py-3 bg-white/40 dark:bg-card/40 backdrop-blur-sm">
-                    <span className="text-xs font-bold uppercase tracking-widest text-foreground/70">{col.label}</span>
-                    <Badge variant="secondary" className="text-[10px] font-bold bg-white/60 dark:bg-muted/60">{colProcessos.length}</Badge>
-                  </div>
-                </div>
-                <div className="space-y-3 min-h-[200px] p-1">
-                  <AnimatePresence>
-                    {colProcessos.length === 0 ? (
-                      <div className="flex items-center justify-center py-8 rounded-xl border border-dashed border-border/60">
-                        <p className="text-xs text-muted-foreground/50">Nenhum processo</p>
-                      </div>
-                    ) : (
-                      colProcessos.map((p) => (
-                        <KanbanCard
-                          key={p.id}
-                          p={p}
-                          onEdit={openEdit}
-                          onView={(p) => { setSelectedProcesso(p); setViewDialogOpen(true); }}
-                          onDelete={(p) => { setSelectedProcesso(p); setDeleteDialogOpen(true); }}
-                        />
-                      ))
-                    )}
-                  </AnimatePresence>
-                </div>
-              </motion.div>
-            );
-          })}
-        </motion.div>
+        <ProcessKanban
+          processos={processos}
+          onEdit={openEdit}
+          onView={(p) => { setSelectedProcesso(p); setViewDialogOpen(true); }}
+          onDelete={(p) => { setSelectedProcesso(p); setDeleteDialogOpen(true); }}
+        />
       )}
 
       {/* ── Dialogs (Create/Edit, View, Delete) — unchanged ── */}

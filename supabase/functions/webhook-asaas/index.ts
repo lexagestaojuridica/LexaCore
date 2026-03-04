@@ -49,7 +49,7 @@ serve(async (req) => {
                     status: newStatus,
                     updated_at: new Date().toISOString()
                 })
-                .eq('asaas_payment_id', asaasPaymentId);
+                .eq('asaas_id', asaasPaymentId);
 
             if (error) {
                 console.error("Supabase Error Update Recebimentos:", error.message);

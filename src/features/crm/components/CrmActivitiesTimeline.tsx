@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import FormField from "@/components/shared/FormField";
-import { useCrm } from "@/contexts/CrmContext";
+import { useCrm } from "@/features/crm/contexts/CrmContext";
 
 const ACTIVITY_CONFIG = {
     ligacao: { icon: Phone, label: "Ligação", color: "text-emerald-600", bg: "bg-emerald-500/10", border: "border-emerald-200", dotColor: "bg-emerald-500", gradient: "from-emerald-500/15 to-transparent" },

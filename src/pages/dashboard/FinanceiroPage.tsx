@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -10,11 +10,14 @@ import {
   ArrowUpRight, ArrowDownRight, Wallet, Receipt, BarChart2, Bell, CheckCircle2, QrCode, Copy,
   RefreshCw, ExternalLink
 } from "lucide-react";
-import { asaasService } from "@/services/asaasService";
 import BudgetPerformanceTab from "@/components/financeiro/BudgetPerformanceTab";
 import { DasDarfPanel } from "@/components/financeiro/DasDarfPanel";
 import { useTranslation } from "react-i18next";
 import { useDebounce } from "@/hooks/useDebounce";
+import { useFinanceiro } from "@/features/financeiro/hooks/useFinanceiro";
+import { useFinanceiroMetrics } from "@/features/financeiro/hooks/useFinanceiroMetrics";
+import { useAsaasBilling } from "@/features/financeiro/hooks/useAsaasBilling";
+import type { TipoConta, ContaBase } from "@/features/financeiro/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -49,7 +52,7 @@ export default function FinanceiroPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
-  const [tab, setTab] = useState("receber");
+  const [tab, setTab] = useState<TipoConta | "dasdarf" | "orcamento">("receber");
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -72,166 +75,20 @@ export default function FinanceiroPage() {
   });
 
   const orgId = profile?.organization_id;
-  const tableName = tab === "receber" ? "contas_receber" : "contas_pagar";
 
-  const { data: contas = [], isLoading } = useQuery({
-    queryKey: [tableName, orgId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from(tableName).select("*").eq("organization_id", orgId!).order("due_date", { ascending: true });
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!orgId,
-  });
+  const { contas, isLoading, createMutation, updateMutation, deleteMutation, markAsPaid } = useFinanceiro(
+    orgId,
+    (tab === "dasdarf" || tab === "orcamento") ? "receber" : tab
+  );
 
-  const { data: receberData = [] } = useQuery({
-    queryKey: ["contas_receber", orgId],
-    queryFn: async () => {
-      const { data } = await supabase.from("contas_receber").select("amount, status").eq("organization_id", orgId!);
-      return data ?? [];
-    },
-    enabled: !!orgId,
-  });
+  const { totalReceber, totalPagar, totalRecebido, saldo, healthPercent } = useFinanceiroMetrics(orgId);
 
-  const { data: pagarData = [] } = useQuery({
-    queryKey: ["contas_pagar", orgId],
-    queryFn: async () => {
-      const { data } = await supabase.from("contas_pagar").select("amount, status").eq("organization_id", orgId!);
-      return data ?? [];
-    },
-    enabled: !!orgId,
-  });
-
-  const totalReceber = receberData.filter((c) => c.status === "pendente").reduce((s, c) => s + Number(c.amount), 0);
-  const totalPagar = pagarData.filter((c) => c.status === "pendente").reduce((s, c) => s + Number(c.amount), 0);
-  const totalRecebido = receberData.filter((c) => c.status === "pago").reduce((s, c) => s + Number(c.amount), 0);
-  const totalPagoVal = pagarData.filter((c) => c.status === "pago").reduce((s, c) => s + Number(c.amount), 0);
-  const saldo = totalRecebido - totalPagoVal;
-
-  // Progress Bar Calcs
-  const totalFluxo = totalReceber + totalPagar;
-  const healthPercent = totalFluxo === 0 ? 50 : (totalReceber / totalFluxo) * 100;
-
-  const createMutation = useMutation({
-    mutationFn: async (payload: any) => {
-      const { error } = await supabase.from(tableName).insert(payload);
-      if (error) throw error;
-    },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: [tableName] }); queryClient.invalidateQueries({ queryKey: ["contas_receber"] }); queryClient.invalidateQueries({ queryKey: ["contas_pagar"] }); toast.success("Conta criada"); closeDialog(); },
-    onError: (e: any) => toast.error(e.message),
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: async ({ id, ...payload }: any) => {
-      delete payload.organization_id;
-      delete payload.created_at;
-
-      const { error } = await supabase.from(tableName).update(payload).eq("id", id).eq("organization_id", orgId!);
-      if (error) throw error;
-    },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: [tableName] }); queryClient.invalidateQueries({ queryKey: ["contas_receber"] }); queryClient.invalidateQueries({ queryKey: ["contas_pagar"] }); toast.success("Conta atualizada"); closeDialog(); },
-    onError: (e: any) => toast.error(e.message),
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from(tableName).delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: [tableName] }); queryClient.invalidateQueries({ queryKey: ["contas_receber"] }); queryClient.invalidateQueries({ queryKey: ["contas_pagar"] }); toast.success("Conta excluída"); setDeleteDialogOpen(false); setEditingId(null); },
-    onError: (e: any) => toast.error(e.message),
-  });
-
-  const generatePixMutation = useMutation({
-    mutationFn: async (c: any) => {
-      if (!orgId) throw new Error("Organização não encontrada.");
-
-      // Check if Asaas is configured
-      const { data: settingsRaw } = await supabase
-        .from("gateway_settings" as any)
-        .select("status, api_key")
-        .eq("organization_id", orgId)
-        .eq("gateway_name", "asaas")
-        .maybeSingle();
-      const settings = settingsRaw as { api_key?: string; status?: string } | null;
-
-      if (!settings?.api_key || settings?.status !== "active") {
-        throw new Error(
-          "Integração com Asaas não configurada. Acesse Configurações > Integrações para ativar."
-        );
-      }
-
-      // Call real Asaas via asaasService (server-side safe only if used via Edge Function)
-      // For now, create via asaasService which routes through browser fetch
-      // Note: may fail CORS in prod — migrate to billing-gateway Edge Function when ready
-      const payment = await asaasService.createPayment(orgId, {
-        customer: c.asaas_customer_id || c.client_id || "",
-        billingType: "PIX",
-        value: Number(c.amount),
-        dueDate: c.due_date,
-        description: c.description,
-        externalReference: c.id,
-      });
-
-      const pixCode = payment.pixTransaction?.payload || payment.encodedImage || "";
-      const { error } = await supabase.from("contas_receber" as any).update({
-        pix_code: pixCode,
-        gateway_id: payment.id,
-        asaas_id: payment.id,
-      }).eq("id", c.id);
-      if (error) throw error;
-      return { ...c, pix_code: pixCode };
-    },
-    onSuccess: (updatedData) => {
-      queryClient.invalidateQueries({ queryKey: [tableName] });
-      setSelectedPix(updatedData);
-      setPixModalOpen(true);
-      toast.success("Cobrança PIX gerada com sucesso!");
-    },
-    onError: (e: any) => toast.error(`Erro ao gerar PIX: ${e.message}`)
-  });
-
-  const reconcileAsaasMutation = useMutation({
-    mutationFn: async (c: any) => {
-      if (!orgId || !c.asaas_id) return;
-
-      const payment = await asaasService.getPayment(orgId, c.asaas_id);
-
-      if (payment.status === "RECEIVED" || payment.status === "CONFIRMED" || payment.status === "RECEIVED_IN_CASH") {
-        const { error } = await supabase.from(tableName).update({
-          status: "pago",
-          updated_at: new Date().toISOString()
-        }).eq("id", c.id);
-        if (error) throw error;
-        toast.success(`Pagamento de ${c.description} confirmado!`);
-      } else {
-        toast.info(`Status no Asaas: ${payment.status}`);
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [tableName] });
-    },
-    onError: (err: any) => toast.error(`Erro ao reconciliar: ${err.message}`)
-  });
-
-  const reconcileAllAsaas = async () => {
-    const pendingAsaas = filtered.filter((c: any) => c.status === "pendente" && c.asaas_id);
-    if (pendingAsaas.length === 0) {
-      toast.info("Nenhuma conta do Asaas pendente para sincronizar.");
-      return;
-    }
-
-    toast.loading(`Sincronizando ${pendingAsaas.length} faturas...`);
-    for (const c of pendingAsaas) {
-      await reconcileAsaasMutation.mutateAsync(c);
-    }
-    toast.dismiss();
-    toast.success("Sincronização concluída.");
-  };
-
-  const markAsPaid = (id: string) => {
-    updateMutation.mutate({ id, status: "pago" });
-  };
+  const { generatePixMutation, reconcileAsaasMutation, reconcileAllAsaas } = useAsaasBilling(
+    orgId,
+    (tab === "dasdarf" || tab === "orcamento") ? "receber" : tab,
+    setPixModalOpen,
+    setSelectedPix
+  );
 
   const closeDialog = () => { setDialogOpen(false); setForm(emptyForm); setEditingId(null); };
   const openCreate = () => { setForm(emptyForm); setEditingId(null); setDialogOpen(true); };
@@ -268,11 +125,15 @@ export default function FinanceiroPage() {
     if (editingId) {
       updateMutation.mutate({ id: editingId, ...payload });
     } else {
-      createMutation.mutate(payload);
+      createMutation.mutate(payload, {
+        onSuccess: () => {
+          closeDialog();
+        }
+      });
     }
   };
 
-  const filtered = contas.filter((c: any) => {
+  const filtered = contas.filter((c: ContaBase) => {
     const matchStatus = statusFilter === "all" || c.status === statusFilter;
     const q = debouncedSearch.toLowerCase();
     const matchSearch = !q || c.description.toLowerCase().includes(q) || (c.category ?? "").toLowerCase().includes(q);
@@ -312,7 +173,7 @@ export default function FinanceiroPage() {
             <Plus className="h-4 w-4" /> Nova Transação
           </Button>
           {tab === "receber" && (
-            <Button variant="outline" onClick={reconcileAllAsaas} className="h-10 gap-2 font-medium">
+            <Button variant="outline" onClick={() => reconcileAllAsaas(filtered)} className="h-10 gap-2 font-medium">
               <RefreshCw className="h-4 w-4" /> Sincronizar Asaas
             </Button>
           )}
@@ -372,7 +233,7 @@ export default function FinanceiroPage() {
 
       {/* ── Main Layout ── */}
       <motion.div variants={itemAnim}>
-        <Tabs value={tab} onValueChange={setTab} className="bg-transparent">
+        <Tabs value={tab} onValueChange={(t) => setTab(t as any)} className="bg-transparent">
           <TabsList className="grid w-full sm:w-auto sm:inline-grid grid-cols-2 md:grid-cols-4 h-auto p-1 bg-muted/50 rounded-xl mb-4">
             <TabsTrigger value="receber" className="py-2.5 gap-2 rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm"><ArrowUpRight className="h-4 w-4" /> <span className="hidden sm:inline">A Receber</span></TabsTrigger>
             <TabsTrigger value="pagar" className="py-2.5 gap-2 rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm"><ArrowDownRight className="h-4 w-4" /> <span className="hidden sm:inline">A Pagar</span></TabsTrigger>

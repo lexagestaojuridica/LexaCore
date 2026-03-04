@@ -1,7 +1,10 @@
-import { useState, useEffect, useMemo } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTimer } from "@/features/timesheet/hooks/useTimer";
+import { useTimesheet } from "@/features/timesheet/hooks/useTimesheet";
+import type { TimesheetEntry, TimerLog, ProcessoTimesheet as Processo } from "@/features/timesheet/types";
 import { toast } from "sonner";
 import { format, differenceInMinutes, parseISO, isToday, isYesterday, isValid, startOfDay, endOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -20,31 +23,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-
-// ─── Types ────────────────────────────────────────────────────
-interface TimesheetEntry {
-    id: string;
-    organization_id: string;
-    user_id: string;
-    process_id: string | null;
-    description: string | null;
-    started_at: string;
-    ended_at: string | null;
-    duration_minutes: number | null;
-    hourly_rate: number | null;
-    billing_status: string;
-    created_at: string;
-}
-
-interface TimerLog {
-    id: string;
-    timesheet_entry_id: string;
-    action: string;
-    logged_at: string;
-    notes: string | null;
-}
-
-interface Processo { id: string; title: string; number: string | null; client_id: string | null; clients?: { id: string; name: string; asaas_customer_id: string | null; }; }
 
 // ─── Helpers ──────────────────────────────────────────────────
 const fmtDuration = (minutes: number): string => {
@@ -84,16 +62,8 @@ const ACTION_LABELS: Record<string, { label: string; color: string }> = {
 // ─── Main Page ────────────────────────────────────────────────
 export default function TimesheetPage() {
     const { user } = useAuth();
-    const queryClient = useQueryClient();
     const { t } = useTranslation();
 
-    const [activeTimer, setActiveTimer] = useState<{
-        processId: string | null; description: string; startedAt: Date; hourlyRate: string;
-        isPaused: boolean; pausedElapsed: number;
-    } | null>(null);
-    const [timerDescription, setTimerDescription] = useState("");
-    const [timerProcess, setTimerProcess] = useState("none");
-    const [timerRate, setTimerRate] = useState("");
     const [dialogOpen, setDialogOpen] = useState(false);
     const [manualForm, setManualForm] = useState({
         processId: "none", description: "", date: format(new Date(), "yyyy-MM-dd"),
@@ -101,18 +71,7 @@ export default function TimesheetPage() {
     });
     const [filterProcess, setFilterProcess] = useState("all");
     const [filterStatus, setFilterStatus] = useState("all");
-    const [elapsed, setElapsed] = useState(0);
     const [expandedEntry, setExpandedEntry] = useState<string | null>(null);
-
-    // ── Timer tick (FIXED: useEffect instead of useState) ──
-    useEffect(() => {
-        if (!activeTimer || activeTimer.isPaused) return;
-        const interval = setInterval(() => {
-            const rawElapsed = Math.floor((Date.now() - activeTimer.startedAt.getTime()) / 1000);
-            setElapsed(rawElapsed + activeTimer.pausedElapsed);
-        }, 1000);
-        return () => clearInterval(interval);
-    }, [activeTimer]);
 
     const { data: profile } = useQuery({
         queryKey: ["profile", user?.id],
@@ -124,32 +83,14 @@ export default function TimesheetPage() {
     });
     const orgId = profile?.organization_id;
 
-    const { data: rawEntries = [], isLoading } = useQuery({
-        queryKey: ["timesheet", orgId],
-        queryFn: async () => {
-            const { data, error } = await supabase
-                .from("timesheet_entries" as any)
-                .select("*")
-                .eq("organization_id", orgId!)
-                .order("started_at", { ascending: false });
-            if (error) return [];
-            return (data ?? []) as unknown as TimesheetEntry[];
-        },
-        enabled: !!orgId,
-    });
+    const {
+        activeTimer, timerDescription, setTimerDescription, timerProcess, setTimerProcess,
+        timerRate, setTimerRate, elapsed, startTimer, pauseTimer, resumeTimer, stopTimer
+    } = useTimer(orgId, user?.id);
 
-    const entries = useMemo(() => {
-        return rawEntries.filter(e => e.started_at && isValid(parseISO(e.started_at)));
-    }, [rawEntries]);
-
-    const { data: processos = [] } = useQuery({
-        queryKey: ["processos-ts", orgId],
-        queryFn: async () => {
-            const { data } = await supabase.from("processos_juridicos").select("id, title, number, client_id, clients(id, name, asaas_customer_id)").eq("organization_id", orgId!).eq("status", "ativo");
-            return (data ?? []) as unknown as Processo[];
-        },
-        enabled: !!orgId,
-    });
+    const {
+        entries, isLoading, processos, createMutation, deleteMutation, handleBilling
+    } = useTimesheet(orgId, user?.id);
 
     // ── Timer logs query ──
     const { data: rawTimerLogs = [] } = useQuery({
@@ -168,165 +109,6 @@ export default function TimesheetPage() {
     const timerLogs = useMemo(() => {
         return rawTimerLogs.filter(log => log.logged_at && isValid(parseISO(log.logged_at)));
     }, [rawTimerLogs]);
-
-    const createMutation = useMutation({
-        mutationFn: async (payload: any) => {
-            const { error } = await supabase.from("timesheet_entries" as any).insert(payload);
-            if (error) throw error;
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["timesheet"] });
-            toast.success("Lançamento registrado!");
-        },
-        onError: () => toast.error("Erro ao registrar no banco."),
-    });
-
-    const deleteMutation = useMutation({
-        mutationFn: async (id: string) => {
-            const { error } = await supabase.from("timesheet_entries" as any).delete().eq("id", id);
-            if (error) throw error;
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["timesheet"] });
-            toast.success("Lançamento excluído");
-        },
-    });
-
-    const bilMutation = useMutation({
-        mutationFn: async ({ entryId, payload, entryUpdate }: { entryId: string, payload: any, entryUpdate: any }) => {
-            const { error: fError } = await supabase.from("contas_receber").insert(payload);
-            if (fError) throw fError;
-
-            const { error: tError } = await supabase.from("timesheet_entries" as any).update(entryUpdate).eq("id", entryId);
-            if (tError) throw tError;
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["timesheet"] });
-            queryClient.invalidateQueries({ queryKey: ["contas_receber"] });
-            toast.success("Conta a Receber gerada com sucesso!");
-        },
-        onError: (e: any) => toast.error(`Erro ao faturar: ${e.message}`),
-    });
-
-    const handleBilling = async (entry: TimesheetEntry, value: number) => {
-        if (!orgId || !user) return;
-
-        const processo = processos.find(p => p.id === entry.process_id);
-        const client = processo?.clients;
-
-        let asaas_id = null;
-        let asaas_url = null;
-
-        if (client?.asaas_customer_id) {
-            try {
-                toast.loading("Gerando cobrança no Asaas...");
-                const payment = await asaasService.createPayment(orgId, {
-                    customer: client.asaas_customer_id,
-                    billingType: "UNDEFINED", // Let the client choose in the checkout
-                    value,
-                    dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 days from now
-                    description: `Honorários (Timesheet): ${entry.description}`,
-                    externalReference: entry.id
-                });
-                asaas_id = payment.id;
-                asaas_url = payment.invoiceUrl;
-                toast.success("Cobrança gerada no Asaas!");
-            } catch (err: any) {
-                toast.error(`Erro no Asaas: ${err.message}. Criando apenas registro local.`);
-            }
-        }
-
-        const payload = {
-            organization_id: orgId,
-            client_id: client?.id || null,
-            description: `Honorários (Timesheet): ${entry.description}${asaas_url ? ` | Cobrança: ${asaas_url}` : ""}`,
-            amount: value,
-            due_date: new Date().toISOString().split('T')[0],
-            status: "pendente",
-            category: "Honorários",
-            asaas_id: asaas_id,
-        };
-
-        bilMutation.mutate({
-            entryId: entry.id,
-            payload,
-            entryUpdate: { billing_status: "faturado" }
-        });
-    };
-
-    const logTimerAction = async (entryId: string, action: string) => {
-        await supabase.from("timesheet_timer_logs" as any).insert({
-            timesheet_entry_id: entryId,
-            action,
-            logged_at: new Date().toISOString(),
-        });
-    };
-
-    const startTimer = () => {
-        if (!timerDescription.trim()) { toast.error("Descreva a atividade"); return; }
-        setActiveTimer({
-            processId: timerProcess === "none" ? null : timerProcess,
-            description: timerDescription,
-            startedAt: new Date(),
-            hourlyRate: timerRate,
-            isPaused: false,
-            pausedElapsed: 0,
-        });
-        setElapsed(0);
-        toast.success("Timer iniciado!");
-    };
-
-    const pauseTimer = () => {
-        if (!activeTimer || activeTimer.isPaused) return;
-        setActiveTimer({ ...activeTimer, isPaused: true, pausedElapsed: elapsed });
-        toast("Timer pausado", { icon: "⏸️" });
-    };
-
-    const resumeTimer = () => {
-        if (!activeTimer || !activeTimer.isPaused) return;
-        setActiveTimer({
-            ...activeTimer,
-            isPaused: false,
-            startedAt: new Date(),
-        });
-        toast("Timer retomado", { icon: "▶️" });
-    };
-
-    const stopTimer = async () => {
-        if (!activeTimer) return;
-        const endedAt = new Date();
-        const durationMinutes = Math.max(1, Math.floor(elapsed / 60));
-
-        const startedIso = new Date(endedAt.getTime() - elapsed * 1000).toISOString();
-
-        const { data: inserted } = await supabase.from("timesheet_entries" as any).insert({
-            organization_id: orgId!,
-            user_id: user!.id,
-            process_id: activeTimer.processId,
-            description: activeTimer.description,
-            started_at: startedIso,
-            ended_at: endedAt.toISOString(),
-            duration_minutes: durationMinutes,
-            hourly_rate: activeTimer.hourlyRate ? Number(activeTimer.hourlyRate) : null,
-            billing_status: "pendente",
-        }).select("id").single();
-
-        if (inserted) {
-            const insertedId = (inserted as any).id;
-            if (insertedId) {
-                await logTimerAction(insertedId, "stop");
-            }
-        }
-
-        queryClient.invalidateQueries({ queryKey: ["timesheet"] });
-        toast.success("Lançamento registrado!");
-
-        setActiveTimer(null);
-        setTimerDescription("");
-        setTimerProcess("none");
-        setTimerRate("");
-        setElapsed(0);
-    };
 
     const handleManualSubmit = () => {
         const startedAt = new Date(`${manualForm.date}T${manualForm.startTime}:00`);

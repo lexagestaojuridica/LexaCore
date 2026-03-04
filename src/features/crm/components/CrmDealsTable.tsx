@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import FormField from "@/components/shared/FormField";
 import { Separator } from "@/components/ui/separator";
-import { useCrm, CrmDeal } from "@/contexts/CrmContext";
+import { useCrm, CrmDeal } from "@/features/crm/contexts/CrmContext";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";

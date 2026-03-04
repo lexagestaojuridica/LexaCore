@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import FormField from "@/components/shared/FormField";
-import { useCrm, CrmContact } from "@/contexts/CrmContext";
+import { useCrm, CrmContact } from "@/features/crm/contexts/CrmContext";
 
 // ── Tag colors ─────────────────────────────────────────
 const TAG_COLORS: Record<string, string> = {

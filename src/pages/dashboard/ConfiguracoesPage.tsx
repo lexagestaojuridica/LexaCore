@@ -1,9 +1,5 @@
-import { useState, useRef, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
-import { toast } from "sonner";
 import {
   Settings, User, Building2, Shield, Save, Camera, MessageCircle,
   Crown, Sparkles, Check, Plus, Trash2, GripVertical, Layers, Users,
@@ -13,416 +9,62 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
 import LexaLoadingOverlay from "@/components/shared/LexaLoadingOverlay";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { useBilling } from "@/hooks/useBilling";
 import { useGoogleCalendar } from "@/hooks/useGoogleCalendar";
 import { useMicrosoftCalendar } from "@/hooks/useMicrosoftCalendar";
+import { toast } from "sonner";
 
-
-// ─── Types ────────────────────────────────────────────────────
-interface Plan { id: string; name: string; slug: string; price_monthly: number; price_yearly: number; max_users: number; max_processes: number; features: string[]; is_active: boolean; sort_order: number; }
-interface CustomOption { id: string; organization_id: string; module: string; field_name: string; label: string; value: string; color: string | null; sort_order: number; is_active: boolean; }
-interface Employee { id: string; organization_id: string; user_id: string | null; full_name: string; email: string | null; phone: string | null; oab_number: string | null; department: string | null; position: string | null; hire_date: string | null; hourly_rate: number | null; unit_id: string | null; is_active: boolean; notes: string | null; }
-
-const MODULES = [
-  { value: "processos", label: "Processos" },
-  { value: "clientes", label: "Clientes" },
-  { value: "financeiro", label: "Financeiro" },
-  { value: "agenda", label: "Agenda" },
-  { value: "timesheet", label: "Timesheet" },
-  { value: "crm", label: "CRM" },
-  { value: "geral", label: "Geral" },
-];
-
-const emptyEmployee = { full_name: "", email: "", phone: "", oab_number: "", department: "", position: "", hire_date: "", hourly_rate: "", unit_id: "none", notes: "" };
-const emptyOption = { module: "geral", field_name: "", label: "", value: "", color: "#6366f1" };
+// FSD Imports
+import { useConfiguracoes } from "@/features/configuracoes/hooks/useConfiguracoes";
+import { EmployeeDialog } from "@/features/configuracoes/components/EmployeeDialog";
+import type { Employee } from "@/features/configuracoes/types";
 
 // ─── ConfiguracoesPage ────────────────────────────────────────
 export default function ConfiguracoesPage() {
-  const { user } = useAuth();
-  const queryClient = useQueryClient();
-  const avatarInputRef = useRef<HTMLInputElement>(null);
   const { t } = useTranslation();
-
-  // ── Queries ──
   const gcal = useGoogleCalendar();
   const mscal = useMicrosoftCalendar();
 
-  const { data: profile, isLoading } = useQuery({
-    queryKey: ["profile-full", user?.id],
-    queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("*").eq("user_id", user!.id).single();
-      return data;
-    },
-    enabled: !!user,
-  });
-
-  const { data: org } = useQuery({
-    queryKey: ["org", profile?.organization_id],
-    queryFn: async () => {
-      const { data } = await supabase.from("organizations").select("*").eq("id", profile!.organization_id!).single();
-      return data;
-    },
-    enabled: !!profile?.organization_id,
-  });
-
-  const { data: userRole } = useQuery({
-    queryKey: ["user-role", user?.id, profile?.organization_id],
-    queryFn: async () => {
-      const { data } = await supabase.from("user_roles").select("role").eq("user_id", user!.id).eq("organization_id", profile!.organization_id!).single();
-      return data;
-    },
-    enabled: !!user && !!profile?.organization_id,
-  });
-
-  const { data: teamMembers = [] } = useQuery({
-    queryKey: ["team-members", profile?.organization_id],
-    queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("*, user_roles(role), custom_roles(name)").eq("organization_id", profile!.organization_id!);
-      return data ?? [];
-    },
-    enabled: !!profile?.organization_id,
-  });
-
-  const { data: customRoles = [] } = useQuery({
-    queryKey: ["custom-roles", profile?.organization_id],
-    queryFn: async () => {
-      const { data } = await (supabase.from("custom_roles") as any).select("*").eq("organization_id", profile!.organization_id!);
-      return data ?? [];
-    },
-    enabled: !!profile?.organization_id,
-  });
-
-  const FALLBACK_PLANS: Plan[] = [
-    { id: "free", name: "Free", slug: "free", price_monthly: 0, price_yearly: 0, max_users: 2, max_processes: 50, features: ["2 usuários", "50 processos", "Agenda básica", "Timesheet", "Chat interno"], is_active: true, sort_order: 1 },
-    { id: "pro", name: "Pro", slug: "pro", price_monthly: 197, price_yearly: 1970, max_users: 10, max_processes: 500, features: ["10 usuários", "500 processos", "Agenda avançada", "Timesheet + BI", "CRM completo", "Integrações", "ARUNA IA", "Suporte prioritário"], is_active: true, sort_order: 2 },
-    { id: "enterprise", name: "Enterprise", slug: "enterprise", price_monthly: 497, price_yearly: 4970, max_users: -1, max_processes: -1, features: ["Usuários ilimitados", "Processos ilimitados", "Multi-unidades", "Workflow avançado", "API dedicada", "IA personalizada", "SLA 99.9%", "Gerente de conta"], is_active: true, sort_order: 3 },
-  ];
-
-  const { data: dbPlans = [] } = useQuery({
-    queryKey: ["subscription-plans"],
-    queryFn: async () => {
-      const { data } = await supabase.from("subscription_plans" as any).select("*").eq("is_active", true).order("sort_order");
-      return (data ?? []) as unknown as Plan[];
-    },
-  });
-  const plans = dbPlans.length > 0 ? dbPlans : FALLBACK_PLANS;
-
-  const { data: employees = [] } = useQuery({
-    queryKey: ["employees", profile?.organization_id],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("rh_colaboradores").select("*").eq("organization_id", profile!.organization_id!);
-      if (error) throw error;
-      return data ?? [];
-    },
-    enabled: !!profile?.organization_id,
-  });
-
-  const { data: units = [] } = useQuery({
-    queryKey: ["units", profile?.organization_id],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("units").select("*").eq("organization_id", profile!.organization_id!);
-      if (error) throw error;
-      return data ?? [];
-    },
-    enabled: !!profile?.organization_id,
-  });
-
-  const { data: customOptions = [] } = useQuery({
-    queryKey: ["custom-options", profile?.organization_id],
-    queryFn: async () => {
-      // Usando 'custom_options' como tabela de fallback para configurações extras
-      const { data } = await (supabase.from("custom_options" as any)).select("*").eq("organization_id", profile!.organization_id!);
-      return data ?? [];
-    },
-    enabled: !!profile?.organization_id,
-  });
-
   const {
-    subscription: orgSubscription,
-    isLoading: loadingSub,
-    createCheckout
-  } = useBilling();
+    user, profile, org, userRole, isLoading,
+    teamMembers, customRoles, plans, employees, units,
+    orgSubscription,
+    profileForm, setProfileForm, orgForm, setOrgForm,
+    avatarInputRef,
+    updateProfileMutation, updateOrgMutation, uploadAvatarMutation,
+    updateMemberRoleMutation,
+    createEmployeeMutation, updateEmployeeMutation, deleteEmployeeMutation,
+    updateGatewayMutation,
+    handleSubscribe, handleSaveIntegration,
+  } = useConfiguracoes();
 
-  // ── Handlers ──
-  const handleSubscribe = (planSlug: string) => {
-    toast.promise(
-      new Promise((resolve, reject) => {
-        createCheckout({ planId: planSlug });
-        resolve(true);
-      }),
-      {
-        loading: "Iniciando checkout...",
-        success: "Redirecionando...",
-        error: "Erro ao iniciar pagamento",
-      }
-    );
-  };
-
-  // ── State ──
-  const [profileForm, setProfileForm] = useState({ full_name: "", phone: "" });
-  const [orgForm, setOrgForm] = useState({
-    whatsapp_instance_id: "",
-    whatsapp_token: "",
-    whatsapp_enabled: false,
-    asaas_api_key: "",
-    asaas_environment: "sandbox",
-    asaas_enabled: false,
-    jusbrasil_token: "",
-    escavador_token: "",
-  });
-  const [formInitialized, setFormInitialized] = useState(false);
   const [activeTab, setActiveTab] = useState("perfil");
   const [addUsersSeats, setAddUsersSeats] = useState(1);
 
+  // Employee dialog
   const [empDialogOpen, setEmpDialogOpen] = useState(false);
-  const [editingEmployee, setEditingEmployee] = useState<string | null>(null);
-  const [empForm, setEmpForm] = useState(emptyEmployee);
+  const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
 
-  const [optDialogOpen, setOptDialogOpen] = useState(false);
-  const [optForm, setOptForm] = useState(emptyOption);
-  const [optFilterModule, setOptFilterModule] = useState("all");
-
-  useEffect(() => {
-    if (profile && org && !formInitialized) {
-      setProfileForm({ full_name: profile.full_name || "", phone: profile.phone || "" });
-      setOrgForm({
-        whatsapp_instance_id: (org as any).whatsapp_instance_id || "",
-        whatsapp_token: (org as any).whatsapp_token || "",
-        whatsapp_enabled: (org as any).whatsapp_enabled || false,
-        asaas_api_key: "",
-        asaas_environment: "sandbox",
-        asaas_enabled: false,
-        jusbrasil_token: (org as any).jusbrasil_token || "",
-        escavador_token: (org as any).escavador_token || "",
-      });
-      setFormInitialized(true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile, org]);
-
-  const { data: gatewaySettings } = useQuery({
-    queryKey: ["gateway-settings", profile?.organization_id],
-    queryFn: async () => {
-      const { data } = await supabase.from("gateway_settings").select("*").eq("organization_id", profile!.organization_id!).eq("gateway_name", "asaas").maybeSingle();
-      return data;
-    },
-    enabled: !!profile?.organization_id,
-  });
-
-  useEffect(() => {
-    if (gatewaySettings && formInitialized && !orgForm.asaas_api_key && gatewaySettings.api_key) {
-      setOrgForm(prev => ({
-        ...prev,
-        asaas_api_key: gatewaySettings.api_key,
-        asaas_environment: gatewaySettings.environment || "sandbox",
-        asaas_enabled: gatewaySettings.status === "active"
-      }));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gatewaySettings, formInitialized]);
-
-  // ── Mutations ──
-  const updateProfileMutation = useMutation({
-    mutationFn: async (payload: { full_name: string; phone: string }) => {
-      const { error } = await supabase.from("profiles").update(payload).eq("user_id", user!.id);
-      if (error) throw error;
-    },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["profile-full"] }); toast.success("Perfil atualizado"); },
-    onError: () => toast.error("Erro ao atualizar perfil"),
-  });
-
-  const updateOrgMutation = useMutation({
-    mutationFn: async (payload: { whatsapp_instance_id: string; whatsapp_token: string; whatsapp_enabled: boolean; jusbrasil_token?: string; escavador_token?: string }) => {
-      const { error } = await (supabase.from("organizations") as any).update(payload).eq("id", profile!.organization_id!);
-      if (error) throw error;
-    },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["org"] }); toast.success("Configurações salvas"); },
-    onError: () => toast.error("Erro ao atualizar as configurações"),
-  });
-
-  const uploadAvatarMutation = useMutation({
-    mutationFn: async (file: File) => {
-      const filePath = `avatars/${user!.id}-${Date.now()}.${file.name.split(".").pop()}`;
-      const { error: uploadError } = await supabase.storage.from("documentos").upload(filePath, file, { upsert: true });
-      if (uploadError) throw uploadError;
-      const { data: urlData } = supabase.storage.from("documentos").getPublicUrl(filePath);
-      const { error: dbError } = await supabase.from("profiles").update({ avatar_url: urlData.publicUrl }).eq("user_id", user!.id);
-      if (dbError) throw dbError;
-      return urlData.publicUrl;
-    },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["profile-full"] }); toast.success("Foto atualizada"); },
-    onError: () => toast.error("Erro ao atualizar foto"),
-  });
-
-  const updateMemberRoleMutation = useMutation({
-    mutationFn: async ({ userId, custom_role_id }: { userId: string; custom_role_id: string }) => {
-      const { error } = await (supabase.from("profiles") as any).update({ custom_role_id }).eq("user_id", userId);
-      if (error) throw error;
-    },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["team-members"] }); toast.success("Nível de acesso atualizado"); },
-  });
-
-  // Employee mutations
-  const createEmployeeMutation = useMutation({
-    mutationFn: async (payload: any) => {
-      const { error } = await supabase.from("rh_colaboradores").insert(payload);
-      if (error) throw error;
-    },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["employees"] }); toast.success("Funcionário cadastrado!"); setEmpDialogOpen(false); },
-    onError: (err: any) => toast.error(`Erro ao cadastrar funcionário: ${err.message}`),
-  });
-
-  const updateEmployeeMutation = useMutation({
-    mutationFn: async ({ id, ...payload }: any) => {
-      const { error } = await supabase.from("rh_colaboradores").update(payload).eq("id", id).eq("organization_id", profile!.organization_id!);
-      if (error) throw error;
-    },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["employees"] }); toast.success("Funcionário atualizado!"); setEmpDialogOpen(false); },
-    onError: (err: any) => toast.error(`Erro ao atualizar funcionário: ${err.message}`),
-  });
-
-  const deleteEmployeeMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("rh_colaboradores").delete().eq("id", id).eq("organization_id", profile!.organization_id!);
-      if (error) throw error;
-    },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["employees"] }); toast.success("Funcionário removido"); },
-    onError: (err: any) => toast.error(`Erro ao remover funcionário: ${err.message}`),
-  });
-
-  // Option mutations
-  const createOptionMutation = useMutation({
-    mutationFn: async (payload: any) => {
-      const { error } = await supabase.from("custom_options" as any).insert(payload);
-      if (error) throw error;
-    },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["custom-options"] }); toast.success("Opção criada!"); setOptDialogOpen(false); },
-    onError: () => toast.error("Erro ao criar opção"),
-  });
-
-  const deleteOptionMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("custom_options" as any).delete().eq("id", id).eq("organization_id", profile!.organization_id!);
-      if (error) throw error;
-    },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["custom-options"] }); toast.success("Opção removida"); },
-  });
-
-  const updateGatewayMutation = useMutation({
-    mutationFn: async (payload: any) => {
-      const { data: existing } = await supabase.from("gateway_settings").select("id").eq("organization_id", profile!.organization_id!).eq("gateway_name", "asaas").maybeSingle();
-
-      if (existing) {
-        const { error } = await supabase.from("gateway_settings").update({
-          api_key: payload.asaas_api_key,
-          environment: payload.asaas_environment,
-          status: payload.asaas_enabled ? "active" : "inactive",
-          updated_at: new Date().toISOString()
-        }).eq("id", existing.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("gateway_settings").insert({
-          organization_id: profile!.organization_id!,
-          gateway_name: "asaas",
-          api_key: payload.asaas_api_key,
-          environment: payload.asaas_environment,
-          status: payload.asaas_enabled ? "active" : "inactive"
-        });
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["gateway-settings"] });
-      toast.success("Configurações de gateway salvas!");
-    },
-    onError: () => toast.error("Erro ao salvar configurações de gateway"),
-  });
-
-  // ── Handlers ──
-  const handleEmpSubmit = () => {
-    const payload = {
-      organization_id: profile!.organization_id!,
-      full_name: empForm.full_name,
-      email: empForm.email || null,
-      phone: empForm.phone || null,
-      oab_number: empForm.oab_number || null,
-      department: empForm.department || null,
-      position: empForm.position || null,
-      hire_date: empForm.hire_date || null,
-      hourly_rate: empForm.hourly_rate ? Number(empForm.hourly_rate) : null,
-      unit_id: empForm.unit_id === "none" ? null : empForm.unit_id,
-      notes: empForm.notes || null,
-    };
-    if (editingEmployee) {
-      updateEmployeeMutation.mutate({ id: editingEmployee, ...payload });
+  const handleEmpSubmit = (payload: Record<string, unknown>, isEdit: boolean, editId?: string) => {
+    if (isEdit && editId) {
+      updateEmployeeMutation.mutate({ id: editId, ...payload }, { onSuccess: () => setEmpDialogOpen(false) });
     } else {
-      createEmployeeMutation.mutate(payload);
+      createEmployeeMutation.mutate(payload, { onSuccess: () => setEmpDialogOpen(false) });
     }
-  };
-
-  const openEditEmployee = (emp: Employee) => {
-    setEditingEmployee(emp.id);
-    setEmpForm({
-      full_name: emp.full_name, email: emp.email || "", phone: emp.phone || "",
-      oab_number: emp.oab_number || "", department: emp.department || "", position: emp.position || "",
-      hire_date: emp.hire_date || "", hourly_rate: emp.hourly_rate?.toString() || "",
-      unit_id: emp.unit_id || "none", notes: emp.notes || "",
-    });
-    setEmpDialogOpen(true);
-  };
-
-  const handleOptSubmit = () => {
-    createOptionMutation.mutate({
-      organization_id: profile!.organization_id!,
-      module: optForm.module,
-      field_name: optForm.field_name,
-      label: optForm.label,
-      value: optForm.value || optForm.label.toLowerCase().replace(/\s+/g, "_"),
-      color: optForm.color || null,
-    });
-  };
-
-  const handleSaveIntegration = () => {
-    // Salva configurações do Gateway
-    if (orgForm.asaas_api_key) {
-      updateGatewayMutation.mutate({
-        asaas_api_key: orgForm.asaas_api_key,
-        asaas_environment: orgForm.asaas_environment,
-        asaas_enabled: orgForm.asaas_enabled,
-      });
-    }
-
-    // Salva configurações da Organização (Jusbrasil, Escavador, etc.)
-    updateOrgMutation.mutate({
-      whatsapp_instance_id: orgForm.whatsapp_instance_id,
-      whatsapp_token: orgForm.whatsapp_token,
-      whatsapp_enabled: orgForm.whatsapp_enabled,
-      jusbrasil_token: orgForm.jusbrasil_token || null,
-      escavador_token: orgForm.escavador_token || null,
-    } as any);
   };
 
   const roleLabels: Record<string, string> = { admin: "Administrador", advogado: "Advogado", estagiario: "Estagiário", financeiro: "Financeiro" };
 
-  const filteredOptions = optFilterModule === "all" ? customOptions : customOptions.filter((o) => o.module === optFilterModule);
-
   if (isLoading) {
     return <div className="flex items-center justify-center py-20"><span className="text-sm text-muted-foreground">{t("common.loading")}</span></div>;
   }
-
-  const planIcons = ["", "✨", "🚀", "👑"];
-  const planColors = ["", "from-blue-500/10 to-indigo-500/10", "from-violet-500/10 to-purple-500/10", "from-amber-500/10 to-orange-500/10"];
 
   const sidebarNavItems = [
     { key: "perfil", icon: User, label: t("settings.profile") || "Meu Perfil" },
@@ -602,7 +244,7 @@ export default function ConfiguracoesPage() {
                   <CardTitle className="font-display text-lg">{t("settings.registerEmployee")}</CardTitle>
                   <CardDescription>{employees.length} {t("settings.employees").toLowerCase()}</CardDescription>
                 </div>
-                <Button size="sm" className="gap-2" onClick={() => { setEditingEmployee(null); setEmpForm(emptyEmployee); setEmpDialogOpen(true); }}>
+                <Button size="sm" className="gap-2" onClick={() => { setEditingEmployee(null); setEmpDialogOpen(true); }}>
                   <Plus className="h-4 w-4" /> {t("settings.newEmployee")}
                 </Button>
               </CardHeader>
@@ -637,7 +279,7 @@ export default function ConfiguracoesPage() {
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                           {emp.hourly_rate && <Badge variant="outline" className="text-[10px]">R$ {emp.hourly_rate}/h</Badge>}
-                          <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => openEditEmployee(emp)}>{t("common.edit")}</Button>
+                          <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => { setEditingEmployee(emp); setEmpDialogOpen(true); }}>{t("common.edit")}</Button>
                           <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => deleteEmployeeMutation.mutate(emp.id)}>
                             <Trash2 className="h-3.5 w-3.5" />
                           </Button>
@@ -660,6 +302,7 @@ export default function ConfiguracoesPage() {
               <div className="grid gap-4 md:grid-cols-3">
                 {plans.map((plan, i) => {
                   const isCurrent = orgSubscription?.plans?.slug === plan.slug;
+                  const planIcons = ["", "✨", "🚀", "👑"];
                   return (
                     <Card key={plan.id} className={cn("relative border-border overflow-hidden transition-shadow hover:shadow-md", isCurrent && "ring-2 ring-primary")}>
                       {isCurrent && <Badge className="absolute top-3 right-3 text-[10px]">{t("settings.currentPlan")}</Badge>}
@@ -681,12 +324,7 @@ export default function ConfiguracoesPage() {
                             </li>
                           ))}
                         </ul>
-                        <Button
-                          variant={isCurrent ? "outline" : "default"}
-                          className="w-full mt-6"
-                          disabled={isCurrent}
-                          onClick={() => handleSubscribe(plan.slug)}
-                        >
+                        <Button variant={isCurrent ? "outline" : "default"} className="w-full mt-6" disabled={isCurrent} onClick={() => handleSubscribe(plan.slug)}>
                           {isCurrent ? t("settings.currentPlan") : t("settings.subscribe")}
                         </Button>
                       </CardContent>
@@ -695,172 +333,6 @@ export default function ConfiguracoesPage() {
                 })}
               </div>
             </div>
-          )}
-
-          {activeTab === "integracoes" && (
-            <Card className="border-border shadow-sm">
-              <CardHeader className="border-b border-border/50 bg-muted/5">
-                <CardTitle className="font-display text-lg flex items-center gap-2">
-                  <Globe className="h-5 w-5 text-primary" />
-                  Integrações e Conectividade
-                </CardTitle>
-                <CardDescription>Gerencie as conexões externas e chaves de API do seu escritório.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-8 pt-6">
-
-                {/* WHATSAPP */}
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-emerald-500/10 p-2.5 rounded-xl">
-                        <MessageCircle className="h-5 w-5 text-emerald-600" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-sm">WhatsApp Business (API)</p>
-                        <p className="text-xs text-muted-foreground">Envio automático de notificações e lembretes.</p>
-                      </div>
-                    </div>
-                    <Switch
-                      checked={orgForm.whatsapp_enabled}
-                      onCheckedChange={(v) => setOrgForm(prev => ({ ...prev, whatsapp_enabled: v }))}
-                    />
-                  </div>
-
-                  {orgForm.whatsapp_enabled && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="grid gap-4 pl-12"
-                    >
-                      <div className="grid sm:grid-cols-2 gap-4">
-                        <div className="space-y-1.5">
-                          <Label className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">ID da Instância (WaAPI)</Label>
-                          <Input
-                            placeholder="instance_id"
-                            value={orgForm.whatsapp_instance_id || ""}
-                            onChange={(e) => setOrgForm(prev => ({ ...prev, whatsapp_instance_id: e.target.value }))}
-                            className="text-xs font-mono"
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Token de Acesso</Label>
-                          <Input
-                            type="password"
-                            placeholder="token_..."
-                            value={orgForm.whatsapp_token || ""}
-                            onChange={(e) => setOrgForm(prev => ({ ...prev, whatsapp_token: e.target.value }))}
-                            className="text-xs font-mono"
-                          />
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </div>
-
-                <Separator />
-
-                {/* ASAAS */}
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-primary/10 p-2.5 rounded-xl">
-                        <CreditCard className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-sm">Asaas Gateway</p>
-                        <p className="text-xs text-muted-foreground">Gestão financeira e cobranças automáticas.</p>
-                      </div>
-                    </div>
-                    <Switch
-                      checked={orgForm.asaas_enabled}
-                      onCheckedChange={(v) => setOrgForm(prev => ({ ...prev, asaas_enabled: v }))}
-                    />
-                  </div>
-
-                  {orgForm.asaas_enabled && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="grid gap-4 pl-12"
-                    >
-                      <div className="space-y-1.5">
-                        <Label className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">API Key</Label>
-                        <Input
-                          type="password"
-                          placeholder="$asaas_api_key_..."
-                          value={orgForm.asaas_api_key || ""}
-                          onChange={(e) => setOrgForm(prev => ({ ...prev, asaas_api_key: e.target.value }))}
-                          className="text-xs font-mono"
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Ambiente</Label>
-                        <Select
-                          value={orgForm.asaas_environment || "sandbox"}
-                          onValueChange={(v) => setOrgForm(prev => ({ ...prev, asaas_environment: v }))}
-                        >
-                          <SelectTrigger className="h-9 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="sandbox">Sandbox (Teste)</SelectItem>
-                            <SelectItem value="production">Produção</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </motion.div>
-                  )}
-                </div>
-
-                <Separator />
-
-                {/* LEGAL DATA */}
-                <div className="space-y-6">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-amber-500/10 p-2.5 rounded-xl">
-                      <Scale className="h-5 w-5 text-amber-600" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-sm">Dados Jurídicos Automáticos</p>
-                      <p className="text-xs text-muted-foreground">Conexão com tribunais via Jusbrasil e Escavador.</p>
-                    </div>
-                  </div>
-
-                  <div className="grid gap-6 pl-12">
-                    <div className="space-y-1.5">
-                      <Label className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Token Jusbrasil</Label>
-                      <Input
-                        type="password"
-                        placeholder="Insira seu token Jusbrasil"
-                        value={orgForm.jusbrasil_token || ""}
-                        onChange={(e) => setOrgForm(prev => ({ ...prev, jusbrasil_token: e.target.value }))}
-                        className="text-xs font-mono"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Chave API Escavador</Label>
-                      <Input
-                        type="password"
-                        placeholder="Insira sua chave Escavador"
-                        value={orgForm.escavador_token || ""}
-                        onChange={(e) => setOrgForm(prev => ({ ...prev, escavador_token: e.target.value }))}
-                        className="text-xs font-mono"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pt-6 border-t border-border flex justify-end">
-                  <Button
-                    className="gap-2 px-8"
-                    onClick={() => handleSaveIntegration()}
-                    disabled={updateOrgMutation.isPending || updateGatewayMutation.isPending}
-                  >
-                    {updateOrgMutation.isPending || updateGatewayMutation.isPending ? "Salvando..." : <><Save className="h-4 w-4" /> Salvar Configurações</>}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
           )}
 
           {/* ── Usuários Adicionais ── */}
@@ -882,27 +354,14 @@ export default function ConfiguracoesPage() {
                         <p className="text-xs text-muted-foreground mt-1">{t("settings.addUsersInfo")}</p>
                       </div>
                       <div className="flex items-center gap-3">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-9 w-9"
-                          onClick={() => setAddUsersSeats(Math.max(1, addUsersSeats - 1))}
-                          disabled={addUsersSeats <= 1}
-                        >
+                        <Button variant="outline" size="icon" className="h-9 w-9" onClick={() => setAddUsersSeats(Math.max(1, addUsersSeats - 1))} disabled={addUsersSeats <= 1}>
                           <Minus className="h-4 w-4" />
                         </Button>
                         <div className="flex flex-col items-center min-w-[60px]">
                           <span className="text-3xl font-bold text-foreground">{addUsersSeats}</span>
-                          <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                            {addUsersSeats === 1 ? "usuário" : "usuários"}
-                          </span>
+                          <span className="text-[10px] text-muted-foreground uppercase tracking-wider">{addUsersSeats === 1 ? "usuário" : "usuários"}</span>
                         </div>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-9 w-9"
-                          onClick={() => setAddUsersSeats(addUsersSeats + 1)}
-                        >
+                        <Button variant="outline" size="icon" className="h-9 w-9" onClick={() => setAddUsersSeats(addUsersSeats + 1)}>
                           <Plus className="h-4 w-4" />
                         </Button>
                       </div>
@@ -921,7 +380,6 @@ export default function ConfiguracoesPage() {
                       </Button>
                     </div>
                   </div>
-
                   <div className="grid gap-3 sm:grid-cols-3">
                     <div className="rounded-lg border border-border p-4 text-center">
                       <p className="text-2xl font-bold text-foreground">{teamMembers.length}</p>
@@ -940,66 +398,162 @@ export default function ConfiguracoesPage() {
               </Card>
             </div>
           )}
+
           {/* ── Integrações ── */}
           {activeTab === "integracoes" && (
-            <div className="space-y-6">
-              <Card className="border-border">
-                <CardHeader>
-                  <CardTitle className="font-display text-lg flex items-center gap-2">
-                    <MessageCircle className="h-5 w-5 text-emerald-500" />
-                    WhatsApp (Z-API)
-                  </CardTitle>
-                  <CardDescription>Configure o disparo de mensagens via WhatsApp para o seu escritório.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/20">
+            <Card className="border-border shadow-sm">
+              <CardHeader className="border-b border-border/50 bg-muted/5">
+                <CardTitle className="font-display text-lg flex items-center gap-2">
+                  <Globe className="h-5 w-5 text-primary" />
+                  Integrações e Conectividade
+                </CardTitle>
+                <CardDescription>Gerencie as conexões externas e chaves de API do seu escritório.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-8 pt-6">
+                {/* WHATSAPP */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-emerald-500/10 p-2.5 rounded-xl"><MessageCircle className="h-5 w-5 text-emerald-600" /></div>
+                      <div>
+                        <p className="font-semibold text-sm">WhatsApp Business (API)</p>
+                        <p className="text-xs text-muted-foreground">Envio automático de notificações e lembretes.</p>
+                      </div>
+                    </div>
+                    <Switch checked={orgForm.whatsapp_enabled} onCheckedChange={(v) => setOrgForm(prev => ({ ...prev, whatsapp_enabled: v }))} />
+                  </div>
+                  {orgForm.whatsapp_enabled && (
+                    <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="grid gap-4 pl-12">
+                      <div className="grid sm:grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <Label className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">ID da Instância (WaAPI)</Label>
+                          <Input placeholder="instance_id" value={orgForm.whatsapp_instance_id || ""} onChange={(e) => setOrgForm(prev => ({ ...prev, whatsapp_instance_id: e.target.value }))} className="text-xs font-mono" />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Token de Acesso</Label>
+                          <Input type="password" placeholder="token_..." value={orgForm.whatsapp_token || ""} onChange={(e) => setOrgForm(prev => ({ ...prev, whatsapp_token: e.target.value }))} className="text-xs font-mono" />
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
+
+                <Separator />
+
+                {/* ASAAS */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-primary/10 p-2.5 rounded-xl"><CreditCard className="h-5 w-5 text-primary" /></div>
+                      <div>
+                        <p className="font-semibold text-sm">Asaas Gateway</p>
+                        <p className="text-xs text-muted-foreground">Gestão financeira e cobranças automáticas.</p>
+                      </div>
+                    </div>
+                    <Switch checked={orgForm.asaas_enabled} onCheckedChange={(v) => setOrgForm(prev => ({ ...prev, asaas_enabled: v }))} />
+                  </div>
+                  {orgForm.asaas_enabled && (
+                    <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="grid gap-4 pl-12">
+                      <div className="space-y-1.5">
+                        <Label className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">API Key</Label>
+                        <Input type="password" placeholder="$asaas_api_key_..." value={orgForm.asaas_api_key || ""} onChange={(e) => setOrgForm(prev => ({ ...prev, asaas_api_key: e.target.value }))} className="text-xs font-mono" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Ambiente</Label>
+                        <Select value={orgForm.asaas_environment || "sandbox"} onValueChange={(v) => setOrgForm(prev => ({ ...prev, asaas_environment: v }))}>
+                          <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="sandbox">Sandbox (Teste)</SelectItem>
+                            <SelectItem value="production">Produção</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
+
+                <Separator />
+
+                {/* LEGAL DATA */}
+                <div className="space-y-6">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-amber-500/10 p-2.5 rounded-xl"><Scale className="h-5 w-5 text-amber-600" /></div>
                     <div>
-                      <p className="font-medium">Habilitar Integração</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">Permite automações workflow dispararem mensagens de WhatsApp.</p>
+                      <p className="font-semibold text-sm">Dados Jurídicos Automáticos</p>
+                      <p className="text-xs text-muted-foreground">Conexão com tribunais via Jusbrasil e Escavador.</p>
                     </div>
-                    <Switch
-                      checked={orgForm.whatsapp_enabled}
-                      onCheckedChange={(v) => setOrgForm((f) => ({ ...f, whatsapp_enabled: v }))}
-                      className="data-[state=checked]:bg-emerald-500"
-                    />
                   </div>
-
-                  <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="grid gap-6 pl-12">
                     <div className="space-y-1.5">
-                      <Label>Instance ID</Label>
-                      <Input
-                        value={orgForm.whatsapp_instance_id}
-                        onChange={(e) => setOrgForm((f) => ({ ...f, whatsapp_instance_id: e.target.value }))}
-                        placeholder="Ex: 3B2C1A..."
-                        disabled={!orgForm.whatsapp_enabled}
-                      />
+                      <Label className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Token Jusbrasil</Label>
+                      <Input type="password" placeholder="Insira seu token Jusbrasil" value={orgForm.jusbrasil_token || ""} onChange={(e) => setOrgForm(prev => ({ ...prev, jusbrasil_token: e.target.value }))} className="text-xs font-mono" />
                     </div>
                     <div className="space-y-1.5">
-                      <Label>Token (Z-API)</Label>
-                      <Input
-                        value={orgForm.whatsapp_token}
-                        onChange={(e) => setOrgForm((f) => ({ ...f, whatsapp_token: e.target.value }))}
-                        type="password"
-                        placeholder="***************"
-                        disabled={!orgForm.whatsapp_enabled}
-                      />
+                      <Label className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Chave API Escavador</Label>
+                      <Input type="password" placeholder="Insira sua chave Escavador" value={orgForm.escavador_token || ""} onChange={(e) => setOrgForm(prev => ({ ...prev, escavador_token: e.target.value }))} className="text-xs font-mono" />
                     </div>
                   </div>
+                </div>
 
-                  <div className="flex justify-end pt-2">
-                    <Button onClick={() => updateOrgMutation.mutate(orgForm)} disabled={updateOrgMutation.isPending} className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white">
-                      <Save className="h-4 w-4" /> Salvar Credenciais
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+                {/* CALENDARS (Google & Microsoft) */}
+                <Separator />
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Card className="border-border opacity-80 hover:opacity-100 transition-opacity flex flex-col h-full">
+                    <CardHeader className="pb-3 border-b border-border/50">
+                      <CardTitle className="font-display text-base flex items-center justify-between">
+                        <div className="flex items-center gap-2"><CalendarDays className="h-5 w-5 text-blue-500" /> Google Calendar</div>
+                        {gcal.isConnected && <Badge variant="outline" className="text-[10px] text-emerald-600 border-emerald-300">Conectado</Badge>}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-4 flex-1 flex flex-col justify-between">
+                      <p className="text-sm text-muted-foreground mb-4">Sincronização bidirecional de eventos e audiências com sua conta Google.</p>
+                      {gcal.isConnected ? (
+                        <div className="space-y-2 w-full">
+                          <div className="grid grid-cols-2 gap-2">
+                            <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => gcal.importEvents()} disabled={gcal.importing}>Importar</Button>
+                            <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => gcal.exportEvents()} disabled={gcal.exporting}>Exportar</Button>
+                          </div>
+                          <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs border-destructive/30 text-destructive hover:bg-destructive/10" onClick={() => gcal.disconnect()}>Desconectar</Button>
+                        </div>
+                      ) : (
+                        <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs border-blue-500/30 text-blue-600 hover:bg-blue-500/10" onClick={() => gcal.connect()} disabled={gcal.connecting}>
+                          <ExternalLink className="h-3.5 w-3.5" /> Conectar Google Account
+                        </Button>
+                      )}
+                    </CardContent>
+                  </Card>
 
-              <div className="grid gap-4 sm:grid-cols-2">
+                  <Card className="border-border opacity-80 hover:opacity-100 transition-opacity flex flex-col h-full">
+                    <CardHeader className="pb-3 border-b border-border/50">
+                      <CardTitle className="font-display text-base flex items-center justify-between">
+                        <div className="flex items-center gap-2"><CalendarDays className="h-5 w-5 text-indigo-500" /> Microsoft Calendar</div>
+                        {mscal.isConnected && <Badge variant="outline" className="text-[10px] text-emerald-600 border-emerald-300">Conectado</Badge>}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-4 flex-1 flex flex-col justify-between">
+                      <p className="text-sm text-muted-foreground mb-4">Sincronização nativa com Exchange, Outlook 365 e Microsoft Teams.</p>
+                      {mscal.isConnected ? (
+                        <div className="space-y-2 w-full">
+                          <div className="grid grid-cols-2 gap-2">
+                            <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => mscal.importEvents()} disabled={mscal.importing}>Importar</Button>
+                            <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => mscal.exportEvents()} disabled={mscal.exporting}>Exportar</Button>
+                          </div>
+                          <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs border-destructive/30 text-destructive hover:bg-destructive/10" onClick={() => mscal.disconnect()}>Desconectar</Button>
+                        </div>
+                      ) : (
+                        <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs border-indigo-500/30 text-indigo-600 hover:bg-indigo-500/10" onClick={() => mscal.connect()} disabled={mscal.connecting}>
+                          <ExternalLink className="h-3.5 w-3.5" /> Conectar Microsoft 365
+                        </Button>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Aruna IA */}
                 <Card className="border-border opacity-80 hover:opacity-100 transition-opacity">
                   <CardHeader className="pb-3">
                     <CardTitle className="font-display text-base flex items-center gap-2">
-                      <Bot className="h-5 w-5 text-indigo-500" />
-                      Aruna IA (Inteligência Artificial)
+                      <Bot className="h-5 w-5 text-indigo-500" /> Aruna IA (Inteligência Artificial)
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -1008,163 +562,27 @@ export default function ConfiguracoesPage() {
                   </CardContent>
                 </Card>
 
-                <Card className="border-border opacity-80 hover:opacity-100 transition-opacity flex flex-col h-full">
-                  <CardHeader className="pb-3 border-b border-border/50">
-                    <CardTitle className="font-display text-base flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <CalendarDays className="h-5 w-5 text-blue-500" />
-                        Google Calendar
-                      </div>
-                      {gcal.isConnected && <Badge variant="outline" className="text-[10px] text-emerald-600 border-emerald-300">Conectado</Badge>}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="pt-4 flex-1 flex flex-col justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-4">Sincronização bidirecional de eventos e audiências com sua conta Google.</p>
-
-                      {gcal.isConnected ? (
-                        <div className="space-y-2 w-full">
-                          <div className="grid grid-cols-2 gap-2">
-                            <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => gcal.importEvents()} disabled={gcal.importing}>
-                              {gcal.importing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />} Importar
-                            </Button>
-                            <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => gcal.exportEvents()} disabled={gcal.exporting}>
-                              {gcal.exporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />} Exportar
-                            </Button>
-                          </div>
-                          <div className="flex gap-2 w-full mt-2">
-                            <Button variant="outline" size="sm" className="flex-1 gap-1.5 text-xs border-destructive/30 text-destructive hover:bg-destructive/10" onClick={() => gcal.clearEvents()} disabled={gcal.clearing}>
-                              {gcal.clearing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />} Limpar
-                            </Button>
-                            <Button variant="ghost" size="sm" className="px-2 text-destructive hover:bg-destructive/10" onClick={() => gcal.disconnect()} title="Desconectar">
-                              <Unplug className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      ) : (
-                        <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs border-blue-500/30 text-blue-600 hover:bg-blue-500/10" onClick={() => gcal.connect()} disabled={gcal.connecting}>
-                          {gcal.connecting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ExternalLink className="h-3.5 w-3.5" />}
-                          Conectar Google Account
-                        </Button>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="border-border opacity-80 hover:opacity-100 transition-opacity flex flex-col h-full mt-4 sm:mt-0">
-                  <CardHeader className="pb-3 border-b border-border/50">
-                    <CardTitle className="font-display text-base flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <CalendarDays className="h-5 w-5 text-indigo-500" />
-                        Microsoft Calendar
-                      </div>
-                      {mscal.isConnected && <Badge variant="outline" className="text-[10px] text-emerald-600 border-emerald-300">Conectado</Badge>}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="pt-4 flex-1 flex flex-col justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-4">Sincronização nativa com Exchange, Outlook 365 e Microsoft Teams.</p>
-
-                      {mscal.isConnected ? (
-                        <div className="space-y-2 w-full">
-                          <div className="grid grid-cols-2 gap-2">
-                            <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => mscal.importEvents()} disabled={mscal.importing}>
-                              {mscal.importing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />} Importar
-                            </Button>
-                            <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => mscal.exportEvents()} disabled={mscal.exporting}>
-                              {mscal.exporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />} Exportar
-                            </Button>
-                          </div>
-                          <div className="flex gap-2 w-full mt-2">
-                            <Button variant="outline" size="sm" className="flex-1 gap-1.5 text-xs border-destructive/30 text-destructive hover:bg-destructive/10" onClick={() => mscal.clearEvents()} disabled={mscal.clearing}>
-                              {mscal.clearing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />} Limpar
-                            </Button>
-                            <Button variant="ghost" size="sm" className="px-2 text-destructive hover:bg-destructive/10" onClick={() => mscal.disconnect()} title="Desconectar">
-                              <Unplug className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      ) : (
-                        <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs border-indigo-500/30 text-indigo-600 hover:bg-indigo-500/10" onClick={() => mscal.connect()} disabled={mscal.connecting}>
-                          {mscal.connecting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ExternalLink className="h-3.5 w-3.5" />}
-                          Conectar Microsoft 365
-                        </Button>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
+                <div className="pt-6 border-t border-border flex justify-end">
+                  <Button className="gap-2 px-8" onClick={() => handleSaveIntegration()} disabled={updateOrgMutation.isPending || updateGatewayMutation.isPending}>
+                    {updateOrgMutation.isPending || updateGatewayMutation.isPending ? "Salvando..." : <><Save className="h-4 w-4" /> Salvar Configurações</>}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           )}
         </div>
       </div>
 
-      {/* ── Employee Dialog ── */}
-      <Dialog open={empDialogOpen} onOpenChange={setEmpDialogOpen}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>{editingEmployee ? t("settings.editEmployee") : t("settings.newEmployee")}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-2 max-h-[60vh] overflow-y-auto">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1.5 sm:col-span-2">
-                <Label>{t("settings.fullName")} *</Label>
-                <Input value={empForm.full_name} onChange={(e) => setEmpForm((f) => ({ ...f, full_name: e.target.value }))} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>{t("common.email")}</Label>
-                <Input value={empForm.email} onChange={(e) => setEmpForm((f) => ({ ...f, email: e.target.value }))} type="email" />
-              </div>
-              <div className="space-y-1.5">
-                <Label>{t("common.phone")}</Label>
-                <Input value={empForm.phone} onChange={(e) => setEmpForm((f) => ({ ...f, phone: e.target.value }))} placeholder="(00) 00000-0000" />
-              </div>
-              <div className="space-y-1.5">
-                <Label>{t("settings.oabNumber")}</Label>
-                <Input value={empForm.oab_number} onChange={(e) => setEmpForm((f) => ({ ...f, oab_number: e.target.value }))} placeholder="123456/SP" />
-              </div>
-              <div className="space-y-1.5">
-                <Label>{t("settings.position")}</Label>
-                <Input value={empForm.position} onChange={(e) => setEmpForm((f) => ({ ...f, position: e.target.value }))} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>{t("settings.department")}</Label>
-                <Input value={empForm.department} onChange={(e) => setEmpForm((f) => ({ ...f, department: e.target.value }))} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>{t("settings.hireDate")}</Label>
-                <Input type="date" value={empForm.hire_date} onChange={(e) => setEmpForm((f) => ({ ...f, hire_date: e.target.value }))} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>{t("settings.hourlyRate")}</Label>
-                <Input type="number" value={empForm.hourly_rate} onChange={(e) => setEmpForm((f) => ({ ...f, hourly_rate: e.target.value }))} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>{t("settings.unit")}</Label>
-                <Select value={empForm.unit_id} onValueChange={(v) => setEmpForm((f) => ({ ...f, unit_id: v }))}>
-                  <SelectTrigger><SelectValue placeholder={t("common.select")} /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">{t("common.none")}</SelectItem>
-                    {units.map((u: any) => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label>{t("settings.notes")}</Label>
-              <Textarea value={empForm.notes} onChange={(e) => setEmpForm((f) => ({ ...f, notes: e.target.value }))} rows={2} className="resize-none" />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEmpDialogOpen(false)}>{t("common.cancel")}</Button>
-            <Button onClick={handleEmpSubmit} disabled={!empForm.full_name || createEmployeeMutation.isPending || updateEmployeeMutation.isPending}>
-              {editingEmployee ? t("common.save") : t("common.create")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
+      {/* ── Employee Dialog (FSD Component) ── */}
+      <EmployeeDialog
+        open={empDialogOpen}
+        onOpenChange={setEmpDialogOpen}
+        employee={editingEmployee}
+        units={units}
+        orgId={profile?.organization_id || ""}
+        onSubmit={handleEmpSubmit}
+        isPending={createEmployeeMutation.isPending || updateEmployeeMutation.isPending}
+      />
     </div>
   );
 }
-

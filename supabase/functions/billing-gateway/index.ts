@@ -185,6 +185,81 @@ serve(async (req) => {
             return json({ url: portalUrl });
         }
 
+        // ─── create-charge ──────────────────────────────────────────────────────
+        if (action === "create-charge") {
+            const { customerId, clientId, value, dueDate, description, externalReference, sourceType, sourceId, createOnlyLocal } = body;
+            
+            let asaas_id = null;
+            let asaas_url = null;
+
+            // 1. Tenta criar a cobrança no Asaas (apenas se a integração estiver ativa e o cliente possuir Asaas ID)
+            if (!createOnlyLocal && gateway?.api_key && gateway.status === "active" && customerId) {
+                const baseUrl = gateway.environment === "production" ? ASAAS_PROD : ASAAS_SANDBOX;
+                const controllerCharge = new AbortController();
+                const timeoutCharge = setTimeout(() => controllerCharge.abort(), 15000);
+                
+                const chargeRes = await fetch(`${baseUrl}/payments`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", "access_token": gateway.api_key },
+                    body: JSON.stringify({
+                        customer: customerId,
+                        billingType: "UNDEFINED", // Deixa o cliente escolher PIX/Boleto/Cartão
+                        value,
+                        dueDate: dueDate ?? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                        description,
+                        externalReference,
+                    }),
+                    signal: controllerCharge.signal,
+                });
+                clearTimeout(timeoutCharge);
+                const chargeData = await chargeRes.json();
+                
+                if (!chargeRes.ok) {
+                    const msg = chargeData?.errors?.[0]?.description ?? chargeData?.message ?? "Erro na API do Asaas";
+                    return json({ error: msg }, chargeRes.status);
+                }
+
+                asaas_id = chargeData.id;
+                asaas_url = chargeData.invoiceUrl;
+            }
+
+            // 2. Cria a Conta a Receber local no Lexa (Garantindo Consistência)
+            const resolvedDescription = `${description}${asaas_url ? ` | Cobrança: ${asaas_url}` : ""}`;
+            const { data: conta, error: contaError } = await supabase
+                .from("contas_receber")
+                .insert({
+                    organization_id: orgId,
+                    client_id: clientId || null,
+                    description: resolvedDescription,
+                    amount: value,
+                    due_date: dueDate ?? new Date().toISOString().split('T')[0],
+                    status: "pendente",
+                    category: "Honorários",
+                    asaas_id: asaas_id,
+                })
+                .select()
+                .single();
+
+            if (contaError) {
+                console.error("Erro ao salvar conta a receber:", contaError);
+                // Se falhou banco, alertamos o front e estornamos ou avisamos o admin:
+                throw new Error("Falha ao registrar a conta no banco após criar no Asaas. Contate o suporte.");
+            }
+
+            // 3. Atualiza a referência de origem (Ex: Timesheet, Processos)
+            if (sourceType === "timesheet" && sourceId) {
+                await supabase
+                    .from("timesheet_entries")
+                    .update({ billing_status: "faturado" })
+                    .eq("id", sourceId)
+                    .eq("organization_id", orgId);
+            } else if (sourceType === "processo" && sourceId) {
+                // Atualizações extras caso o source seja um processo recém-encerrado
+            }
+
+            return json({ success: true, asaas_id, asaas_url, conta });
+        }
+
         return json({ error: "Invalid action" }, 400);
 
     } catch (error: any) {
