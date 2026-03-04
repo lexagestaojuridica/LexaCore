@@ -175,8 +175,21 @@ export function useClientes() {
         if (data?.signedUrl) window.open(data.signedUrl, "_blank");
     };
 
+    // ── BI Counts (for StatCards) ──
+    const { data: biCounts } = useQuery({
+        queryKey: ["clients-bi", orgId],
+        queryFn: async () => {
+            const { count: total } = await supabase.from("clients").select("*", { count: "exact", head: true }).eq("organization_id", orgId!);
+            const { count: pf } = await supabase.from("clients").select("*", { count: "exact", head: true }).eq("organization_id", orgId!).eq("client_type", "pessoa_fisica");
+            const { count: pj } = await supabase.from("clients").select("*", { count: "exact", head: true }).eq("organization_id", orgId!).eq("client_type", "pessoa_juridica");
+            return { total: total || 0, pf: pf || 0, pj: pj || 0 };
+        },
+        enabled: !!orgId,
+    });
+
     return {
         user, orgId, clients, totalCount, totalPages, page, setPage, search, isLoading,
+        biCounts: biCounts || { total: 0, pf: 0, pj: 0 },
         handleSearch, handleDocDownload, useClientDocs,
         createMutation, updateMutation, deleteMutation, uploadDocMutation,
         requestSignatureMutation, syncAsaasMutation, generatePortalAuth,

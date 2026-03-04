@@ -6,6 +6,7 @@ import { Users, UserMinus, UserCheck, CalendarDays, TrendingUp, Briefcase, Dolla
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from "recharts";
 import LexaLoadingOverlay from "@/components/shared/LexaLoadingOverlay";
 import { useTranslation } from "react-i18next";
+import { PageHeader } from "@/components/shared/PageHeader";
 
 const COLORS = ["#0ea5e9", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#6366f1"];
 
@@ -75,16 +76,13 @@ export default function RhDashboardPage() {
     if (isLoading) return <LexaLoadingOverlay visible />;
 
     return (
-        <div className="flex-1 space-y-6 p-8 pt-6 bg-background/50">
-            <div className="flex flex-col gap-1 mb-2">
-                <div className="flex items-center gap-2 mb-1">
-                    <div className="p-2 bg-primary/10 rounded-lg">
-                        <Users className="h-5 w-5 text-primary" />
-                    </div>
-                    <h1 className="text-2xl font-bold tracking-tight text-foreground">RH e Inteligência de DHO</h1>
-                </div>
-                <p className="text-sm text-muted-foreground ml-10">Gestão estratégica de capital humano e performance organizacional</p>
-            </div>
+        <div className="flex-1 space-y-6 pt-2 bg-background/50">
+            <PageHeader
+                title="RH e Inteligência de DHO"
+                subtitle="Gestão estratégica de capital humano e performance organizacional"
+                icon={Users}
+                gradient="from-emerald-600 to-teal-600"
+            />
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Card className="border-border/50 shadow-sm hover:shadow-md transition-shadow">

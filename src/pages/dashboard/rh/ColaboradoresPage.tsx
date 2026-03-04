@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -6,17 +6,17 @@ import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
-    Plus, Search, Filter, Edit, Trash2, Building2, Mail, Download, User, ArrowRightLeft
+    Plus, Search, Filter, Edit, Trash2, Building2, Mail, Download, User,
+    ArrowRightLeft, ChevronRight, ChevronLeft, Check, X, Loader2, Users, Briefcase, Wallet
 } from "lucide-react";
 import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
-    Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger, SheetFooter,
-} from "@/components/ui/sheet";
-import {
     Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
+import { PageHeader } from "@/components/shared/PageHeader";
+import { motion, AnimatePresence } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -61,11 +61,14 @@ const emptyForm = {
 export default function ColaboradoresPage() {
     const { user } = useAuth();
     const queryClient = useQueryClient();
-    const [searchTerm, setSearchTerm] = useState("");
-    const debouncedSearch = useDebounce(searchTerm, 400);
-    const [isSheetOpen, setIsSheetOpen] = useState(false);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [form, setForm] = useState(emptyForm);
+    const [step, setStep] = useState(1);
+    const totalSteps = 3;
+
+    const nextStep = () => setStep(s => Math.min(s + 1, totalSteps));
+    const prevStep = () => setStep(s => Math.max(s - 1, 1));
 
     // Demission Flow State
     const [transferDialogOpen, setTransferDialogOpen] = useState(false);
@@ -122,7 +125,7 @@ export default function ColaboradoresPage() {
             queryClient.invalidateQueries({ queryKey: ["colaboradores"] });
             queryClient.invalidateQueries({ queryKey: ["hr-dashboard-stats"] });
             toast.success(editingId ? "Colaborador atualizado!" : "Colaborador cadastrado!");
-            setIsSheetOpen(false);
+            setIsDialogOpen(false);
             resetForm();
         },
         onError: (err: any) => toast.error(`Erro: ${err.message}`),
@@ -151,6 +154,7 @@ export default function ColaboradoresPage() {
     const resetForm = () => {
         setForm(emptyForm);
         setEditingId(null);
+        setStep(1);
     };
 
     const handleEdit = (col: Colaborador) => {
@@ -168,7 +172,8 @@ export default function ColaboradoresPage() {
             document_cpf: col.document_cpf || ""
         });
         setEditingId(col.id);
-        setIsSheetOpen(true);
+        setStep(1);
+        setIsDialogOpen(true);
     };
 
     const handleExportCSV = () => {
@@ -219,79 +224,164 @@ export default function ColaboradoresPage() {
     if (isLoading) return <LexaLoadingOverlay visible />;
 
     return (
-        <div className="flex-1 space-y-4 p-8 pt-6">
-            <div className="flex items-center justify-between mb-2">
-                <div className="flex flex-col gap-1">
-                    <h1 className="text-2xl font-bold tracking-tight text-foreground">Gestão de Colaboradores</h1>
-                    <p className="text-sm text-muted-foreground">Diretório completo e controle contratual da equipe</p>
-                </div>
-                <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="gap-2 h-9" onClick={handleExportCSV}>
-                        <Download className="h-4 w-4" /> Exportar Planilha
-                    </Button>
-                    <Sheet open={isSheetOpen} onOpenChange={(open) => { setIsSheetOpen(open); if (!open) resetForm(); }}>
-                        <SheetTrigger asChild>
-                            <Button className="gap-2 h-9 shadow-sm" onClick={() => setIsSheetOpen(true)}>
-                                <Plus className="h-4 w-4" /> Novo Colaborador
-                            </Button>
-                        </SheetTrigger>
-                        <SheetContent className="sm:max-w-md overflow-y-auto w-[600px] sm:w-[540px]">
-                            <SheetHeader className="mb-6">
-                                <SheetTitle>{editingId ? "Editar Colaborador" : "Cadastrar Colaborador"}</SheetTitle>
-                                <SheetDescription>
-                                    Insira os dados profissionais e contratuais do colaborador Lexa.
-                                </SheetDescription>
-                            </SheetHeader>
+        <div className="flex-1 space-y-6 p-8 pt-6">
+            <PageHeader
+                title="Gestão de Colaboradores"
+                subtitle="Diretório completo e controle contratual da equipe Lexa"
+                icon={Users}
+                gradient="from-slate-900 to-slate-800"
+                actions={
+                    <div className="flex gap-3">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-2 h-10 bg-white/5 border-white/10 text-white hover:bg-white/10"
+                            onClick={handleExportCSV}
+                        >
+                            <Download className="h-4 w-4" /> Exportar CSV
+                        </Button>
+                        <Button
+                            className="gap-2 h-10 shadow-lg shadow-primary/20"
+                            onClick={() => { resetForm(); setIsDialogOpen(true); }}
+                        >
+                            <Plus className="h-4 w-4" /> Novo Colaborador
+                        </Button>
+                    </div>
+                }
+            />
 
-                            <div className="space-y-4 py-4">
-                                <div className="space-y-2">
-                                    <Label className="text-xs uppercase font-bold text-muted-foreground tracking-wider">Dados Pessoais</Label>
-                                    <div className="grid gap-3">
-                                        <div className="space-y-1">
-                                            <Label htmlFor="name">Nome Completo</Label>
-                                            <Input id="name" value={form.full_name} onChange={e => setForm({ ...form, full_name: e.target.value })} placeholder="Ex: João Silva" />
+            <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) resetForm(); }}>
+                <DialogContent className="sm:max-w-2xl p-0 overflow-hidden border-none gap-0">
+                    <div className="bg-slate-900 p-8 text-white relative h-32 flex flex-col justify-end">
+                        <div className="absolute top-6 right-6">
+                            <Button variant="ghost" size="icon" className="text-white/50 hover:text-white" onClick={() => setIsDialogOpen(false)}>
+                                <X className="h-5 w-5" />
+                            </Button>
+                        </div>
+                        <DialogTitle className="text-2xl font-bold">
+                            {editingId ? "Editar Colaborador" : "Novo Colaborador"}
+                        </DialogTitle>
+                        <p className="text-slate-400 text-sm mt-1">
+                            {step === 1 && "Dados iniciais e contato"}
+                            {step === 2 && "Informações profissionais"}
+                            {step === 3 && "Detalhes contratuais e status"}
+                        </p>
+
+                        {/* Stepper progress */}
+                        <div className="absolute bottom-0 left-0 w-full h-1 bg-white/5">
+                            <motion.div
+                                className="h-full bg-primary"
+                                initial={{ width: 0 }}
+                                animate={{ width: `${(step / totalSteps) * 100}%` }}
+                                transition={{ duration: 0.3 }}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="p-8 bg-background">
+                        <AnimatePresence mode="wait">
+                            {step === 1 && (
+                                <motion.div
+                                    key="step1"
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -20 }}
+                                    className="space-y-4"
+                                >
+                                    <div className="flex items-center gap-2 mb-6 text-primary">
+                                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center font-bold">1</div>
+                                        <h3 className="font-semibold text-foreground">Identificação Pessoal</h3>
+                                    </div>
+                                    <div className="grid gap-4">
+                                        <div className="space-y-2">
+                                            <Label>Nome Completo</Label>
+                                            <Input value={form.full_name} onChange={e => setForm({ ...form, full_name: e.target.value })} placeholder="Ex: João Silva" className="h-11 rounded-xl" />
                                         </div>
-                                        <div className="grid grid-cols-2 gap-2">
-                                            <div className="space-y-1">
-                                                <Label htmlFor="email">E-mail</Label>
-                                                <Input id="email" type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="joao@empresa.com" />
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <Label>E-mail Corporativo</Label>
+                                                <Input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="joao@empresa.com" className="h-11 rounded-xl" />
                                             </div>
-                                            <div className="space-y-1">
-                                                <Label htmlFor="phone">Telefone</Label>
-                                                <Input id="phone" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="(11) 99999-9999" />
+                                            <div className="space-y-2">
+                                                <Label>Telefone / WhatsApp</Label>
+                                                <Input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="(11) 99999-9999" className="h-11 rounded-xl" />
                                             </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>CPF</Label>
+                                            <Input value={form.document_cpf} onChange={e => setForm({ ...form, document_cpf: e.target.value })} placeholder="000.000.000-00" className="h-11 rounded-xl" />
                                         </div>
                                     </div>
-                                </div>
+                                </motion.div>
+                            )}
 
-                                <div className="space-y-2 pt-4 border-t border-border/50">
-                                    <Label className="text-xs uppercase font-bold text-muted-foreground tracking-wider">Contratual</Label>
-                                    <div className="grid gap-3">
-                                        <div className="grid grid-cols-2 gap-2">
-                                            <div className="space-y-1">
-                                                <Label htmlFor="dept">Departamento</Label>
-                                                <Input id="dept" value={form.department} onChange={e => setForm({ ...form, department: e.target.value })} placeholder="Ex: Jurídico" />
+                            {step === 2 && (
+                                <motion.div
+                                    key="step2"
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -20 }}
+                                    className="space-y-4"
+                                >
+                                    <div className="flex items-center gap-2 mb-6 text-primary">
+                                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center font-bold">2</div>
+                                        <h3 className="font-semibold text-foreground">Estrutura Profissional</h3>
+                                    </div>
+                                    <div className="grid gap-4">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <Label>Departamento</Label>
+                                                <Input value={form.department} onChange={e => setForm({ ...form, department: e.target.value })} placeholder="Ex: Jurídico" className="h-11 rounded-xl" />
                                             </div>
-                                            <div className="space-y-1">
-                                                <Label htmlFor="pos">Cargo</Label>
-                                                <Input id="pos" value={form.position} onChange={e => setForm({ ...form, position: e.target.value })} placeholder="Ex: Advogado Pleno" />
+                                            <div className="space-y-2">
+                                                <Label>Cargo / Função</Label>
+                                                <Input value={form.position} onChange={e => setForm({ ...form, position: e.target.value })} placeholder="Ex: Advogado Pleno" className="h-11 rounded-xl" />
                                             </div>
                                         </div>
-                                        <div className="grid grid-cols-2 gap-2">
-                                            <div className="space-y-1">
-                                                <Label htmlFor="salary">Salário Base (R$)</Label>
-                                                <Input id="salary" type="number" value={form.base_salary} onChange={e => setForm({ ...form, base_salary: e.target.value })} />
-                                            </div>
-                                            <div className="space-y-1">
-                                                <Label htmlFor="adm">Admissão</Label>
-                                                <Input id="adm" type="date" value={form.admission_date} onChange={e => setForm({ ...form, admission_date: e.target.value })} />
+                                        <div className="space-y-2">
+                                            <Label>Data de Admissão</Label>
+                                            <Input type="date" value={form.admission_date} onChange={e => setForm({ ...form, admission_date: e.target.value })} className="h-11 rounded-xl" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>Formato de Trabalho</Label>
+                                            <Select value={form.work_format} onValueChange={v => setForm({ ...form, work_format: v })}>
+                                                <SelectTrigger className="h-11 rounded-xl"><SelectValue /></SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="Presencial">Presencial</SelectItem>
+                                                    <SelectItem value="Híbrido">Híbrido</SelectItem>
+                                                    <SelectItem value="Remoto">Remoto</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            )}
+
+                            {step === 3 && (
+                                <motion.div
+                                    key="step3"
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -20 }}
+                                    className="space-y-4"
+                                >
+                                    <div className="flex items-center gap-2 mb-6 text-primary">
+                                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center font-bold">3</div>
+                                        <h3 className="font-semibold text-foreground">Remuneração e Vínculo</h3>
+                                    </div>
+                                    <div className="grid gap-4">
+                                        <div className="space-y-2">
+                                            <Label>Salário Base (R$)</Label>
+                                            <div className="relative">
+                                                <span className="absolute left-3 top-3 text-muted-foreground">R$</span>
+                                                <Input type="number" value={form.base_salary} onChange={e => setForm({ ...form, base_salary: e.target.value })} className="h-11 pl-10 rounded-xl" />
                                             </div>
                                         </div>
-                                        <div className="grid grid-cols-2 gap-2">
-                                            <div className="space-y-1">
-                                                <Label>Vínculo</Label>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <Label>Tipo de Vínculo</Label>
                                                 <Select value={form.employment_type} onValueChange={v => setForm({ ...form, employment_type: v })}>
-                                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                                    <SelectTrigger className="h-11 rounded-xl"><SelectValue /></SelectTrigger>
                                                     <SelectContent>
                                                         <SelectItem value="CLT">CLT</SelectItem>
                                                         <SelectItem value="PJ">PJ</SelectItem>
@@ -300,10 +390,10 @@ export default function ColaboradoresPage() {
                                                     </SelectContent>
                                                 </Select>
                                             </div>
-                                            <div className="space-y-1">
-                                                <Label>Status</Label>
+                                            <div className="space-y-2">
+                                                <Label>Status Atual</Label>
                                                 <Select value={form.status} onValueChange={v => setForm({ ...form, status: v })}>
-                                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                                    <SelectTrigger className="h-11 rounded-xl"><SelectValue /></SelectTrigger>
                                                     <SelectContent>
                                                         <SelectItem value="active">Ativo</SelectItem>
                                                         <SelectItem value="on_leave">Afastado</SelectItem>
@@ -313,18 +403,42 @@ export default function ColaboradoresPage() {
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
 
-                            <SheetFooter className="mt-6">
-                                <Button type="submit" className="w-full" onClick={() => mutation.mutate(form)} disabled={mutation.isPending}>
-                                    {editingId ? "Salvar Alterações" : "Cadastrar Colaborador"}
-                                </Button>
-                            </SheetFooter>
-                        </SheetContent>
-                    </Sheet>
-                </div>
-            </div>
+                    <div className="p-6 bg-slate-50 border-t flex items-center justify-between">
+                        <Button
+                            variant="ghost"
+                            onClick={step === 1 ? () => setIsDialogOpen(false) : prevStep}
+                            className="gap-2 h-11 px-6 rounded-xl hover:bg-slate-200"
+                        >
+                            {step === 1 ? <X className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+                            {step === 1 ? "Cancelar" : "Voltar"}
+                        </Button>
+
+                        {step < totalSteps ? (
+                            <Button
+                                onClick={nextStep}
+                                className="gap-2 h-11 px-8 rounded-xl shadow-lg shadow-primary/20 group"
+                            >
+                                Próximo Passo
+                                <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                            </Button>
+                        ) : (
+                            <Button
+                                onClick={() => mutation.mutate(form)}
+                                disabled={mutation.isPending}
+                                className="gap-2 h-11 px-8 rounded-xl bg-slate-900 hover:bg-slate-800 shadow-lg shadow-slate-900/10"
+                            >
+                                {mutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                                {editingId ? "Salvar Alterações" : "Concluir Cadastro"}
+                            </Button>
+                        )}
+                    </div>
+                </DialogContent>
+            </Dialog>
 
             <Card className="border-border/50 shadow-sm overflow-hidden">
                 <CardContent className="p-0">

@@ -119,24 +119,28 @@ export default function DocumentosPage() {
           label="Total Arquivos"
           value={documentos.length}
           color="blue"
+          index={0}
         />
         <StatCard
           icon={Archive}
           label="Armazenamento"
           value={formatFileSize(documentos.reduce((acc, d) => acc + (d.size || 0), 0))}
           color="purple"
+          index={1}
         />
         <StatCard
           icon={Briefcase}
           label="Em Processos"
           value={documentos.filter((d) => d.process_id).length}
           color="amber"
+          index={2}
         />
         <StatCard
           icon={User}
           label="Clientes"
           value={documentos.filter((d) => d.client_id).length}
           color="emerald"
+          index={3}
         />
       </div>
 

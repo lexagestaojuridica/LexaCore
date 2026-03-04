@@ -6,11 +6,12 @@ import { ptBR } from "date-fns/locale";
 import {
   Users, Plus, Search, Edit2, Trash2, Eye, Upload, Download, File, X, ShieldAlert,
   ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, MessageCircle,
-  RefreshCw, CheckCircle2, ShieldCheck
+  RefreshCw, CheckCircle2, ShieldCheck, User
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { ConflitosInteresseDialog } from "@/components/clientes/ConflitosInteresseDialog";
+import { ConflitosInteresseDialog } from "@/features/clientes/components/ConflitosInteresseDialog";
 import { Button } from "@/components/ui/button";
+import { StatCard } from "@/components/shared/StatCard";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -42,7 +43,7 @@ export default function ClientesPage() {
   const { t } = useTranslation();
   const {
     orgId, clients, totalCount, totalPages, page, setPage, search, isLoading,
-    handleSearch, handleDocDownload,
+    biCounts, handleSearch, handleDocDownload,
     createMutation, updateMutation, deleteMutation, uploadDocMutation,
     requestSignatureMutation, syncAsaasMutation, generatePortalAuth,
     PAGE_SIZE,
@@ -98,7 +99,12 @@ export default function ClientesPage() {
   const isSaving = createMutation.isPending || updateMutation.isPending;
 
   return (
-    <div className="space-y-6">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      className="space-y-6"
+    >
       <LexaLoadingOverlay visible={isSaving} message="Salvando cliente..." />
 
       <ConflitosInteresseDialog
@@ -110,15 +116,40 @@ export default function ClientesPage() {
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">{t("clients.title")}</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">{t("clients.title")}</h1>
           <p className="text-sm text-muted-foreground">
-            {totalCount} {totalCount !== 1 ? "clientes" : "cliente"} {totalCount !== 1 ? t("common.registeredPlural") : t("common.registered")}
+            Gestão e acompanhamento da sua base de clientes
           </p>
         </div>
-        <Button onClick={openCreate} className="gap-2"><Plus className="h-4 w-4" /> Novo Cliente</Button>
+        <Button onClick={openCreate} className="gap-2 shadow-sm"><Plus className="h-4 w-4" /> Novo Cliente</Button>
       </div>
 
-      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+      {/* Stats Grid */}
+      <div className="grid gap-4 sm:grid-cols-3">
+        <StatCard
+          icon={Users}
+          label="Total de Clientes"
+          value={biCounts.total}
+          color="blue"
+          index={0}
+        />
+        <StatCard
+          icon={User}
+          label="Pessoas Físicas"
+          value={biCounts.pf}
+          color="emerald"
+          index={1}
+        />
+        <StatCard
+          icon={ShieldCheck}
+          label="Pessoas Jurídicas"
+          value={biCounts.pj}
+          color="purple"
+          index={2}
+        />
+      </div>
+
+      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.3 }}>
         <Card className="glass-card border-border/40 shadow-sm overflow-hidden">
           <CardContent className="flex items-center gap-3 p-4">
             <div className="relative flex-1 group">
@@ -239,6 +270,6 @@ export default function ClientesPage() {
         client={selectedClient}
         isDeleting={deleteMutation.isPending}
       />
-    </div>
+    </motion.div>
   );
 }

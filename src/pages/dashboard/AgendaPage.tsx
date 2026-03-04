@@ -24,6 +24,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { KPISkeleton } from "@/components/shared/SkeletonLoaders";
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
+import { PageHeader } from "@/components/shared/PageHeader";
 
 // FSD Feature Imports
 import { Evento, ViewMode, EventFormState, emptyEventForm } from "@/features/agenda/types";
@@ -169,33 +170,31 @@ export default function AgendaPage() {
 
   return (
     <div className="space-y-5">
-      {/* ── Premium Header ── */}
-      <div className="relative overflow-hidden rounded-2xl bg-primary p-7">
-        <div className="absolute -right-8 -top-8 h-40 w-40 rounded-full bg-white/5" />
-        <div className="absolute -right-4 top-12 h-24 w-24 rounded-full bg-white/5" />
-        <div className="absolute right-20 -bottom-6 h-32 w-32 rounded-full bg-white/[0.03]" />
-
-        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 backdrop-blur-sm ring-1 ring-white/20">
-              <CalendarDays className="h-7 w-7 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-primary-foreground tracking-tight">Agenda & Prazos</h1>
-              <p className="text-sm text-primary-foreground/60 mt-0.5">Gerencie compromissos com suporte nativo Drag & Drop</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Button variant="secondary" size="sm" className="gap-1.5 text-xs bg-white/10 text-primary-foreground border-white/20 hover:bg-white/20" onClick={() => setSyncOpen(true)}>
+      <PageHeader
+        title="Agenda & Prazos"
+        subtitle="Gerencie compromissos com suporte nativo Drag & Drop"
+        icon={CalendarDays}
+        gradient="from-indigo-600 to-blue-600"
+        actions={
+          <>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="gap-1.5 text-xs bg-white/10 text-primary-foreground border-white/20 hover:bg-white/20"
+              onClick={() => setSyncOpen(true)}
+            >
               <Link2 className="h-3.5 w-3.5" /> Integrações
             </Button>
-            <Button size="sm" className="gap-1.5 bg-accent text-accent-foreground hover:bg-accent/90" onClick={() => openCreate()}>
+            <Button
+              size="sm"
+              className="gap-1.5 bg-accent text-accent-foreground hover:bg-accent/90 shadow-lg shadow-accent/20"
+              onClick={() => openCreate()}
+            >
               <Plus className="h-3.5 w-3.5" /> Novo Evento
             </Button>
-          </div>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {/* ── KPIs ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">

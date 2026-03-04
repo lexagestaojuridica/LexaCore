@@ -1281,6 +1281,7 @@ export type Database = {
           number: string | null
           organization_id: string
           parte_contraria: string | null
+          public_token: string | null
           responsible_user_id: string | null
           status: string
           subject: string | null
@@ -1305,6 +1306,7 @@ export type Database = {
           number?: string | null
           organization_id: string
           parte_contraria?: string | null
+          public_token?: string | null
           responsible_user_id?: string | null
           status?: string
           subject?: string | null
@@ -1329,6 +1331,7 @@ export type Database = {
           number?: string | null
           organization_id?: string
           parte_contraria?: string | null
+          public_token?: string | null
           responsible_user_id?: string | null
           status?: string
           subject?: string | null

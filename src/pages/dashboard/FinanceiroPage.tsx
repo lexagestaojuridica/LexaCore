@@ -8,9 +8,10 @@ import { ptBR } from "date-fns/locale";
 import {
   DollarSign, Plus, Search, Filter, Edit2, Trash2, TrendingUp, TrendingDown,
   ArrowUpRight, ArrowDownRight, Wallet, Receipt, BarChart2, Bell, CheckCircle2, QrCode, Copy,
-  RefreshCw, ExternalLink
+  RefreshCw, ExternalLink, RefreshCcw, Sparkles, Bot
 } from "lucide-react";
-import BudgetPerformanceTab from "@/components/financeiro/BudgetPerformanceTab";
+import { StatCard } from "@/components/shared/StatCard";
+import { PageHeader } from "@/components/shared/PageHeader";
 import { DasDarfPanel } from "@/components/financeiro/DasDarfPanel";
 import { useTranslation } from "react-i18next";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -30,6 +31,8 @@ import LexaLoadingOverlay from "@/components/shared/LexaLoadingOverlay";
 import { formatCurrencyInput, parseCurrencyToNumber } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { TableSkeleton } from "@/components/shared/SkeletonLoaders";
+import BudgetPerformanceTab from "@/components/financeiro/BudgetPerformanceTab";
 
 const STATUS_OPTIONS = [
   { value: "pendente", label: "Pendente", color: "text-amber-600 bg-amber-500/10 border-amber-500/20" },
@@ -153,52 +156,104 @@ export default function FinanceiroPage() {
   const containerAnim = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.05 } } };
   const itemAnim = { hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } };
 
+  const analyzeWithAruna = () => {
+    const overdue = (contas || []).filter(c =>
+      c.status === "pendente" &&
+      isPast(parseISO(c.due_date)) &&
+      !isToday(parseISO(c.due_date))
+    );
+
+    if (overdue.length === 0) {
+      toast.info("Tudo em dia! Nenhuma inadimplência detectada pelo Aruna.");
+      return;
+    }
+
+    const totalOverdue = overdue.reduce((sum, c) => sum + (Number(c.amount) || 0), 0);
+    const count = overdue.length;
+
+    window.dispatchEvent(new CustomEvent("aruna-ask", {
+      detail: {
+        query: `Análise Financeira Aruna: Detectamos ${count} pagamentos atrasados somando ${fmtCurrency(totalOverdue)}. O que você sugere para recuperação destes valores e quais templates de cobrança devemos usar?`
+      }
+    }));
+    toast.success("Aruna está analisando sua inadimplência...");
+  };
+
   return (
     <motion.div variants={containerAnim} initial="hidden" animate="show" className="max-w-6xl mx-auto space-y-8 pb-10">
       <LexaLoadingOverlay visible={isSaving} message="Salvando..." />
 
-      {/* ── Minimal Header ── */}
-      <motion.div variants={itemAnim} className="flex flex-col md:flex-row md:items-end justify-between gap-4 pt-2">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            {t("financial.title")}
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground flex items-center gap-2">
-            <Wallet className="h-4 w-4" />
-            {t("financial.subtitle")}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button onClick={openCreate} className="h-10 gap-2 font-medium shadow-sm">
-            <Plus className="h-4 w-4" /> Nova Transação
-          </Button>
-          {tab === "receber" && (
-            <Button variant="outline" onClick={() => reconcileAllAsaas(filtered)} className="h-10 gap-2 font-medium">
-              <RefreshCw className="h-4 w-4" /> Sincronizar Asaas
+      <PageHeader
+        title={t("financial.title")}
+        subtitle={t("financial.subtitle")}
+        icon={Wallet}
+        gradient="from-violet-600 to-indigo-600"
+        actions={
+          <>
+            {tab === "receber" && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 text-xs bg-primary/5 text-primary border-primary/20 hover:bg-primary/10"
+                  onClick={analyzeWithAruna}
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Aruna Insights
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="gap-1.5 text-xs bg-white/10 text-primary-foreground border-white/20 hover:bg-white/20"
+                  onClick={() => reconcileAllAsaas(filtered)}
+                  disabled={reconcileAsaasMutation.isPending}
+                >
+                  <RefreshCcw className={cn("h-3.5 w-3.5", reconcileAsaasMutation.isPending && "animate-spin")} />
+                  Sincronizar Asaas
+                </Button>
+              </>
+            )}
+            <Button
+              size="sm"
+              className="gap-1.5 bg-accent text-accent-foreground hover:bg-accent/90 shadow-lg shadow-accent/20"
+              onClick={openCreate}
+            >
+              <Plus className="h-3.5 w-3.5" /> Novo Lançamento
             </Button>
-          )}
-        </div>
-      </motion.div>
+          </>
+        }
+      />
 
-      {/* ── Key Metrics Overview ── */}
-      <motion.div variants={itemAnim} className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: "A Receber (Pendente)", val: fmtCurrency(totalReceber), icon: ArrowUpRight, color: "text-blue-600", bg: "bg-blue-600/10" },
-          { label: "A Pagar (Pendente)", val: fmtCurrency(totalPagar), icon: ArrowDownRight, color: "text-rose-600", bg: "bg-rose-600/10" },
-          { label: "Receita Acumulada", val: fmtCurrency(totalRecebido), icon: Receipt, color: "text-emerald-600", bg: "bg-emerald-600/10" },
-          { label: "Saldo Acumulado", val: fmtCurrency(saldo), icon: Wallet, color: saldo >= 0 ? "text-emerald-600" : "text-rose-600", bg: saldo >= 0 ? "bg-emerald-600/10" : "bg-rose-600/10" },
-        ].map((kpi, i) => (
-          <div key={i} className="flex items-center gap-4 bg-card border border-border/50 rounded-xl p-4 shadow-sm hover:border-primary/20 transition-colors">
-            <div className={cn("p-2.5 rounded-lg", kpi.bg, kpi.color)}>
-              <kpi.icon className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-0.5 max-w-[100px] leading-tight">{kpi.label}</p>
-              <p className="text-lg font-bold tracking-tight text-foreground">{kpi.val}</p>
-            </div>
-          </div>
-        ))}
-      </motion.div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard
+          icon={ArrowUpRight}
+          label="A Receber (Pendente)"
+          value={fmtCurrency(totalReceber)}
+          color="blue"
+          index={0}
+        />
+        <StatCard
+          icon={ArrowDownRight}
+          label="A Pagar (Pendente)"
+          value={fmtCurrency(totalPagar)}
+          color="rose"
+          index={1}
+        />
+        <StatCard
+          icon={Receipt}
+          label="Receita Acumulada"
+          value={fmtCurrency(totalRecebido)}
+          color="emerald"
+          index={2}
+        />
+        <StatCard
+          icon={Wallet}
+          label="Saldo Acumulado"
+          value={fmtCurrency(saldo)}
+          color={saldo >= 0 ? "emerald" : "rose"}
+          index={3}
+        />
+      </div>
 
       {/* ── Health / Flow Thermometer ── */}
       <motion.div variants={itemAnim}>
@@ -262,10 +317,8 @@ export default function FinanceiroPage() {
                 </div>
 
                 {isLoading ? (
-                  <div className="space-y-4">
-                    {[1, 2].map((n) => <div key={n} className="h-32 rounded-xl bg-muted/30 animate-pulse border border-border/40" />)}
-                  </div>
-                ) : filtered.length === 0 ? (
+                  <TableSkeleton cols={7} rows={8} />
+                ) : contas.length === 0 ? (
                   <div className="flex flex-col items-center py-16 text-center border border-dashed border-border/60 rounded-2xl bg-muted/10">
                     <DollarSign className="mb-4 h-12 w-12 text-muted-foreground/30" />
                     <p className="text-base font-medium text-foreground">

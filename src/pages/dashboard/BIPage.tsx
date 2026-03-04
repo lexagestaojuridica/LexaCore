@@ -21,8 +21,9 @@ import {
 } from "recharts";
 import { format, subMonths, startOfMonth, endOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
+import { PageHeader } from "@/components/shared/PageHeader";
 
 import { toast } from "sonner";
 
@@ -416,81 +417,83 @@ export default function BIPage() {
 
   return (
     <div id="bi-dashboard-container" className="space-y-6 bg-background rounded-lg p-1">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-display text-2xl text-foreground">Business Intelligence</h1>
-          <p className="text-sm text-muted-foreground">Análise avançada de desempenho do escritório</p>
-        </div>
-        <div className="flex gap-2">
-          <Badge variant="outline" className="gap-1.5 text-xs h-8 items-center flex">
-            <Activity className="h-3 w-3" /> Últimos 12 meses
-          </Badge>
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-1.5 text-xs h-8"
-            onClick={async () => {
-              const { default: html2canvas } = await import("html2canvas");
-              const { jsPDF } = await import("jspdf");
+      <PageHeader
+        title="Business Intelligence"
+        subtitle="Análise avançada de desempenho do escritório"
+        icon={BarChart3}
+        gradient="from-slate-700 to-slate-900"
+        actions={
+          <div className="flex gap-2">
+            <Badge variant="outline" className="gap-1.5 text-xs h-8 items-center flex bg-white/10 text-primary-foreground border-white/20">
+              <Activity className="h-3 w-3" /> Últimos 12 meses
+            </Badge>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="gap-1.5 text-xs h-8 bg-white/10 text-primary-foreground border-white/20 hover:bg-white/20"
+              onClick={async () => {
+                const { default: html2canvas } = await import("html2canvas");
+                const { jsPDF } = await import("jspdf");
 
-              const element = document.getElementById("bi-dashboard-container");
-              if (!element) return;
+                const element = document.getElementById("bi-dashboard-container");
+                if (!element) return;
 
-              try {
-                toast.loading("Gerando PDF, aguarde...", { id: "pdf-export" });
-                const canvas = await html2canvas(element, {
-                  scale: 2,
-                  useCORS: true,
-                  logging: false,
-                  backgroundColor: "#ffffff"
-                });
+                try {
+                  toast.loading("Gerando PDF, aguarde...", { id: "pdf-export" });
+                  const canvas = await html2canvas(element, {
+                    scale: 2,
+                    useCORS: true,
+                    logging: false,
+                    backgroundColor: "#ffffff"
+                  });
 
-                const imgData = canvas.toDataURL("image/png");
-                const pdf = new jsPDF("p", "mm", "a4");
-                const pdfWidth = pdf.internal.pageSize.getWidth();
-                const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+                  const imgData = canvas.toDataURL("image/png");
+                  const pdf = new jsPDF("p", "mm", "a4");
+                  const pdfWidth = pdf.internal.pageSize.getWidth();
+                  const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
-                pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-                pdf.save(`LEXA_BI_${format(new Date(), "yyyyMMdd")}.pdf`);
-                toast.success("PDF gerado com sucesso!", { id: "pdf-export" });
-              } catch (error) {
-                console.error(error);
-                toast.error("Erro ao gerar PDF", { id: "pdf-export" });
-              }
-            }}
-          >
-            <Download className="h-3.5 w-3.5" /> PDF
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-1.5 text-xs h-8"
-            onClick={() => {
-              const rows = [
-                ["Mês", "Receita", "Despesa", "Lucro", "Margem %", "Honorários"],
-                ...data.monthlyData.map((m) => [
-                  m.monthFull,
-                  m.receita.toFixed(2),
-                  m.despesa.toFixed(2),
-                  m.lucro.toFixed(2),
-                  m.receita > 0 ? ((m.lucro / m.receita) * 100).toFixed(1) : "0",
-                  m.honorarios.toFixed(2),
-                ]),
-              ];
-              const csv = rows.map((r) => r.join(";")).join("\n");
-              const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement("a");
-              a.href = url;
-              a.download = `LEXA_BI_${format(new Date(), "yyyyMMdd")}.csv`;
-              a.click();
-              URL.revokeObjectURL(url);
-            }}
-          >
-            <Download className="h-3.5 w-3.5" /> CSV
-          </Button>
-        </div>
-      </div>
+                  pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+                  pdf.save(`LEXA_BI_${format(new Date(), "yyyyMMdd")}.pdf`);
+                  toast.success("PDF gerado com sucesso!", { id: "pdf-export" });
+                } catch (error) {
+                  console.error(error);
+                  toast.error("Erro ao gerar PDF", { id: "pdf-export" });
+                }
+              }}
+            >
+              <Download className="h-3.5 w-3.5" /> PDF
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 text-xs h-8"
+              onClick={() => {
+                const rows = [
+                  ["Mês", "Receita", "Despesa", "Lucro", "Margem %", "Honorários"],
+                  ...data.monthlyData.map((m) => [
+                    m.monthFull,
+                    m.receita.toFixed(2),
+                    m.despesa.toFixed(2),
+                    m.lucro.toFixed(2),
+                    m.receita > 0 ? ((m.lucro / m.receita) * 100).toFixed(1) : "0",
+                    m.honorarios.toFixed(2),
+                  ]),
+                ];
+                const csv = rows.map((r) => r.join(";")).join("\n");
+                const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `LEXA_BI_${format(new Date(), "yyyyMMdd")}.csv`;
+                a.click();
+                URL.revokeObjectURL(url);
+              }}
+            >
+              <Download className="h-3.5 w-3.5" /> CSV
+            </Button>
+          </div>
+        }
+      />
 
       {/* KPI Grid */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -957,6 +960,6 @@ export default function BIPage() {
           <TimesheetBITab orgId={orgId} />
         </TabsContent>
       </Tabs>
-    </div>
+    </div >
   );
 }

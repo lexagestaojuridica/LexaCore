@@ -140,11 +140,10 @@ export default function ArunaQuickChat() {
               )}
               {msgs.map((m) => (
                 <div key={m.id} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-                  <div className={`max-w-[85%] rounded-xl px-3 py-2 text-sm ${
-                    m.role === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-foreground"
-                  }`}>
+                  <div className={`max-w-[85%] rounded-xl px-3 py-2 text-sm ${m.role === "user"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-foreground"
+                    }`}>
                     {m.role === "assistant" ? (
                       <div className="prose prose-sm max-w-none [&_p]:mb-1 [&_p]:leading-relaxed text-foreground">
                         <ReactMarkdown>{m.content || "..."}</ReactMarkdown>

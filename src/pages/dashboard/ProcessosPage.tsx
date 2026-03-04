@@ -8,14 +8,18 @@ import { ptBR } from "date-fns/locale";
 import {
   Scale, Plus, Search, Filter, Edit2, Trash2, Eye, Upload, Download, File, Calculator, X,
   LayoutList, LayoutGrid, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
-  ArrowUpDown, ArrowUp, ArrowDown, Receipt, Bot, SwitchCamera, Share2, MessageCircle, Sparkles, Timer, Clock
+  ArrowUpDown, ArrowUp, ArrowDown, Receipt, Bot, SwitchCamera, Share2, MessageCircle, Sparkles, Timer, Clock, Loader2
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useDebounce } from "@/hooks/useDebounce";
 import { ProcessKanban } from "@/features/processos/components/ProcessKanban";
 import { ProcessCalculator } from "@/features/processos/components/ProcessCalculator";
+import { ProcessoDialog } from "@/features/processos/components/ProcessoDialog";
+import { ProcessoViewSheet } from "@/features/processos/components/ProcessoViewSheet";
 import type { Processo, Documento } from "@/features/processos/types";
+import { STATUS_OPTIONS } from "@/features/processos/constants";
+import type { TablesInsert } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
@@ -34,8 +38,10 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { PageHeader } from "@/components/shared/PageHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
+import { StatCard } from "@/components/shared/StatCard";
 import { TableSkeleton } from "@/components/shared/SkeletonLoaders";
 import FormField from "@/components/shared/FormField";
 import LexaLoadingOverlay from "@/components/shared/LexaLoadingOverlay";
@@ -43,40 +49,16 @@ import { formatCurrencyInput, parseCurrencyToNumber } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
+// FSD Imports
+import { useProcessos } from "@/features/processos/hooks/useProcessos";
+
+// Pagination and View Defaults
 type SortField = "title" | "number" | "court" | "status" | "estimated_value" | "created_at";
 type SortDir = "asc" | "desc";
 
-const formatCNJ = (value: string) => {
-  const digits = value.replace(/\D/g, "");
-  let formatted = digits.substring(0, 20);
-  if (formatted.length > 16) {
-    formatted = formatted.replace(/^(\d{7})(\d{2})(\d{4})(\d{1})(\d{2})(\d{4})$/, "$1-$2.$3.$4.$5.$6");
-  } else if (formatted.length > 7) {
-    formatted = formatted.replace(/^(\d{7})(\d{1,2})?(\d{1,4})?(\d{1})?(\d{1,2})?(\d{1,4})?/, (_, p1, p2, p3, p4, p5, p6) => {
-      let res = p1;
-      if (p2) res += `-${p2}`;
-      if (p3) res += `.${p3}`;
-      if (p4) res += `.${p4}`;
-      if (p5) res += `.${p5}`;
-      if (p6) res += `.${p6}`;
-      return res;
-    });
-  }
-  return formatted;
-};
-
-const STATUS_OPTIONS = [
-  { value: "ativo", label: "Ativo", className: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/25 border-emerald-500/20 font-semibold" },
-  { value: "arquivado", label: "Arquivado", className: "bg-muted text-muted-foreground hover:bg-muted/80 border-border font-semibold" },
-  { value: "suspenso", label: "Suspenso", className: "bg-amber-500/15 text-amber-700 dark:text-amber-400 hover:bg-amber-500/25 border-amber-500/20 font-semibold" },
-  { value: "encerrado", label: "Encerrado", className: "bg-rose-500/15 text-rose-700 dark:text-rose-400 hover:bg-rose-500/25 border-rose-500/20 font-semibold" },
-];
-
-const PAGE_SIZE = 15;
-
 const statusBadge = (status: string) => {
   const opt = STATUS_OPTIONS.find((o) => o.value === status);
-  return <Badge variant="outline" className={opt?.className ?? "bg-muted text-muted-foreground"}>{opt?.label ?? status}</Badge>;
+  return <Badge variant="outline" className={`font-bold uppercase tracking-widest text-[10px] border ${opt?.color ?? "bg-muted text-muted-foreground"}`}>{opt?.label ?? status}</Badge>;
 };
 
 const emptyForm: Record<string, any> = {
@@ -86,13 +68,6 @@ const emptyForm: Record<string, any> = {
   instancia: null, fase_processual: null, comarca: null, uf: null,
   data_distribuicao: null, auto_capture_enabled: false,
 };
-
-const AREAS_DIREITO = [
-  "Cível", "Trabalhista", "Penal", "Tributário", "Empresarial",
-  "Família e Sucessões", "Consumidor", "Ambiental", "Administrativo",
-  "Previdenciário", "Imobiliário", "Contratual", "Propriedade Intelectual",
-  "Digital", "Internacional", "Outro",
-];
 
 const INSTANCIAS = [
   "1ª Instância", "2ª Instância", "Tribunal Superior", "STJ", "STF",
@@ -112,8 +87,11 @@ const UFS = [
 // ─── SortableHeader ──────────────────────────────────────────
 
 function SortableHeader({ field, label, sortField, sortDir, onSort }: {
-  field: SortField; label: string; sortField: SortField; sortDir: SortDir;
-  onSort: (f: SortField) => void;
+  field: "title" | "number" | "court" | "status" | "estimated_value" | "created_at";
+  label: string;
+  sortField: "title" | "number" | "court" | "status" | "estimated_value" | "created_at";
+  sortDir: "asc" | "desc";
+  onSort: (f: "title" | "number" | "court" | "status" | "estimated_value" | "created_at") => void;
 }) {
   const active = sortField === field;
   return (
@@ -122,12 +100,12 @@ function SortableHeader({ field, label, sortField, sortDir, onSort }: {
       onClick={() => onSort(field)}
     >
       <span className="flex items-center gap-1">
-        {label}
         {active
           ? sortDir === "asc"
             ? <ArrowUp className="h-3 w-3 text-primary" />
             : <ArrowDown className="h-3 w-3 text-primary" />
           : <ArrowUpDown className="h-3 w-3 opacity-30" />}
+        {label}
       </span>
     </TableHead>
   );
@@ -141,79 +119,29 @@ export default function ProcessosPage() {
   const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [page, setPage] = useState(1);
+  const [sortField, setSortField] = useState<SortField>("created_at");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [viewMode, setViewMode] = useState<"table" | "kanban">("table");
+
+  const debouncedSearch = useDebounce(search, 400);
+
+  const {
+    orgId, processos, totalCount, biCounts, isLoading,
+    createMutation, updateMutation, deleteMutation,
+    PAGE_SIZE
+  } = useProcessos(page, debouncedSearch, statusFilter, sortField, sortDir, viewMode);
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedProcesso, setSelectedProcesso] = useState<Processo | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [isEditing, setIsEditing] = useState(false);
-  const [viewMode, setViewMode] = useState<"table" | "kanban">("table");
-  const [page, setPage] = useState(1);
-  const [sortField, setSortField] = useState<SortField>("created_at");
-  const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [aiSummary, setAiSummary] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const { data: profile } = useQuery({
-    queryKey: ["profile", user?.id],
-    queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("organization_id").eq("user_id", user!.id).single();
-      return data;
-    },
-    enabled: !!user,
-  });
-  const orgId = profile?.organization_id;
-
-  const debouncedSearch = useDebounce(search, 400);
-
-  const { data: processosData, isLoading } = useQuery({
-    queryKey: ["processos", orgId, page, debouncedSearch, statusFilter, sortField, sortDir],
-    queryFn: async () => {
-      let query = supabase
-        .from("processos_juridicos")
-        .select("*, clients(id, name, phone, asaas_customer_id)", { count: "exact" })
-        .eq("organization_id", orgId!);
-
-      // Apply Filters
-      if (statusFilter !== "all") {
-        query = query.eq("status", statusFilter);
-      }
-
-      if (debouncedSearch) {
-        // Busca textual em título, número de processo contendo a strig
-        query = query.or(`title.ilike.%${debouncedSearch}%,number.ilike.%${debouncedSearch}%,court.ilike.%${debouncedSearch}%,subject.ilike.%${debouncedSearch}%`);
-      }
-
-      // Apply Sorting
-      query = query.order(sortField, { ascending: sortDir === "asc" });
-
-      // Only paginate if we are in table mode (Kanban needs all for columns, or we can deal with kanban separately)
-      // Actually, standard practice for Kanban is also to limit, but let's apply the limit strictly here.
-      // Wait, Kanban mode expects 'filtered', which was all processes. If we paginate, Kanban only sees 15.
-      // We'll pass the unpaginated for Kanban in a separate hook if needed, or disable pagination on Kanban.
-      if (viewMode === "table") {
-        const from = (page - 1) * PAGE_SIZE;
-        const to = from + PAGE_SIZE - 1;
-        query = query.range(from, to);
-      } else {
-        // Hard limit for Kanban to prevent crash, e.g., 200 items max or no pagination.
-        query = query.limit(200);
-      }
-
-
-      const { data, error, count } = await query;
-      if (error) throw error;
-      return { data: data as Processo[], count: count ?? 0 };
-    },
-    enabled: !!orgId,
-    placeholderData: keepPreviousData,
-  });
-
-  const processos = processosData?.data || [];
-  const totalCount = processosData?.count || 0;
-  // If view mode is table, we use the server's count. If Kanban, we might just use the array length.
   const totalPages = viewMode === "table" ? Math.max(1, Math.ceil(totalCount / PAGE_SIZE)) : 1;
-
 
   const { data: clients = [] } = useQuery({
     queryKey: ["clients-list", orgId],
@@ -236,7 +164,6 @@ export default function ProcessosPage() {
   const { data: captures = [] } = useQuery({
     queryKey: ["process-captures", selectedProcesso?.id],
     queryFn: async () => {
-      // @ts-expect-error - Supabase type reference
       const { data } = await supabase.from("process_captures").select("*").eq("process_id", selectedProcesso!.id).order("capture_date", { ascending: false });
       return data ?? [];
     },
@@ -246,7 +173,7 @@ export default function ProcessosPage() {
   const handleShare = (p: Processo) => {
     const token = (p as any).public_token;
     if (!token) {
-      toast.error("Processo sem token público. Abra e salve-o novamente ou aplique a migração de banco.");
+      toast.error("Processo sem token público.");
       return;
     }
     const url = `${window.location.origin}/public/processo/${token}`;
@@ -254,64 +181,16 @@ export default function ProcessosPage() {
     toast.success("Link do Portal do Cliente copiado!");
   };
 
-  const createMutation = useMutation({
-    mutationFn: async (payload: TablesInsert<"processos_juridicos">) => {
-      const { error } = await supabase.from("processos_juridicos").insert(payload);
-      if (error) throw error;
-    },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["processos"] }); toast.success("Processo criado"); closeDialog(); },
-    onError: () => toast.error("Erro ao criar processo"),
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: async ({ id, ...payload }: Partial<Processo> & { id: string }) => {
-      // Security FIX: DOR (Direct Object Reference) Prevention. 
-      // Force removal of sensitive infrastructure keys from client payload before updating
-      delete payload.organization_id;
-      delete payload.created_at;
-      delete payload.responsible_user_id;
-
-      const { error } = await supabase.from("processos_juridicos").update(payload).eq("id", id).eq("organization_id", orgId!); // Extra enforcement layer
-      if (error) throw error;
-    },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["processos"] }); toast.success("Processo atualizado"); closeDialog(); },
-    onError: () => toast.error("Erro ao atualizar processo"),
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("processos_juridicos").delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["processos"] }); toast.success("Processo excluído"); setDeleteDialogOpen(false); setSelectedProcesso(null); },
-    onError: () => toast.error("Erro ao excluir processo"),
-  });
-
   const createContaMutation = useMutation({
     mutationFn: async ({ processoTitle, value, clientId, asaasCustomerId }: { processoTitle: string; value: number; clientId: string | null; asaasCustomerId: string | null }) => {
       const dueDate = new Date();
       dueDate.setDate(dueDate.getDate() + 30);
-
       const { data: res, error } = await supabase.functions.invoke("billing-gateway", {
-        body: {
-          action: "create-charge",
-          customerId: asaasCustomerId,
-          clientId: clientId,
-          value,
-          dueDate: dueDate.toISOString().split("T")[0],
-          description: `Honorários — ${processoTitle}`,
-          createOnlyLocal: !asaasCustomerId
-        }
+        body: { action: "create-charge", customerId: asaasCustomerId, clientId, value, dueDate: dueDate.toISOString().split("T")[0], description: `Honorários — ${processoTitle}` }
       });
-
       if (error) throw error;
-      if (res?.error) throw new Error(res.error);
     },
-    onSuccess: () => {
-      toast.success("Fatura de Honorários criada! Redirecionando para o Financeiro...");
-      setViewDialogOpen(false);
-      setTimeout(() => navigate("/dashboard/financeiro"), 1200);
-    },
+    onSuccess: () => { toast.success("Fatura criada! Redirecionando..."); setViewDialogOpen(false); setTimeout(() => navigate("/dashboard/financeiro"), 1200); },
     onError: (err: any) => toast.error(`Erro ao faturar: ${err.message}`),
   });
 
@@ -323,10 +202,7 @@ export default function ProcessosPage() {
       if (error) throw error;
       return data.summary;
     },
-    onSuccess: (summary) => {
-      setAiSummary(summary);
-      toast.success("Sumário gerado com sucesso!");
-    },
+    onSuccess: (summary) => { setAiSummary(summary); toast.success("Sumário gerado com sucesso!"); },
     onError: (err: any) => toast.error(`Erro ao gerar sumário: ${err.message}`),
   });
 
@@ -341,7 +217,7 @@ export default function ProcessosPage() {
       });
       if (dbError) throw dbError;
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["process-docs"] }); toast.success("Documento vinculado ao processo"); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["process-docs"] }); toast.success("Documento vinculado"); },
     onError: () => toast.error("Erro ao enviar documento"),
   });
 
@@ -425,44 +301,83 @@ export default function ProcessosPage() {
   const isSaving = createMutation.isPending || updateMutation.isPending;
 
   return (
-    <div className="space-y-6">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      className="space-y-6"
+    >
       <LexaLoadingOverlay visible={isSaving} message="Salvando processo..." />
 
-      {/* ── Header ── */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">{t("processes.title")}</h1>
-          <p className="text-sm text-muted-foreground">
-            {totalCount} {totalCount !== 1 ? t("processes.subtitle") + "s" : t("processes.subtitle")} {totalCount !== 1 ? t("common.registeredPlural") : t("common.registered")}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          {/* View toggle */}
-          <div className="flex items-center rounded-lg border border-border/60 p-0.5">
-            <button
-              onClick={() => setViewMode("table")}
-              className={cn("flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs transition-all", viewMode === "table" ? "bg-muted text-foreground font-medium" : "text-muted-foreground hover:text-foreground")}
+      <PageHeader
+        title="Gestão de Processos"
+        subtitle="Prontuário completo com histórico interativo e automação de jusbrasil"
+        icon={Scale}
+        gradient="from-blue-600 to-cyan-600"
+        actions={
+          <>
+            <div className="flex bg-white/10 backdrop-blur-md p-1 rounded-lg border border-white/20">
+              <button
+                onClick={() => setViewMode("table")}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs transition-all",
+                  viewMode === "table" ? "bg-white text-primary font-semibold shadow-sm" : "text-primary-foreground hover:bg-white/10"
+                )}
+              >
+                <LayoutList className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Tabela</span>
+              </button>
+              <button
+                onClick={() => setViewMode("kanban")}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs transition-all",
+                  viewMode === "kanban" ? "bg-white text-primary font-semibold shadow-sm" : "text-primary-foreground hover:bg-white/10"
+                )}
+              >
+                <LayoutGrid className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Kanban</span>
+              </button>
+            </div>
+            <Button
+              onClick={openCreate}
+              className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90 shadow-lg shadow-accent/20"
             >
-              <LayoutList className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Tabela</span>
-            </button>
-            <button
-              onClick={() => setViewMode("kanban")}
-              className={cn("flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs transition-all", viewMode === "kanban" ? "bg-muted text-foreground font-medium" : "text-muted-foreground hover:text-foreground")}
-            >
-              <LayoutGrid className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Kanban</span>
-            </button>
-          </div>
-          <Button onClick={openCreate} className="gap-2"><Plus className="h-4 w-4" /> Novo Processo</Button>
-        </div>
+              <Plus className="h-4 w-4" /> Novo Processo
+            </Button>
+          </>
+        }
+      />
+
+      {/* Stats Grid */}
+      <div className="grid gap-4 sm:grid-cols-3">
+        <StatCard
+          icon={Scale}
+          label="Total de Processos"
+          value={biCounts.total}
+          color="blue"
+          index={0}
+        />
+        <StatCard
+          icon={Sparkles}
+          label="Processos Ativos"
+          value={biCounts.ativos}
+          color="emerald"
+          index={1}
+        />
+        <StatCard
+          icon={Clock}
+          label="Processos Suspensos"
+          value={biCounts.suspensos}
+          color="amber"
+          index={2}
+        />
       </div>
 
       {/* ── Filters ── */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
+        transition={{ duration: 0.3, delay: 0.3 }}
       >
         <Card className="glass-card border-border/40 shadow-sm overflow-hidden">
           <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
@@ -497,7 +412,7 @@ export default function ProcessosPage() {
           <Card className="glass-card border-border/40 shadow-xl shadow-black/5 overflow-hidden rounded-xl premium-shadow">
             <CardContent className="p-0">
               {isLoading ? (
-                <TableSkeleton columns={6} rows={8} />
+                <TableSkeleton cols={7} rows={8} />
               ) : processos.length === 0 ? (
                 <div className="flex flex-col items-center justify-center p-12 text-center bg-muted/5 border-2 border-dashed border-border/50 rounded-lg m-6">
                   <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
@@ -600,424 +515,59 @@ export default function ProcessosPage() {
         />
       )}
 
-      {/* ── Dialogs (Create/Edit, View, Delete) — unchanged ── */}
-      <Dialog open={dialogOpen} onOpenChange={(o) => { if (!o) closeDialog(); }}>
-        <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto p-0">
-          <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-card px-6 py-4">
-            <div>
-              <DialogTitle className="text-lg font-semibold">{isEditing ? "Editar Processo" : "Novo Processo"}</DialogTitle>
-              <p className="text-xs text-muted-foreground">Informações do processo jurídico</p>
-            </div>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={closeDialog}><X className="h-4 w-4" /></Button>
-          </div>
-          <form onSubmit={handleSubmit} className="px-6 pb-6">
-            <Tabs defaultValue="dados" className="w-full">
-              <TabsList className="my-4 grid w-full grid-cols-2">
-                <TabsTrigger value="dados" className="text-xs">Dados</TabsTrigger>
-                <TabsTrigger value="documentos" className="text-xs">Anexos</TabsTrigger>
-              </TabsList>
-              <TabsContent value="dados" className="space-y-4">
-                <div className="rounded-lg border border-border/50 bg-muted/20 p-4 space-y-4">
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Informações Principais</h3>
-                  <FormField label="Título" value={form.title ?? ""} onChange={(v) => setField("title", v)} placeholder="Ex: Ação Trabalhista - João Silva" required />
-                  <div className="grid grid-cols-2 gap-3">
-                    <FormField label="Número do Processo" value={form.number ?? ""} onChange={(v) => setField("number", formatCNJ(v))} placeholder="0000000-00.0000.0.00.0000" />
-                    <FormField label="Vara / Tribunal" value={form.court ?? ""} onChange={(v) => setField("court", v)} placeholder="Ex: 1ª Vara Cível" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</label>
-                      <Select value={form.status ?? "ativo"} onValueChange={(v) => setField("status", v)}>
-                        <SelectTrigger className="h-10 bg-background"><SelectValue /></SelectTrigger>
-                        <SelectContent>{STATUS_OPTIONS.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
-                      </Select>
-                    </div>
-                    <FormField label="Valor Estimado" value={form.estimated_value_display ?? ""} onChange={handleValueChange} placeholder="0,00" />
-                  </div>
-                  <div className="flex items-center justify-between rounded-lg border border-border bg-background p-3">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-primary/10 text-primary rounded-md"><Bot className="h-4 w-4" /></div>
-                      <div>
-                        <p className="text-sm font-medium">Robô de Captura</p>
-                        <p className="text-xs text-muted-foreground">Monitorar Diários Oficiais (Jusbrasil/Escavador)</p>
-                      </div>
-                    </div>
-                    <Switch checked={form.auto_capture_enabled || false} onCheckedChange={(v) => setField("auto_capture_enabled", v)} />
-                  </div>
-                </div>
-                <div className="rounded-lg border border-border/50 bg-muted/20 p-4 space-y-4">
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Dados Jurídicos</h3>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Área do Direito</label>
-                      <Select value={form.area_direito ?? "none"} onValueChange={(v) => setField("area_direito", v === "none" ? null : v)}>
-                        <SelectTrigger className="h-10 bg-background"><SelectValue placeholder="Selecione" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">—</SelectItem>
-                          {AREAS_DIREITO.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <FormField label="Tipo da Ação" value={form.tipo_acao ?? ""} onChange={(v) => setField("tipo_acao", v)} placeholder="Ex: Ação de Indenização" />
-                  </div>
-                  <FormField label="Parte Contrária" value={form.parte_contraria ?? ""} onChange={(v) => setField("parte_contraria", v)} placeholder="Nome da parte contrária" />
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Instância</label>
-                      <Select value={form.instancia ?? "none"} onValueChange={(v) => setField("instancia", v === "none" ? null : v)}>
-                        <SelectTrigger className="h-10 bg-background"><SelectValue placeholder="Selecione" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">—</SelectItem>
-                          {INSTANCIAS.map((i) => <SelectItem key={i} value={i}>{i}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Fase Processual</label>
-                      <Select value={form.fase_processual ?? "none"} onValueChange={(v) => setField("fase_processual", v === "none" ? null : v)}>
-                        <SelectTrigger className="h-10 bg-background"><SelectValue placeholder="Selecione" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">—</SelectItem>
-                          {FASES_PROCESSUAIS.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-3 gap-3">
-                    <FormField label="Comarca" value={form.comarca ?? ""} onChange={(v) => setField("comarca", v)} placeholder="Ex: São Paulo" />
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">UF</label>
-                      <Select value={form.uf ?? "none"} onValueChange={(v) => setField("uf", v === "none" ? null : v)}>
-                        <SelectTrigger className="h-10 bg-background"><SelectValue placeholder="UF" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">—</SelectItem>
-                          {UFS.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <FormField label="Data Distribuição" type="date" value={form.data_distribuicao ?? ""} onChange={(v) => setField("data_distribuicao", v || null)} />
-                  </div>
-                </div>
-                <div className="rounded-lg border border-border/50 bg-muted/20 p-4 space-y-4">
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Detalhes</h3>
-                  <div className="grid grid-cols-2 gap-3">
-                    <FormField label="Assunto" value={form.subject ?? ""} onChange={(v) => setField("subject", v)} placeholder="Ex: Dano moral" />
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Cliente</label>
-                      <Select value={form.client_id ?? "none"} onValueChange={(v) => setField("client_id", v === "none" ? null : v)}>
-                        <SelectTrigger className="h-10 bg-background"><SelectValue placeholder="Selecione" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">Nenhum</SelectItem>
-                          {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Observações</label>
-                    <Textarea value={form.notes ?? ""} onChange={(e) => setField("notes", e.target.value)} rows={3} placeholder="Anotações sobre o processo..." className="bg-background" />
-                  </div>
-                </div>
-              </TabsContent>
-              <TabsContent value="documentos" className="space-y-4">
-                <div className="rounded-lg border border-border/50 bg-muted/20 p-4 space-y-4">
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Anexos do Processo</h3>
-                  {isEditing && selectedProcesso ? (
-                    <>
-                      <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={() => triggerFileUpload(selectedProcesso.id)}>
-                        <Upload className="h-3.5 w-3.5" /> Anexar Documento
-                      </Button>
-                      {processDocs.length === 0 ? (
-                        <p className="text-sm text-muted-foreground text-center py-3">Nenhum documento vinculado.</p>
-                      ) : (
-                        <div className="space-y-2">
-                          {processDocs.map((doc) => (
-                            <div key={doc.id} className="flex items-center justify-between rounded-lg border border-border p-2.5">
-                              <div className="flex items-center gap-2">
-                                <File className="h-4 w-4 text-primary" />
-                                <span className="text-sm truncate max-w-[200px]">{doc.file_name}</span>
-                                <span className="text-xs text-muted-foreground">{format(new Date(doc.created_at), "dd/MM/yy")}</span>
-                              </div>
-                              <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDocDownload(doc)}>
-                                <Download className="h-3.5 w-3.5" />
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <p className="text-sm text-muted-foreground py-4 text-center">Salve o processo primeiro para anexar documentos.</p>
-                  )}
-                </div>
-              </TabsContent>
+      <ProcessoDialog
+        open={dialogOpen}
+        onOpenChange={(o) => { if (!o) closeDialog(); }}
+        isEditing={isEditing}
+        selectedProcesso={selectedProcesso}
+        clients={clients}
+        processDocs={processDocs}
+        isSaving={isSaving}
+        onSave={(payload) => {
+          if (isEditing && selectedProcesso) {
+            updateMutation.mutate({ id: selectedProcesso.id, ...payload }, { onSuccess: closeDialog });
+          } else {
+            createMutation.mutate(payload, { onSuccess: closeDialog });
+          }
+        }}
+        onUploadDoc={(file) => selectedProcesso && uploadDocMutation.mutate({ file, processId: selectedProcesso.id })}
+        onDownloadDoc={handleDocDownload}
+      />
 
-            </Tabs>
-            <Separator className="my-4" />
-            <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={closeDialog}>Cancelar</Button>
-              <Button type="submit" disabled={isSaving}>{isEditing ? "Salvar" : "Criar Processo"}</Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* VER PROCESSO (SHEET MODAL) */}
-      <Sheet open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-        <SheetContent side="right" className="w-[95vw] sm:w-[600px] sm:max-w-[700px] overflow-y-auto p-0 border-l border-border/50 bg-background">
-          {selectedProcesso && (
-            <div className="flex flex-col h-full bg-background">
-              {/* Header do Panel */}
-              <SheetHeader className="p-6 pb-4 border-b border-border/50 bg-muted/10 sticky top-0 z-10 backdrop-blur-md">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1 pr-6 flex-1 text-left">
-                    <SheetTitle className="text-xl font-bold leading-tight text-foreground text-left">
-                      {selectedProcesso.title}
-                    </SheetTitle>
-                    <SheetDescription asChild>
-                      <div className="flex items-center justify-between gap-2 text-sm text-primary">
-                        <div className="flex items-center gap-2">
-                          <Scale className="h-4 w-4" />
-                          <span className="font-semibold">{selectedProcesso.number || "Sem Número (Administrativo)"}</span>
-                        </div>
-                        {captures.length > 0 && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 gap-2 text-xs font-bold text-primary bg-primary/5 hover:bg-primary/10 rounded-full border border-primary/20 transition-all shadow-sm"
-                            onClick={() => {
-                              const content = captures.map((c: any) => `${format(new Date(c.capture_date), "dd/MM/yyyy")}: ${c.content}`).join("\n");
-                              aiSummaryMutation.mutate({ processId: selectedProcesso.id, content });
-                            }}
-                            disabled={aiSummaryMutation.isPending}
-                          >
-                            {aiSummaryMutation.isPending ? (
-                              <Loader2 className="h-3 w-3 animate-spin" />
-                            ) : (
-                              <Sparkles className="h-3.5 w-3.5" />
-                            )}
-                            Aruna IA
-                          </Button>
-                        )}
-                      </div>
-                    </SheetDescription>
-                  </div>
-                </div>
-
-                {/* Meta Bar */}
-                <div className="flex flex-wrap items-center gap-3 pt-4 mt-2 border-t border-border/40">
-                  {statusBadge(selectedProcesso.status)}
-                  {selectedProcesso.comarca && (
-                    <Badge variant="outline" className="text-[10px] bg-background">
-                      {selectedProcesso.comarca} {selectedProcesso.uf && `- ${selectedProcesso.uf}`}
-                    </Badge>
-                  )}
-                  {selectedProcesso.area_direito && (
-                    <Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-600 border-amber-500/20">
-                      {selectedProcesso.area_direito}
-                    </Badge>
-                  )}
-                  {selectedProcesso.fase_processual && (
-                    <Badge variant="outline" className="text-[10px] bg-blue-500/10 text-blue-600 border-blue-500/20">
-                      {selectedProcesso.fase_processual}
-                    </Badge>
-                  )}
-                </div>
-              </SheetHeader>
-
-              {/* Corpo do Conteúdo / Tabs */}
-              <div className="flex-1 p-6">
-                <Tabs defaultValue="detalhes" className="w-full">
-                  <TabsList className="w-full justify-start h-10 bg-transparent border-b border-border/50 rounded-none p-0 overflow-x-auto hide-scrollbar">
-                    <TabsTrigger value="detalhes" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 pb-2.5">Detalhes</TabsTrigger>
-                    <TabsTrigger value="timeline" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 pb-2.5 flex gap-1.5"><Bot className="w-3.5 h-3.5" /> Movimentações</TabsTrigger>
-                    <TabsTrigger value="docs" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 pb-2.5 flex gap-1.5"><File className="w-3.5 h-3.5" /> Anexos ({processDocs.length})</TabsTrigger>
-                  </TabsList>
-
-                  <div className="mt-6">
-                    {/* TAB: DETALHES */}
-                    <TabsContent value="detalhes" className="space-y-6 mt-0">
-                      {/* Grid de Informações Básicas */}
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Cliente/Autor</span>
-                          <p className="text-sm font-medium">{selectedProcesso.cliente_nome || "Não informado"}</p>
-                        </div>
-                        <div className="space-y-1">
-                          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Parte Contrária</span>
-                          <p className="text-sm font-medium">{selectedProcesso.parte_contraria || "Não informada"}</p>
-                        </div>
-                        <div className="space-y-1">
-                          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Órgão / Vara</span>
-                          <p className="text-sm font-medium">{selectedProcesso.court || "Não informado"}</p>
-                        </div>
-                        <div className="space-y-1">
-                          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Instância</span>
-                          <p className="text-sm font-medium">{selectedProcesso.instancia || "1ª Instância"}</p>
-                        </div>
-                      </div>
-
-                      <Separator />
-
-                      {/* Assunto / Resumo */}
-                      <div className="space-y-2">
-                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Assunto Principal</span>
-                        <p className="text-sm leading-relaxed text-foreground/80">{selectedProcesso.subject || "Sem assunto definido"}</p>
-                      </div>
-
-                      {selectedProcesso.notes && (
-                        <div className="space-y-2 p-4 bg-amber-500/5 rounded-lg border border-amber-500/20">
-                          <span className="text-xs font-bold text-amber-600 uppercase tracking-wider flex items-center gap-1.5">Anotações Internas</span>
-                          <p className="text-sm text-foreground/80 whitespace-pre-wrap">{selectedProcesso.notes}</p>
-                        </div>
-                      )}
-
-
-                    </TabsContent>
-
-                    {/* TAB: TIMELINE CAPTURAS */}
-                    <TabsContent value="timeline" className="mt-0">
-                      <div className="space-y-6">
-                        <div className="flex items-center justify-between pb-4 border-b border-border/50">
-                          <h3 className="text-sm font-medium flex items-center gap-2">
-                            <Bot className="h-4 w-4 text-emerald-500" /> Andamentos Robô
-                          </h3>
-                          <div className="flex items-center gap-2">
-                            {selectedProcesso.auto_capture_enabled ? (
-                              <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[10px] h-6">Captura ON</Badge>
-                            ) : (
-                              <Badge variant="outline" className="text-[10px] h-6 text-muted-foreground border-muted-foreground/30">Captura OFF</Badge>
-                            )}
-                          </div>
-                        </div>
-
-                        {aiSummary && (
-                          <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: "auto" }}
-                            className="p-4 bg-primary/5 rounded-lg border border-primary/20 space-y-3"
-                          >
-                            <div className="flex items-center justify-between">
-                              <h4 className="text-xs font-bold text-primary uppercase tracking-wider flex items-center gap-1.5">
-                                <Sparkles className="h-3 w-3" /> Resumo Inteligente (Aruna)
-                              </h4>
-                              <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => setAiSummary(null)}>
-                                <X className="h-3 w-3" />
-                              </Button>
-                            </div>
-                            <div className="text-sm text-foreground/90 whitespace-pre-wrap font-sans prose prose-sm max-w-none prose-headings:text-primary prose-strong:text-primary/80">
-                              {aiSummary}
-                            </div>
-                          </motion.div>
-                        )}
-
-                        {captures.length === 0 ? (
-                          <div className="text-center py-12 bg-muted/20 rounded-lg border border-dashed border-border/60">
-                            <Search className="h-8 w-8 text-muted-foreground/30 mx-auto mb-3" />
-                            <p className="text-sm text-muted-foreground font-medium">Nenhuma movimentação capturada</p>
-                            <p className="text-xs text-muted-foreground/60 mt-1">Acione a Captura Automática na edição</p>
-                          </div>
-                        ) : (
-                          <div className="relative before:absolute before:inset-y-0 before:left-3.5 before:w-0.5 before:bg-muted ml-0 space-y-8 pl-10 pr-2">
-                            {captures.map((cap: any) => (
-                              <div key={cap.id} className="relative">
-                                {/* Ponto na linha */}
-                                <div className="absolute left-[-2rem] top-1.5 h-3 w-3 rounded-full border-2 border-background bg-primary ring-2 ring-primary/20" />
-                                {/* Cartão de Movimentação */}
-                                <div className="flex flex-col gap-1 w-full bg-muted/20 border border-border/60 rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow">
-                                  <div className="flex items-center justify-between mb-1">
-                                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                                      {format(new Date(cap.capture_date), "dd MMM yyyy", { locale: ptBR })}
-                                    </span>
-                                    <span className="text-[9px] text-muted-foreground bg-muted/60 px-2 py-0.5 rounded">
-                                      {cap.source}
-                                    </span>
-                                  </div>
-                                  <p className="text-sm font-medium text-foreground leading-relaxed">{cap.content}</p>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </TabsContent>
-
-                    {/* TAB: DOCUMENTOS */}
-                    <TabsContent value="docs" className="mt-0">
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between pb-4">
-                          <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Peças do Processo</h3>
-                          <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5" onClick={() => triggerFileUpload(selectedProcesso.id)}>
-                            <Upload className="h-3 w-3" /> Upload PDF
-                          </Button>
-                        </div>
-                        {processDocs.length === 0 ? (
-                          <div className="text-center py-12 bg-muted/20 rounded-lg border border-dashed border-border/60">
-                            <File className="h-8 w-8 text-muted-foreground/30 mx-auto mb-3" />
-                            <p className="text-sm text-muted-foreground font-medium">Pasta vazia</p>
-                            <p className="text-xs text-muted-foreground/60 mt-1">Armazene petições e procurações aqui</p>
-                          </div>
-                        ) : (
-                          <div className="space-y-2">
-                            {processDocs.map((doc) => (
-                              <div key={doc.id} className="flex items-center justify-between p-3 rounded-lg border border-border/50 bg-card hover:bg-muted/30 transition-colors group">
-                                <div className="flex items-center gap-3 overflow-hidden">
-                                  <div className="h-8 w-8 rounded bg-primary/10 flex items-center justify-center shrink-0">
-                                    <File className="h-4 w-4 text-primary" />
-                                  </div>
-                                  <div className="truncate">
-                                    <p className="text-sm font-medium truncate">{doc.file_name}</p>
-                                    <p className="text-[10px] text-muted-foreground">{format(new Date(doc.created_at), "dd/MM/yyyy")}</p>
-                                  </div>
-                                </div>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 transition-opacity" onClick={() => handleDocDownload(doc)}>
-                                  <Download className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </TabsContent>
-                  </div>
-                </Tabs>
-              </div>
-
-              {/* Botões do Rodapé Fixos */}
-              <div className="border-t border-border/50 bg-muted/10 p-4 sticky bottom-0 mt-auto flex justify-end gap-2 backdrop-blur-md">
-                {selectedProcesso?.estimated_value != null && orgId && (
-                  <Button
-                    className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium mr-auto shadow-sm"
-                    disabled={createContaMutation.isPending}
-                    onClick={() => createContaMutation.mutate({
-                      processoTitle: selectedProcesso.title,
-                      value: Number(selectedProcesso.estimated_value),
-                      orgId,
-                    })}
-                  >
-                    <Receipt className="h-4 w-4" />
-                    Faturar Honorários
-                  </Button>
-                )}
-                <Button variant="outline" onClick={() => { setViewDialogOpen(false); openEdit(selectedProcesso!); }}>Editar</Button>
-                <Button onClick={() => setViewDialogOpen(false)}>Fechar Processo</Button>
-              </div>
-
-            </div>
-          )}
-        </SheetContent>
-      </Sheet>
+      <ProcessoViewSheet
+        open={viewDialogOpen}
+        onOpenChange={setViewDialogOpen}
+        selectedProcesso={selectedProcesso}
+        captures={captures}
+        processDocs={processDocs}
+        aiSummary={aiSummary}
+        isAiLoading={aiSummaryMutation.isPending}
+        onGenerateAiSummary={(content) => selectedProcesso && aiSummaryMutation.mutate({ processId: selectedProcesso.id, content })}
+        onUploadDoc={(pid) => triggerFileUpload(pid)}
+        onDownloadDoc={handleDocDownload}
+        onBilling={(p) => createContaMutation.mutate({
+          processoTitle: p.title,
+          value: Number(p.estimated_value),
+          clientId: p.client_id,
+          // @ts-ignore
+          asaasCustomerId: p.clients?.asaas_customer_id || null
+        })}
+        onEdit={(p) => openEdit(p)}
+        isBillingLoading={createContaMutation.isPending}
+      />
 
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle className="font-semibold">Excluir Processo</DialogTitle></DialogHeader>
-          <p className="text-sm text-muted-foreground">Tem certeza que deseja excluir o processo <strong className="text-foreground">{selectedProcesso?.title}</strong>?</p>
-          <div className="flex justify-end gap-2 pt-2">
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Cancelar</Button>
-            <Button variant="destructive" disabled={deleteMutation.isPending} onClick={() => selectedProcesso && deleteMutation.mutate(selectedProcesso.id)}>Excluir</Button>
+        <DialogContent className="max-w-sm rounded-2xl border-none shadow-2xl">
+          <DialogHeader><DialogTitle className="font-bold text-lg">Excluir Processo</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            Tem certeza que deseja excluir o processo <strong className="text-foreground">{selectedProcesso?.title}</strong>? Esta ação é irreversível.
+          </p>
+          <div className="flex justify-end gap-2 pt-4">
+            <Button variant="ghost" onClick={() => setDeleteDialogOpen(false)}>Cancelar</Button>
+            <Button variant="destructive" className="rounded-xl px-6" disabled={deleteMutation.isPending} onClick={() => selectedProcesso && deleteMutation.mutate(selectedProcesso.id, { onSuccess: () => setDeleteDialogOpen(false) })}>Excluir</Button>
           </div>
         </DialogContent>
       </Dialog>
-    </div >
+    </motion.div >
   );
 }
