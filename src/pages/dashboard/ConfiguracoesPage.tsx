@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Settings, User, Building2, Shield, Save, Camera, MessageCircle,
@@ -19,7 +19,10 @@ import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { useGoogleCalendar } from "@/hooks/useGoogleCalendar";
 import { useMicrosoftCalendar } from "@/hooks/useMicrosoftCalendar";
+import { useAppleCalendar } from "@/hooks/useAppleCalendar";
+import { AppleCalendarAuthDialog } from "@/components/dashboard/AppleCalendarAuthDialog";
 import { toast } from "sonner";
+import { useSearchParams } from "react-router-dom";
 
 // FSD Imports
 import { useConfiguracoes } from "@/features/configuracoes/hooks/useConfiguracoes";
@@ -31,6 +34,7 @@ export default function ConfiguracoesPage() {
   const { t } = useTranslation();
   const gcal = useGoogleCalendar();
   const mscal = useMicrosoftCalendar();
+  const appleCal = useAppleCalendar();
 
   const {
     user, profile, org, userRole, isLoading,
@@ -45,7 +49,15 @@ export default function ConfiguracoesPage() {
     handleSubscribe, handleSaveIntegration,
   } = useConfiguracoes();
 
+  const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState("perfil");
+
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab) setActiveTab(tab);
+  }, [searchParams]);
+
+  const [isAppleDialogOpen, setIsAppleDialogOpen] = useState(false);
   const [addUsersSeats, setAddUsersSeats] = useState(1);
 
   // Employee dialog
@@ -547,6 +559,33 @@ export default function ConfiguracoesPage() {
                       )}
                     </CardContent>
                   </Card>
+
+                  <Card className="border-border opacity-80 hover:opacity-100 transition-opacity flex flex-col h-full">
+                    <CardHeader className="pb-3 border-b border-border/50">
+                      <CardTitle className="font-display text-base flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 bg-white border border-black/5 rounded-md flex flex-col items-center justify-center overflow-hidden shadow-sm">
+                            <div className="bg-red-500 w-full h-[8px] text-[5px] font-bold text-white text-center leading-tight pt-[1px]">MAR</div>
+                            <div className="text-black text-[10px] font-semibold leading-tight mt-[0.5px]">05</div>
+                          </div>
+                          Apple Calendar
+                        </div>
+                        {appleCal.isConnected && <Badge variant="outline" className="text-[10px] text-emerald-600 border-emerald-300">Conectado</Badge>}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-4 flex-1 flex flex-col justify-between">
+                      <p className="text-sm text-muted-foreground mb-4">Sincronização segura para usuários de ecossistema Apple (iCloud).</p>
+                      {appleCal.isConnected ? (
+                        <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs border-destructive/30 text-destructive hover:bg-destructive/10" onClick={() => toast.info("Para desconectar o iCloud, entre em contato com o suporte.")}>
+                          Conectado ao iCloud
+                        </Button>
+                      ) : (
+                        <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs border-zinc-500/30 text-zinc-600 hover:bg-zinc-500/10" onClick={() => setIsAppleDialogOpen(true)} disabled={appleCal.connecting}>
+                          <Plus className="h-3.5 w-3.5" /> Conectar Apple ID
+                        </Button>
+                      )}
+                    </CardContent>
+                  </Card>
                 </div>
 
                 {/* Aruna IA */}
@@ -582,6 +621,11 @@ export default function ConfiguracoesPage() {
         orgId={profile?.organization_id || ""}
         onSubmit={handleEmpSubmit}
         isPending={createEmployeeMutation.isPending || updateEmployeeMutation.isPending}
+      />
+
+      <AppleCalendarAuthDialog
+        open={isAppleDialogOpen}
+        onOpenChange={setIsAppleDialogOpen}
       />
     </div>
   );

@@ -148,17 +148,7 @@ export default function DashboardOverview() {
 
               <div className="space-y-1 overflow-y-auto flex-1 min-h-0 pr-1 pl-1">
                 {todayEvents.length === 0 && tomorrowEvents.length === 0 && (
-                  (!gcal.isConnected && !mscal.isConnected && !appleCal.isConnected) ? (
-                    <CalendarEmptyState showTitle={true} />
-                  ) : (
-                    <div className="glass-card border-dashed p-6 text-center flex flex-col items-center justify-center rounded-xl bg-muted/5 border-muted/30">
-                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center mb-2">
-                        <CalendarDays className="h-5 w-5 text-primary/60" />
-                      </div>
-                      <p className="text-xs font-semibold text-foreground/80">{t("dashboard.noEvents")}</p>
-                      <Button variant="link" size="sm" className="mt-0 h-auto p-0 text-[11px] font-bold uppercase tracking-wider text-primary/70 hover:text-primary transition-colors" onClick={() => navigate("/dashboard/agenda")}>Agendar agora</Button>
-                    </div>
-                  )
+                  <CalendarEmptyState showTitle={true} />
                 )}
 
                 {todayEvents.length > 0 && (

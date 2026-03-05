@@ -335,17 +335,7 @@ export default function AgendaPage() {
                 {isLoading ? (
                   <div className="flex justify-center py-8"><div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" /></div>
                 ) : eventsForDate.length === 0 ? (
-                  (!gcal.isConnected && !mscal.isConnected && !appleCal.isConnected) ? (
-                    <CalendarEmptyState />
-                  ) : (
-                    <div className="flex flex-col items-center py-8 text-center">
-                      <CalendarDays className="mb-2 h-8 w-8 text-muted-foreground/20" />
-                      <p className="text-sm text-muted-foreground mb-3">Nenhum compromisso</p>
-                      <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => openCreate()}>
-                        <Plus className="h-3 w-3" /> Adicionar
-                      </Button>
-                    </div>
-                  )
+                  <CalendarEmptyState />
                 ) : (
                   <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
                     <AnimatePresence mode="popLayout">
