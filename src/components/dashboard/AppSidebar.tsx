@@ -20,7 +20,6 @@ import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import logoLexaWhite from "@/assets/logo-lexa-white.png";
 import iconLexa from "@/assets/icon-lexa.png";
-import { GlobalSearch } from "@/components/shared/GlobalSearch";
 import { Search } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -200,8 +199,6 @@ export function AppSidebar() {
         })}
       </SidebarContent>
 
-      {/* Global Search Component is now in the TopBar, but we keep the listener here to catch the Cmd+K shortcut throughout the whole App */}
-      <GlobalSearch />
 
       {/* Footer */}
       <SidebarFooter className="shrink-0 border-t border-sidebar-border/50 p-2.5">

@@ -54,7 +54,7 @@ import AdminSettings from "@/pages/admin/AdminSettings";
 const queryClient = new QueryClient();
 
 import { ThemeProvider } from "@/components/theme-provider";
-import { CommandPalette } from "@/components/shared/CommandPalette";
+import { GlobalSearch } from "@/components/shared/GlobalSearch";
 
 // ... inside App component ...
 const App = () => (
@@ -65,7 +65,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
-            <CommandPalette />
+            <GlobalSearch />
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
