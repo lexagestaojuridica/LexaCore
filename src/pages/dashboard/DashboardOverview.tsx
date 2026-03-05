@@ -151,12 +151,12 @@ export default function DashboardOverview() {
                   (!gcal.isConnected && !mscal.isConnected && !appleCal.isConnected) ? (
                     <CalendarEmptyState showTitle={true} />
                   ) : (
-                    <div className="glass-card border-dashed p-10 text-center flex flex-col items-center justify-center rounded-xl bg-muted/5">
-                      <div className="h-12 w-12 rounded-full bg-muted/30 flex items-center justify-center mb-3">
-                        <CalendarDays className="h-6 w-6 text-muted-foreground/40" />
+                    <div className="glass-card border-dashed p-6 text-center flex flex-col items-center justify-center rounded-xl bg-muted/5 border-muted/30">
+                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center mb-2">
+                        <CalendarDays className="h-5 w-5 text-primary/60" />
                       </div>
-                      <p className="text-sm font-medium text-muted-foreground">{t("dashboard.noEvents")}</p>
-                      <Button variant="link" size="sm" className="mt-1" onClick={() => navigate("/dashboard/agenda")}>Agendar compromisso</Button>
+                      <p className="text-xs font-semibold text-foreground/80">{t("dashboard.noEvents")}</p>
+                      <Button variant="link" size="sm" className="mt-0 h-auto p-0 text-[11px] font-bold uppercase tracking-wider text-primary/70 hover:text-primary transition-colors" onClick={() => navigate("/dashboard/agenda")}>Agendar agora</Button>
                     </div>
                   )
                 )}
