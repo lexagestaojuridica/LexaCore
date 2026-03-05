@@ -153,39 +153,39 @@ export function GlobalSearch() {
 
                 <CommandSeparator />
 
-                <CommandGroup heading="Ações Principais">
+                <CommandGroup heading={t("common.mainActions") || "Ações Principais"}>
                     <CommandItem value="Dashboard Meu Dia" onSelect={() => onSelect("/dashboard")}>
                         <LayoutDashboard className="mr-2 h-4 w-4 text-emerald-500" />
-                        <span>Meu Dia (Dashboard)</span>
+                        <span>{t("nav.dashboard") || "Meu Dia (Dashboard)"}</span>
                     </CommandItem>
                     <CommandItem value="Processos Juridicos" onSelect={() => onSelect("/dashboard/processos")}>
                         <Briefcase className="mr-2 h-4 w-4 text-indigo-500" />
-                        <span>Processos</span>
+                        <span>{t("nav.processes") || "Processos"}</span>
                     </CommandItem>
                     <CommandItem value="Agenda e Prazos" onSelect={() => onSelect("/dashboard/agenda")}>
                         <Calendar className="mr-2 h-4 w-4 text-amber-500" />
-                        <span>Agenda & Compromissos</span>
+                        <span>{t("nav.agenda") || "Agenda & Compromissos"}</span>
                     </CommandItem>
                 </CommandGroup>
 
                 <CommandSeparator />
 
-                <CommandGroup heading="Módulos Auxiliares">
+                <CommandGroup heading={t("common.auxiliaryModules") || "Módulos Auxiliares"}>
                     <CommandItem value="Minutas e Contratos" onSelect={() => onSelect("/dashboard/minutas")}>
                         <FileText className="mr-2 h-4 w-4 text-rose-500" />
-                        <span>Minutas Inteligentes</span>
+                        <span>{t("nav.minutas") || "Minutas Inteligentes"}</span>
                     </CommandItem>
                     <CommandItem value="Financeiro Gestao" onSelect={() => onSelect("/dashboard/financeiro")}>
                         <CreditCard className="mr-2 h-4 w-4 text-emerald-500" />
-                        <span>Financeiro (Contas)</span>
+                        <span>{t("nav.financial") || "Financeiro (Contas)"}</span>
                     </CommandItem>
                     <CommandItem value="Workflow Fluxos" onSelect={() => onSelect("/dashboard/workflow")}>
                         <Network className="mr-2 h-4 w-4 text-indigo-500" />
-                        <span>Fluxos de Trabalho</span>
+                        <span>{t("nav.workflow") || "Fluxos de Trabalho"}</span>
                     </CommandItem>
                     <CommandItem value="Chat Canais" onSelect={() => onSelect("/dashboard/chat")}>
                         <MessageSquare className="mr-2 h-4 w-4 text-zinc-500" />
-                        <span>Canais de Comunicação</span>
+                        <span>{t("nav.chat") || "Canais de Comunicação"}</span>
                     </CommandItem>
                 </CommandGroup>
 
