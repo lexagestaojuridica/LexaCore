@@ -127,7 +127,17 @@
         "saving": "Guardando...",
         "of": "de",
         "or": "o",
-        "type": "Tipo"
+        "type": "Tipo",
+        "mainActions": "Acciones Principales",
+        "auxiliaryModules": "Módulos Auxiliares"
+    },
+    "globalSearch": {
+        "arunaIntelligence": "Inteligencia Aruna IA",
+        "searchResults": "Resultados de la Búsqueda",
+        "adminSaaS": "Administración SaaS (Master)",
+        "settingsTheme": "Configuraciones y Tema",
+        "askAruna": "Preguntar a Aruna",
+        "themeToggle": "Cambiar Tema Claro/Oscuro"
     },
     "processes": {
         "title": "Procesos Jurídicos",

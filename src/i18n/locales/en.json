@@ -123,7 +123,17 @@
         "saving": "Saving...",
         "of": "of",
         "or": "or",
-        "type": "Type"
+        "type": "Type",
+        "mainActions": "Main Actions",
+        "auxiliaryModules": "Auxiliary Modules"
+    },
+    "globalSearch": {
+        "arunaIntelligence": "Aruna Intelligence",
+        "searchResults": "Search Results",
+        "adminSaaS": "SaaS Administration (Master)",
+        "settingsTheme": "Settings & Theme",
+        "askAruna": "Ask Aruna",
+        "themeToggle": "Toggle Light/Dark Theme"
     },
     "processes": {
         "title": "Legal Processes",

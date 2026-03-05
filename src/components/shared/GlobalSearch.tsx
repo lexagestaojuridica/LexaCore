@@ -28,18 +28,7 @@ export function GlobalSearch() {
     const { t } = useTranslation();
     const { user } = useAuth();
     const { theme, setTheme } = useTheme();
-    const [facilitadorLinks, setFacilitadorLinks] = useState<any[]>([]);
 
-    useEffect(() => {
-        const stored = localStorage.getItem("lexa_facilitador_links");
-        if (stored) {
-            try {
-                setFacilitadorLinks(JSON.parse(stored));
-            } catch (e) {
-                console.error("Failed to parse facilitador links", e);
-            }
-        }
-    }, [open]);
 
     useEffect(() => {
         const down = (e: KeyboardEvent) => {
@@ -108,46 +97,28 @@ export function GlobalSearch() {
                 </CommandEmpty>
 
                 {searchTerm.length > 0 && (
-                    <CommandGroup heading="Inteligência Aruna IA">
+                    <CommandGroup heading={t("globalSearch.arunaIntelligence") || "Inteligência Aruna IA"}>
                         <CommandItem onSelect={() => askAruna(searchTerm)} className="cursor-pointer">
                             <Sparkles className="mr-2 h-4 w-4 text-accent animate-pulse" />
-                            <span>Perguntar para Aruna: <span className="font-semibold text-accent">"{searchTerm}"</span></span>
+                            <span>{t("globalSearch.askAruna") || "Perguntar para Aruna"}: <span className="font-semibold text-accent">"{searchTerm}"</span></span>
                         </CommandItem>
                     </CommandGroup>
                 )}
 
                 {(results.clients.length > 0 || results.processes.length > 0) && (
-                    <CommandGroup heading="Resultados da Busca">
+                    <CommandGroup heading={t("globalSearch.searchResults") || "Resultados da Busca"}>
                         {results.processes.map((p) => (
                             <CommandItem key={p.id} value={`processo-${p.id}-${p.title}`} onSelect={() => onSelect(`/dashboard/processos?id=${p.id}`)}>
                                 <Briefcase className="mr-2 h-4 w-4 text-orange-500" />
-                                <span>Processo: {p.title} <span className="text-[10px] text-muted-foreground ml-2">({p.number})</span></span>
+                                <span>{t("nav.processes") || "Processo"}: {p.title} <span className="text-[10px] text-muted-foreground ml-2">({p.number})</span></span>
                             </CommandItem>
                         ))}
                         {results.clients.map((c) => (
                             <CommandItem key={c.id} value={`cliente-${c.id}-${c.name}`} onSelect={() => onSelect(`/dashboard/clientes?id=${c.id}`)}>
                                 <User className="mr-2 h-4 w-4 text-blue-500" />
-                                <span>Cliente: {c.name}</span>
+                                <span>{t("nav.clients") || "Cliente"}: {c.name}</span>
                             </CommandItem>
                         ))}
-                    </CommandGroup>
-                )}
-
-                <CommandSeparator />
-
-                {facilitadorLinks.length > 0 && (
-                    <CommandGroup heading="Atalhos / Facilitador">
-                        {facilitadorLinks
-                            .filter(l => !searchTerm || l.label.toLowerCase().includes(searchTerm.toLowerCase()))
-                            .slice(0, 5)
-                            .map((link) => (
-                                <CommandItem key={link.id} value={`link-${link.label}`} onSelect={() => { window.open(link.url, "_blank"); setOpen(false); }}>
-                                    <span className="mr-2 h-4 w-4 flex items-center justify-center text-sm">{link.emoji}</span>
-                                    <span>{link.label}</span>
-                                    <span className="ml-2 text-[10px] text-muted-foreground truncate opacity-50">{link.url.replace(/^https?:\/\//, '')}</span>
-                                </CommandItem>
-                            ))
-                        }
                     </CommandGroup>
                 )}
 
@@ -191,7 +162,7 @@ export function GlobalSearch() {
 
                 <CommandSeparator />
 
-                <CommandGroup heading="Administração SaaS (Master)">
+                <CommandGroup heading={t("globalSearch.adminSaaS") || "Administração SaaS (Master)"}>
                     <CommandItem value="Painel Executivo Admin" onSelect={() => onSelect("/admin/hq")}>
                         <LayoutDashboard className="mr-2 h-4 w-4 text-indigo-600" />
                         <span>Painel Executivo</span>
@@ -204,10 +175,10 @@ export function GlobalSearch() {
 
                 <CommandSeparator />
 
-                <CommandGroup heading="Configurações & Tema">
+                <CommandGroup heading={t("globalSearch.settingsTheme") || "Configurações & Tema"}>
                     <CommandItem value="Configuracoes Sistema" onSelect={() => onSelect("/dashboard/configuracoes")}>
                         <Settings className="mr-2 h-4 w-4 text-zinc-400" />
-                        <span>Configurações do Sistema</span>
+                        <span>{t("common.settings") || "Configurações do Sistema"}</span>
                     </CommandItem>
                     <CommandItem value="Alternar Tema" onSelect={() => { setTheme(theme === 'dark' ? 'light' : 'dark'); setOpen(false); }}>
                         {theme === 'dark' ? (
@@ -215,7 +186,7 @@ export function GlobalSearch() {
                         ) : (
                             <Moon className="mr-2 h-4 w-4 text-indigo-500" />
                         )}
-                        <span>Alternar Tema Claro/Escuro</span>
+                        <span>{t("globalSearch.themeToggle") || "Alternar Tema Claro/Escuro"}</span>
                     </CommandItem>
                 </CommandGroup>
             </CommandList>
