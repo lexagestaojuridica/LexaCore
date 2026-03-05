@@ -17,7 +17,11 @@
         "calculator": "Calculadora",
         "news": "Noticias Jurídicas",
         "ia": "ARUNA IA",
-        "settings": "Configuración"
+        "settings": "Configuración",
+        "rhDashboard": "Dashboard RRHH",
+        "employees": "Empleados",
+        "timeclock": "Control Horario",
+        "recruitment": "Reclutamiento"
     },
     "groups": {
         "main": "Inicio",
@@ -26,7 +30,8 @@
         "documents": "Documentos",
         "financial": "Financiero",
         "intelligence": "Inteligencia",
-        "admin": "Administración"
+        "admin": "Administración",
+        "management": "Gerencia"
     },
     "dashboard": {
         "greeting": "Buenos días",
@@ -260,31 +265,55 @@
         "pendingReceivable": "A Cobrar (Pendiente)",
         "pendingPayable": "A Pagar (Pendiente)",
         "pendingFlow": "Flujo Pendiente",
-        "financialThermometer": "Termómetro Financiero",
+        "thermometer": "Termómetro Financiero",
         "pendingRevenue": "Ingresos Pendientes",
         "pendingExpenses": "Gastos Pendientes",
-        "searchTransaction": "Buscar transacción...",
-        "allStatuses": "Todos los estados",
-        "noAccounts": "Ninguna cuenta a {{type}} registrada.",
-        "noAccountsFound": "Ninguna cuenta encontrada.",
-        "useNewTransaction": "Use el botón \"Nueva Transacción\" para agregar.",
+        "searchPlaceholder": "Buscar transacción...",
+        "allStatus": "Todos los estados",
         "monthTotal": "Total del mes",
         "editTransaction": "Editar Transacción",
-        "newAccountReceivable": "Nueva Cuenta por Cobrar",
-        "newAccountPayable": "Nueva Cuenta por Pagar",
+        "newEntryReceivable": "Nueva Cuenta por Cobrar",
+        "newEntryPayable": "Nueva Cuenta por Pagar",
         "amount": "Monto",
         "dueDate": "Vencimiento",
-        "register": "Registrar",
-        "deleteTransaction": "Eliminar Transacción",
-        "deleteConfirm": "¿Está seguro de que desea eliminar esta transacción? Esta acción no se puede deshacer.",
-        "deleteDefinitely": "Eliminar Definitivamente",
-        "pixPayment": "Pago con PIX",
+        "description": "Descripción",
+        "status": "Estado",
+        "category": "Categoría",
+        "select": "Seleccionar",
+        "deleteTitle": "Eliminar Transação",
+        "deleteDesc": "¿Está seguro de que desea eliminar este movimiento? Esta acción no se puede deshacer.",
+        "deleteConfirm": "Eliminar Definitivamente",
+        "pixModalTitle": "Pago con PIX",
         "copyPaste": "Copiar y Pegar",
         "done": "Listo",
         "pixBilling": "Cobro PIX",
         "markAsPaid": "Marcar como Pagado",
         "noCategory": "Sin Categoría",
-        "cancelled": "Cancelado"
+        "cancelled": "Cancelado",
+        "insights": "Aruna Insights",
+        "syncAsaas": "Sincronizar Asaas",
+        "emptyState": "Ninguna cuenta a {{type}} registrada.",
+        "emptyStateSearch": "Ninguna cuenta encontrada.",
+        "emptyStateHint": "Use el botón \"Nueva Transacción\" para agregar.",
+        "analyzeInadimplencia": "Aruna está analizando su morosidad...",
+        "allInDay": "¡Todo al día! Aruna não detectó morosidad.",
+        "saving": "Guardando...",
+        "categories": {
+            "fees": "Honorarios",
+            "costs": "Costos Procesales",
+            "rent": "Alquiler",
+            "salaries": "Salarios",
+            "utilities": "Energía / Internet",
+            "marketing": "Marketing",
+            "taxes": "Impuestos",
+            "others": "Otros"
+        },
+        "statusOptions": {
+            "pending": "Pendiente",
+            "paid": "Pagado",
+            "overdue": "Atrasado",
+            "cancelled": "Cancelado"
+        }
     },
     "chat": {
         "title": "Chat Interno",
@@ -448,9 +477,18 @@
         "manageLinks": "Gestionar enlaces",
         "addQuickLink": "Agregar Enlace Rápido",
         "resetDefault": "Restaurar predeterminado",
-        "search": "Buscar...",
+        "search": "Buscar atajo o categoría...",
         "pin": "Fijar",
-        "unpin": "Desfijar"
+        "unpin": "Desfijar",
+        "hubSubtitle": "Hub de Accesos Rápidos",
+        "noLinks": "No se encontraron atajos",
+        "categories": {
+            "communication": "Comunicación",
+            "courts": "Tribunales",
+            "legal": "Jurídico",
+            "government": "Gobierno",
+            "custom": "Personalizado"
+        }
     },
     "agenda": {
         "title": "Agenda y Plazos",

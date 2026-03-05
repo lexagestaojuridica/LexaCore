@@ -27,16 +27,16 @@ export function CalendarsIntegrationDialog({
                     <p className="text-sm text-muted-foreground mb-2">Conecte sua agenda com outros serviços ou exporte seus eventos.</p>
 
                     {/* Google Calendar */}
-                    <div className="rounded-lg border border-border p-4 bg-card shadow-sm">
-                        <div className="flex items-center gap-3 mb-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10">
-                                <CalendarDays className="h-5 w-5 text-blue-500" />
-                            </div>
-                            <div className="flex-1">
+                    <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/30 transition-colors group">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-500/5 text-blue-500 group-hover:bg-blue-500/10 transition-colors">
+                            <CalendarDays className="h-4.5 w-4.5" />
+                        </div>
+                        <div className="flex-1">
+                            <div className="flex items-center gap-2">
                                 <p className="text-sm font-medium">Google Calendar</p>
-                                <p className="text-xs text-muted-foreground">{gcal.isConnected ? "Conectado" : "Sincronize via OAuth"}</p>
+                                {gcal.isConnected && <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />}
                             </div>
-                            {gcal.isConnected && <Badge variant="outline" className="text-[10px] text-emerald-600 border-emerald-300 bg-emerald-500/10">Ativo</Badge>}
+                            <p className="text-[11px] text-muted-foreground">{gcal.isConnected ? "Sincronizado" : "OAuth 2.0"}</p>
                         </div>
                         {gcal.isConnected ? (
                             <div className="space-y-2">
@@ -63,16 +63,16 @@ export function CalendarsIntegrationDialog({
                     </div>
 
                     {/* Microsoft Calendar */}
-                    <div className="rounded-lg border border-border p-4 bg-card shadow-sm">
-                        <div className="flex items-center gap-3 mb-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/10">
-                                <CalendarDays className="h-5 w-5 text-indigo-500" />
+                    <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/30 transition-colors group">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-500/5 text-indigo-500 group-hover:bg-indigo-500/10 transition-colors">
+                            <CalendarDays className="h-4.5 w-4.5" />
+                        </div>
+                        <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                                <p className="text-sm font-medium">Microsoft 365</p>
+                                {mscal.isConnected && <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />}
                             </div>
-                            <div className="flex-1">
-                                <p className="text-sm font-medium">Microsoft Calendar</p>
-                                <p className="text-xs text-muted-foreground">{mscal.isConnected ? "Conectado" : "Microsoft 365 / Outlook"}</p>
-                            </div>
-                            {mscal.isConnected && <Badge variant="outline" className="text-[10px] text-emerald-600 border-emerald-300 bg-emerald-500/10">Ativo</Badge>}
+                            <p className="text-[11px] text-muted-foreground">{mscal.isConnected ? "Sincronizado" : "Outlook / Exchange"}</p>
                         </div>
                         {mscal.isConnected ? (
                             <div className="space-y-2">
@@ -99,16 +99,16 @@ export function CalendarsIntegrationDialog({
                     </div>
 
                     {/* Apple Calendar */}
-                    <div className="rounded-lg border border-border p-4 bg-card shadow-sm mb-4">
-                        <div className="flex items-center gap-3 mb-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-neutral-200 dark:bg-neutral-800">
-                                <CalendarDays className="h-5 w-5 text-neutral-800 dark:text-neutral-200" />
-                            </div>
-                            <div className="flex-1">
+                    <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/30 transition-colors group">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-neutral-200 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200">
+                            <CalendarDays className="h-4.5 w-4.5" />
+                        </div>
+                        <div className="flex-1">
+                            <div className="flex items-center gap-2">
                                 <p className="text-sm font-medium">Apple Calendar</p>
-                                <p className="text-xs text-muted-foreground">{appleCal.isConnected ? "Conectado" : "Sincronize via CalDAV"}</p>
+                                {appleCal.isConnected && <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />}
                             </div>
-                            {appleCal.isConnected && <Badge variant="outline" className="text-[10px] text-emerald-600 border-emerald-300 bg-emerald-500/10">Ativo</Badge>}
+                            <p className="text-[11px] text-muted-foreground">{appleCal.isConnected ? "Sincronizado" : "CalDAV"}</p>
                         </div>
                         {appleCal.isConnected ? (
                             <div className="space-y-2">

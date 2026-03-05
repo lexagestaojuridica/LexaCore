@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { useTranslation } from "react-i18next";
 import {
     ChevronDown, ChevronUp, Plus, X, ExternalLink, Pencil, RotateCcw, Search, Star, StarOff, HelpCircle
 } from "lucide-react";
@@ -64,6 +65,7 @@ function saveLinks(links: FacilitadorLink[]) {
 // ─── Component ────────────────────────────────────────────────
 
 export default function FacilitadorBar() {
+    const { t } = useTranslation();
     const [links, setLinks] = useState<FacilitadorLink[]>(loadLinks);
     const [isOpen, setIsOpen] = useState(false);
     const [editOpen, setEditOpen] = useState(false);
@@ -176,106 +178,135 @@ export default function FacilitadorBar() {
                         variant="ghost"
                         size="icon"
                         onClick={() => setIsOpen(true)}
-                        className="h-9 w-9 text-muted-foreground hover:text-foreground hover:bg-muted/80"
+                        className="h-9 w-9 text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all duration-300 relative group"
                     >
-                        <HelpCircle className="h-4 w-4" />
+                        <HelpCircle className="h-4 w-4 transition-transform group-hover:scale-110" />
+                        <span className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-primary opacity-0 group-hover:opacity-100 transition-opacity" />
                     </Button>
                 </TooltipTrigger>
-                <TooltipContent side="bottom" className="font-semibold">
-                    Facilitador <kbd className="ml-1 rounded border bg-muted px-1 py-0.5 text-[10px] text-muted-foreground">Ctrl + /</kbd>
+                <TooltipContent side="bottom" className="font-semibold bg-popover/90 backdrop-blur-md border-border/50">
+                    {t('facilitador.title')} <kbd className="ml-1 rounded border border-border/50 bg-muted/50 px-1 py-0.5 text-[10px] text-muted-foreground">Ctrl + /</kbd>
                 </TooltipContent>
             </Tooltip>
 
             {/* ── Side Menu (Sheet) ── */}
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
-                <SheetContent side="right" className="w-[300px] sm:w-[400px] flex flex-col p-0 border-l border-border/50 bg-background/95 backdrop-blur-xl">
-                    <SheetHeader className="p-6 pb-4 border-b border-border/50">
+                <SheetContent side="right" className="w-full sm:max-w-[440px] flex flex-col p-0 border-l border-border/20 bg-background/80 backdrop-blur-2xl shadow-2xl">
+                    <SheetHeader className="p-8 pb-6 bg-gradient-to-b from-background to-transparent shrink-0">
                         <div className="flex items-center justify-between">
-                            <SheetTitle className="flex items-center gap-2 text-xl font-bold">
-                                <span className="bg-primary/10 text-primary p-1.5 rounded-md">
-                                    <HelpCircle className="h-5 w-5" />
-                                </span>
-                                Facilitador
-                            </SheetTitle>
-                        </div>
-                        <div className="relative mt-4">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
-                            <Input
-                                ref={searchInputRef}
-                                type="text"
-                                placeholder="Buscar atalho..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="pl-9 h-10 bg-muted/40 border-border/50 focus-visible:ring-primary/30"
-                            />
+                            <div className="space-y-1">
+                                <SheetTitle className="flex items-center gap-3 text-2xl font-bold tracking-tight">
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-inner">
+                                        <HelpCircle className="h-6 w-6" />
+                                    </div>
+                                    {t('facilitador.title')}
+                                </SheetTitle>
+                                <p className="text-[11px] font-medium text-muted-foreground/60 uppercase tracking-widest pl-[52px]">{t('facilitador.hubSubtitle')}</p>
+                            </div>
                         </div>
                     </SheetHeader>
 
-                    <ScrollArea className="flex-1 px-6">
-                        {displayLinks.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center h-40 text-muted-foreground/50">
-                                <Search className="h-8 w-8 mb-2 opacity-20" />
-                                <p className="text-sm">Nenhum atalho encontrado</p>
+                    <div className="px-8 pb-4">
+                        <div className="relative group">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/40 group-focus-within:text-primary transition-colors" />
+                            <Input
+                                ref={searchInputRef}
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder={t('facilitador.search')}
+                                className="pl-10 h-11 bg-muted/30 border-border/40 focus:border-primary/40 focus:ring-primary/10 transition-all rounded-xl placeholder:text-muted-foreground/40"
+                            />
+                        </div>
+                    </div>
+
+                    <ScrollArea className="flex-1 px-8">
+                        {sortedLinks.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-20 text-muted-foreground/30">
+                                <Search className="h-12 w-12 mb-4 opacity-10" />
+                                <p className="text-sm font-medium">{t('facilitador.noLinks')}</p>
                             </div>
                         ) : (
-                            <div className="py-4 space-y-6">
-                                {categories.map((cat) => {
+                            <div className="py-4 space-y-8 pb-24">
+                                {categories.map((cat, catIdx) => {
                                     const catLinks = displayLinks.filter((l) => l.category === cat);
                                     return (
-                                        <div key={cat} className="space-y-3">
-                                            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70 flex items-center gap-2">
-                                                {cat}
-                                                <div className="h-px flex-1 bg-border/40" />
-                                            </h3>
-                                            <div className="grid grid-cols-1 gap-1.5">
+                                        <motion.div
+                                            key={cat}
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: catIdx * 0.1 }}
+                                            className="space-y-4"
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/50">
+                                                    {t(`facilitador.categories.${cat.toLowerCase()}`, cat)}
+                                                </h3>
+                                                <div className="h-px flex-1 bg-gradient-to-r from-border/50 to-transparent" />
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-3">
                                                 {catLinks.map((link) => (
-                                                    <a
+                                                    <motion.a
                                                         key={link.id}
                                                         href={link.url}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
+                                                        whileHover={{ y: -2 }}
+                                                        whileTap={{ scale: 0.98 }}
                                                         className={cn(
-                                                            "group flex items-center justify-between rounded-lg px-3 py-2.5 hover:bg-muted/80 transition-all border border-transparent hover:border-border/50",
-                                                            link.pinned && "bg-primary/5 hover:bg-primary/10 border-primary/10"
+                                                            "group relative flex flex-col p-4 rounded-2xl transition-all duration-300 border bg-card/40 hover:bg-card/60",
+                                                            link.pinned
+                                                                ? "border-primary/20 bg-primary/[0.02] shadow-[0_8px_32px_rgba(var(--primary),0.05)]"
+                                                                : "border-border/40 hover:border-primary/20"
                                                         )}
                                                     >
-                                                        <div className="flex items-center gap-3 overflow-hidden">
-                                                            <span className="flex items-center justify-center h-8 w-8 rounded-md bg-background shadow-sm text-base shrink-0 group-hover:scale-110 transition-transform">
+                                                        <div className="flex items-start justify-between mb-3">
+                                                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-background/50 text-xl shadow-sm border border-border/20 group-hover:bg-background transition-colors">
                                                                 {link.emoji}
-                                                            </span>
-                                                            <div className="flex flex-col min-w-0">
-                                                                <span className="text-sm font-medium text-foreground truncate">{link.label}</span>
-                                                                <span className="text-[10px] text-muted-foreground truncate">{link.url.replace(/^https?:\/\//, '')}</span>
+                                                            </div>
+                                                            <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity translate-x-1 group-hover:translate-x-0 transition-transform">
+                                                                {link.pinned && <Star className="h-3 w-3 fill-primary text-primary" />}
+                                                                <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
                                                             </div>
                                                         </div>
-                                                        <div className="flex items-center opacity-40 group-hover:opacity-100 transition-opacity">
-                                                            {link.pinned && <Star className="h-3.5 w-3.5 fill-primary text-primary mr-2" />}
-                                                            <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
+                                                        <div className="space-y-1">
+                                                            <p className="text-xs font-bold text-foreground/90 group-hover:text-primary transition-colors truncate">
+                                                                {link.label}
+                                                            </p>
+                                                            <p className="text-[9px] font-medium text-muted-foreground/50 truncate uppercase tracking-wider">
+                                                                {link.url.replace(/^https?:\/\/(www\.)?/, '').split('/')[0]}
+                                                            </p>
                                                         </div>
-                                                    </a>
+                                                        {link.pinned && (
+                                                            <div className="absolute top-0 right-0 p-1">
+                                                                <div className="h-1 w-1 rounded-full bg-primary" />
+                                                            </div>
+                                                        )}
+                                                    </motion.a>
                                                 ))}
                                             </div>
-                                        </div>
+                                        </motion.div>
                                     );
                                 })}
                             </div>
                         )}
                     </ScrollArea>
 
-                    <div className="p-4 border-t border-border/50 bg-muted/20 flex gap-2">
-                        <Button
-                            variant="outline"
-                            className="flex-1 gap-2 text-xs h-9 bg-background/50 hover:bg-background"
-                            onClick={() => { setEditOpen(true); setIsOpen(false); }}
-                        >
-                            <Pencil className="h-3.5 w-3.5" /> Gerenciar
-                        </Button>
-                        <Button
-                            className="flex-1 gap-2 text-xs h-9"
-                            onClick={() => { setAddOpen(true); setIsOpen(false); }}
-                        >
-                            <Plus className="h-3.5 w-3.5" /> Adicionar
-                        </Button>
+                    <div className="absolute bottom-0 left-0 right-0 p-6 pt-10 bg-gradient-to-t from-background via-background/90 to-transparent border-t border-border/10">
+                        <div className="flex gap-3">
+                            <Button
+                                variant="outline"
+                                className="flex-1 gap-2 text-[10px] font-bold uppercase tracking-wider h-11 bg-background/50 hover:bg-background border-border/40 hover:border-primary/20 rounded-xl transition-all"
+                                onClick={() => { setEditOpen(true); setIsOpen(false); }}
+                            >
+                                <Pencil className="h-3.5 w-3.5" /> {t('facilitador.manageLinks')}
+                            </Button>
+                            <Button
+                                className="flex-1 gap-2 text-[10px] font-bold uppercase tracking-wider h-11 shadow-[0_8px_16px_rgba(var(--primary),0.2)] rounded-xl transition-all"
+                                onClick={() => { setAddOpen(true); setIsOpen(false); }}
+                            >
+                                <Plus className="h-3.5 w-3.5" /> {t('facilitador.addLink')}
+                            </Button>
+                        </div>
                     </div>
                 </SheetContent>
             </Sheet>

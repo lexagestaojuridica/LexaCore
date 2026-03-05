@@ -34,21 +34,28 @@ import { motion, AnimatePresence } from "framer-motion";
 import { TableSkeleton } from "@/components/shared/SkeletonLoaders";
 import BudgetPerformanceTab from "@/components/financeiro/BudgetPerformanceTab";
 
-const STATUS_OPTIONS = [
-  { value: "pendente", label: "Pendente", color: "text-amber-600 bg-amber-500/10 border-amber-500/20" },
-  { value: "pago", label: "Pago", color: "text-emerald-600 bg-emerald-500/10 border-emerald-500/20" },
-  { value: "atrasado", label: "Atrasado", color: "text-rose-600 bg-rose-500/10 border-rose-500/20" },
-  { value: "cancelado", label: "Cancelado", color: "text-slate-600 bg-slate-500/10 border-border" },
+const STATUS_OPTIONS = (t: any) => [
+  { value: "pendente", label: t('financial.statusOptions.pending'), color: "text-amber-600 bg-amber-500/10 border-amber-500/20" },
+  { value: "pago", label: t('financial.statusOptions.paid'), color: "text-emerald-600 bg-emerald-500/10 border-emerald-500/20" },
+  { value: "atrasado", label: t('financial.statusOptions.overdue'), color: "text-rose-600 bg-rose-500/10 border-rose-500/20" },
+  { value: "cancelado", label: t('financial.statusOptions.cancelled'), color: "text-slate-600 bg-slate-500/10 border-border" },
 ];
 
-const CATEGORIES = ["Honorários", "Custas Processuais", "Aluguel", "Salários", "Energia / Internet", "Marketing", "Impostos", "Outros"];
+const CATEGORIES = (t: any) => [
+  t('financial.categories.fees'),
+  t('financial.categories.costs'),
+  t('financial.categories.rent'),
+  t('financial.categories.salaries'),
+  t('financial.categories.utilities'),
+  t('financial.categories.marketing'),
+  t('financial.categories.taxes'),
+  t('financial.categories.others')
+];
 
-const fmtCurrency = (v: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
-
-const emptyForm = { description: "", amount_display: "", due_date: "", status: "pendente", category: "" };
-
-function getMonthYearLabel(dateStr: string) {
-  return format(parseISO(dateStr), "MMMM yyyy", { locale: ptBR });
+function getMonthYearLabel(dateStr: string, i18n: any) {
+  return format(parseISO(dateStr), "MMMM yyyy", {
+    locale: i18n.language === 'en' ? undefined : (i18n.language === 'es' ? undefined : ptBR)
+  });
 }
 
 export default function FinanceiroPage() {
@@ -108,10 +115,19 @@ export default function FinanceiroPage() {
     setDialogOpen(true);
   };
 
+  const { i18n } = useTranslation();
+
+  const fmtCurrency = (v: number) => {
+    return new Intl.NumberFormat(i18n.language === 'en' ? 'en-US' : (i18n.language === 'es' ? 'es-ES' : 'pt-BR'), {
+      style: "currency",
+      currency: i18n.language === 'en' ? 'USD' : (i18n.language === 'es' ? 'EUR' : 'BRL')
+    }).format(v);
+  };
+
   const handleSubmit = () => {
     const amount = parseCurrencyToNumber(form.amount_display);
     if (!form.description || !amount || !form.due_date) {
-      toast.error("Preencha descrição, valor e data");
+      toast.error(t('financial.formError'));
       return;
     }
     if (!orgId) return;
@@ -145,7 +161,7 @@ export default function FinanceiroPage() {
 
   // Group by month
   const groupedMonths = filtered.reduce((acc, c: any) => {
-    const label = getMonthYearLabel(c.due_date);
+    const label = getMonthYearLabel(c.due_date, i18n);
     if (!acc[label]) acc[label] = [];
     acc[label].push(c);
     return acc;
@@ -164,7 +180,7 @@ export default function FinanceiroPage() {
     );
 
     if (overdue.length === 0) {
-      toast.info("Tudo em dia! Nenhuma inadimplência detectada pelo Aruna.");
+      toast.info(t('financial.allInDay'));
       return;
     }
 
@@ -173,15 +189,15 @@ export default function FinanceiroPage() {
 
     window.dispatchEvent(new CustomEvent("aruna-ask", {
       detail: {
-        query: `Análise Financeira Aruna: Detectamos ${count} pagamentos atrasados somando ${fmtCurrency(totalOverdue)}. O que você sugere para recuperação destes valores e quais templates de cobrança devemos usar?`
+        query: `Financial Analysis: Detected ${count} overdue payments totaling ${fmtCurrency(totalOverdue)}. Suggestions for recovery?`
       }
     }));
-    toast.success("Aruna está analisando sua inadimplência...");
+    toast.success(t('financial.analyzeInadimplencia'));
   };
 
   return (
     <motion.div variants={containerAnim} initial="hidden" animate="show" className="max-w-6xl mx-auto space-y-8 pb-10">
-      <LexaLoadingOverlay visible={isSaving} message="Salvando..." />
+      <LexaLoadingOverlay visible={isSaving} message={t('financial.saving')} />
 
       <PageHeader
         title={t("financial.title")}
@@ -199,7 +215,7 @@ export default function FinanceiroPage() {
                   onClick={analyzeWithAruna}
                 >
                   <Sparkles className="h-3.5 w-3.5" />
-                  Aruna Insights
+                  {t('financial.insights')}
                 </Button>
                 <Button
                   variant="secondary"
@@ -209,7 +225,7 @@ export default function FinanceiroPage() {
                   disabled={reconcileAsaasMutation.isPending}
                 >
                   <RefreshCcw className={cn("h-3.5 w-3.5", reconcileAsaasMutation.isPending && "animate-spin")} />
-                  Sincronizar Asaas
+                  {t('financial.syncAsaas')}
                 </Button>
               </>
             )}
@@ -218,7 +234,7 @@ export default function FinanceiroPage() {
               className="gap-1.5 bg-accent text-accent-foreground hover:bg-accent/90 shadow-lg shadow-accent/20"
               onClick={openCreate}
             >
-              <Plus className="h-3.5 w-3.5" /> Novo Lançamento
+              <Plus className="h-3.5 w-3.5" /> {t('financial.newEntry')}
             </Button>
           </>
         }
@@ -227,14 +243,14 @@ export default function FinanceiroPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard
           icon={ArrowUpRight}
-          label="A Receber (Pendente)"
+          label={t('financial.receivablePending')}
           value={fmtCurrency(totalReceber)}
           color="blue"
           index={0}
         />
         <StatCard
           icon={ArrowDownRight}
-          label="A Pagar (Pendente)"
+          label={t('financial.payablePending')}
           value={fmtCurrency(totalPagar)}
           color="rose"
           index={1}
@@ -262,10 +278,10 @@ export default function FinanceiroPage() {
           <CardContent className="p-5">
             <div className="flex justify-between items-end mb-2">
               <h3 className="text-sm font-semibold flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-primary" /> Fluxo Pendente
+                <TrendingUp className="h-4 w-4 text-primary" /> {t('financial.pendingFlow')}
               </h3>
               <span className="text-xs font-medium text-muted-foreground uppercase tracking-widest">
-                Termômetro Financeiro
+                {t('financial.thermometer')}
               </span>
             </div>
             <div className="h-3 w-full bg-muted rounded-full overflow-hidden flex">
@@ -279,8 +295,8 @@ export default function FinanceiroPage() {
               />
             </div>
             <div className="flex justify-between mt-2 text-xs font-medium">
-              <span className="text-blue-600/80">{healthPercent.toFixed(1)}% Receitas Pendentes</span>
-              <span className="text-rose-600/80">{(100 - healthPercent).toFixed(1)}% Despesas Pendentes</span>
+              <span className="text-blue-600/80">{healthPercent.toFixed(1)}% {t('financial.pendingRevenue')}</span>
+              <span className="text-rose-600/80">{(100 - healthPercent).toFixed(1)}% {t('financial.pendingExpenses')}</span>
             </div>
           </CardContent>
         </Card>
@@ -290,10 +306,10 @@ export default function FinanceiroPage() {
       <motion.div variants={itemAnim}>
         <Tabs value={tab} onValueChange={(t) => setTab(t as any)} className="bg-transparent">
           <TabsList className="grid w-full sm:w-auto sm:inline-grid grid-cols-2 md:grid-cols-4 h-auto p-1 bg-muted/50 rounded-xl mb-4">
-            <TabsTrigger value="receber" className="py-2.5 gap-2 rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm"><ArrowUpRight className="h-4 w-4" /> <span className="hidden sm:inline">A Receber</span></TabsTrigger>
-            <TabsTrigger value="pagar" className="py-2.5 gap-2 rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm"><ArrowDownRight className="h-4 w-4" /> <span className="hidden sm:inline">A Pagar</span></TabsTrigger>
-            <TabsTrigger value="dasdarf" className="py-2.5 gap-2 rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm"><Bell className="h-4 w-4" /> <span className="hidden sm:inline">DAS / DARF</span></TabsTrigger>
-            <TabsTrigger value="orcamento" className="py-2.5 gap-2 rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm"><BarChart2 className="h-4 w-4" /> <span className="hidden sm:inline">Orçamento</span></TabsTrigger>
+            <TabsTrigger value="receber" className="py-2.5 gap-2 rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm"><ArrowUpRight className="h-4 w-4" /> <span className="hidden sm:inline">{t('financial.receivable')}</span></TabsTrigger>
+            <TabsTrigger value="pagar" className="py-2.5 gap-2 rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm"><ArrowDownRight className="h-4 w-4" /> <span className="hidden sm:inline">{t('financial.payable')}</span></TabsTrigger>
+            <TabsTrigger value="dasdarf" className="py-2.5 gap-2 rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm"><Bell className="h-4 w-4" /> <span className="hidden sm:inline">{t('financial.dasDarf')}</span></TabsTrigger>
+            <TabsTrigger value="orcamento" className="py-2.5 gap-2 rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm"><BarChart2 className="h-4 w-4" /> <span className="hidden sm:inline">{t('financial.budget')}</span></TabsTrigger>
           </TabsList>
 
           <TabsContent value={tab} className="mt-0 space-y-4 focus-visible:outline-none focus:outline-none focus-visible:ring-0 focus:ring-0">
@@ -302,15 +318,15 @@ export default function FinanceiroPage() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-muted/40 p-2 pl-4 border border-border/50 rounded-xl">
                   <div className="relative flex-1 max-w-sm">
                     <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input placeholder="Buscar transação..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-9 bg-card border-none text-sm" />
+                    <Input placeholder={t('financial.searchPlaceholder')} value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-9 bg-card border-none text-sm" />
                   </div>
                   <div className="flex items-center gap-2">
                     <Filter className="h-4 w-4 text-muted-foreground mr-1" />
                     <Select value={statusFilter} onValueChange={setStatusFilter}>
-                      <SelectTrigger className="h-9 w-36 bg-card border-none text-xs"><SelectValue placeholder="Status" /></SelectTrigger>
+                      <SelectTrigger className="h-9 w-36 bg-card border-none text-xs"><SelectValue placeholder={t('common.status')} /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">Todos os status</SelectItem>
-                        {STATUS_OPTIONS.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+                        <SelectItem value="all">{t('financial.allStatus')}</SelectItem>
+                        {STATUS_OPTIONS(t).map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
@@ -322,9 +338,9 @@ export default function FinanceiroPage() {
                   <div className="flex flex-col items-center py-16 text-center border border-dashed border-border/60 rounded-2xl bg-muted/10">
                     <DollarSign className="mb-4 h-12 w-12 text-muted-foreground/30" />
                     <p className="text-base font-medium text-foreground">
-                      {contas.length === 0 ? `Nenhuma conta a ${tab === "receber" ? "receber" : "pagar"} cadastrada.` : "Nenhuma conta encontrada."}
+                      {contas.length === 0 ? t('financial.emptyState', { type: tab === "receber" ? t('financial.receivable') : t('financial.payable') }) : t('financial.emptyStateSearch')}
                     </p>
-                    <p className="text-sm text-muted-foreground mt-1 max-w-sm">Use o botão "Nova Transação" para adicionar.</p>
+                    <p className="text-sm text-muted-foreground mt-1 max-w-sm">{t('financial.emptyStateHint')}</p>
                   </div>
                 ) : (
                   <div className="space-y-6">
@@ -338,10 +354,10 @@ export default function FinanceiroPage() {
                           <div className="divide-y divide-border/40">
                             <AnimatePresence>
                               {items.map((c: any) => {
-                                let statusObj = STATUS_OPTIONS.find((s) => s.value === c.status) || STATUS_OPTIONS[0];
+                                let statusObj = STATUS_OPTIONS(t).find((s) => s.value === c.status) || STATUS_OPTIONS(t)[0];
                                 const dueDate = parseISO(c.due_date);
                                 const isLate = isPast(dueDate) && !isToday(dueDate) && c.status === "pendente";
-                                if (isLate) statusObj = STATUS_OPTIONS.find((s) => s.value === "atrasado") || statusObj;
+                                if (isLate) statusObj = STATUS_OPTIONS(t).find((s) => s.value === "atrasado") || statusObj;
 
                                 const amountNum = Number(c.amount);
 
@@ -364,7 +380,7 @@ export default function FinanceiroPage() {
                                       </div>
                                       <div className="min-w-0">
                                         <p className="text-sm font-semibold text-foreground truncate">{c.description}</p>
-                                        <p className="text-xs font-medium text-muted-foreground mt-1 uppercase tracking-wider">{c.category || "Sem Categoria"}</p>
+                                        <p className="text-xs font-medium text-muted-foreground mt-1 uppercase tracking-wider">{c.category ? t(`financial.categories.${c.category.toLowerCase().replace(/ \/ /g, '_')}`) : t('financial.noCategory')}</p>
                                       </div>
                                     </div>
 
@@ -447,7 +463,7 @@ export default function FinanceiroPage() {
                           </div>
                           {/* Month Summary Footer */}
                           <div className="bg-muted/30 p-3 px-4 flex justify-between items-center text-xs">
-                            <span className="text-muted-foreground font-medium uppercase tracking-wider text-[10px]">Total do mês</span>
+                            <span className="text-muted-foreground font-medium uppercase tracking-wider text-[10px]">{t('financial.monthTotal')}</span>
                             <span className={cn("font-bold text-sm", tab === "receber" ? "text-blue-600" : "text-rose-600")}>
                               {fmtCurrency(items.reduce((s, c) => s + Number(c.amount), 0))}
                             </span>
@@ -477,39 +493,39 @@ export default function FinanceiroPage() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>
-              {editingId ? "Editar Transação" : `Nova Conta a ${tab === "receber" ? "Receber" : "Pagar"}`}
+              {editingId ? t('financial.editTransaction') : (tab === "receber" ? t('financial.newEntryReceivable') : t('financial.newEntryPayable'))}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
-            <FormField label="Descrição" value={form.description} onChange={(v) => setForm({ ...form, description: v })} placeholder="Ex: Honorários advocatícios" required />
+            <FormField label={t('financial.description')} value={form.description} onChange={(v) => setForm({ ...form, description: v })} placeholder="Ex: Honorários advocatícios" required />
             <div className="grid grid-cols-2 gap-3">
-              <FormField label="Valor (R$)" value={form.amount_display} onChange={(v) => setForm({ ...form, amount_display: formatCurrencyInput(v) })} placeholder="0,00" required />
-              <FormField label="Vencimento" value={form.due_date} onChange={(v) => setForm({ ...form, due_date: v })} type="date" required />
+              <FormField label={t('financial.amount')} value={form.amount_display} onChange={(v) => setForm({ ...form, amount_display: formatCurrencyInput(v) })} placeholder="0,00" required />
+              <FormField label={t('financial.dueDate')} value={form.due_date} onChange={(v) => setForm({ ...form, due_date: v })} type="date" required />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Categoria</label>
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t('financial.category')}</label>
                 <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
-                  <SelectTrigger className="h-10 border-border/50 bg-background/50"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectTrigger className="h-10 border-border/50 bg-background/50"><SelectValue placeholder={t('financial.select')} /></SelectTrigger>
                   <SelectContent>
-                    {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    {CATEGORIES(t).map((c, idx) => <SelectItem key={idx} value={c}>{c}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Status</label>
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t('financial.status')}</label>
                 <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
                   <SelectTrigger className="h-10 border-border/50 bg-background/50"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {STATUS_OPTIONS.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+                    {STATUS_OPTIONS(t).map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={closeDialog} className="w-full sm:w-auto">Cancelar</Button>
-            <Button onClick={handleSubmit} disabled={isSaving} className="w-full sm:w-auto">{editingId ? "Salvar" : "Registrar"}</Button>
+            <Button variant="outline" onClick={closeDialog} className="w-full sm:w-auto">{t('common.cancel')}</Button>
+            <Button onClick={handleSubmit} disabled={isSaving} className="w-full sm:w-auto">{editingId ? t('common.save') : t('financial.register')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -518,12 +534,12 @@ export default function FinanceiroPage() {
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
-            <DialogTitle>Excluir Transação</DialogTitle>
+            <DialogTitle>{t('financial.deleteTitle')}</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-muted-foreground">Tem certeza que deseja excluir esta movimentação? Esta ação não pode ser desfeita.</p>
+          <p className="text-sm text-muted-foreground">{t('financial.deleteDesc')}</p>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Cancelar</Button>
-            <Button variant="destructive" disabled={deleteMutation.isPending} onClick={() => editingId && deleteMutation.mutate(editingId)}>Excluir Definitivamente</Button>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>{t('common.cancel')}</Button>
+            <Button variant="destructive" disabled={deleteMutation.isPending} onClick={() => editingId && deleteMutation.mutate(editingId)}>{t('financial.deleteConfirm')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -533,7 +549,7 @@ export default function FinanceiroPage() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center justify-center gap-2 text-xl">
-              <QrCode className="w-5 h-5 text-primary" /> Pagamento com PIX
+              <QrCode className="w-5 h-5 text-primary" /> {t('financial.pixModalTitle')}
             </DialogTitle>
           </DialogHeader>
           <div className="flex flex-col items-center py-6 space-y-4">
@@ -542,11 +558,11 @@ export default function FinanceiroPage() {
               <QrCode className="w-32 h-32 text-slate-800" />
             </div>
             <p className="font-bold text-lg text-primary">{fmtCurrency(Number(selectedPix?.amount || 0))}</p>
-            <p className="text-sm text-muted-foreground text-center">Fatura: {selectedPix?.description}</p>
+            <p className="text-sm text-muted-foreground text-center">{selectedPix?.description}</p>
 
             <div className="w-full mt-4">
               <p className="text-xs font-semibold uppercase text-muted-foreground mb-1.5 flex justify-between">
-                Copia e Cola
+                {t('financial.copyPaste')}
               </p>
               <div className="flex gap-2 relative">
                 <Input readOnly value={selectedPix?.pix_code || ""} className="pr-12 bg-muted/30 font-mono text-[10px]" />
@@ -555,7 +571,7 @@ export default function FinanceiroPage() {
                   className="absolute right-0 top-0 bottom-0 rounded-l-none"
                   onClick={() => {
                     navigator.clipboard.writeText(selectedPix?.pix_code);
-                    toast.success("Código PIX copiado!");
+                    toast.success("OK!");
                   }}
                 >
                   <Copy className="h-4 w-4" />
@@ -564,7 +580,7 @@ export default function FinanceiroPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setPixModalOpen(false)} className="w-full">Concluído</Button>
+            <Button variant="outline" onClick={() => setPixModalOpen(false)} className="w-full">{t('financial.done')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -33,7 +33,7 @@ const navGroups = [
     defaultOpen: true,
     items: [
       { titleKey: "nav.dashboard", url: "/dashboard", icon: LayoutDashboard },
-      { titleKey: "Lawletter", url: "/dashboard/noticias", icon: Newspaper }, // Renamed from Notícias Jurídicas, now at root
+      { titleKey: "nav.news", url: "/dashboard/noticias", icon: Newspaper },
     ],
   },
   {
@@ -66,15 +66,15 @@ const navGroups = [
     ],
   },
   {
-    labelKey: "Gerencial",
+    labelKey: "groups.management",
     defaultOpen: false,
     items: [
       { titleKey: "nav.financial", url: "/dashboard/financeiro", icon: DollarSign, allowedRoles: ["admin", "advogado", "financeiro"] },
       { titleKey: "nav.units", url: "/dashboard/unidades", icon: Building2, allowedRoles: ["admin"] },
-      { titleKey: "Dashboard RH", url: "/dashboard/rh", icon: BarChart3, allowedRoles: ["admin", "advogado"] },
-      { titleKey: "Colaboradores", url: "/dashboard/rh/colaboradores", icon: Users, allowedRoles: ["admin", "advogado"] },
-      { titleKey: "Ponto Eletrônico", url: "/dashboard/rh/ponto", icon: Clock, allowedRoles: ["admin", "advogado"] },
-      { titleKey: "Recrutamento", url: "/dashboard/rh/recrutamento", icon: Briefcase, allowedRoles: ["admin", "advogado"] },
+      { titleKey: "nav.rhDashboard", url: "/dashboard/rh", icon: BarChart3, allowedRoles: ["admin", "advogado"] },
+      { titleKey: "nav.employees", url: "/dashboard/rh/colaboradores", icon: Users, allowedRoles: ["admin", "advogado"] },
+      { titleKey: "nav.timeclock", url: "/dashboard/rh/ponto", icon: Clock, allowedRoles: ["admin", "advogado"] },
+      { titleKey: "nav.recruitment", url: "/dashboard/rh/recrutamento", icon: Briefcase, allowedRoles: ["admin", "advogado"] },
     ],
   },
 ];

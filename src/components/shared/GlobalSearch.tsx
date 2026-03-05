@@ -23,6 +23,18 @@ export function GlobalSearch() {
     const { t } = useTranslation();
     const { user } = useAuth();
     const [orgId, setOrgId] = useState<string | null>(null);
+    const [facilitadorLinks, setFacilitadorLinks] = useState<any[]>([]);
+
+    useEffect(() => {
+        const stored = localStorage.getItem("lexa_facilitador_links");
+        if (stored) {
+            try {
+                setFacilitadorLinks(JSON.parse(stored));
+            } catch (e) {
+                console.error("Failed to parse facilitador links", e);
+            }
+        }
+    }, [open]);
 
     useEffect(() => {
         if (!user) return;
@@ -133,6 +145,24 @@ export function GlobalSearch() {
                                 <span className="ml-2 text-xs text-muted-foreground">{l.contact_name}</span>
                             </CommandItem>
                         ))}
+                    </CommandGroup>
+                )}
+
+                <CommandSeparator />
+
+                {facilitadorLinks.length > 0 && (
+                    <CommandGroup heading="Atalhos / Facilitador">
+                        {facilitadorLinks
+                            .filter(l => !searchTerm || l.label.toLowerCase().includes(searchTerm.toLowerCase()))
+                            .slice(0, 5)
+                            .map((link) => (
+                                <CommandItem key={link.id} value={`link-${link.label}`} onSelect={() => { window.open(link.url, "_blank"); setOpen(false); }}>
+                                    <span className="mr-2 h-4 w-4 flex items-center justify-center text-sm">{link.emoji}</span>
+                                    <span>{link.label}</span>
+                                    <span className="ml-2 text-[10px] text-muted-foreground truncate opacity-50">{link.url.replace(/^https?:\/\//, '')}</span>
+                                </CommandItem>
+                            ))
+                        }
                     </CommandGroup>
                 )}
 
