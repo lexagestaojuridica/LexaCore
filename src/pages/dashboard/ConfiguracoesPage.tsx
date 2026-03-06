@@ -27,7 +27,7 @@ import { useSearchParams } from "react-router-dom";
 // FSD Imports
 import { useConfiguracoes } from "@/features/configuracoes/hooks/useConfiguracoes";
 import { EmployeeDialog } from "@/features/configuracoes/components/EmployeeDialog";
-import type { Employee } from "@/features/configuracoes/types";
+import type { Employee, TeamMember, CustomRole } from "@/features/configuracoes/types";
 
 // ─── ConfiguracoesPage ────────────────────────────────────────
 export default function ConfiguracoesPage() {
@@ -210,7 +210,7 @@ export default function ConfiguracoesPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {teamMembers.map((member: any) => (
+                  {(teamMembers as TeamMember[]).map((member) => (
                     <div key={member.id} className="flex items-center justify-between rounded-lg border border-border p-3">
                       <div className="flex items-center gap-3">
                         {member.avatar_url ? (
@@ -233,7 +233,7 @@ export default function ConfiguracoesPage() {
                           <SelectTrigger className="w-[180px] h-8 text-xs bg-background"><SelectValue placeholder={t("settings.accessLevel")} /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="default" disabled className="text-xs">{roleLabels[member.user_roles?.[0]?.role || "advogado"] || "Membro"}</SelectItem>
-                            {customRoles.map((r: any) => (<SelectItem key={r.id} value={r.id} className="text-xs">{r.name}</SelectItem>))}
+                            {(customRoles as CustomRole[]).map((r) => (<SelectItem key={r.id} value={r.id} className="text-xs">{r.name}</SelectItem>))}
                           </SelectContent>
                         </Select>
                         <Badge variant="outline" className="text-[10px] hidden sm:inline-flex">

@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { useBilling } from "@/hooks/useBilling";
-import type { Plan, Employee, OrgFormState, EmployeeFormState } from "../types";
+import type { Plan, Employee, OrgFormState, EmployeeFormState, CustomRole, GatewaySettings, CustomOption, TeamMember } from "../types";
 import { emptyEmployee, emptyOrgForm, FALLBACK_PLANS } from "../types";
 
 export function useConfiguracoes() {
@@ -46,7 +46,7 @@ export function useConfiguracoes() {
         queryKey: ["team-members", orgId],
         queryFn: async () => {
             const { data } = await supabase.from("profiles").select("*, user_roles(role), custom_roles(name)").eq("organization_id", orgId!);
-            return data ?? [];
+            return (data ?? []) as unknown as TeamMember[];
         },
         enabled: !!orgId,
     });
@@ -54,8 +54,8 @@ export function useConfiguracoes() {
     const { data: customRoles = [] } = useQuery({
         queryKey: ["custom-roles", orgId],
         queryFn: async () => {
-            const { data } = await (supabase.from("custom_roles") as any).select("*").eq("organization_id", orgId!);
-            return data ?? [];
+            const { data } = await supabase.from("custom_roles").select("*").eq("organization_id", orgId!);
+            return (data ?? []) as CustomRole[];
         },
         enabled: !!orgId,
     });
@@ -63,7 +63,7 @@ export function useConfiguracoes() {
     const { data: dbPlans = [] } = useQuery({
         queryKey: ["subscription-plans"],
         queryFn: async () => {
-            const { data } = await supabase.from("subscription_plans" as any).select("*").eq("is_active", true).order("sort_order");
+            const { data } = await supabase.from("subscription_plans").select("*").eq("is_active", true).order("sort_order");
             return (data ?? []) as unknown as Plan[];
         },
     });
@@ -92,8 +92,8 @@ export function useConfiguracoes() {
     const { data: customOptions = [] } = useQuery({
         queryKey: ["custom-options", orgId],
         queryFn: async () => {
-            const { data } = await (supabase.from("custom_options" as any)).select("*").eq("organization_id", orgId!);
-            return data ?? [];
+            const { data } = await supabase.from("custom_options").select("*").eq("organization_id", orgId!);
+            return (data ?? []) as CustomOption[];
         },
         enabled: !!orgId,
     });
@@ -102,7 +102,7 @@ export function useConfiguracoes() {
         queryKey: ["gateway-settings", orgId],
         queryFn: async () => {
             const { data } = await supabase.from("gateway_settings").select("*").eq("organization_id", orgId!).eq("gateway_name", "asaas").maybeSingle();
-            return data;
+            return data as GatewaySettings | null;
         },
         enabled: !!orgId,
     });
@@ -117,15 +117,16 @@ export function useConfiguracoes() {
     useEffect(() => {
         if (profile && org && !formInitialized) {
             setProfileForm({ full_name: profile.full_name || "", phone: profile.phone || "" });
+            const o = org as any;
             setOrgForm({
-                whatsapp_instance_id: (org as any).whatsapp_instance_id || "",
-                whatsapp_token: (org as any).whatsapp_token || "",
-                whatsapp_enabled: (org as any).whatsapp_enabled || false,
+                whatsapp_instance_id: o.whatsapp_instance_id || "",
+                whatsapp_token: o.whatsapp_token || "",
+                whatsapp_enabled: o.whatsapp_enabled || false,
                 asaas_api_key: "",
                 asaas_environment: "sandbox",
                 asaas_enabled: false,
-                jusbrasil_token: (org as any).jusbrasil_token || "",
-                escavador_token: (org as any).escavador_token || "",
+                jusbrasil_token: o.jusbrasil_token || "",
+                escavador_token: o.escavador_token || "",
             });
             setFormInitialized(true);
         }
@@ -156,7 +157,7 @@ export function useConfiguracoes() {
 
     const updateOrgMutation = useMutation({
         mutationFn: async (payload: { whatsapp_instance_id: string; whatsapp_token: string; whatsapp_enabled: boolean; jusbrasil_token?: string; escavador_token?: string }) => {
-            const { error } = await (supabase.from("organizations") as any).update(payload).eq("id", orgId!);
+            const { error } = await supabase.from("organizations").update(payload as any).eq("id", orgId!);
             if (error) throw error;
         },
         onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["org"] }); toast.success("Configurações salvas"); },
@@ -179,7 +180,7 @@ export function useConfiguracoes() {
 
     const updateMemberRoleMutation = useMutation({
         mutationFn: async ({ userId, custom_role_id }: { userId: string; custom_role_id: string }) => {
-            const { error } = await (supabase.from("profiles") as any).update({ custom_role_id }).eq("user_id", userId);
+            const { error } = await supabase.from("profiles").update({ custom_role_id } as any).eq("user_id", userId);
             if (error) throw error;
         },
         onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["team-members"] }); toast.success("Nível de acesso atualizado"); },
@@ -214,7 +215,7 @@ export function useConfiguracoes() {
 
     const createOptionMutation = useMutation({
         mutationFn: async (payload: Record<string, unknown>) => {
-            const { error } = await supabase.from("custom_options" as any).insert(payload);
+            const { error } = await supabase.from("custom_options").insert(payload as any);
             if (error) throw error;
         },
         onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["custom-options"] }); toast.success("Opção criada!"); },
@@ -223,7 +224,7 @@ export function useConfiguracoes() {
 
     const deleteOptionMutation = useMutation({
         mutationFn: async (id: string) => {
-            const { error } = await supabase.from("custom_options" as any).delete().eq("id", id).eq("organization_id", orgId!);
+            const { error } = await supabase.from("custom_options").delete().eq("id", id).eq("organization_id", orgId!);
             if (error) throw error;
         },
         onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["custom-options"] }); toast.success("Opção removida"); },

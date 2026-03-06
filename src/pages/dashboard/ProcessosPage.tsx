@@ -18,7 +18,7 @@ import { ProcessCalculator } from "@/features/processos/components/ProcessCalcul
 import { ProcessoDialog } from "@/features/processos/components/ProcessoDialog";
 import { ProcessoViewSheet } from "@/features/processos/components/ProcessoViewSheet";
 import type { Processo, Documento } from "@/features/processos/types";
-import { STATUS_OPTIONS } from "@/features/processos/constants";
+import { STATUS_OPTIONS, INSTANCIAS, FASES_PROCESSUAIS, UFS } from "@/features/processos/constants";
 import type { TablesInsert } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -68,21 +68,6 @@ const emptyForm: Record<string, any> = {
   instancia: null, fase_processual: null, comarca: null, uf: null,
   data_distribuicao: null, auto_capture_enabled: false,
 };
-
-const INSTANCIAS = [
-  "1ª Instância", "2ª Instância", "Tribunal Superior", "STJ", "STF",
-];
-
-const FASES_PROCESSUAIS = [
-  "Conhecimento", "Instrução", "Sentença", "Recursal",
-  "Execução", "Cumprimento de Sentença", "Encerrado",
-];
-
-const UFS = [
-  "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS",
-  "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC",
-  "SP", "SE", "TO",
-];
 
 // ─── SortableHeader ──────────────────────────────────────────
 

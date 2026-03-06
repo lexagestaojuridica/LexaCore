@@ -59,26 +59,26 @@ export interface CrmActivity {
 }
 
 // ── DB row mappers ─────────────────────────────────────
-const mapContact = (r: any): CrmContact => ({
+const mapContact = (r: Record<string, any>): CrmContact => ({
     id: r.id, name: r.name, email: r.email || "", phone: r.phone || "",
     type: r.type || "pessoa_fisica", company: r.company || "", city: r.city || "",
     state: r.state || "", tags: r.tags || [], score: r.score || 1,
     notes: r.notes || "", createdAt: r.created_at?.split("T")[0] || "", source: r.source || "manual",
 });
 
-const mapLead = (r: any): CrmLead => ({
+const mapLead = (r: Record<string, any>): CrmLead => ({
     id: r.id, name: r.name, contactId: r.contact_id || "", contactName: r.contact_name || "",
     value: Number(r.value) || 0, priority: r.priority || "media", date: r.date || "",
     notes: r.notes || "", stageId: r.stage_id || "novo_lead",
 });
 
-const mapDeal = (r: any): CrmDeal => ({
+const mapDeal = (r: Record<string, any>): CrmDeal => ({
     id: r.id, name: r.name, contactId: r.contact_id || "", contactName: r.contact_name || "",
     value: Number(r.value) || 0, probability: r.probability || 50, stage: r.stage || "Qualificação",
     dueDate: r.due_date || "", notes: r.notes || "", createdAt: r.created_at?.split("T")[0] || "",
 });
 
-const mapActivity = (r: any): CrmActivity => ({
+const mapActivity = (r: Record<string, any>): CrmActivity => ({
     id: r.id, type: r.type || "tarefa", title: r.title, description: r.description || "",
     contactId: r.contact_id || "", contactName: r.contact_name || "",
     date: r.date || "", time: r.time || "09:00", completed: r.completed || false,
@@ -236,7 +236,7 @@ export function CrmProvider({ children }: { children: ReactNode }) {
             if (error) throw error;
         },
         onSuccess: () => invalidate(["crm_contacts"]),
-        onError: (e: any) => toast.error(e.message),
+        onError: (e: Error) => toast.error(e.message),
     });
 
     const addContact = useCallback((data: Omit<CrmContact, "id" | "createdAt">): CrmContact => {
@@ -247,7 +247,7 @@ export function CrmProvider({ children }: { children: ReactNode }) {
 
     const updateContactMut = useMutation({
         mutationFn: async ({ id, ...data }: { id: string } & Partial<CrmContact>) => {
-            const payload: any = {};
+            const payload: Record<string, any> = {};
             if (data.name !== undefined) payload.name = data.name;
             if (data.email !== undefined) payload.email = data.email;
             if (data.phone !== undefined) payload.phone = data.phone;
@@ -263,7 +263,7 @@ export function CrmProvider({ children }: { children: ReactNode }) {
             if (error) throw error;
         },
         onSuccess: () => invalidate(["crm_contacts"]),
-        onError: (e: any) => toast.error(e.message),
+        onError: (e: Error) => toast.error(e.message),
     });
     const updateContact = useCallback((id: string, data: Partial<CrmContact>) => updateContactMut.mutate({ id, ...data }), []);
 
@@ -273,7 +273,7 @@ export function CrmProvider({ children }: { children: ReactNode }) {
             if (error) throw error;
         },
         onSuccess: () => invalidate(["crm_contacts"]),
-        onError: (e: any) => toast.error(e.message),
+        onError: (e: Error) => toast.error(e.message),
     });
     const deleteContact = useCallback((id: string) => deleteContactMut.mutate(id), []);
 
@@ -290,13 +290,13 @@ export function CrmProvider({ children }: { children: ReactNode }) {
             if (error) throw error;
         },
         onSuccess: () => invalidate(["crm_leads", "crm_contacts"]),
-        onError: (e: any) => toast.error(e.message),
+        onError: (e: Error) => toast.error(e.message),
     });
     const addLead = useCallback((data: Omit<CrmLead, "id" | "contactId">) => addLeadMut.mutate(data), []);
 
     const updateLeadMut = useMutation({
         mutationFn: async ({ id, ...data }: { id: string } & Partial<CrmLead>) => {
-            const payload: any = {};
+            const payload: Record<string, any> = {};
             if (data.name !== undefined) payload.name = data.name;
             if (data.contactName !== undefined) {
                 payload.contact_name = data.contactName;
@@ -313,7 +313,7 @@ export function CrmProvider({ children }: { children: ReactNode }) {
             if (error) throw error;
         },
         onSuccess: () => invalidate(["crm_leads"]),
-        onError: (e: any) => toast.error(e.message),
+        onError: (e: Error) => toast.error(e.message),
     });
     const updateLead = useCallback((id: string, data: Partial<CrmLead>) => updateLeadMut.mutate({ id, ...data }), []);
 
@@ -323,7 +323,7 @@ export function CrmProvider({ children }: { children: ReactNode }) {
             if (error) throw error;
         },
         onSuccess: () => invalidate(["crm_leads"]),
-        onError: (e: any) => toast.error(e.message),
+        onError: (e: Error) => toast.error(e.message),
     });
     const deleteLead = useCallback((id: string) => deleteLeadMut.mutate(id), []);
 
@@ -340,13 +340,13 @@ export function CrmProvider({ children }: { children: ReactNode }) {
             if (error) throw error;
         },
         onSuccess: () => invalidate(["crm_deals", "crm_contacts"]),
-        onError: (e: any) => toast.error(e.message),
+        onError: (e: Error) => toast.error(e.message),
     });
     const addDeal = useCallback((data: Omit<CrmDeal, "id" | "contactId" | "createdAt">) => addDealMut.mutate(data), []);
 
     const updateDealMut = useMutation({
         mutationFn: async ({ id, ...data }: { id: string } & Partial<CrmDeal>) => {
-            const payload: any = {};
+            const payload: Record<string, any> = {};
             if (data.name !== undefined) payload.name = data.name;
             if (data.contactName !== undefined) {
                 payload.contact_name = data.contactName;
@@ -363,7 +363,7 @@ export function CrmProvider({ children }: { children: ReactNode }) {
             if (error) throw error;
         },
         onSuccess: () => invalidate(["crm_deals"]),
-        onError: (e: any) => toast.error(e.message),
+        onError: (e: Error) => toast.error(e.message),
     });
     const updateDeal = useCallback((id: string, data: Partial<CrmDeal>) => updateDealMut.mutate({ id, ...data }), []);
 
@@ -373,7 +373,7 @@ export function CrmProvider({ children }: { children: ReactNode }) {
             if (error) throw error;
         },
         onSuccess: () => invalidate(["crm_deals"]),
-        onError: (e: any) => toast.error(e.message),
+        onError: (e: Error) => toast.error(e.message),
     });
     const deleteDeal = useCallback((id: string) => deleteDealMut.mutate(id), []);
 
@@ -390,13 +390,13 @@ export function CrmProvider({ children }: { children: ReactNode }) {
             if (error) throw error;
         },
         onSuccess: () => invalidate(["crm_activities", "crm_contacts"]),
-        onError: (e: any) => toast.error(e.message),
+        onError: (e: Error) => toast.error(e.message),
     });
     const addActivity = useCallback((data: Omit<CrmActivity, "id" | "contactId">) => addActivityMut.mutate(data), []);
 
     const updateActivityMut = useMutation({
         mutationFn: async ({ id, ...data }: { id: string } & Partial<CrmActivity>) => {
-            const payload: any = {};
+            const payload: Record<string, any> = {};
             if (data.type !== undefined) payload.type = data.type;
             if (data.title !== undefined) payload.title = data.title;
             if (data.description !== undefined) payload.description = data.description;
@@ -408,7 +408,7 @@ export function CrmProvider({ children }: { children: ReactNode }) {
             if (error) throw error;
         },
         onSuccess: () => invalidate(["crm_activities"]),
-        onError: (e: any) => toast.error(e.message),
+        onError: (e: Error) => toast.error(e.message),
     });
     const updateActivity = useCallback((id: string, data: Partial<CrmActivity>) => updateActivityMut.mutate({ id, ...data }), []);
 
@@ -418,7 +418,7 @@ export function CrmProvider({ children }: { children: ReactNode }) {
             if (error) throw error;
         },
         onSuccess: () => invalidate(["crm_activities"]),
-        onError: (e: any) => toast.error(e.message),
+        onError: (e: Error) => toast.error(e.message),
     });
     const deleteActivity = useCallback((id: string) => deleteActivityMut.mutate(id), []);
 

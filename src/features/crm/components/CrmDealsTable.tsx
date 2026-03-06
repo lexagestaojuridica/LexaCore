@@ -99,7 +99,7 @@ export default function CrmDealsTable() {
             queryClient.invalidateQueries({ queryKey: ["clients"] });
             // Optional: navigate("/dashboard/processos");
         },
-        onError: (err: any) => toast.error(`Erro: ${err.message}`)
+        onError: (err: Error) => toast.error(`Erro: ${err.message}`)
     });
 
     const filtered = deals.filter((d) => {
@@ -126,7 +126,7 @@ export default function CrmDealsTable() {
 
     const handleDelete = () => { if (selectedDeal) { deleteDealCtx(selectedDeal.id); setDeleteDialogOpen(false); setSelectedDeal(null); } };
 
-    const onDragEnd = (result: any) => {
+    const onDragEnd = (result: { destination: { droppableId: string } | null; source: { droppableId: string }; draggableId: string }) => {
         if (!result.destination) return;
         const { source, destination, draggableId } = result;
 

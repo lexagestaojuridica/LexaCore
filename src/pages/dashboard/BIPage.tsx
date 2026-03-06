@@ -104,36 +104,43 @@ const GrowthBadge = ({ current, previous }: { current: number; previous: number 
 
 // ... Timesheet BI Tab ...
 
+interface TimesheetEntryBI {
+  duration_minutes: number;
+  hourly_rate: number;
+  billing_status: string;
+  processos_juridicos: { title: string } | null;
+}
+
 function TimesheetBITab({ orgId }: { orgId: string | null }) {
   const { data: entries = [], isLoading } = useQuery({
     queryKey: ["timesheet-bi", orgId],
-    queryFn: async () => {
+    queryFn: async (): Promise<TimesheetEntryBI[]> => {
       if (!orgId) return [];
       const { data } = await supabase
         .from("timesheet_entries" as any)
         .select("duration_minutes, hourly_rate, billing_status, processos_juridicos(title)")
         .eq("organization_id", orgId);
-      return data || [];
+      return (data as any) || [];
     },
     enabled: !!orgId,
   });
 
-  const totalMin = entries.reduce((s: number, e: any) => s + (e.duration_minutes || 0), 0);
+  const totalMin = entries.reduce((s: number, e) => s + (e.duration_minutes || 0), 0);
   const totalHoras = totalMin / 60;
   const aFaturar = entries
-    .filter((e: any) => e.billing_status === "pendente")
-    .reduce((s: number, e: any) => s + ((e.duration_minutes || 0) / 60) * (e.hourly_rate || 0), 0);
+    .filter((e) => e.billing_status === "pendente")
+    .reduce((s: number, e) => s + ((e.duration_minutes || 0) / 60) * (e.hourly_rate || 0), 0);
   const recebido = entries
-    .filter((e: any) => e.billing_status === "pago")
-    .reduce((s: number, e: any) => s + ((e.duration_minutes || 0) / 60) * (e.hourly_rate || 0), 0);
+    .filter((e) => e.billing_status === "pago")
+    .reduce((s: number, e) => s + ((e.duration_minutes || 0) / 60) * (e.hourly_rate || 0), 0);
   const faturado = entries
-    .filter((e: any) => e.billing_status === "faturado")
-    .reduce((s: number, e: any) => s + ((e.duration_minutes || 0) / 60) * (e.hourly_rate || 0), 0);
+    .filter((e) => e.billing_status === "faturado")
+    .reduce((s: number, e) => s + ((e.duration_minutes || 0) / 60) * (e.hourly_rate || 0), 0);
 
   // Group by process
   const byProcess: Record<string, number> = {};
-  entries.forEach((e: any) => {
-    const title = (e.processos_juridicos as any)?.title || "Sem processo";
+  entries.forEach((e) => {
+    const title = e.processos_juridicos?.title || "Sem processo";
     byProcess[title] = (byProcess[title] || 0) + (e.duration_minutes || 0);
   });
   const ranked = Object.entries(byProcess)

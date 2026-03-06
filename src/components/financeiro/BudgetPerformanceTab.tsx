@@ -48,12 +48,26 @@ const STATUS_CONFIG = {
 
 // ─── Custom Recharts tooltip ───────────────────────────────────
 
-function CustomTooltip({ active, payload, label }: any) {
+interface RechartsTooltipPayload {
+    name: string;
+    value: number;
+    color: string;
+    dataKey: string;
+    payload: any;
+}
+
+interface CustomTooltipProps {
+    active?: boolean;
+    payload?: RechartsTooltipPayload[];
+    label?: string;
+}
+
+function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
     if (!active || !payload?.length) return null;
     return (
         <div className="rounded-lg border border-border/60 bg-background p-3 shadow-lg text-xs space-y-1">
             <p className="font-semibold text-foreground mb-2">{label}</p>
-            {payload.map((p: any) => (
+            {payload.map((p) => (
                 <div key={p.dataKey} className="flex justify-between gap-4">
                     <span style={{ color: p.color }}>{p.name}</span>
                     <span className="font-medium">{fmtCurrency(p.value)}</span>
@@ -61,6 +75,17 @@ function CustomTooltip({ active, payload, label }: any) {
             ))}
         </div>
     );
+}
+
+interface OrcamentoLog {
+    id: string;
+    orcamento_id: string;
+    organization_id: string;
+    old_amount: number | null;
+    new_amount: number | null;
+    notes: string | null;
+    changed_at: string;
+    changed_by: string | null;
 }
 
 // ─── Main Component ────────────────────────────────────────────
@@ -146,16 +171,16 @@ export default function BudgetPerformanceTab({ orgId }: Props) {
                 const y = d.getFullYear();
 
                 const [{ data: orc }, { data: ct }] = await Promise.all([
-                    supabase.from("orcamentos" as any).select("amount").eq("organization_id", orgId).eq("type", typeTab).eq("period_month", m).eq("period_year", y),
-                    supabase.from(contaTable as any).select("amount, status, due_date, category").eq("organization_id", orgId),
+                    supabase.from("orcamentos").select("amount").eq("organization_id", orgId).eq("type", typeTab).eq("period_month", m).eq("period_year", y),
+                    supabase.from(contaTable).select("amount, status, due_date, category").eq("organization_id", orgId),
                 ]);
 
-                const budgeted = (orc ?? []).reduce((s: number, o: any) => s + Number(o.amount), 0);
-                const monthContas = (ct ?? []).filter((c: any) => {
-                    const dd = new Date(c.due_date + "T00:00:00");
-                    return dd.getMonth() + 1 === m && dd.getFullYear() === y && (c.status === "pago" || c.status === "pendente");
+                const budgeted = (orc ?? []).reduce((s, o) => s + Number(o.amount), 0);
+                const monthContas = (ct ?? []).filter((c) => {
+                    const dd = new Date((c as any).due_date + "T00:00:00");
+                    return dd.getMonth() + 1 === m && dd.getFullYear() === y && ((c as any).status === "pago" || (c as any).status === "pendente");
                 });
-                const realized = monthContas.reduce((s: number, c: any) => s + Number(c.amount), 0);
+                const realized = monthContas.reduce((s, c) => s + Number((c as any).amount), 0);
 
                 results.push({
                     name: format(d, "MMM/yy", { locale: ptBR }),
@@ -223,13 +248,14 @@ export default function BudgetPerformanceTab({ orgId }: Props) {
 
             // Insert log entry
             if (existing) {
-                await supabase.from("orcamentos_log" as any).insert({
-                    orcamento_id: (data as any)?.id ?? (existing as any).id,
+                const userResponse = await supabase.auth.getUser();
+                await supabase.from("orcamentos_log").insert({
+                    orcamento_id: data.id,
                     organization_id: orgId,
                     old_amount: existing.amount,
                     new_amount: payload.amount,
                     notes: payload.notes || null,
-                    changed_by: (await supabase.auth.getUser()).data.user?.id ?? null,
+                    changed_by: userResponse.data.user?.id ?? null,
                 });
             }
         },
@@ -244,7 +270,7 @@ export default function BudgetPerformanceTab({ orgId }: Props) {
             setDialogNotes("");
             setEditingCategory(null);
         },
-        onError: (e: any) => toast.error(e.message),
+        onError: (e: Error) => toast.error(e.message),
     });
 
     // ─── Handlers ─────────────────────────────────────────────
@@ -369,8 +395,8 @@ export default function BudgetPerformanceTab({ orgId }: Props) {
                         <button
                             onClick={() => setTypeTab("despesa")}
                             className={`px-3 py-1.5 text-xs font-medium transition-colors ${typeTab === "despesa"
-                                    ? "bg-primary text-primary-foreground"
-                                    : "bg-background text-muted-foreground hover:bg-muted"
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-background text-muted-foreground hover:bg-muted"
                                 }`}
                         >
                             Despesas
@@ -378,8 +404,8 @@ export default function BudgetPerformanceTab({ orgId }: Props) {
                         <button
                             onClick={() => setTypeTab("receita")}
                             className={`px-3 py-1.5 text-xs font-medium transition-colors ${typeTab === "receita"
-                                    ? "bg-primary text-primary-foreground"
-                                    : "bg-background text-muted-foreground hover:bg-muted"
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-background text-muted-foreground hover:bg-muted"
                                 }`}
                         >
                             Receitas
@@ -725,7 +751,7 @@ export default function BudgetPerformanceTab({ orgId }: Props) {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {orcamentosLog.map((log: any) => (
+                                            {(orcamentosLog as OrcamentoLog[]).map((log) => (
                                                 <tr key={log.id} className="border-b border-border/30">
                                                     <td className="px-4 py-2.5 text-muted-foreground tabular-nums">
                                                         {format(new Date(log.changed_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}

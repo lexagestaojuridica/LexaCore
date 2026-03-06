@@ -9,6 +9,10 @@ export type Processo = Tables<"processos_juridicos"> & {
         phone: string | null;
         asaas_customer_id?: string | null;
     } | null;
+    estimated_value_display?: string;
+    segredo_de_justica?: boolean;
+    public_link_password?: string | null;
+    public_link_expires_at?: string | null;
 };
 
 export type Documento = {

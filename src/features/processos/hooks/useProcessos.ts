@@ -34,7 +34,7 @@ export function useProcessos(
     const { data: processosData, isLoading } = useQuery({
         queryKey: ["processos", orgId, page, search, statusFilter, sortField, sortDir, viewMode],
         queryFn: async () => {
-            let query = (supabase.from("processos_juridicos") as any)
+            let query = supabase.from("processos_juridicos")
                 .select("*, clients(id, name, phone, asaas_customer_id)", { count: "exact" })
                 .eq("organization_id", orgId!);
 
@@ -58,7 +58,7 @@ export function useProcessos(
 
             const { data, error, count } = await query;
             if (error) throw error;
-            return { data: data as Processo[], count: count ?? 0 };
+            return { data: (data as any) as Processo[], count: count ?? 0 };
         },
         enabled: !!orgId,
         placeholderData: keepPreviousData,
@@ -78,8 +78,8 @@ export function useProcessos(
 
     // ── Mutations ──
     const createMutation = useMutation({
-        mutationFn: async (payload: any) => {
-            const { error } = await supabase.from("processos_juridicos").insert({ ...payload, organization_id: orgId, responsible_user_id: user?.id });
+        mutationFn: async (payload: Partial<Processo>) => {
+            const { error } = await supabase.from("processos_juridicos").insert({ ...payload, organization_id: orgId, responsible_user_id: user?.id } as any);
             if (error) throw error;
         },
         onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["processos"] }); toast.success("Processo criado"); },
@@ -87,11 +87,12 @@ export function useProcessos(
     });
 
     const updateMutation = useMutation({
-        mutationFn: async ({ id, ...payload }: any) => {
-            delete payload.organization_id;
-            delete payload.created_at;
-            delete payload.responsible_user_id;
-            const { error } = await supabase.from("processos_juridicos").update(payload).eq("id", id).eq("organization_id", orgId!);
+        mutationFn: async ({ id, ...payload }: { id: string } & Partial<Processo>) => {
+            const updatePayload: Record<string, any> = { ...payload };
+            delete updatePayload.organization_id;
+            delete updatePayload.created_at;
+            delete updatePayload.responsible_user_id;
+            const { error } = await supabase.from("processos_juridicos").update(updatePayload as any).eq("id", id).eq("organization_id", orgId!);
             if (error) throw error;
         },
         onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["processos"] }); toast.success("Processo atualizado"); },

@@ -217,7 +217,7 @@ export default function CrmPipelineBoard() {
                         <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-1.5">
                                 <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Prioridade</label>
-                                <Select value={form.priority} onValueChange={(v: any) => setForm((p) => ({ ...p, priority: v }))}><SelectTrigger className="h-10 bg-background"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="alta">🔴 Alta</SelectItem><SelectItem value="media">🟡 Média</SelectItem><SelectItem value="baixa">⚪ Baixa</SelectItem></SelectContent></Select>
+                                <Select value={form.priority} onValueChange={(v: "alta" | "media" | "baixa") => setForm((p) => ({ ...p, priority: v }))}><SelectTrigger className="h-10 bg-background"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="alta">🔴 Alta</SelectItem><SelectItem value="media">🟡 Média</SelectItem><SelectItem value="baixa">⚪ Baixa</SelectItem></SelectContent></Select>
                             </div>
                             <div className="space-y-1.5">
                                 <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Etapa</label>

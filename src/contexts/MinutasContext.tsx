@@ -214,15 +214,62 @@ const LIBRARY_TEMPLATES: LibraryTemplate[] = [
 <h3>CLÁUSULA 1ª — DO ALUGUEL</h3>
 <p>O valor mensal é de <strong>{{valor_aluguel}}</strong>.</p>`,
     },
+    {
+        id: "lib9", title: "Declaração de Hipossuficiência", category: "procuracoes", area: "Geral",
+        description: "Declaração para pedido de Gratuidade de Justiça (Justiça Gratuita).", downloads: 4200,
+        variables: [
+            { key: "cliente", label: "Nome completo", value: "", placeholder: "" },
+            { key: "nacionalidade", label: "Nacionalidade", value: "", placeholder: "brasileiro(a)" },
+            { key: "estado_civil", label: "Estado Civil", value: "", placeholder: "solteiro(a)" },
+            { key: "profissao", label: "Profissão", value: "", placeholder: "" },
+            { key: "rg", label: "RG", value: "", placeholder: "" },
+            { key: "cpf", label: "CPF", value: "", placeholder: "" },
+            { key: "endereco", label: "Endereço", value: "", placeholder: "" },
+            { key: "comarca", label: "Comarca/Cidade", value: "", placeholder: "" },
+            { key: "data_hoje", label: "Data", value: "", placeholder: "" },
+        ],
+        content: `<h1 style="text-align:center">DECLARAÇÃO DE HIPOSSUFICIÊNCIA</h1>
+<p><br></p>
+<p><strong>{{cliente}}</strong>, {{nacionalidade}}, {{estado_civil}}, {{profissao}}, portador(a) do RG nº {{rg}} e inscrito(a) no CPF sob o nº {{cpf}}, residente e domiciliado(a) em {{endereco}}, declara, sob as penas da lei, para fins de obtenção do benefício da <strong>ASSISTÊNCIA JUDICIÁRIA GRATUITA</strong>, que não possui condições financeiras de arcar com as custas processuais e honorários advocatícios sem prejuízo do próprio sustento e de sua família.</p>
+<p><br></p>
+<p>A presente declaração é feita em conformidade com o artigo 98 e seguintes do Código de Processo Civil (Lei 13.105/2015).</p>
+<p><br></p>
+<p style="text-align:right">{{comarca}}, {{data_hoje}}.</p>
+<p><br></p><p><br></p>
+<p style="text-align:center">__________________________________________</p>
+<p style="text-align:center"><strong>{{cliente}}</strong></p>`,
+    },
 ];
 
-// ── Helpers ────────────────────────────────────────────
+// ── Supabase Types ──
+interface SupabaseMinutaDocument {
+    id: string;
+    title: string;
+    category: DocumentCategory;
+    content: string | null;
+    variables: DocumentVariable[] | null;
+    tags: string[] | null;
+    favorite: boolean | null;
+    usage_count: number | null;
+    created_at: string;
+    updated_at: string;
+    source: "manual" | "library" | null;
+}
+
+interface SupabaseMinutaVersion {
+    id: string;
+    document_id: string;
+    content: string | null;
+    label: string | null;
+    saved_at: string;
+}
+
 async function getOrgId(userId: string): Promise<string> {
     const { data } = await supabase.from("profiles").select("organization_id").eq("user_id", userId).single();
     return data?.organization_id || "";
 }
 
-const mapDoc = (r: any, versions: DocumentVersion[]): MinutaDocument => ({
+const mapDoc = (r: SupabaseMinutaDocument, versions: DocumentVersion[]): MinutaDocument => ({
     id: r.id, title: r.title, category: r.category || "outros",
     content: r.content || "", variables: r.variables || [],
     tags: r.tags || [], favorite: r.favorite || false,
@@ -284,51 +331,51 @@ export function MinutasProvider({ children }: { children: ReactNode }) {
             if (error) throw error;
             if (!rows?.length) return [];
 
-            const ids = rows.map((r: any) => r.id);
+            const ids = (rows as unknown as SupabaseMinutaDocument[]).map((r) => r.id);
             const { data: verRows } = await supabase
                 .from("minutas_versions").select("*").in("document_id", ids).order("saved_at");
 
             const versByDoc: Record<string, DocumentVersion[]> = {};
-            (verRows || []).forEach((v: any) => {
+            ((verRows as unknown as SupabaseMinutaVersion[]) || []).forEach((v) => {
                 if (!versByDoc[v.document_id]) versByDoc[v.document_id] = [];
                 versByDoc[v.document_id].push({
                     id: v.id, content: v.content || "", savedAt: v.saved_at || "", label: v.label || "",
                 });
             });
 
-            return rows.map((r: any) => mapDoc(r, versByDoc[r.id] || []));
+            return (rows as unknown as SupabaseMinutaDocument[]).map((r) => mapDoc(r, versByDoc[r.id] || []));
         },
     });
 
     // ── Mutations ──
     const createMut = useMutation({
-        mutationFn: async (data: any) => {
+        mutationFn: async (data: Partial<MinutaDocument> & { id: string }) => {
             const orgId = await getOrgId(uid);
             const { error } = await supabase.from("minutas_documents").insert({
                 id: data.id, organization_id: orgId, user_id: uid,
                 title: data.title, category: data.category, content: data.content,
-                variables: data.variables, tags: data.tags, favorite: data.favorite,
+                variables: data.variables as any, tags: data.tags, favorite: data.favorite,
                 source: data.source,
             });
             if (error) throw error;
         },
         onSuccess: () => invalidate(),
-        onError: (e: any) => toast.error(e.message),
+        onError: (e: Error) => toast.error(e.message),
     });
 
     const createDocument = useCallback((data: Omit<MinutaDocument, "id" | "createdAt" | "updatedAt" | "usageCount" | "versions">): string => {
         const id = crypto.randomUUID();
         createMut.mutate({ ...data, id });
         return id;
-    }, []);
+    }, [createMut]);
 
     const updateMut = useMutation({
-        mutationFn: async ({ id, ...data }: any) => {
-            const payload: any = { updated_at: new Date().toISOString() };
+        mutationFn: async ({ id, ...data }: Partial<MinutaDocument> & { id: string }) => {
+            const payload: Record<string, any> = { updated_at: new Date().toISOString() };
             if (data.title !== undefined) payload.title = data.title;
             if (data.category !== undefined) payload.category = data.category;
             if (data.content !== undefined) payload.content = data.content;
-            if (data.variables !== undefined) payload.variables = data.variables;
+            if (data.variables !== undefined) payload.variables = data.variables as any;
             if (data.tags !== undefined) payload.tags = data.tags;
             if (data.favorite !== undefined) payload.favorite = data.favorite;
             if (data.usageCount !== undefined) payload.usage_count = data.usageCount;
@@ -337,12 +384,12 @@ export function MinutasProvider({ children }: { children: ReactNode }) {
             if (error) throw error;
         },
         onSuccess: () => invalidate(),
-        onError: (e: any) => toast.error(e.message),
+        onError: (e: Error) => toast.error(e.message),
     });
 
     const updateDocument = useCallback((id: string, data: Partial<MinutaDocument>) => {
         updateMut.mutate({ id, ...data });
-    }, []);
+    }, [updateMut]);
 
     const deleteMut = useMutation({
         mutationFn: async (id: string) => {
@@ -350,19 +397,19 @@ export function MinutasProvider({ children }: { children: ReactNode }) {
             if (error) throw error;
         },
         onSuccess: () => invalidate(),
-        onError: (e: any) => toast.error(e.message),
+        onError: (e: Error) => toast.error(e.message),
     });
 
     const deleteDocument = useCallback((id: string) => {
         deleteMut.mutate(id);
         if (openDocument === id) setOpenDocument(null);
-    }, [openDocument]);
+    }, [openDocument, deleteMut]);
 
     const toggleFavorite = useCallback((id: string) => {
         const doc = documents.find((d) => d.id === id);
         if (!doc) return;
         updateMut.mutate({ id, favorite: !doc.favorite });
-    }, [documents]);
+    }, [documents, updateMut]);
 
     const duplicateFromLibrary = useCallback((templateId: string): string => {
         const template = LIBRARY_TEMPLATES.find((t) => t.id === templateId);
@@ -374,10 +421,10 @@ export function MinutasProvider({ children }: { children: ReactNode }) {
             tags: [template.area], favorite: false, source: "library",
         });
         return id;
-    }, []);
+    }, [createMut]);
 
     const saveVersionMut = useMutation({
-        mutationFn: async ({ docId, label }: any) => {
+        mutationFn: async ({ docId, label }: { docId: string; label: string }) => {
             const doc = documents.find((d) => d.id === docId);
             if (!doc) throw new Error("Document not found");
             const { error } = await supabase.from("minutas_versions").insert({
@@ -386,12 +433,12 @@ export function MinutasProvider({ children }: { children: ReactNode }) {
             if (error) throw error;
         },
         onSuccess: () => { invalidate(); toast.success("Versão salva"); },
-        onError: (e: any) => toast.error(e.message),
+        onError: (e: Error) => toast.error(e.message),
     });
 
     const saveVersion = useCallback((docId: string, label: string) => {
         saveVersionMut.mutate({ docId, label });
-    }, [documents]);
+    }, [documents, saveVersionMut]);
 
     return (
         <MinutasContext.Provider value={{

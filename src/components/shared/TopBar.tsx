@@ -77,13 +77,13 @@ export function TopBar() {
     const currentTitle = titleKey ? t(titleKey) : "Dashboard";
 
     return (
-        <header className="sticky top-0 z-40 flex h-14 w-full items-center justify-between border-b border-border bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <header className="sticky top-0 z-40 flex h-14 w-full items-center justify-between border-b border-border/40 glass px-4 transition-all duration-300">
 
             {/* Left Axis: Sidebar Toggle + Title */}
             <div className="flex items-center gap-3 w-1/3">
-                <SidebarTrigger className="shrink-0 text-muted-foreground hover:text-foreground" />
-                <div className="h-5 w-px bg-border/40" />
-                <h1 className="text-base font-semibold tracking-tight text-foreground md:text-lg">
+                <SidebarTrigger className="shrink-0 text-foreground/60 hover:text-primary transition-colors" />
+                <div className="h-4 w-px bg-border/40" />
+                <h1 className="text-sm font-bold tracking-tight text-foreground md:text-base font-display uppercase tracking-[0.05em]">
                     {currentTitle}
                 </h1>
             </div>

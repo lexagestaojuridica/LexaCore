@@ -34,14 +34,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import { TableSkeleton } from "@/components/shared/SkeletonLoaders";
 import BudgetPerformanceTab from "@/components/financeiro/BudgetPerformanceTab";
 
-const STATUS_OPTIONS = (t: any) => [
+const STATUS_OPTIONS = (t: (key: string) => string) => [
   { value: "pendente", label: t('financial.statusOptions.pending'), color: "text-amber-600 bg-amber-500/10 border-amber-500/20" },
   { value: "pago", label: t('financial.statusOptions.paid'), color: "text-emerald-600 bg-emerald-500/10 border-emerald-500/20" },
   { value: "atrasado", label: t('financial.statusOptions.overdue'), color: "text-rose-600 bg-rose-500/10 border-rose-500/20" },
   { value: "cancelado", label: t('financial.statusOptions.cancelled'), color: "text-slate-600 bg-slate-500/10 border-border" },
 ];
 
-const CATEGORIES = (t: any) => [
+const CATEGORIES = (t: (key: string) => string) => [
   t('financial.categories.fees'),
   t('financial.categories.costs'),
   t('financial.categories.rent'),
@@ -52,11 +52,12 @@ const CATEGORIES = (t: any) => [
   t('financial.categories.others')
 ];
 
-function getMonthYearLabel(dateStr: string, i18n: any) {
+function getMonthYearLabel(dateStr: string, i18n: { language: string }) {
   return format(parseISO(dateStr), "MMMM yyyy", {
     locale: i18n.language === 'en' ? undefined : (i18n.language === 'es' ? undefined : ptBR)
   });
 }
+const emptyForm = { description: "", amount_display: "", due_date: "", status: "pendente", category: "" };
 
 export default function FinanceiroPage() {
   const { user } = useAuth();
@@ -73,7 +74,7 @@ export default function FinanceiroPage() {
   const [form, setForm] = useState(emptyForm);
 
   const [pixModalOpen, setPixModalOpen] = useState(false);
-  const [selectedPix, setSelectedPix] = useState<any>(null);
+  const [selectedPix, setSelectedPix] = useState<ContaBase | null>(null);
 
   const { data: profile } = useQuery({
     queryKey: ["profile", user?.id],
@@ -103,7 +104,7 @@ export default function FinanceiroPage() {
   const closeDialog = () => { setDialogOpen(false); setForm(emptyForm); setEditingId(null); };
   const openCreate = () => { setForm(emptyForm); setEditingId(null); setDialogOpen(true); };
 
-  const openEdit = (c: any) => {
+  const openEdit = (c: ContaBase) => {
     setForm({
       description: c.description,
       amount_display: formatCurrencyInput(String(Math.round(Number(c.amount) * 100))),
@@ -160,12 +161,12 @@ export default function FinanceiroPage() {
   });
 
   // Group by month
-  const groupedMonths = filtered.reduce((acc, c: any) => {
+  const groupedMonths = filtered.reduce((acc, c) => {
     const label = getMonthYearLabel(c.due_date, i18n);
     if (!acc[label]) acc[label] = [];
     acc[label].push(c);
     return acc;
-  }, {} as Record<string, any[]>);
+  }, {} as Record<string, ContaBase[]>);
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
 
@@ -353,7 +354,7 @@ export default function FinanceiroPage() {
                         <div className="bg-card border border-border/50 rounded-xl overflow-hidden shadow-sm">
                           <div className="divide-y divide-border/40">
                             <AnimatePresence>
-                              {items.map((c: any) => {
+                              {items.map((c) => {
                                 let statusObj = STATUS_OPTIONS(t).find((s) => s.value === c.status) || STATUS_OPTIONS(t)[0];
                                 const dueDate = parseISO(c.due_date);
                                 const isLate = isPast(dueDate) && !isToday(dueDate) && c.status === "pendente";

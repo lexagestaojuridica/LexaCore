@@ -26,12 +26,17 @@ export interface AsaasPayment {
     installmentValue?: number;
 }
 
+export interface AsaasResponse<T = any> {
+    data: T;
+    error?: string;
+}
+
 /**
  * Calls all Asaas endpoints through the `asaas-proxy` Edge Function,
  * which runs server-side — no CORS issues.
  */
 export const asaasService = {
-    async request(method: string, endpoint: string, organizationId: string, body?: any) {
+    async request<T>(method: string, endpoint: string, organizationId: string, body?: unknown): Promise<T> {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) throw new Error("Usuário não autenticado.");
 
@@ -44,12 +49,12 @@ export const asaasService = {
         }
 
         // The Edge Function returns { data } or { error }
-        const result = response.data as any;
+        const result = response.data as AsaasResponse<T>;
         if (result?.error) {
             throw new Error(result.error);
         }
 
-        return result;
+        return result.data;
     },
 
     async createCustomer(organizationId: string, customer: AsaasCustomer) {

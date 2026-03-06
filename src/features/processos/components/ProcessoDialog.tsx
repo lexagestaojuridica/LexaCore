@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { X, Bot, Upload, File, Download, ChevronRight, ChevronLeft, Check, Scale, ShieldCheck, Wallet, Loader2, Share2, Copy, ExternalLink } from "lucide-react";
+import { X, Bot, Upload, File, Download, ChevronRight, ChevronLeft, Check, Scale, ShieldCheck, Wallet, Loader2, Share2, Copy, ExternalLink, Timer } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
@@ -15,6 +16,8 @@ import FormField from "@/components/shared/FormField";
 import { formatCNJ } from "@/lib/utils";
 import { STATUS_OPTIONS, AREAS_DIREITO, INSTANCIAS, FASES_PROCESSUAIS, UFS } from "../constants";
 import type { Processo, Documento } from "../types";
+import { ProcessCalculator } from "./ProcessCalculator";
+import { DeadlineCalculator } from "./DeadlineCalculator";
 
 interface ProcessoDialogProps {
     open: boolean;
@@ -23,7 +26,7 @@ interface ProcessoDialogProps {
     selectedProcesso: Processo | null;
     clients: { id: string, name: string }[];
     processDocs: Documento[];
-    onSave: (data: any) => void;
+    onSave: (data: Partial<Processo>) => void;
     isSaving: boolean;
     onUploadDoc: (file: File) => void;
     onDownloadDoc: (doc: Documento) => void;
@@ -33,10 +36,15 @@ export function ProcessoDialog({
     open, onOpenChange, isEditing, selectedProcesso, clients, processDocs,
     onSave, isSaving, onUploadDoc, onDownloadDoc
 }: ProcessoDialogProps) {
-    const [form, setForm] = useState<any>({});
+    const [form, setForm] = useState<Partial<Processo>>({});
     const [step, setStep] = useState(1);
+    const [maxStepVisited, setMaxStepVisited] = useState(1);
     const [copiedShareLink, setCopiedShareLink] = useState(false);
     const totalSteps = 4;
+
+    useEffect(() => {
+        if (step > maxStepVisited) setMaxStepVisited(step);
+    }, [step]);
 
     useEffect(() => {
         if (open && selectedProcesso && isEditing) {
@@ -53,12 +61,12 @@ export function ProcessoDialog({
         }
     }, [open, selectedProcesso, isEditing]);
 
-    const setField = (field: string, value: any) => setForm((prev: any) => ({ ...prev, [field]: value }));
+    const setField = (field: keyof Processo | string, value: any) => setForm((prev) => ({ ...prev, [field]: value }));
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         const payload = { ...form };
-        delete payload.estimated_value_display;
+        delete (payload as any).estimated_value_display;
         onSave(payload);
     };
 
@@ -78,6 +86,9 @@ export function ProcessoDialog({
 
     const nextStep = () => setStep(s => Math.min(s + 1, totalSteps));
     const prevStep = () => setStep(s => Math.max(s - 1, 1));
+    const jumpToStep = (s: number) => {
+        if (s <= maxStepVisited) setStep(s);
+    };
 
     const steps = [
         { id: 1, title: "Identificação", icon: Scale },
@@ -204,6 +215,17 @@ export function ProcessoDialog({
                                                 </Select>
                                             </div>
                                         </div>
+
+                                        <div className="flex items-center justify-between rounded-2xl border border-destructive/20 bg-destructive/5 p-4 transition-all shadow-sm">
+                                            <div className="flex items-center gap-3">
+                                                <div className="p-2 bg-destructive/10 text-destructive rounded-lg"><ShieldCheck className="h-5 w-5" /></div>
+                                                <div>
+                                                    <p className="text-xs font-bold text-destructive">Segredo de Justiça</p>
+                                                    <p className="text-[10px] text-muted-foreground">Restringir acesso a documentos no Portal do Cliente</p>
+                                                </div>
+                                            </div>
+                                            <Switch checked={form.segredo_de_justica || false} onCheckedChange={(v) => setField("segredo_de_justica", v)} />
+                                        </div>
                                     </div>
                                 </motion.div>
                             )}
@@ -235,6 +257,8 @@ export function ProcessoDialog({
                                             <Textarea value={form.notes ?? ""} onChange={(e) => setField("notes", e.target.value)} rows={4} placeholder="Anotações confidenciais sobre a tese..." className="bg-background/50 border-border/40 resize-none shadow-inner" />
                                         </div>
 
+                                        <DeadlineCalculator />
+
                                         {/* Lexa Share Section */}
                                         {isEditing && selectedProcesso?.public_token && (
                                             <div className="mt-8 pt-6 border-t border-border/50">
@@ -242,8 +266,8 @@ export function ProcessoDialog({
                                                     <Share2 className="h-4 w-4 text-primary" />
                                                     <h4 className="text-sm font-semibold text-foreground">Lexa Share — Acompanhamento do Cliente</h4>
                                                 </div>
-                                                <div className="bg-primary/5 rounded-2xl p-6 border border-primary/10">
-                                                    <p className="text-xs text-muted-foreground mb-4 leading-relaxed line-clamp-2">
+                                                <div className="bg-primary/5 rounded-2xl p-6 border border-primary/10 space-y-4">
+                                                    <p className="text-xs text-muted-foreground mb-4 leading-relaxed">
                                                         Gere um link seguro para seu cliente acompanhar o status deste processo sem precisar de login.
                                                     </p>
                                                     <div className="flex items-center gap-2">
@@ -263,17 +287,35 @@ export function ProcessoDialog({
                                                         >
                                                             {copiedShareLink ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
                                                         </Button>
-                                                        <Button
-                                                            type="button"
-                                                            variant="outline"
-                                                            size="icon"
-                                                            className="h-11 w-11 rounded-xl shrink-0"
-                                                            asChild
-                                                        >
-                                                            <a href={`/public/processo/${selectedProcesso.public_token}`} target="_blank" rel="noreferrer">
-                                                                <ExternalLink className="h-4 w-4" />
-                                                            </a>
+                                                        <Button type="button" variant="outline" size="icon" className="h-11 w-11 rounded-xl shrink-0" asChild>
+                                                            <a href={`/public/processo/${selectedProcesso.public_token}`} target="_blank" rel="noreferrer"><ExternalLink className="h-4 w-4" /></a>
                                                         </Button>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-primary/10">
+                                                        <div className="space-y-1.5">
+                                                            <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
+                                                                <ShieldCheck className="h-3 w-3" /> Senha do Link (Opcional)
+                                                            </label>
+                                                            <Input
+                                                                type="password"
+                                                                placeholder="Definir PIN de acesso"
+                                                                value={form.public_link_password ?? ""}
+                                                                onChange={(e) => setField("public_link_password", e.target.value)}
+                                                                className="h-9 text-xs bg-background"
+                                                            />
+                                                        </div>
+                                                        <div className="space-y-1.5">
+                                                            <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
+                                                                <Timer className="h-3 w-3" /> Expira em
+                                                            </label>
+                                                            <Input
+                                                                type="date"
+                                                                value={form.public_link_expires_at ? form.public_link_expires_at.split('T')[0] : ""}
+                                                                onChange={(e) => setField("public_link_expires_at", e.target.value)}
+                                                                className="h-9 text-xs bg-background"
+                                                            />
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>

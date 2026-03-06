@@ -41,7 +41,7 @@ interface Message {
     profiles?: { full_name: string | null; avatar_url: string | null } | null;
 }
 
-const CHANNEL_ICONS: Record<string, any> = {
+const CHANNEL_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
     general: Hash, process: Scale, direct: Users, unit: Building2,
 };
 
@@ -57,7 +57,7 @@ export default function ChatWidget() {
     const [isOpen, setIsOpen] = useState(false);
     const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null);
     const [newChannelOpen, setNewChannelOpen] = useState(false);
-    const [channelForm, setChannelForm] = useState({ name: "", type: "general" });
+    const [channelForm, setChannelForm] = useState<{ name: string; type: Channel["type"] }>({ name: "", type: "general" });
     const [messageText, setMessageText] = useState("");
     const [searchChannels, setSearchChannels] = useState("");
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -81,13 +81,13 @@ export default function ChatWidget() {
     const { data: channels = [], isLoading: channelsLoading } = useQuery({
         queryKey: ["chat-channels", orgId],
         queryFn: async () => {
-            const { data, error } = await (supabase
+            const { data, error } = await supabase
                 .from("chat_channels")
                 .select("*")
                 .eq("organization_id", orgId!)
                 .eq("is_archived", false)
                 .order("type")
-                .order("name", { ascending: true }) as any);
+                .order("name", { ascending: true });
             if (error) throw error;
             return (data || []) as Channel[];
         },
@@ -95,7 +95,7 @@ export default function ChatWidget() {
     });
 
     const createChannelMutation = useMutation({
-        mutationFn: async (payload: any) => {
+        mutationFn: async (payload: Omit<Channel, "id" | "created_at"> & { organization_id: string }) => {
             const { error } = await supabase.from("chat_channels").insert(payload);
             if (error) throw error;
         },
@@ -105,7 +105,7 @@ export default function ChatWidget() {
             setNewChannelOpen(false);
             setChannelForm({ name: "", type: "general" });
         },
-        onError: (e: any) => toast.error(`Erro ao criar canal: ${e.message}`),
+        onError: (e: Error) => toast.error(`Erro ao criar canal: ${e.message}`),
     });
 
     // ── Messages ────────────────────────────────────────────
@@ -155,7 +155,7 @@ export default function ChatWidget() {
             setMessageText("");
             queryClient.invalidateQueries({ queryKey: ["chat-messages", selectedChannel?.id] });
         },
-        onError: (e: any) => toast.error(e.message),
+        onError: (e: Error) => toast.error(e.message),
     });
 
     const handleSend = () => {
@@ -353,7 +353,8 @@ export default function ChatWidget() {
                                     <AnimatePresence initial={false}>
                                         {messages.map((msg, i) => {
                                             const isMe = msg.user_id === user?.id;
-                                            const name = (msg.profiles as any)?.full_name || "Usuário";
+                                            const profileData = msg.profiles as { full_name: string | null; avatar_url: string | null } | undefined;
+                                            const name = profileData?.full_name || "Usuário";
                                             const prev = messages[i - 1];
                                             const isGrouping = prev && prev.user_id === msg.user_id && (new Date(msg.created_at).getTime() - new Date(prev.created_at).getTime() < 5 * 60 * 1000);
                                             const showAvatar = !isGrouping;
@@ -441,7 +442,7 @@ export default function ChatWidget() {
                         />
                         <div className="space-y-2">
                             <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Tipo</label>
-                            <Select value={channelForm.type} onValueChange={(v) => setChannelForm({ ...channelForm, type: v })}>
+                            <Select value={channelForm.type} onValueChange={(v: Channel["type"]) => setChannelForm({ ...channelForm, type: v })}>
                                 <SelectTrigger className="h-10 bg-muted/20"><SelectValue /></SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="general"><div className="flex items-center gap-2"><Hash className="h-4 w-4 text-primary" /><span>Geral</span></div></SelectItem>
@@ -458,7 +459,7 @@ export default function ChatWidget() {
                             disabled={!channelForm.name.trim() || createChannelMutation.isPending}
                             onClick={() => {
                                 if (!channelForm.name.trim() || !orgId) return;
-                                createChannelMutation.mutate({ name: channelForm.name, type: channelForm.type, organization_id: orgId });
+                                createChannelMutation.mutate({ name: channelForm.name, type: channelForm.type, organization_id: orgId, is_archived: false });
                             }}
                         >
                             {createChannelMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}

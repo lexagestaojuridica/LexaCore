@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { isBusinessDay } from "@/lib/utils";
 
 // ── Types ──────────────────────────────────────────────
 export interface WorkflowStep {
@@ -160,10 +161,48 @@ async function getOrgId(userId: string): Promise<string> {
     return data?.organization_id || "";
 }
 
+// ── Supabase Types ──
+interface SupabaseWorkflowInstance {
+    id: string;
+    organization_id: string;
+    user_id: string;
+    template_id: string;
+    template_name: string;
+    template_emoji: string;
+    sector_id: string;
+    assigned_to: string;
+    assigned_to_name: string;
+    priority: "alta" | "media" | "baixa";
+    deadline: string | null;
+    status: string;
+    created_at: string;
+    created_by: string;
+}
+
+interface SupabaseWorkflowStep {
+    id: string;
+    workflow_id: string;
+    title: string;
+    description: string | null;
+    completed: boolean;
+    due_date: string | null;
+    notes: string | null;
+    sort_order: number;
+}
+
 function computeStatus(steps: WorkflowStep[], deadline: string): WorkflowInstance["status"] {
     const allDone = steps.every((s) => s.completed);
     const anyDone = steps.some((s) => s.completed);
-    const overdue = deadline && new Date(deadline) < new Date() && !allDone;
+
+    let overdue = false;
+    if (deadline && !allDone) {
+        const deadlineDate = new Date(deadline);
+        const today = new Date();
+        // Só marcamos atraso se a data atual for maior que o deadline
+        // Futuramente podemos adicionar um 'buffer' de dias úteis aqui
+        overdue = today > deadlineDate;
+    }
+
     return allDone ? "concluido" : overdue ? "atrasado" : anyDone ? "em_andamento" : "pendente";
 }
 
@@ -227,12 +266,12 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
             if (error) throw error;
             if (!rows?.length) return [];
 
-            const ids = rows.map((r: any) => r.id);
+            const ids = (rows as SupabaseWorkflowInstance[]).map((r) => r.id);
             const { data: stepRows } = await supabase
                 .from("workflow_steps").select("*").in("workflow_id", ids).order("sort_order");
 
             const stepsByWf: Record<string, WorkflowStep[]> = {};
-            (stepRows || []).forEach((s: any) => {
+            ((stepRows as SupabaseWorkflowStep[]) || []).forEach((s) => {
                 if (!stepsByWf[s.workflow_id]) stepsByWf[s.workflow_id] = [];
                 stepsByWf[s.workflow_id].push({
                     id: s.id, title: s.title, description: s.description || "",
@@ -240,7 +279,7 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
                 });
             });
 
-            return rows.map((r: any): WorkflowInstance => {
+            return (rows as SupabaseWorkflowInstance[]).map((r): WorkflowInstance => {
                 const steps = stepsByWf[r.id] || [];
                 return {
                     id: r.id, templateId: r.template_id || "", templateName: r.template_name || "",
@@ -258,11 +297,11 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
     const { data: members = [] } = useQuery({
         queryKey: ["workflow_members", orgId],
         queryFn: async () => {
-            const { data } = await supabase
-                .from("rh_colaboradores")
+            const { data } = await (supabase
+                .from("rh_colaboradores" as any)
                 .select("id, full_name, position")
                 .eq("organization_id", orgId)
-                .eq("status", "active");
+                .eq("status", "active") as any);
             return (data || []).map((c: any): Member => ({
                 id: c.id,
                 name: c.full_name,
@@ -289,10 +328,10 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
 
     // ── Start workflow ──
     const startMut = useMutation({
-        mutationFn: async ({ templateId, sectorId, assignedTo, priority, deadline }: any) => {
+        mutationFn: async ({ templateId, sectorId, assignedTo, priority, deadline }: { templateId: string; sectorId: string; assignedTo: string; priority: "alta" | "media" | "baixa"; deadline: string }) => {
             const template = TEMPLATES.find((t) => t.id === templateId);
             if (!template) throw new Error("Template not found");
-            const member = SAMPLE_MEMBERS.find((m) => m.id === assignedTo);
+            const member = members.find((m) => m.id === assignedTo);
             const orgId = await getOrgId(uid);
 
             const { data: wf, error } = await supabase.from("workflow_instances").insert({
@@ -312,45 +351,45 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
             if (stepErr) throw stepErr;
         },
         onSuccess: () => { invalidate(); toast.success("Workflow iniciado"); },
-        onError: (e: any) => toast.error(e.message),
+        onError: (e: Error) => toast.error(e.message),
     });
-    const startWorkflow = useCallback((...args: [string, string, string, "alta" | "media" | "baixa", string]) => {
-        startMut.mutate({ templateId: args[0], sectorId: args[1], assignedTo: args[2], priority: args[3], deadline: args[4] });
-    }, []);
+    const startWorkflow = useCallback((templateId: string, sectorId: string, assignedTo: string, priority: "alta" | "media" | "baixa", deadline: string) => {
+        startMut.mutate({ templateId, sectorId, assignedTo, priority, deadline });
+    }, [startMut]);
 
     // ── Step mutations ──
     const stepMut = useMutation({
-        mutationFn: async ({ stepId, data }: { stepId: string; data: any }) => {
+        mutationFn: async ({ stepId, data }: { stepId: string; data: Partial<WorkflowStep> | Record<string, any> }) => {
             const { error } = await supabase.from("workflow_steps").update(data).eq("id", stepId);
             if (error) throw error;
         },
         onSuccess: () => invalidate(),
-        onError: (e: any) => toast.error(e.message),
+        onError: (e: Error) => toast.error(e.message),
     });
 
     const completeStep = useCallback((instanceId: string, stepId: string) => {
         stepMut.mutate({ stepId, data: { completed: true } });
-    }, []);
+    }, [stepMut]);
     const uncompleteStep = useCallback((instanceId: string, stepId: string) => {
         stepMut.mutate({ stepId, data: { completed: false } });
-    }, []);
+    }, [stepMut]);
     const updateStepNotes = useCallback((instanceId: string, stepId: string, notes: string) => {
         stepMut.mutate({ stepId, data: { notes } });
-    }, []);
+    }, [stepMut]);
 
     const addStepMut = useMutation({
-        mutationFn: async ({ instanceId, title, description }: any) => {
+        mutationFn: async ({ instanceId, title, description }: { instanceId: string; title: string; description: string }) => {
             const { error } = await supabase.from("workflow_steps").insert({
                 workflow_id: instanceId, title, description, completed: false, sort_order: 999,
             });
             if (error) throw error;
         },
         onSuccess: () => invalidate(),
-        onError: (e: any) => toast.error(e.message),
+        onError: (e: Error) => toast.error(e.message),
     });
     const addCustomStep = useCallback((instanceId: string, title: string, description: string) => {
         addStepMut.mutate({ instanceId, title, description });
-    }, []);
+    }, [addStepMut]);
 
     const deleteMut = useMutation({
         mutationFn: async (id: string) => {
@@ -358,27 +397,27 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
             if (error) throw error;
         },
         onSuccess: () => { invalidate(); toast.success("Workflow excluído"); },
-        onError: (e: any) => toast.error(e.message),
+        onError: (e: Error) => toast.error(e.message),
     });
-    const deleteWorkflow = useCallback((id: string) => deleteMut.mutate(id), []);
+    const deleteWorkflow = useCallback((id: string) => deleteMut.mutate(id), [deleteMut]);
 
     const reassignMut = useMutation({
-        mutationFn: async ({ id, assignedTo }: any) => {
-            const member = SAMPLE_MEMBERS.find((m) => m.id === assignedTo);
+        mutationFn: async ({ id, assignedTo }: { id: string; assignedTo: string }) => {
+            const member = members.find((m) => m.id === assignedTo);
             const { error } = await supabase.from("workflow_instances")
                 .update({ assigned_to: assignedTo, assigned_to_name: member?.name || "—" }).eq("id", id);
             if (error) throw error;
         },
         onSuccess: () => invalidate(),
-        onError: (e: any) => toast.error(e.message),
+        onError: (e: Error) => toast.error(e.message),
     });
     const reassignWorkflow = useCallback((id: string, assignedTo: string) => {
         reassignMut.mutate({ id, assignedTo });
-    }, []);
+    }, [reassignMut]);
 
     return (
         <WorkflowContext.Provider value={{
-            templates: TEMPLATES, members: SAMPLE_MEMBERS, sectors, instances, isLoading,
+            templates: TEMPLATES, members, sectors, instances, isLoading,
             addSector, updateSector, deleteSector,
             startWorkflow, completeStep, uncompleteStep, updateStepNotes, addCustomStep,
             deleteWorkflow, reassignWorkflow, getMember, getSector,

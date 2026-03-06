@@ -4,6 +4,26 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
+interface GoogleCalendarConnection {
+  id: string;
+  user_id: string;
+  organization_id: string;
+  access_token: string;
+  refresh_token: string | null;
+  token_expires_at: string;
+  last_sync_at: string | null;
+  sync_enabled: boolean;
+  created_at: string;
+}
+
+interface GoogleAuthResponse {
+  access_token: string;
+  refresh_token: string | null;
+  expires_in: number;
+  error?: string;
+  url?: string;
+}
+
 export function useGoogleCalendar() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -19,7 +39,7 @@ export function useGoogleCalendar() {
         .eq("user_id", user!.id)
         .maybeSingle();
       if (error) throw error;
-      return data as any;
+      return data as unknown as GoogleCalendarConnection | null;
     },
     enabled: !!user?.id,
   });
@@ -44,7 +64,7 @@ export function useGoogleCalendar() {
 
         const redirectUri = `${window.location.origin}/dashboard/agenda`;
 
-        const { data: tokenData, error } = await supabase.functions.invoke("google-calendar-auth", {
+        const { data: tokenData, error } = await supabase.functions.invoke<GoogleAuthResponse>("google-calendar-auth", {
           body: {
             action: "exchange_code",
             code,
@@ -53,7 +73,7 @@ export function useGoogleCalendar() {
         });
 
         if (error) throw error;
-        if (tokenData.error) throw new Error(tokenData.error);
+        if (!tokenData || tokenData.error) throw new Error(tokenData?.error || "Unknown auth error");
 
         // Get user profile for org_id
         const { data: profile } = await supabase
@@ -68,14 +88,14 @@ export function useGoogleCalendar() {
 
         // Store tokens
         const { error: insertError } = await supabase
-          .from("google_calendar_tokens" as any)
+          .from("google_calendar_tokens")
           .upsert({
             user_id: user!.id,
             organization_id: profile.organization_id,
             access_token: tokenData.access_token,
             refresh_token: tokenData.refresh_token,
             token_expires_at: expiresAt,
-          } as any);
+          });
 
         if (insertError) throw insertError;
 
@@ -98,7 +118,7 @@ export function useGoogleCalendar() {
     try {
       const redirectUri = `${window.location.origin}/dashboard/agenda`;
 
-      const { data, error } = await supabase.functions.invoke("google-calendar-auth", {
+      const { data, error } = await supabase.functions.invoke<GoogleAuthResponse>("google-calendar-auth", {
         body: { action: "get_auth_url", redirect_uri: redirectUri },
       });
 
@@ -107,8 +127,9 @@ export function useGoogleCalendar() {
 
       // Redirect full page
       window.location.href = data.url;
-    } catch (err: any) {
-      toast.error(err.message || "Erro ao iniciar conexão");
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(error.message || "Erro ao iniciar conexão");
       setConnecting(false);
     }
   }, []);
@@ -126,7 +147,7 @@ export function useGoogleCalendar() {
       queryClient.invalidateQueries({ queryKey: ["google-calendar-connection"] });
       toast.success("Google Calendar desconectado");
     },
-    onError: (err: any) => toast.error(err.message),
+    onError: (err: Error) => toast.error(err.message),
   });
 
   // Import events from Google
@@ -139,12 +160,12 @@ export function useGoogleCalendar() {
       if (data.error) throw new Error(data.error);
       return data;
     },
-    onSuccess: (data) => {
+    onSuccess: (data: { imported: number }) => {
       queryClient.invalidateQueries({ queryKey: ["eventos_agenda"] });
       queryClient.invalidateQueries({ queryKey: ["google-calendar-connection"] });
       toast.success(`${data.imported} eventos importados do Google Calendar`);
     },
-    onError: (err: any) => toast.error(err.message || "Erro ao importar"),
+    onError: (err: Error) => toast.error(err.message || "Erro ao importar"),
   });
 
   // Clear events from Google

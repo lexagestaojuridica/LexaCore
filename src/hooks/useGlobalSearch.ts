@@ -59,7 +59,7 @@ export function useGlobalSearch(query: string) {
 
                 if (processosRes.data && !processosRes.error) {
                     combined.push(
-                        ...(processosRes.data as any[]).map((p: any) => ({
+                        ...processosRes.data.map((p) => ({
                             id: p.id,
                             title: p.title,
                             subtitle: "Processo Jurídico",
@@ -71,7 +71,7 @@ export function useGlobalSearch(query: string) {
 
                 if (clientesRes.data && !clientesRes.error) {
                     combined.push(
-                        ...(clientesRes.data as any[]).map((c: any) => ({
+                        ...clientesRes.data.map((c) => ({
                             id: c.id,
                             title: c.name,
                             subtitle: "Cliente",
@@ -83,7 +83,7 @@ export function useGlobalSearch(query: string) {
 
                 if (wikiRes.data && !wikiRes.error) {
                     combined.push(
-                        ...(wikiRes.data as any[]).map((w: any) => ({
+                        ...wikiRes.data.map((w) => ({
                             id: w.id,
                             title: w.title,
                             subtitle: `Categoria: ${w.category}`,

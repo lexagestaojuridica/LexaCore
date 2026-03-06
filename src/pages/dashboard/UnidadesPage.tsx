@@ -57,12 +57,12 @@ export default function UnidadesPage() {
     const { data: profile } = useQuery({
         queryKey: ["profile", user?.id],
         queryFn: async () => {
-            const { data } = await (supabase.from("profiles") as any).select("organization_id").eq("user_id", user!.id).single();
+            const { data } = await supabase.from("profiles").select("organization_id").eq("user_id", user!.id).single();
             return data;
         },
         enabled: !!user,
     });
-    const orgId = (profile as any)?.organization_id;
+    const orgId = profile?.organization_id;
     const isSuperAdmin = true; // Admin check via RLS
 
     const { data: units = [], isLoading } = useQuery({
@@ -81,24 +81,24 @@ export default function UnidadesPage() {
     });
 
     const createMutation = useMutation({
-        mutationFn: async (payload: any) => {
-            const { error } = await supabase.from("units").insert(payload);
+        mutationFn: async (payload: Omit<Unit, "id" | "created_at" | "updated_at"> & { organization_id: string }) => {
+            const { error } = await supabase.from("units").insert(payload as any);
             if (error) throw error;
         },
         onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["units"] }); toast.success("Unidade criada!"); closeDialog(); },
-        onError: (e: any) => toast.error(`Erro ao criar unidade: ${e.message}`),
+        onError: (e: Error) => toast.error(`Erro ao criar unidade: ${e.message}`),
     });
 
     const updateMutation = useMutation({
-        mutationFn: async ({ id, ...payload }: any) => {
-            delete payload.organization_id;
-            delete payload.created_at;
+        mutationFn: async ({ id, ...payload }: { id: string } & Partial<Unit>) => {
+            delete (payload as any).organization_id;
+            delete (payload as any).created_at;
 
-            const { error } = await supabase.from("units").update(payload).eq("id", id).eq("organization_id", orgId!);
+            const { error } = await supabase.from("units").update(payload as any).eq("id", id).eq("organization_id", orgId!);
             if (error) throw error;
         },
         onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["units"] }); toast.success("Unidade atualizada!"); closeDialog(); },
-        onError: (e: any) => toast.error(`Erro ao atualizar unidade: ${e.message}`),
+        onError: (e: Error) => toast.error(`Erro ao atualizar unidade: ${e.message}`),
     });
 
     const deleteMutation = useMutation({

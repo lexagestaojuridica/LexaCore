@@ -168,7 +168,7 @@ export default function CrmActivitiesTimeline() {
                         <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-1.5">
                                 <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Tipo</label>
-                                <Select value={form.type} onValueChange={(v: any) => setForm((p) => ({ ...p, type: v }))}><SelectTrigger className="h-10 bg-background"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="ligacao">📞 Ligação</SelectItem><SelectItem value="email">✉️ E-mail</SelectItem><SelectItem value="reuniao">📅 Reunião</SelectItem><SelectItem value="tarefa">✅ Tarefa</SelectItem></SelectContent></Select>
+                                <Select value={form.type} onValueChange={(v: "ligacao" | "email" | "reuniao" | "tarefa") => setForm((p) => ({ ...p, type: v }))}><SelectTrigger className="h-10 bg-background"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="ligacao">📞 Ligação</SelectItem><SelectItem value="email">✉️ E-mail</SelectItem><SelectItem value="reuniao">📅 Reunião</SelectItem><SelectItem value="tarefa">✅ Tarefa</SelectItem></SelectContent></Select>
                             </div>
                             <FormField label="Data" value={form.date} onChange={(v) => setForm((p) => ({ ...p, date: v }))} type="date" />
                         </div>

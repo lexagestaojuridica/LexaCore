@@ -88,18 +88,18 @@ function NavItem({ item, collapsed, t }: { item: { titleKey: string; url: string
         <NavLink
           to={item.url}
           end={item.url === "/dashboard"}
-          className="sidebar-nav-link group flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] text-sidebar-foreground/60 transition-all duration-200 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-          activeClassName="bg-gradient-to-r from-sidebar-accent to-transparent text-sidebar-foreground font-medium border-l-2 border-accent !rounded-l-none"
+          className="sidebar-nav-link group flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] text-sidebar-foreground/45 transition-all duration-300 hover:bg-white/5 hover:text-sidebar-foreground"
+          activeClassName="bg-white/10 text-primary font-semibold border-r-2 border-accent !rounded-r-none shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]"
         >
-          <item.icon className="sidebar-icon h-4 w-4 shrink-0" />
+          <item.icon className="sidebar-icon h-4 w-4 shrink-0 transition-transform duration-300 group-hover:scale-110 group-hover:text-accent" />
           {!collapsed && (
-            <span className="truncate transition-transform duration-200 group-hover:translate-x-0.5">
+            <span className="truncate font-medium transition-transform duration-300 group-hover:translate-x-1">
               {title}
             </span>
           )}
         </NavLink>
       </TooltipTrigger>
-      {collapsed && <TooltipContent side="right">{title}</TooltipContent>}
+      {collapsed && <TooltipContent side="right" className="font-sans font-bold">{title}</TooltipContent>}
     </Tooltip>
   );
 }
@@ -122,12 +122,12 @@ function NavGroup({
       {!collapsed && (
         <button
           onClick={() => setOpen((o) => !o)}
-          className="flex w-full items-center justify-between px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/35 hover:text-sidebar-foreground/60 transition-colors"
+          className="flex w-full items-center justify-between px-2.5 py-2 mt-4 text-[9px] font-bold uppercase tracking-[0.15em] text-sidebar-foreground/30 hover:text-sidebar-foreground/50 transition-colors font-display"
         >
           <span>{group.labelKey.includes('.') ? t(group.labelKey) : group.labelKey}</span>
           <ChevronDown
             className={cn(
-              "h-3 w-3 transition-transform duration-200",
+              "h-2.5 w-2.5 transition-transform duration-300 opacity-50",
               !open && "-rotate-90"
             )}
           />
@@ -175,13 +175,13 @@ export function AppSidebar() {
     .toUpperCase();
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" className="border-r border-white/5 bg-sidebar-background shadow-2xl">
       {/* Logo */}
-      <div className="flex h-14 shrink-0 items-center justify-center border-b border-sidebar-border/50 px-3">
+      <div className="flex h-20 shrink-0 items-center justify-center border-b border-white/5 px-4 mb-2">
         {collapsed ? (
-          <img src={iconLexa} alt="LEXA" className="h-8 w-8 object-contain" />
+          <img src={iconLexa} alt="LEXA" className="h-8 w-8 object-contain animate-pulse" />
         ) : (
-          <img src={logoLexaWhite} alt="LEXA" className="h-14 w-auto max-w-[140px] object-contain" />
+          <img src={logoLexaWhite} alt="LEXA" className="h-16 w-auto max-w-[140px] object-contain" />
         )}
       </div>
 

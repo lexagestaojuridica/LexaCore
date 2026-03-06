@@ -66,6 +66,42 @@ export interface OrgFormState {
     escavador_token: string;
 }
 
+export interface Profile {
+    id: string;
+    user_id: string;
+    organization_id: string | null;
+    full_name: string | null;
+    phone: string | null;
+    avatar_url: string | null;
+    custom_role_id: string | null;
+    created_at: string;
+}
+
+export interface TeamMember extends Profile {
+    user_roles: { role: string }[];
+    custom_roles: { name: string } | null;
+}
+
+export interface CustomRole {
+    id: string;
+    organization_id: string;
+    name: string;
+    description: string | null;
+    permissions: any;
+    created_at: string;
+}
+
+export interface GatewaySettings {
+    id: string;
+    organization_id: string;
+    gateway_name: string;
+    api_key: string;
+    environment: string;
+    status: string;
+    created_at: string;
+    updated_at: string;
+}
+
 export const emptyEmployee: EmployeeFormState = {
     full_name: "", email: "", phone: "", oab_number: "",
     department: "", position: "", hire_date: "", hourly_rate: "",

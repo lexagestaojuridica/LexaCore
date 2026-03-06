@@ -1,0 +1,560 @@
+
+> vite_react_shadcn_ts@0.0.0 lint
+> eslint .
+
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\components\dashboard\AppSidebar.tsx
+   83:89  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  191:59  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\components\dashboard\FacilitadorBar.tsx
+  57:13  error  Empty block statement  no-empty
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\components\dashboard\GuidedOnboarding.tsx
+  16:11  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\components\dashboard\OnboardingTour.tsx
+   15:11  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  153:17  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\components\financeiro\ArunaAnalysisPanel.tsx
+  142:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\components\financeiro\BudgetPerformanceTab.tsx
+   51:52  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   56:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   98:39  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  127:43  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  149:51  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  150:49  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  153:68  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  154:59  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  158:68  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  174:70  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  206:39  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  226:57  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  227:44  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  227:69  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  247:22  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  728:70  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\components\financeiro\DasDarfPanel.tsx
+  88:62  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\components\minutas\MinutaTemplateSelector.tsx
+  14:15  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\components\minutas\MinutasEditor.tsx
+  81:73  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\components\minutas\MinutasMyDocuments.tsx
+  154:78  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\components\shared\ChatWidget.tsx
+   44:37  error    Unexpected any. Specify a different type                                                                            @typescript-eslint/no-explicit-any
+   90:56  error    Unexpected any. Specify a different type                                                                            @typescript-eslint/no-explicit-any
+   98:37  error    Unexpected any. Specify a different type                                                                            @typescript-eslint/no-explicit-any
+  108:22  error    Unexpected any. Specify a different type                                                                            @typescript-eslint/no-explicit-any
+  137:8   warning  React Hook useEffect has a missing dependency: 'selectedChannel'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  158:22  error    Unexpected any. Specify a different type                                                                            @typescript-eslint/no-explicit-any
+  356:75  error    Unexpected any. Specify a different type                                                                            @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\components\shared\GlobalSearch.tsx
+  25:55  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  25:73  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  52:36  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\components\shared\RichTextEditor.tsx
+  21:69  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\components\shared\SkeletonLoaders.tsx
+  3:11  error  An interface declaring no members is equivalent to its supertype  @typescript-eslint/no-empty-object-type
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\components\theme-provider.tsx
+  66:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\components\ui\badge.tsx
+  29:17  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\components\ui\button.tsx
+  49:18  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\components\ui\command.tsx
+  24:11  error  An interface declaring no members is equivalent to its supertype  @typescript-eslint/no-empty-object-type
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\components\ui\form.tsx
+  129:10  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\components\ui\navigation-menu.tsx
+  111:3  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\components\ui\sidebar.tsx
+  636:3  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\components\ui\sonner.tsx
+  27:19  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\components\ui\textarea.tsx
+  5:18  error  An interface declaring no members is equivalent to its supertype  @typescript-eslint/no-empty-object-type
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\components\ui\toggle.tsx
+  37:18  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\components\workflow\WorkflowAutomations.tsx
+   50:78  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   65:79  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   87:79  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   96:79  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  131:44  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  132:92  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\components\workflow\WorkflowMyList.tsx
+  12:60  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\components\workflow\WorkflowTemplates.tsx
+  136:77  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\contexts\AuthContext.tsx
+  20:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\contexts\MinutasContext.tsx
+   10:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+  250:20  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  275:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+  312:38  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  317:41  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  324:33  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  330:34  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  341:22  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  348:8   warning  React Hook useCallback has a missing dependency: 'createMut'. Either include it or remove the dependency array                  react-hooks/exhaustive-deps
+  351:45  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  352:28  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  365:22  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  370:8   warning  React Hook useCallback has a missing dependency: 'updateMut'. Either include it or remove the dependency array                  react-hooks/exhaustive-deps
+  378:22  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  384:8   warning  React Hook useCallback has a missing dependency: 'deleteMut'. Either include it or remove the dependency array                  react-hooks/exhaustive-deps
+  390:8   warning  React Hook useCallback has a missing dependency: 'updateMut'. Either include it or remove the dependency array                  react-hooks/exhaustive-deps
+  402:8   warning  React Hook useCallback has a missing dependency: 'createMut'. Either include it or remove the dependency array                  react-hooks/exhaustive-deps
+  405:46  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  414:22  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  419:8   warning  React Hook useCallback has a missing dependency: 'saveVersionMut'. Either include it or remove the dependency array             react-hooks/exhaustive-deps
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\contexts\WorkflowContext.tsx
+  193:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+  230:38  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  235:42  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  243:33  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  266:41  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  292:86  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  315:22  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  319:8   warning  React Hook useCallback has a missing dependency: 'startMut'. Either include it or remove the dependency array                   react-hooks/exhaustive-deps
+  323:70  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  328:22  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  333:8   warning  React Hook useCallback has a missing dependency: 'stepMut'. Either include it or remove the dependency array                    react-hooks/exhaustive-deps
+  336:8   warning  React Hook useCallback has a missing dependency: 'stepMut'. Either include it or remove the dependency array                    react-hooks/exhaustive-deps
+  339:8   warning  React Hook useCallback has a missing dependency: 'stepMut'. Either include it or remove the dependency array                    react-hooks/exhaustive-deps
+  342:64  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  349:22  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  353:8   warning  React Hook useCallback has a missing dependency: 'addStepMut'. Either include it or remove the dependency array                 react-hooks/exhaustive-deps
+  361:22  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  363:78  warning  React Hook useCallback has a missing dependency: 'deleteMut'. Either include it or remove the dependency array                  react-hooks/exhaustive-deps
+  366:48  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  373:22  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  377:8   warning  React Hook useCallback has a missing dependency: 'reassignMut'. Either include it or remove the dependency array                react-hooks/exhaustive-deps
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\features\agenda\components\DayView.tsx
+   12:17  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+  164:52  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\features\agenda\components\KPICard.tsx
+  8:11  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\features\agenda\hooks\useAgenda.ts
+  46:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  58:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  70:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\features\backoffice\hooks\useAdminOrganizations.ts
+  14:47  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  34:13  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\features\clientes\hooks\useClientes.ts
+   34:54  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   66:66  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  142:70  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  156:50  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\features\configuracoes\hooks\useConfiguracoes.ts
+   57:70  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   66:74  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   95:71  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  121:47  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  122:41  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  123:43  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  127:42  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  128:42  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  159:72  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  182:67  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  217:71  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  226:71  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\features\crm\components\CrmActivitiesTimeline.tsx
+  171:78  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\features\crm\components\CrmContactsList.tsx
+   95:49  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  272:78  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\features\crm\components\CrmDealsTable.tsx
+  102:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  129:32  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\features\crm\components\CrmPipelineBoard.tsx
+  220:82  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\features\crm\contexts\CrmContext.tsx
+   62:24   error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+   69:21   error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+   75:21   error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+   81:25   error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  111:14   warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+  224:8    warning  React Hook useCallback has a missing dependency: 'invalidate'. Either include it or remove the dependency array                 react-hooks/exhaustive-deps
+  239:22   error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  246:8    warning  React Hook useCallback has a missing dependency: 'addContactMut'. Either include it or remove the dependency array              react-hooks/exhaustive-deps
+  250:28   error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  266:22   error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  268:124  warning  React Hook useCallback has a missing dependency: 'updateContactMut'. Either include it or remove the dependency array           react-hooks/exhaustive-deps
+  276:22   error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  278:84   warning  React Hook useCallback has a missing dependency: 'deleteContactMut'. Either include it or remove the dependency array           react-hooks/exhaustive-deps
+  293:22   error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  295:103  warning  React Hook useCallback has a missing dependency: 'addLeadMut'. Either include it or remove the dependency array                 react-hooks/exhaustive-deps
+  299:28   error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  316:22   error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  318:115  warning  React Hook useCallback has a missing dependency: 'updateLeadMut'. Either include it or remove the dependency array              react-hooks/exhaustive-deps
+  326:22   error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  328:78   warning  React Hook useCallback has a missing dependency: 'deleteLeadMut'. Either include it or remove the dependency array              react-hooks/exhaustive-deps
+  343:22   error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  345:117  warning  React Hook useCallback has a missing dependency: 'addDealMut'. Either include it or remove the dependency array                 react-hooks/exhaustive-deps
+  349:28   error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  366:22   error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  368:115  warning  React Hook useCallback has a missing dependency: 'updateDealMut'. Either include it or remove the dependency array              react-hooks/exhaustive-deps
+  376:22   error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  378:78   warning  React Hook useCallback has a missing dependency: 'deleteDealMut'. Either include it or remove the dependency array              react-hooks/exhaustive-deps
+  393:22   error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  395:115  warning  React Hook useCallback has a missing dependency: 'addActivityMut'. Either include it or remove the dependency array             react-hooks/exhaustive-deps
+  399:28   error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  411:22   error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  413:127  warning  React Hook useCallback has a missing dependency: 'updateActivityMut'. Either include it or remove the dependency array          react-hooks/exhaustive-deps
+  421:22   error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  423:86   warning  React Hook useCallback has a missing dependency: 'deleteActivityMut'. Either include it or remove the dependency array          react-hooks/exhaustive-deps
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\features\documentos\hooks\useDocumentos.ts
+  85:50  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\features\documentos\types\index.ts
+  18:34  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\features\financeiro\hooks\useAsaasBilling.ts
+   7:140  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  16:45   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  38:71   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  53:22   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  77:24   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\features\financeiro\hooks\useFinanceiro.ts
+  26:37  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  39:22  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  43:48  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  57:22  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  71:22  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\features\processos\components\ProcessKanban.tsx
+  9:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\features\processos\components\ProcessoDeadlineManager.tsx
+  47:37  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\features\processos\components\ProcessoDialog.tsx
+  27:20  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  37:38  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  57:45  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  57:68  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\features\processos\components\ProcessoViewSheet.tsx
+   21:15  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   67:82  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  182:69  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\features\processos\hooks\useProcessos.ts
+  37:66  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  81:37  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  90:48  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\features\timesheet\hooks\useTimer.ts
+  32:55  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  76:79  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  89:45  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\features\timesheet\hooks\useTimesheet.ts
+   14:46  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   40:37  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   41:74  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   53:74  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  101:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\hooks\useAppleCalendar.ts
+   17:50  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   22:28  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   44:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   56:50  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   65:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   83:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  100:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\hooks\useGlobalSearch.ts
+  62:50  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  62:65  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  74:49  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  74:64  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  86:45  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  86:60  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\hooks\useGoogleCalendar.ts
+   17:43  error    Unexpected any. Specify a different type                                                                 @typescript-eslint/no-explicit-any
+   22:22  error    Unexpected any. Specify a different type                                                                 @typescript-eslint/no-explicit-any
+   32:3   warning  Unused eslint-disable directive (no problems were reported from 'react-hooks/exhaustive-deps')
+   71:45  error    Unexpected any. Specify a different type                                                                 @typescript-eslint/no-explicit-any
+   78:16  error    Unexpected any. Specify a different type                                                                 @typescript-eslint/no-explicit-any
+   84:21  error    Unexpected any. Specify a different type                                                                 @typescript-eslint/no-explicit-any
+   93:6   warning  React Hook useEffect has a missing dependency: 'user'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  110:19  error    Unexpected any. Specify a different type                                                                 @typescript-eslint/no-explicit-any
+  120:43  error    Unexpected any. Specify a different type                                                                 @typescript-eslint/no-explicit-any
+  129:20  error    Unexpected any. Specify a different type                                                                 @typescript-eslint/no-explicit-any
+  147:20  error    Unexpected any. Specify a different type                                                                 @typescript-eslint/no-explicit-any
+  164:20  error    Unexpected any. Specify a different type                                                                 @typescript-eslint/no-explicit-any
+  181:20  error    Unexpected any. Specify a different type                                                                 @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\hooks\useMicrosoftCalendar.ts
+   17:54  error    Unexpected any. Specify a different type                                                                 @typescript-eslint/no-explicit-any
+   22:28  error    Unexpected any. Specify a different type                                                                 @typescript-eslint/no-explicit-any
+   32:5   warning  Unused eslint-disable directive (no problems were reported from 'react-hooks/exhaustive-deps')
+   75:58  error    Unexpected any. Specify a different type                                                                 @typescript-eslint/no-explicit-any
+   82:26  error    Unexpected any. Specify a different type                                                                 @typescript-eslint/no-explicit-any
+   88:27  error    Unexpected any. Specify a different type                                                                 @typescript-eslint/no-explicit-any
+   96:8   warning  React Hook useEffect has a missing dependency: 'user'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  113:23  error    Unexpected any. Specify a different type                                                                 @typescript-eslint/no-explicit-any
+  123:54  error    Unexpected any. Specify a different type                                                                 @typescript-eslint/no-explicit-any
+  132:24  error    Unexpected any. Specify a different type                                                                 @typescript-eslint/no-explicit-any
+  150:24  error    Unexpected any. Specify a different type                                                                 @typescript-eslint/no-explicit-any
+  167:24  error    Unexpected any. Specify a different type                                                                 @typescript-eslint/no-explicit-any
+  184:24  error    Unexpected any. Specify a different type                                                                 @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\hooks\useRealtimeNotifications.ts
+   25:42  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   52:53  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   70:52  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   88:48  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   88:81  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  101:48  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  101:81  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\lib\DocumentTemplateEngine.ts
+   8:67  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  38:75  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  54:64  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\pages\admin\AdminAudit.tsx
+   29:72  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  105:49  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\pages\admin\AdminDashboard.tsx
+  32:55  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\pages\admin\AdminPlans.tsx
+   14:13  error  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+   16:47  error  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+   20:28  error  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  108:69  error  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\pages\admin\AdminSettings.tsx
+  15:12  error    Unexpected any. Specify a different type                                                                          @typescript-eslint/no-explicit-any
+  53:8   warning  React Hook useEffect has a missing dependency: 'settingsState'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  73:24  error    Unexpected any. Specify a different type                                                                          @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\pages\admin\AdminSupport.tsx
+   45:61  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   69:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  165:55  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\pages\auth\ResetPassword.tsx
+  38:25  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\pages\auth\UpdatePassword.tsx
+  61:25  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\pages\dashboard\AgendaPage.tsx
+  59:35  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\pages\dashboard\BIPage.tsx
+  113:38  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  121:50  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  124:17  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  125:28  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  127:17  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  128:28  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  130:17  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  131:28  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  135:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  136:45  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\pages\dashboard\ChatPage.tsx
+   44:37  error    Unexpected any. Specify a different type                                                                            @typescript-eslint/no-explicit-any
+   92:56  error    Unexpected any. Specify a different type                                                                            @typescript-eslint/no-explicit-any
+  100:37  error    Unexpected any. Specify a different type                                                                            @typescript-eslint/no-explicit-any
+  110:22  error    Unexpected any. Specify a different type                                                                            @typescript-eslint/no-explicit-any
+  147:8   warning  React Hook useEffect has a missing dependency: 'selectedChannel'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  172:22  error    Unexpected any. Specify a different type                                                                            @typescript-eslint/no-explicit-any
+  368:71  error    Unexpected any. Specify a different type                                                                            @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\pages\dashboard\ClientesPage.tsx
+  76:64  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  82:35  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  86:70  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\pages\dashboard\ConfiguracoesPage.tsx
+  213:45  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  236:50  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\pages\dashboard\FinanceiroPage.tsx
+   37:28  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   44:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   55:51  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   76:50  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  106:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  163:50  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  168:27  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  307:61  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  356:46  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\pages\dashboard\IAPage.tsx
+  184:39  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  279:17  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  314:17  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  330:17  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  347:17  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  394:17  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\pages\dashboard\ProcessosPage.tsx
+   64:33  error  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  174:25  error  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  194:20  error  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  206:20  error  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  232:53  error  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  251:9   error  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+  262:13  error  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+  552:11  error  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\pages\dashboard\TimesheetPage.tsx
+  100:49  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  193:41  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  407:63  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\pages\dashboard\UnidadesPage.tsx
+   60:66  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   65:31  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   84:37  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   89:22  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   93:48  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  101:22  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  110:22  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\pages\dashboard\rh\ColaboradoresPage.tsx
+  113:37  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  131:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  151:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\pages\dashboard\rh\PontoEletronicoPage.tsx
+  94:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\pages\dashboard\rh\RecrutamentoPage.tsx
+   85:37  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  188:78  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\pages\portal\PortalDashboard.tsx
+   22:52   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  107:24   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  114:30   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  117:50   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  209:59   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  285:81   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  293:74   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  293:99   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  296:66   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  301:100  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\pages\portal\PortalLogin.tsx
+  50:25  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\pages\portal\PortalSignature.tsx
+  28:56  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  42:28  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  57:50  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  75:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\pages\public\ProcessPublicView.tsx
+   16:15  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   39:89  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  235:56  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\src\services\asaasService.ts
+  34:84  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  47:41  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\supabase\functions\admin-impersonate\index.ts
+  77:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\supabase\functions\aruna-chat\index.ts
+  36:37  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\supabase\functions\aruna-generate-doc\index.ts
+  157:15  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\supabase\functions\asaas-proxy\index.ts
+  97:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\supabase\functions\billing-gateway\index.ts
+   92:51  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  103:39  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  170:45  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  265:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\supabase\functions\google-calendar-sync\index.ts
+  85:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  86:18  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\supabase\functions\judicial-capture\index.ts
+  76:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\supabase\functions\microsoft-calendar-sync\index.ts
+  63:17  error  'newRefreshToken' is never reassigned. Use 'const' instead  prefer-const
+  85:29  error  Unexpected any. Specify a different type                    @typescript-eslint/no-explicit-any
+  86:26  error  Unexpected any. Specify a different type                    @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\supabase\functions\rss-proxy\index.ts
+  35:16  error  Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+  50:9   error  'imageUrl' is never reassigned. Use 'const' instead  prefer-const
+  81:21  error  Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\supabase\functions\webhook-asaas\index.ts
+  63:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\supabase\functions\whatsapp-sender\index.ts
+  89:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\user\OneDrive - Creare Sistemas\Documentos\lexa\lexanova-core\tailwind.config.ts
+  136:13  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  136:45  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+✖ 362 problems (313 errors, 49 warnings)
+  2 errors and 2 warnings potentially fixable with the `--fix` option.
+

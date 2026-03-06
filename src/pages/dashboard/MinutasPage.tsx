@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FileEdit, FileText, BookOpen, PenTool } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MinutasProvider, useMinutas } from "@/contexts/MinutasContext";
@@ -8,7 +8,14 @@ import MinutasEditor from "@/components/minutas/MinutasEditor";
 
 function MinutasPageInner() {
     const { documents, openDocument, setOpenDocument } = useMinutas();
-    const [activeTab, setActiveTab] = useState("minutas");
+    const [activeTab, setActiveTab] = useState(openDocument ? "editor" : "minutas");
+
+    // Sync active tab when a document is opened from elsewhere (e.g., ProcessoViewSheet)
+    useEffect(() => {
+        if (openDocument) {
+            setActiveTab("editor");
+        }
+    }, [openDocument]);
 
     const handleOpenEditor = (id: string) => {
         setOpenDocument(id);

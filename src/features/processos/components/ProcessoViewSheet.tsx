@@ -1,12 +1,16 @@
+import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { X, Scale, Sparkles, Bot, File, Upload, Download, Receipt, Loader2, Search } from "lucide-react";
+import { X, Scale, Sparkles, Bot, File, Upload, Download, Receipt, Loader2, Search, Clock, FilePlus } from "lucide-react";
 import { motion } from "framer-motion";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ProcessoDeadlineManager } from "./ProcessoDeadlineManager";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { MinutasProvider } from "@/contexts/MinutasContext";
+import { MinutaTemplateSelector } from "@/components/minutas/MinutaTemplateSelector";
 import { STATUS_OPTIONS } from "../constants";
 import type { Processo, Documento } from "../types";
 
@@ -26,11 +30,14 @@ interface ProcessoViewSheetProps {
     isBillingLoading: boolean;
 }
 
-export function ProcessoViewSheet({
-    open, onOpenChange, selectedProcesso, captures, processDocs,
-    aiSummary, onGenerateAiSummary, isAiLoading,
-    onUploadDoc, onDownloadDoc, onBilling, onEdit, isBillingLoading
-}: ProcessoViewSheetProps) {
+export function ProcessoViewSheet(props: ProcessoViewSheetProps) {
+    const {
+        open, onOpenChange, selectedProcesso, captures, processDocs,
+        aiSummary, onGenerateAiSummary, isAiLoading,
+        onUploadDoc, onDownloadDoc, onBilling, onEdit, isBillingLoading
+    } = props;
+
+    const [templateSelectorOpen, setTemplateSelectorOpen] = useState(false);
 
     if (!selectedProcesso) return null;
 
@@ -96,11 +103,16 @@ export function ProcessoViewSheet({
                         <Tabs defaultValue="detalhes" className="w-full">
                             <TabsList className="w-full justify-start h-11 bg-transparent border-b border-border/50 rounded-none p-0 overflow-x-auto hide-scrollbar space-x-6">
                                 <TabsTrigger value="detalhes" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-foreground rounded-none px-0 pb-3 text-sm font-bold text-muted-foreground transition-all">Geral</TabsTrigger>
+                                <TabsTrigger value="prazos" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-foreground rounded-none px-0 pb-3 text-sm font-bold text-muted-foreground transition-all flex gap-1.5"><Clock className="w-4 h-4" /> Prazos</TabsTrigger>
                                 <TabsTrigger value="timeline" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-foreground rounded-none px-0 pb-3 text-sm font-bold text-muted-foreground transition-all flex gap-1.5"><Bot className="w-4 h-4" /> Capas & Mov</TabsTrigger>
                                 <TabsTrigger value="docs" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-foreground rounded-none px-0 pb-3 text-sm font-bold text-muted-foreground transition-all flex gap-1.5"><File className="w-4 h-4" /> Anexos ({processDocs.length})</TabsTrigger>
                             </TabsList>
 
                             <div className="mt-8">
+                                <TabsContent value="prazos" className="mt-0">
+                                    <ProcessoDeadlineManager processId={selectedProcesso.id} orgId={selectedProcesso.organization_id} />
+                                </TabsContent>
+
                                 <TabsContent value="detalhes" className="space-y-8 mt-0">
                                     <div className="grid grid-cols-2 gap-x-8 gap-y-6">
                                         <div className="space-y-1">
@@ -231,10 +243,26 @@ export function ProcessoViewSheet({
                                 <Receipt className="h-4 w-4" /> Faturar Honorários
                             </Button>
                         )}
+                        <Button
+                            className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-lg shadow-primary/20 px-6 rounded-xl transition-all hover:scale-105 active:scale-95"
+                            onClick={() => setTemplateSelectorOpen(true)}
+                        >
+                            <FilePlus className="h-4 w-4" /> Gerar Minuta
+                        </Button>
                         <Button variant="outline" className="rounded-xl px-6 font-bold" onClick={() => { onOpenChange(false); onEdit(selectedProcesso); }}>Editar</Button>
                         <Button className="rounded-xl px-6 font-bold" onClick={() => onOpenChange(false)}>Fechar</Button>
                     </div>
                 </div>
+
+                {selectedProcesso && (
+                    <MinutasProvider>
+                        <MinutaTemplateSelector
+                            open={templateSelectorOpen}
+                            onOpenChange={setTemplateSelectorOpen}
+                            processo={selectedProcesso}
+                        />
+                    </MinutasProvider>
+                )}
             </SheetContent>
         </Sheet>
     );
