@@ -1,5 +1,6 @@
 import { createContext, useContext, ReactNode, useCallback, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -354,7 +355,7 @@ export function MinutasProvider({ children }: { children: ReactNode }) {
             const { error } = await supabase.from("minutas_documents").insert({
                 id: data.id, organization_id: orgId, user_id: uid,
                 title: data.title, category: data.category, content: data.content,
-                variables: data.variables as any, tags: data.tags, favorite: data.favorite,
+                variables: data.variables as unknown as Json, tags: data.tags, favorite: data.favorite,
                 source: data.source,
             });
             if (error) throw error;
@@ -375,7 +376,7 @@ export function MinutasProvider({ children }: { children: ReactNode }) {
             if (data.title !== undefined) payload.title = data.title;
             if (data.category !== undefined) payload.category = data.category;
             if (data.content !== undefined) payload.content = data.content;
-            if (data.variables !== undefined) payload.variables = data.variables as any;
+            if (data.variables !== undefined) payload.variables = data.variables as unknown as Json;
             if (data.tags !== undefined) payload.tags = data.tags;
             if (data.favorite !== undefined) payload.favorite = data.favorite;
             if (data.usageCount !== undefined) payload.usage_count = data.usageCount;

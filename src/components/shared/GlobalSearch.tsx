@@ -49,7 +49,8 @@ export function GlobalSearch() {
 
         setIsLoading(true);
         try {
-            const orgId = (user as any)?.organization_id;
+            const { data: profile } = await supabase.from("profiles").select("organization_id").eq("user_id", user.id).single();
+            const orgId = profile?.organization_id;
             if (!orgId) return;
 
             const [{ data: proc }, { data: cli }] = await Promise.all([

@@ -120,7 +120,7 @@ export default function BudgetPerformanceTab({ orgId }: Props) {
         queryKey: ["orcamentos", orgId, month, year, typeTab],
         queryFn: async () => {
             const { data, error } = await supabase
-                .from("orcamentos" as any)
+                .from("orcamentos")
                 .select("*")
                 .eq("organization_id", orgId)
                 .eq("type", typeTab)
@@ -149,7 +149,7 @@ export default function BudgetPerformanceTab({ orgId }: Props) {
         queryKey: ["orcamentos_log", orgId, month, year],
         queryFn: async () => {
             const { data, error } = await supabase
-                .from("orcamentos_log" as any)
+                .from("orcamentos_log")
                 .select("*")
                 .eq("organization_id", orgId)
                 .order("changed_at", { ascending: false })
@@ -177,10 +177,10 @@ export default function BudgetPerformanceTab({ orgId }: Props) {
 
                 const budgeted = (orc ?? []).reduce((s, o) => s + Number(o.amount), 0);
                 const monthContas = (ct ?? []).filter((c) => {
-                    const dd = new Date((c as any).due_date + "T00:00:00");
-                    return dd.getMonth() + 1 === m && dd.getFullYear() === y && ((c as any).status === "pago" || (c as any).status === "pendente");
+                    const dd = new Date(c.due_date + "T00:00:00");
+                    return dd.getMonth() + 1 === m && dd.getFullYear() === y && (c.status === "pago" || c.status === "pendente");
                 });
-                const realized = monthContas.reduce((s, c) => s + Number((c as any).amount), 0);
+                const realized = monthContas.reduce((s, c) => s + Number(c.amount), 0);
 
                 results.push({
                     name: format(d, "MMM/yy", { locale: ptBR }),
@@ -196,7 +196,7 @@ export default function BudgetPerformanceTab({ orgId }: Props) {
     // ─── Computed Data ────────────────────────────────────────
 
     const rows = useMemo(
-        () => buildCategoryRows(orcamentos as Orcamento[], contas as any[], month, year, typeTab, categories),
+        () => buildCategoryRows(orcamentos as Orcamento[], contas as Record<string, unknown>[], month, year, typeTab, categories),
         [orcamentos, contas, month, year, typeTab, categories]
     );
 
@@ -228,7 +228,7 @@ export default function BudgetPerformanceTab({ orgId }: Props) {
             const existing = (orcamentos as Orcamento[]).find((o) => o.category === payload.category);
 
             const { data, error } = await supabase
-                .from("orcamentos" as any)
+                .from("orcamentos")
                 .upsert(
                     {
                         organization_id: orgId,

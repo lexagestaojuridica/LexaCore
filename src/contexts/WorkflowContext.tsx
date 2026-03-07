@@ -297,16 +297,16 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
     const { data: members = [] } = useQuery({
         queryKey: ["workflow_members", orgId],
         queryFn: async () => {
-            const { data } = await (supabase
-                .from("rh_colaboradores" as any)
+            const { data } = await supabase
+                .from("rh_colaboradores")
                 .select("id, full_name, position")
                 .eq("organization_id", orgId)
-                .eq("status", "active") as any);
-            return (data || []).map((c: any): Member => ({
+                .eq("status", "active");
+            return (data || []).map((c): Member => ({
                 id: c.id,
-                name: c.full_name,
+                name: c.full_name || "",
                 role: c.position || "Colaborador",
-                avatar: (c.full_name as string).split(" ").map((n: string) => n[0]).slice(0, 2).join(""),
+                avatar: (c.full_name || "").split(" ").map((n: string) => n[0]).slice(0, 2).join(""),
             }));
         },
         enabled: !!orgId,

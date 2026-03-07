@@ -92,7 +92,7 @@ export default function CrmContactsList() {
 
     const handleActivitySubmit = () => {
         if (selectedContact && activityNote) {
-            addActivity({ type: activityType as any, title: `${activityType === "ligacao" ? "Ligação" : activityType === "email" ? "E-mail" : activityType === "reuniao" ? "Reunião" : "Tarefa"} — ${selectedContact.name}`, description: activityNote, contactName: selectedContact.name, date: new Date().toISOString().split("T")[0], time: new Date().toTimeString().slice(0, 5), completed: false });
+            addActivity({ type: activityType as "ligacao" | "email" | "reuniao" | "tarefa", title: `${activityType === "ligacao" ? "Ligação" : activityType === "email" ? "E-mail" : activityType === "reuniao" ? "Reunião" : "Tarefa"} — ${selectedContact.name}`, description: activityNote, contactName: selectedContact.name, date: new Date().toISOString().split("T")[0], time: new Date().toTimeString().slice(0, 5), completed: false });
         }
         setActivityDialogOpen(false);
     };
@@ -269,7 +269,7 @@ export default function CrmContactsList() {
                         <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-1.5">
                                 <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Tipo</label>
-                                <Select value={form.type} onValueChange={(v: any) => setForm((p) => ({ ...p, type: v }))}><SelectTrigger className="h-10 bg-background"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="pessoa_fisica">Pessoa Física</SelectItem><SelectItem value="pessoa_juridica">Pessoa Jurídica</SelectItem></SelectContent></Select>
+                                <Select value={form.type} onValueChange={(v: "pessoa_fisica" | "pessoa_juridica") => setForm((p) => ({ ...p, type: v }))}><SelectTrigger className="h-10 bg-background"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="pessoa_fisica">Pessoa Física</SelectItem><SelectItem value="pessoa_juridica">Pessoa Jurídica</SelectItem></SelectContent></Select>
                             </div>
                             <FormField label="Empresa" value={form.company} onChange={(v) => setForm((p) => ({ ...p, company: v }))} placeholder="Nome da empresa" />
                         </div>

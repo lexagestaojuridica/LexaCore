@@ -37,9 +37,9 @@ export default function ProcessPublicView() {
     const { data, isLoading, isError } = useQuery({
         queryKey: ["public_process", token],
         queryFn: async () => {
-            const { data, error } = await supabase.rpc("get_public_process_with_org" as any, { token_val: token });
+            const { data, error } = await supabase.rpc("get_public_process_with_org" as "get_organization_id", { token_val: token } as Record<string, unknown>);
             if (error) throw error;
-            return data as PublicProcessData;
+            return data as unknown as PublicProcessData;
         },
         enabled: !!token,
     });
@@ -253,7 +253,7 @@ export default function ProcessPublicView() {
                             </div>
                         ) : (
                             <div className="space-y-4">
-                                {andamentos.map((item: any, idx: number) => (
+                                {andamentos.map((item, idx: number) => (
                                     <div key={idx} className="group glass-card rounded-2xl p-5 border border-border/40 hover:border-accent/40 hover:bg-white/50 transition-all duration-300">
                                         <div className="flex gap-4">
                                             <div className="flex flex-col items-center gap-2">

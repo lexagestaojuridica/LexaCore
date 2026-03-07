@@ -25,21 +25,21 @@ export default function PortalSignature() {
         queryFn: async () => {
             // By default RLS blocks unauthenticated unless we have a specific policy or RPC
             // Admin override is ideal here or an Edge Function, but for this MVP:
-            const { data, error } = await (supabase as any)
-                .from("document_signatures")
+            const { data, error } = await supabase
+                .from("document_signatures" as "profiles")
                 .select(`
           *,
           documentos ( file_name, file_path, size ),
           organizations ( name, document )
-        `)
-                .eq("token", token)
+        ` as "*")
+                .eq("token" as "user_id", token as string)
                 .single();
 
             if (error) {
                 setHasError(true);
                 throw error;
             }
-            return data as any;
+            return data as unknown as Record<string, any>;
         },
         enabled: !!token,
         retry: false
@@ -54,16 +54,16 @@ export default function PortalSignature() {
             const clientIp = "127.0.0.1"; // Idealmente via Edge Function req.headers.get("x-forwarded-for")
             const userAgent = navigator.userAgent;
 
-            const { error } = await (supabase as any)
-                .from("document_signatures")
+            const { error } = await supabase
+                .from("document_signatures" as "profiles")
                 .update({
                     status: 'assinado',
                     signed_at: new Date().toISOString(),
                     ip_address: clientIp,
                     user_agent: userAgent,
                     signature_hash: btoa(`signed-${signature.id}-${Date.now()}`) // Basic hash mock
-                })
-                .eq("token", token);
+                } as Record<string, unknown>)
+                .eq("token" as "user_id", token as string);
 
             if (error) throw error;
         },

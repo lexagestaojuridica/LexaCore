@@ -185,7 +185,7 @@ export default function RecrutamentoPage() {
                                             </div>
                                             <span className="text-[10px] font-medium text-primary flex items-center gap-1">
                                                 <Briefcase className="h-3 w-3" />
-                                                {(c.rh_recrutamento_vagas as any)?.title || "Vaga Geral"}
+                                                {(c.rh_recrutamento_vagas as { title?: string } | null)?.title || "Vaga Geral"}
                                             </span>
 
                                             <div className="flex items-center gap-2 mt-2 pt-2 border-t border-border/30">

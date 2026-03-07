@@ -73,7 +73,7 @@ export default function ClientesPage() {
   const openCreate = () => { setForm(emptyClientForm); setIsEditing(false); setDialogOpen(true); };
   const openEdit = (c: Client) => {
     const f: Record<string, string> = {};
-    Object.keys(emptyClientForm).forEach((k) => { f[k] = (c as any)[k] ?? ""; });
+    Object.keys(emptyClientForm).forEach((k) => { f[k] = (c as Record<string, string | null>)[k] ?? ""; });
     setForm(f); setSelectedClient(c); setIsEditing(true); setDialogOpen(true);
   };
 
@@ -83,7 +83,7 @@ export default function ClientesPage() {
     Object.entries(dataToSave).forEach(([k, v]) => { payload[k] = v || null; });
     payload.name = dataToSave.name;
     if (isEditing && selectedClient) {
-      updateMutation.mutate({ id: selectedClient.id, ...payload } as any, { onSuccess: closeDialog });
+      updateMutation.mutate({ id: selectedClient.id, ...payload } as Parameters<typeof updateMutation.mutate>[0], { onSuccess: closeDialog });
     } else {
       createMutation.mutate({ ...payload, organization_id: orgId! }, { onSuccess: closeDialog });
     }

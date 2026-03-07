@@ -118,7 +118,7 @@ export function useConfiguracoes() {
         if (profile && org && !formInitialized) {
             setProfileForm({ full_name: profile.full_name || "", phone: profile.phone || "" });
             // TODO: Add whatsapp_instance_id, jusbrasil_token, escavador_token to organizations type
-            const o = org as any;
+            const o = org as Record<string, unknown>;
             setOrgForm({
                 whatsapp_instance_id: o.whatsapp_instance_id || "",
                 whatsapp_token: o.whatsapp_token || "",
@@ -159,7 +159,7 @@ export function useConfiguracoes() {
     const updateOrgMutation = useMutation({
         mutationFn: async (payload: { whatsapp_instance_id: string; whatsapp_token: string; whatsapp_enabled: boolean; jusbrasil_token?: string; escavador_token?: string }) => {
             // TODO: Add integration fields (whatsapp_instance_id, etc.) to organizations type
-            const { error } = await supabase.from("organizations").update(payload as any).eq("id", orgId!);
+            const { error } = await supabase.from("organizations").update(payload as unknown as Record<string, unknown>).eq("id", orgId!);
             if (error) throw error;
         },
         onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["org"] }); toast.success("Configurações salvas"); },

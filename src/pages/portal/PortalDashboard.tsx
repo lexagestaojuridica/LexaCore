@@ -19,7 +19,7 @@ export default function PortalDashboard() {
     const queryClient = useQueryClient();
 
     const [pixModalOpen, setPixModalOpen] = useState(false);
-    const [selectedPix, setSelectedPix] = useState<any>(null);
+    const [selectedPix, setSelectedPix] = useState<{ amount: number; description: string; pix_code?: string; asaas_billing_url?: string } | null>(null);
 
     // Pegar o Client ID real vinculado a este Auth User
     const { data: clientUser, isLoading: loadingClient } = useQuery({
@@ -104,17 +104,17 @@ export default function PortalDashboard() {
             queryClient.invalidateQueries({ queryKey: ["portal-documentos"] });
             toast.success("Documento enviado com sucesso! Seu advogado será notificado.");
         },
-        onError: (err: any) => toast.error(`Erro ao enviar documento: ${err.message}`),
+        onError: (err: Error) => toast.error(`Erro ao enviar documento: ${err.message}`),
     });
 
     const triggerUpload = () => {
         const input = document.createElement("input");
         input.type = "file";
         input.multiple = true;
-        input.onchange = (e: any) => {
-            const files = e.target.files;
+        input.onchange = (e: Event) => {
+            const files = (e.target as HTMLInputElement).files;
             if (files) {
-                Array.from(files).forEach((file: any) => {
+                Array.from(files).forEach((file) => {
                     uploadDocMutation.mutate({ file });
                 });
             }
@@ -205,8 +205,7 @@ export default function PortalDashboard() {
                             </Card>
                         ) : (
                             <div className="grid gap-4">
-                                {processos?.map((p_raw) => {
-                                    const proc = p_raw as any;
+                                {processos?.map((proc) => {
                                     return (
                                         <Card key={proc.id} className="overflow-hidden hover:shadow-md transition-shadow">
                                             <CardHeader className="bg-muted/30 pb-3">
@@ -282,23 +281,23 @@ export default function PortalDashboard() {
                                                                 variant={isVencido ? "destructive" : "default"}
                                                                 className="h-7 text-xs px-2 shadow-sm gap-1.5"
                                                                 onClick={() => {
-                                                                    if ((fat as any).pix_code) {
-                                                                        setSelectedPix(fat);
+                                                                    if ((fat as unknown as { pix_code?: string }).pix_code) {
+                                                                        setSelectedPix(fat as unknown as typeof selectedPix);
                                                                         setPixModalOpen(true);
                                                                     } else {
                                                                         toast.error("Boleto/PIX ainda não gerado pelo escritório.");
                                                                     }
                                                                 }}
                                                             >
-                                                                {(fat as any).pix_code || (fat as any).asaas_billing_url ? <QrCode className="w-3.5 h-3.5" /> : null} Pagar
+                                                                {(fat as unknown as { pix_code?: string; asaas_billing_url?: string }).pix_code || (fat as unknown as { asaas_billing_url?: string }).asaas_billing_url ? <QrCode className="w-3.5 h-3.5" /> : null} Pagar
                                                             </Button>
                                                         )}
-                                                        {(fat as any).asaas_billing_url && (
+                                                        {(fat as unknown as { asaas_billing_url?: string }).asaas_billing_url && (
                                                             <Button
                                                                 size="sm"
                                                                 variant="ghost"
                                                                 className="h-7 w-7 p-0 ml-1 text-blue-600"
-                                                                onClick={() => window.open((fat as any).asaas_billing_url, "_blank")}
+                                                                onClick={() => window.open((fat as unknown as { asaas_billing_url: string }).asaas_billing_url, "_blank")}
                                                                 title="Abrir no Gateway"
                                                             >
                                                                 <ExternalLink className="h-3.5 w-3.5" />
