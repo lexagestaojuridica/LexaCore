@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import type { Processo } from "../types";
@@ -58,7 +59,7 @@ export function useProcessos(
 
             const { data, error, count } = await query;
             if (error) throw error;
-            return { data: (data as any) as Processo[], count: count ?? 0 };
+            return { data: (data as unknown) as Processo[], count: count ?? 0 };
         },
         enabled: !!orgId,
         placeholderData: keepPreviousData,
@@ -79,7 +80,7 @@ export function useProcessos(
     // ── Mutations ──
     const createMutation = useMutation({
         mutationFn: async (payload: Partial<Processo>) => {
-            const { error } = await supabase.from("processos_juridicos").insert({ ...payload, organization_id: orgId, responsible_user_id: user?.id } as any);
+            const { error } = await supabase.from("processos_juridicos").insert({ ...payload, organization_id: orgId, responsible_user_id: user?.id } as Database["public"]["Tables"]["processos_juridicos"]["Insert"]);
             if (error) throw error;
         },
         onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["processos"] }); toast.success("Processo criado"); },
@@ -92,7 +93,7 @@ export function useProcessos(
             delete updatePayload.organization_id;
             delete updatePayload.created_at;
             delete updatePayload.responsible_user_id;
-            const { error } = await supabase.from("processos_juridicos").update(updatePayload as any).eq("id", id).eq("organization_id", orgId!);
+            const { error } = await supabase.from("processos_juridicos").update(updatePayload as Database["public"]["Tables"]["processos_juridicos"]["Update"]).eq("id", id).eq("organization_id", orgId!);
             if (error) throw error;
         },
         onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["processos"] }); toast.success("Processo atualizado"); },

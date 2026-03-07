@@ -13,7 +13,7 @@ export function useAsaasBilling(orgId: string | undefined, tab: TipoConta, setPi
             if (!orgId) throw new Error("Organização não encontrada.");
 
             const { data: settingsRaw } = await supabase
-                .from("gateway_settings" as any)
+                .from("gateway_settings")
                 .select("status, api_key")
                 .eq("organization_id", orgId)
                 .eq("gateway_name", "asaas")
@@ -35,7 +35,7 @@ export function useAsaasBilling(orgId: string | undefined, tab: TipoConta, setPi
             });
 
             const pixCode = payment.pixTransaction?.payload || payment.encodedImage || "";
-            const { error } = await supabase.from("contas_receber" as any).update({
+            const { error } = await supabase.from("contas_receber").update({
                 pix_code: pixCode,
                 gateway_id: payment.id,
                 asaas_id: payment.id,

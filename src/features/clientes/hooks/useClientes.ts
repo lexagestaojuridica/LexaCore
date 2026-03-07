@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { asaasService } from "@/services/asaasService";
@@ -31,7 +32,7 @@ export function useClientes() {
     const { data: clientsData, isLoading } = useQuery({
         queryKey: ["clients", orgId, page, search],
         queryFn: async () => {
-            let query = (supabase.from("clients") as any).select("*", { count: "exact" }).eq("organization_id", orgId!).order("created_at", { ascending: false });
+            let query = supabase.from("clients").select("*", { count: "exact" }).eq("organization_id", orgId!).order("created_at", { ascending: false });
             if (search) {
                 query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%,document.ilike.%${search}%,company_name.ilike.%${search}%`);
             }
@@ -39,7 +40,7 @@ export function useClientes() {
             query = query.range(from, from + PAGE_SIZE - 1);
             const { data, error, count } = await query;
             if (error) throw error;
-            return { data: (data ?? []) as Client[], count: count ?? 0 };
+            return { data: (data ?? []) as unknown as Client[], count: count ?? 0 };
         },
         enabled: !!orgId,
         placeholderData: keepPreviousData,
@@ -63,7 +64,7 @@ export function useClientes() {
     // ── Mutations ──
     const createMutation = useMutation({
         mutationFn: async (payload: Record<string, unknown>) => {
-            const { error } = await (supabase.from("clients") as any).insert(payload);
+            const { error } = await supabase.from("clients").insert(payload as Database["public"]["Tables"]["clients"]["Insert"]);
             if (error) throw error;
         },
         onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["clients"] }); toast.success("Cliente criado com sucesso"); },
@@ -139,7 +140,7 @@ export function useClientes() {
             } else {
                 const response = await asaasService.createCustomer(orgId, customerData);
                 asaasId = response.id;
-                const { error } = await (supabase.from("clients") as any).update({ asaas_customer_id: asaasId }).eq("id", client.id);
+                const { error } = await supabase.from("clients").update({ asaas_customer_id: asaasId }).eq("id", client.id);
                 if (error) throw error;
             }
         },
@@ -153,6 +154,7 @@ export function useClientes() {
             if (!orgId) throw new Error("Organização não encontrada.");
             const token = crypto.randomUUID();
             const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+            // TODO: Add client_portal_tokens type to types.ts when migration is created
             const { error } = await (supabase as any).from("client_portal_tokens").insert({
                 client_id: client.id, organization_id: orgId, token, expires_at: expiresAt,
             });

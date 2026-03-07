@@ -11,7 +11,7 @@ export function useTimesheet(orgId: string | undefined, userId: string | undefin
         queryKey: ["timesheet", orgId],
         queryFn: async () => {
             const { data, error } = await supabase
-                .from("timesheet_entries" as any)
+                .from("timesheet_entries")
                 .select("*")
                 .eq("organization_id", orgId!)
                 .order("started_at", { ascending: false });
@@ -38,7 +38,7 @@ export function useTimesheet(orgId: string | undefined, userId: string | undefin
 
     const createMutation = useMutation({
         mutationFn: async (payload: any) => {
-            const { error } = await supabase.from("timesheet_entries" as any).insert(payload);
+            const { error } = await supabase.from("timesheet_entries").insert(payload);
             if (error) throw error;
         },
         onSuccess: () => {
@@ -50,7 +50,7 @@ export function useTimesheet(orgId: string | undefined, userId: string | undefin
 
     const deleteMutation = useMutation({
         mutationFn: async (id: string) => {
-            const { error } = await supabase.from("timesheet_entries" as any).delete().eq("id", id);
+            const { error } = await supabase.from("timesheet_entries").delete().eq("id", id);
             if (error) throw error;
         },
         onSuccess: () => {

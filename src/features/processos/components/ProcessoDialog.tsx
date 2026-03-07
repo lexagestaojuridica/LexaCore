@@ -66,8 +66,8 @@ export function ProcessoDialog({
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         const payload = { ...form };
-        delete (payload as any).estimated_value_display;
-        onSave(payload);
+        const { estimated_value_display, ...cleanPayload } = payload as Partial<Processo> & { estimated_value_display?: string };
+        onSave(cleanPayload);
     };
 
     const handleValueChange = (v: string) => {

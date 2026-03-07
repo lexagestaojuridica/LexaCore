@@ -82,7 +82,7 @@ export function useDocumentos() {
             if (!signerName || !signerEmail) throw new Error("Nome e E-mail são obrigatórios");
             const signingToken = crypto.randomUUID();
             const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-            const { error } = await (supabase as any).from("document_signatures").insert({
+            const { error } = await supabase.from("document_signatures").insert({
                 organization_id: orgId, document_id: docId, client_id: clientId,
                 signer_name: signerName, signer_email: signerEmail, signer_document: signerDoc,
                 signing_token: signingToken, expires_at: expiresAt, status: "pendente",

@@ -117,6 +117,7 @@ export function useConfiguracoes() {
     useEffect(() => {
         if (profile && org && !formInitialized) {
             setProfileForm({ full_name: profile.full_name || "", phone: profile.phone || "" });
+            // TODO: Add whatsapp_instance_id, jusbrasil_token, escavador_token to organizations type
             const o = org as any;
             setOrgForm({
                 whatsapp_instance_id: o.whatsapp_instance_id || "",
@@ -157,6 +158,7 @@ export function useConfiguracoes() {
 
     const updateOrgMutation = useMutation({
         mutationFn: async (payload: { whatsapp_instance_id: string; whatsapp_token: string; whatsapp_enabled: boolean; jusbrasil_token?: string; escavador_token?: string }) => {
+            // TODO: Add integration fields (whatsapp_instance_id, etc.) to organizations type
             const { error } = await supabase.from("organizations").update(payload as any).eq("id", orgId!);
             if (error) throw error;
         },
@@ -180,7 +182,7 @@ export function useConfiguracoes() {
 
     const updateMemberRoleMutation = useMutation({
         mutationFn: async ({ userId, custom_role_id }: { userId: string; custom_role_id: string }) => {
-            const { error } = await supabase.from("profiles").update({ custom_role_id } as any).eq("user_id", userId);
+            const { error } = await supabase.from("profiles").update({ custom_role_id }).eq("user_id", userId);
             if (error) throw error;
         },
         onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["team-members"] }); toast.success("Nível de acesso atualizado"); },
@@ -215,7 +217,7 @@ export function useConfiguracoes() {
 
     const createOptionMutation = useMutation({
         mutationFn: async (payload: Record<string, unknown>) => {
-            const { error } = await supabase.from("custom_options").insert(payload as any);
+            const { error } = await supabase.from("custom_options").insert(payload);
             if (error) throw error;
         },
         onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["custom-options"] }); toast.success("Opção criada!"); },

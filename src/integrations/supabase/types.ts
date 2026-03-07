@@ -212,6 +212,7 @@ export type Database = {
           secondary_email: string | null
           secondary_phone: string | null
           updated_at: string
+          asaas_customer_id: string | null
         }
         Insert: {
           address_city?: string | null
@@ -242,6 +243,7 @@ export type Database = {
           secondary_email?: string | null
           secondary_phone?: string | null
           updated_at?: string
+          asaas_customer_id?: string | null
         }
         Update: {
           address_city?: string | null
@@ -272,6 +274,7 @@ export type Database = {
           secondary_email?: string | null
           secondary_phone?: string | null
           updated_at?: string
+          asaas_customer_id?: string | null
         }
         Relationships: [
           {
@@ -1927,43 +1930,78 @@ export type Database = {
           },
         ]
       }
-      support_tickets: {
+      timesheet_timer_logs: {
+        Row: {
+          id: string
+          timesheet_entry_id: string
+          action: string
+          logged_at: string
+          notes: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          timesheet_entry_id: string
+          action: string
+          logged_at?: string
+          notes?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          timesheet_entry_id?: string
+          action?: string
+          logged_at?: string
+          notes?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "timesheet_timer_logs_timesheet_entry_id_fkey"
+            columns: ["timesheet_entry_id"]
+            isOneToOne: false
+            referencedRelation: "timesheet_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gateway_settings: {
         Row: {
           id: string
           organization_id: string
-          user_id: string | null
-          subject: string
-          message: string
+          gateway_name: string
+          api_key: string
+          environment: string | null
+          webhook_secret: string | null
           status: string | null
-          priority: string | null
-          created_at: string | null
-          updated_at: string | null
+          created_at: string
+          updated_at: string
         }
         Insert: {
           id?: string
           organization_id: string
-          user_id?: string | null
-          subject: string
-          message: string
+          gateway_name?: string
+          api_key: string
+          environment?: string | null
+          webhook_secret?: string | null
           status?: string | null
-          priority?: string | null
-          created_at?: string | null
-          updated_at?: string | null
+          created_at?: string
+          updated_at?: string
         }
         Update: {
           id?: string
           organization_id?: string
-          user_id?: string | null
-          subject?: string
-          message?: string
+          gateway_name?: string
+          api_key?: string
+          environment?: string | null
+          webhook_secret?: string | null
           status?: string | null
-          priority?: string | null
-          created_at?: string | null
-          updated_at?: string | null
+          created_at?: string
+          updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: "support_tickets_organization_id_fkey"
+            foreignKeyName: "gateway_settings_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -1971,32 +2009,58 @@ export type Database = {
           },
         ]
       }
-      platform_settings: {
+      custom_options: {
         Row: {
           id: string
-          key: string
-          value: Json
-          description: string | null
-          created_at: string | null
-          updated_at: string | null
+          organization_id: string
+          module: string
+          field_name: string
+          label: string
+          value: string
+          color: string | null
+          icon: string | null
+          sort_order: number
+          is_active: boolean
+          created_at: string
+          updated_at: string
         }
         Insert: {
           id?: string
-          key: string
-          value: Json
-          description?: string | null
-          created_at?: string | null
-          updated_at?: string | null
+          organization_id: string
+          module: string
+          field_name: string
+          label: string
+          value: string
+          color?: string | null
+          icon?: string | null
+          sort_order?: number
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
         }
         Update: {
           id?: string
-          key?: string
-          value?: Json
-          description?: string | null
-          created_at?: string | null
-          updated_at?: string | null
+          organization_id?: string
+          module?: string
+          field_name?: string
+          label?: string
+          value?: string
+          color?: string | null
+          icon?: string | null
+          sort_order?: number
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "custom_options_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

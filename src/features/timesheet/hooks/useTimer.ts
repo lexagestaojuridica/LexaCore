@@ -29,7 +29,7 @@ export function useTimer(orgId: string | undefined, userId: string | undefined) 
     }, [activeTimer]);
 
     const logTimerAction = async (entryId: string, action: string) => {
-        await supabase.from("timesheet_timer_logs" as any).insert({
+        await supabase.from("timesheet_timer_logs").insert({
             timesheet_entry_id: entryId,
             action,
             logged_at: new Date().toISOString(),
@@ -73,7 +73,7 @@ export function useTimer(orgId: string | undefined, userId: string | undefined) 
 
         const startedIso = new Date(endedAt.getTime() - elapsed * 1000).toISOString();
 
-        const { data: inserted } = await supabase.from("timesheet_entries" as any).insert({
+        const { data: inserted } = await supabase.from("timesheet_entries").insert({
             organization_id: orgId,
             user_id: userId,
             process_id: activeTimer.processId,
@@ -86,7 +86,7 @@ export function useTimer(orgId: string | undefined, userId: string | undefined) 
         }).select("id").single();
 
         if (inserted) {
-            const insertedId = (inserted as any).id;
+            const insertedId = inserted.id;
             if (insertedId) {
                 await logTimerAction(insertedId, "stop");
             }
