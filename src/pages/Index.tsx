@@ -1,8 +1,8 @@
-import { Navbar, HeroSection } from "@/components/landing/HeroSection";
-import FeaturesSection from "@/components/landing/FeaturesSection";
-import ArunaSection from "@/components/landing/ArunaSection";
-import PricingSection from "@/components/landing/PricingSection";
-import Footer from "@/components/landing/Footer";
+import { Navbar, HeroSection } from "@/features/landing/components/HeroSection";
+import FeaturesSection from "@/features/landing/components/FeaturesSection";
+import ArunaSection from "@/features/landing/components/ArunaSection";
+import PricingSection from "@/features/landing/components/PricingSection";
+import Footer from "@/features/landing/components/Footer";
 
 const Index = () => {
   return (

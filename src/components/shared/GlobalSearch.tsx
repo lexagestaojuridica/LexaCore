@@ -16,7 +16,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
-import { useTheme } from "@/components/theme-provider";
+import { useTheme } from "@/components/shared/ThemeProvider";
 import { supabase } from "@/integrations/supabase/client";
 
 export function GlobalSearch() {

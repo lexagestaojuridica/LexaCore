@@ -1,4 +1,4 @@
-import { MinutaDocument, DocumentVariable } from "@/contexts/MinutasContext";
+import { MinutaDocument, DocumentVariable } from "@/features/minutas/contexts/MinutasContext";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 

@@ -9,8 +9,8 @@ import { ProcessoDeadlineManager } from "./ProcessoDeadlineManager";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { MinutasProvider } from "@/contexts/MinutasContext";
-import { MinutaTemplateSelector } from "@/components/minutas/MinutaTemplateSelector";
+import { MinutasProvider } from "@/features/minutas/contexts/MinutasContext";
+import { MinutaTemplateSelector } from "@/features/minutas/components/MinutaTemplateSelector";
 import { STATUS_OPTIONS } from "../constants";
 import type { Processo, Documento } from "../types";
 

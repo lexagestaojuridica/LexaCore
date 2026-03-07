@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { useBilling } from "@/hooks/useBilling";
+import { useBilling } from "@/features/financeiro/hooks/useBilling";
 import type { Plan, Employee, OrgFormState, EmployeeFormState, CustomRole, GatewaySettings, CustomOption, TeamMember } from "../types";
 import { emptyEmployee, emptyOrgForm, FALLBACK_PLANS } from "../types";
 

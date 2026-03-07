@@ -2,9 +2,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, CalendarDays, ExternalLink, Download, Upload, Unplug, Trash2 } from "lucide-react";
-import { useGoogleCalendar } from "@/hooks/useGoogleCalendar";
-import { useMicrosoftCalendar } from "@/hooks/useMicrosoftCalendar";
-import { useAppleCalendar } from "@/hooks/useAppleCalendar";
+import { useGoogleCalendar } from "@/features/agenda/hooks/useGoogleCalendar";
+import { useMicrosoftCalendar } from "@/features/agenda/hooks/useMicrosoftCalendar";
+import { useAppleCalendar } from "@/features/agenda/hooks/useAppleCalendar";
 
 export function CalendarsIntegrationDialog({
     open,

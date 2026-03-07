@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import LoginForm from "@/components/auth/LoginForm";
-import SignupForm from "@/components/auth/SignupForm";
+import LoginForm from "@/features/auth/components/LoginForm";
+import SignupForm from "@/features/auth/components/SignupForm";
 import logoLexaWhite from "@/assets/logo-lexa-white.png";
 import logoLexa from "@/assets/logo-lexa.png";
 import authBgVideo from "@/assets/auth-bg-video.mp4";

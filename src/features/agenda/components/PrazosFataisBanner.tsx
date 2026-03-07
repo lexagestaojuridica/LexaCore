@@ -2,7 +2,7 @@ import { differenceInHours, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Flame } from "lucide-react";
 import { motion } from "framer-motion";
-import { useUpcomingDeadlines } from "@/hooks/useUpcomingDeadlines";
+import { useUpcomingDeadlines } from "@/features/agenda/hooks/useUpcomingDeadlines";
 
 export function PrazosFataisBanner({ onSelectDate }: { onSelectDate: (d: Date) => void }) {
     const { deadlines, isLoading } = useUpcomingDeadlines();

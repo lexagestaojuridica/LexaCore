@@ -7,53 +7,53 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import RoleGuard from "@/components/shared/RoleGuard";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
-import ProtectedRoute from "@/components/auth/ProtectedRoute";
-import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import DashboardOverview from "@/pages/dashboard/DashboardOverview";
-import ProcessosPage from "@/pages/dashboard/ProcessosPage";
-import ClientesPage from "@/pages/dashboard/ClientesPage";
-import AgendaPage from "@/pages/dashboard/AgendaPage";
-import FinanceiroPage from "@/pages/dashboard/FinanceiroPage";
+import ProtectedRoute from "@/features/auth/components/ProtectedRoute";
+import DashboardLayout from "@/components/layout/DashboardLayout";
+import DashboardOverview from "@/features/meu-dia/pages/DashboardOverview";
+import ProcessosPage from "@/features/processos/pages/ProcessosPage";
+import ClientesPage from "@/features/clientes/pages/ClientesPage";
+import AgendaPage from "@/features/agenda/pages/AgendaPage";
+import FinanceiroPage from "@/features/financeiro/pages/FinanceiroPage";
 // DocumentosPage removed — docs are now inside Processos and Clientes
-import IAPage from "@/pages/dashboard/IAPage";
-import ConfiguracoesPage from "@/pages/dashboard/ConfiguracoesPage";
-import BIPage from "@/pages/dashboard/BIPage";
-import NoticiasPage from "@/pages/dashboard/NoticiasPage";
-import CrmPage from "@/pages/dashboard/CrmPage";
-import WorkflowPage from "@/pages/dashboard/WorkflowPage";
-import MinutasPage from "@/pages/dashboard/MinutasPage";
-import TimesheetPage from "@/pages/dashboard/TimesheetPage";
-import ChatPage from "@/pages/dashboard/ChatPage";
-import UnidadesPage from "@/pages/dashboard/UnidadesPage";
+import IAPage from "@/features/ia/pages/IAPage";
+import ConfiguracoesPage from "@/features/configuracoes/pages/ConfiguracoesPage";
+import BIPage from "@/features/bi/pages/BIPage";
+import NoticiasPage from "@/features/noticias/pages/NoticiasPage";
+import CrmPage from "@/features/crm/pages/CrmPage";
+import WorkflowPage from "@/features/workflow/pages/WorkflowPage";
+import MinutasPage from "@/features/minutas/pages/MinutasPage";
+import TimesheetPage from "@/features/timesheet/pages/TimesheetPage";
+import ChatPage from "@/features/chat/pages/ChatPage";
+import UnidadesPage from "@/features/unidades/pages/UnidadesPage";
 
 // RH Module
-import RhDashboardPage from "@/pages/dashboard/rh/RhDashboardPage";
-import ColaboradoresPage from "@/pages/dashboard/rh/ColaboradoresPage";
-import PontoEletronicoPage from "@/pages/dashboard/rh/PontoEletronicoPage";
-import RecrutamentoPage from "@/pages/dashboard/rh/RecrutamentoPage";
+import RhDashboardPage from "@/features/rh/pages/RhDashboardPage";
+import ColaboradoresPage from "@/features/rh/pages/ColaboradoresPage";
+import PontoEletronicoPage from "@/features/rh/pages/PontoEletronicoPage";
+import RecrutamentoPage from "@/features/rh/pages/RecrutamentoPage";
 
-import PortalLogin from "@/pages/portal/PortalLogin";
-import PortalDashboard from "@/pages/portal/PortalDashboard";
-import PortalSignature from "@/pages/portal/PortalSignature";
+import PortalLogin from "@/features/portal/pages/PortalLogin";
+import PortalDashboard from "@/features/portal/pages/PortalDashboard";
+import PortalSignature from "@/features/portal/pages/PortalSignature";
 import NotFound from "./pages/NotFound";
-import ProcessPublicView from "./pages/public/ProcessPublicView";
+import ProcessPublicView from "@/features/portal/pages/ProcessPublicView";
 
-import ResetPassword from "./pages/auth/ResetPassword";
-import UpdatePassword from "./pages/auth/UpdatePassword";
+import ResetPassword from "@/features/auth/pages/ResetPassword";
+import UpdatePassword from "@/features/auth/pages/UpdatePassword";
 
 // SaaS Backoffice (Master Admin)
-import AdminGuard from "@/components/shared/AdminGuard";
-import AdminLayout from "@/components/admin/AdminLayout";
-import AdminDashboard from "@/pages/admin/AdminDashboard";
-import AdminOrganizations from "@/pages/admin/AdminOrganizations";
-import AdminPlans from "@/pages/admin/AdminPlans";
-import AdminAudit from "@/pages/admin/AdminAudit";
-import AdminSupport from "@/pages/admin/AdminSupport";
-import AdminSettings from "@/pages/admin/AdminSettings";
+import AdminGuard from "@/features/admin/components/AdminGuard";
+import AdminLayout from "@/features/admin/components/AdminLayout";
+import AdminDashboard from "@/features/admin/pages/AdminDashboard";
+import AdminOrganizations from "@/features/admin/pages/AdminOrganizations";
+import AdminPlans from "@/features/admin/pages/AdminPlans";
+import AdminAudit from "@/features/admin/pages/AdminAudit";
+import AdminSupport from "@/features/admin/pages/AdminSupport";
+import AdminSettings from "@/features/admin/pages/AdminSettings";
 
 const queryClient = new QueryClient();
 
-import { ThemeProvider } from "@/components/theme-provider";
+import { ThemeProvider } from "@/components/shared/ThemeProvider";
 import { GlobalSearch } from "@/components/shared/GlobalSearch";
 
 // ... inside App component ...
