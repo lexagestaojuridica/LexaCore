@@ -89,7 +89,7 @@ export default function ChatPage() {
                 .eq("organization_id", orgId!)
                 .eq("is_archived", false)
                 .order("type")
-                .order("name", { ascending: true }) as any);
+                .order("name", { ascending: true }));
             if (error) throw error;
             return (data || []) as Channel[];
         },
@@ -365,7 +365,7 @@ export default function ChatPage() {
                                 <AnimatePresence initial={false}>
                                     {messages.map((msg, i) => {
                                         const isMe = msg.user_id === user?.id;
-                                        const name = (msg.profiles as any)?.full_name || "Usuário";
+                                        const name = (msg.profiles as { full_name?: string | null })?.full_name || "Usuário";
                                         const prev = messages[i - 1];
                                         // group messages from same user if sent within 5 minutes
                                         const isGrouping = prev && prev.user_id === msg.user_id && (new Date(msg.created_at).getTime() - new Date(prev.created_at).getTime() < 5 * 60 * 1000);

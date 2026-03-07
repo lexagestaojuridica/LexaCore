@@ -154,8 +154,8 @@ export function useClientes() {
             if (!orgId) throw new Error("Organização não encontrada.");
             const token = crypto.randomUUID();
             const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-            // TODO: Add client_portal_tokens type to types.ts when migration is created
-            const { error } = await (supabase as any).from("client_portal_tokens").insert({
+            // client_portal_tokens type now available in types.ts
+            const { error } = await supabase.from("client_portal_tokens").insert({
                 client_id: client.id, organization_id: orgId, token, expires_at: expiresAt,
             });
             if (error && !error.message.includes("does not exist")) throw error;

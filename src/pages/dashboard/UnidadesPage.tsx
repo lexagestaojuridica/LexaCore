@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import {
@@ -82,7 +83,7 @@ export default function UnidadesPage() {
 
     const createMutation = useMutation({
         mutationFn: async (payload: Omit<Unit, "id" | "created_at" | "updated_at"> & { organization_id: string }) => {
-            const { error } = await supabase.from("units").insert(payload as any);
+            const { error } = await supabase.from("units").insert(payload as Database["public"]["Tables"]["units"]["Insert"]);
             if (error) throw error;
         },
         onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["units"] }); toast.success("Unidade criada!"); closeDialog(); },
@@ -91,10 +92,9 @@ export default function UnidadesPage() {
 
     const updateMutation = useMutation({
         mutationFn: async ({ id, ...payload }: { id: string } & Partial<Unit>) => {
-            delete (payload as any).organization_id;
-            delete (payload as any).created_at;
+            const { organization_id, created_at, ...cleanPayload } = payload as Partial<Unit> & { organization_id?: string; created_at?: string };
 
-            const { error } = await supabase.from("units").update(payload as any).eq("id", id).eq("organization_id", orgId!);
+            const { error } = await supabase.from("units").update(cleanPayload as Database["public"]["Tables"]["units"]["Update"]).eq("id", id).eq("organization_id", orgId!);
             if (error) throw error;
         },
         onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["units"] }); toast.success("Unidade atualizada!"); closeDialog(); },

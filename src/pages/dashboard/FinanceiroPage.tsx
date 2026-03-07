@@ -305,7 +305,7 @@ export default function FinanceiroPage() {
 
       {/* ── Main Layout ── */}
       <motion.div variants={itemAnim}>
-        <Tabs value={tab} onValueChange={(t) => setTab(t as any)} className="bg-transparent">
+        <Tabs value={tab} onValueChange={(t) => setTab(t as typeof tab)} className="bg-transparent">
           <TabsList className="grid w-full sm:w-auto sm:inline-grid grid-cols-2 md:grid-cols-4 h-auto p-1 bg-muted/50 rounded-xl mb-4">
             <TabsTrigger value="receber" className="py-2.5 gap-2 rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm"><ArrowUpRight className="h-4 w-4" /> <span className="hidden sm:inline">{t('financial.receivable')}</span></TabsTrigger>
             <TabsTrigger value="pagar" className="py-2.5 gap-2 rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm"><ArrowDownRight className="h-4 w-4" /> <span className="hidden sm:inline">{t('financial.payable')}</span></TabsTrigger>

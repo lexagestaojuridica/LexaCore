@@ -14,12 +14,12 @@ export function useAppleCalendar() {
         queryKey: ["apple-calendar-connection", user?.id],
         queryFn: async () => {
             const { data, error } = await supabase
-                .from("apple_calendar_tokens" as any)
+                .from("apple_calendar_tokens")
                 .select("*")
                 .eq("user_id", user!.id)
                 .maybeSingle();
             if (error) throw error;
-            return data as any;
+            return data;
         },
         enabled: !!user?.id,
     });
@@ -53,7 +53,7 @@ export function useAppleCalendar() {
     const disconnect = useMutation({
         mutationFn: async () => {
             const { error } = await supabase
-                .from("apple_calendar_tokens" as any)
+                .from("apple_calendar_tokens")
                 .delete()
                 .eq("user_id", user!.id);
             if (error) throw error;

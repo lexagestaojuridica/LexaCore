@@ -97,7 +97,7 @@ export default function TimesheetPage() {
         queryKey: ["timer-logs", expandedEntry],
         queryFn: async () => {
             const { data } = await supabase
-                .from("timesheet_timer_logs" as any)
+                .from("timesheet_timer_logs")
                 .select("*")
                 .eq("timesheet_entry_id", expandedEntry!)
                 .order("logged_at", { ascending: true });

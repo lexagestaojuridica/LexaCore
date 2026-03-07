@@ -156,7 +156,7 @@ export default function ProcessosPage() {
   });
 
   const handleShare = (p: Processo) => {
-    const token = (p as any).public_token;
+    const token = (p as { public_token?: string }).public_token;
     if (!token) {
       toast.error("Processo sem token público.");
       return;

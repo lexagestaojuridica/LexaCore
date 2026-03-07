@@ -2062,6 +2062,229 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          id: string
+          organization_id: string
+          user_id: string | null
+          title: string
+          description: string | null
+          type: string
+          link: string | null
+          is_read: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          user_id?: string | null
+          title: string
+          description?: string | null
+          type?: string
+          link?: string | null
+          is_read?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          user_id?: string | null
+          title?: string
+          description?: string | null
+          type?: string
+          link?: string | null
+          is_read?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      microsoft_calendar_tokens: {
+        Row: {
+          id: string
+          user_id: string
+          organization_id: string
+          access_token: string
+          refresh_token: string | null
+          token_expires_at: string
+          calendar_id: string | null
+          sync_enabled: boolean
+          last_sync_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          organization_id: string
+          access_token: string
+          refresh_token?: string | null
+          token_expires_at: string
+          calendar_id?: string | null
+          sync_enabled?: boolean
+          last_sync_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          organization_id?: string
+          access_token?: string
+          refresh_token?: string | null
+          token_expires_at?: string
+          calendar_id?: string | null
+          sync_enabled?: boolean
+          last_sync_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "microsoft_calendar_tokens_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      apple_calendar_tokens: {
+        Row: {
+          id: string
+          user_id: string
+          organization_id: string
+          apple_id: string
+          app_specific_password: string
+          caldav_url: string | null
+          sync_enabled: boolean
+          last_sync_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          organization_id: string
+          apple_id: string
+          app_specific_password: string
+          caldav_url?: string | null
+          sync_enabled?: boolean
+          last_sync_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          organization_id?: string
+          apple_id?: string
+          app_specific_password?: string
+          caldav_url?: string | null
+          sync_enabled?: boolean
+          last_sync_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apple_calendar_tokens_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_portal_tokens: {
+        Row: {
+          id: string
+          client_id: string
+          organization_id: string
+          token: string
+          expires_at: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          client_id: string
+          organization_id: string
+          token: string
+          expires_at: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          client_id?: string
+          organization_id?: string
+          token?: string
+          expires_at?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_portal_tokens_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rh_recrutamento_vagas: {
+        Row: {
+          id: string
+          organization_id: string
+          title: string
+          department: string
+          description: string | null
+          requirements: string | null
+          status: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          title: string
+          department: string
+          description?: string | null
+          requirements?: string | null
+          status?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          title?: string
+          department?: string
+          description?: string | null
+          requirements?: string | null
+          status?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rh_recrutamento_vagas_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

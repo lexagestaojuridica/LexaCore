@@ -47,7 +47,7 @@ export default function WorkflowAutomations() {
     const { data: automations = [], isLoading } = useQuery({
         queryKey: ["automations", orgId],
         queryFn: async () => {
-            const { data } = await (supabase.from("workflow_automations") as any).select("*").eq("organization_id", orgId!).order("created_at", { ascending: false });
+            const { data } = await supabase.from("workflow_automations").select("*").eq("organization_id", orgId!).order("created_at", { ascending: false });
             return data ?? [];
         },
         enabled: !!orgId,
@@ -62,7 +62,7 @@ export default function WorkflowAutomations() {
             ];
             const edges = [{ id: "e1-2", source: "trigger_1", target: "action_1" }];
 
-            const { error } = await (supabase.from("workflow_automations") as any).insert({
+            const { error } = await supabase.from("workflow_automations").insert({
                 organization_id: orgId!,
                 name: form.name,
                 description: form.description,
@@ -84,7 +84,7 @@ export default function WorkflowAutomations() {
 
     const toggleMutation = useMutation({
         mutationFn: async ({ id, is_active }: { id: string, is_active: boolean }) => {
-            const { error } = await (supabase.from("workflow_automations") as any).update({ is_active }).eq("id", id);
+            const { error } = await supabase.from("workflow_automations").update({ is_active }).eq("id", id);
             if (error) throw error;
         },
         onSuccess: () => queryClient.invalidateQueries({ queryKey: ["automations"] }),
@@ -93,7 +93,7 @@ export default function WorkflowAutomations() {
 
     const deleteMutation = useMutation({
         mutationFn: async (id: string) => {
-            const { error } = await (supabase.from("workflow_automations") as any).delete().eq("id", id);
+            const { error } = await supabase.from("workflow_automations").delete().eq("id", id);
             if (error) throw error;
         },
         onSuccess: () => {

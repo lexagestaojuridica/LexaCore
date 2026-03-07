@@ -117,10 +117,10 @@ function TimesheetBITab({ orgId }: { orgId: string | null }) {
     queryFn: async (): Promise<TimesheetEntryBI[]> => {
       if (!orgId) return [];
       const { data } = await supabase
-        .from("timesheet_entries" as any)
+        .from("timesheet_entries")
         .select("duration_minutes, hourly_rate, billing_status, processos_juridicos(title)")
         .eq("organization_id", orgId);
-      return (data as any) || [];
+      return (data as unknown as TimesheetEntryBI[]) || [];
     },
     enabled: !!orgId,
   });

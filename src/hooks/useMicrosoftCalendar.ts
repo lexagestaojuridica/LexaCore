@@ -34,7 +34,7 @@ export function useMicrosoftCalendar() {
         queryKey: ["microsoft-calendar-connection", user?.id],
         queryFn: async () => {
             const { data, error } = await supabase
-                .from("microsoft_calendar_tokens" as any)
+                .from("microsoft_calendar_tokens")
                 .select("*")
                 .eq("user_id", user!.id)
                 .maybeSingle();
@@ -92,7 +92,7 @@ export function useMicrosoftCalendar() {
 
                 // Store tokens
                 const { error: insertError } = await (supabase
-                    .from("microsoft_calendar_tokens" as any)
+                    .from("microsoft_calendar_tokens")
                     .upsert({
                         user_id: user!.id,
                         organization_id: profile.organization_id,
@@ -141,7 +141,7 @@ export function useMicrosoftCalendar() {
     const disconnect = useMutation({
         mutationFn: async () => {
             const { error } = await supabase
-                .from("microsoft_calendar_tokens" as any)
+                .from("microsoft_calendar_tokens")
                 .delete()
                 .eq("user_id", user!.id);
             if (error) throw error;
