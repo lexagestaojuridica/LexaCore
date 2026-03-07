@@ -1831,6 +1831,173 @@ export type Database = {
           },
         ]
       }
+      subscription_plans: {
+        Row: {
+          id: string
+          name: string
+          slug: string
+          price_monthly: number
+          price_yearly: number
+          max_users: number
+          max_processes: number
+          features: Json
+          is_active: boolean
+          sort_order: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          slug: string
+          price_monthly?: number
+          price_yearly?: number
+          max_users?: number
+          max_processes?: number
+          features?: Json
+          is_active?: boolean
+          sort_order?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          slug?: string
+          price_monthly?: number
+          price_yearly?: number
+          max_users?: number
+          max_processes?: number
+          features?: Json
+          is_active?: boolean
+          sort_order?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      organization_subscriptions: {
+        Row: {
+          id: string
+          organization_id: string
+          plan_id: string
+          status: string
+          started_at: string
+          expires_at: string | null
+          billing_cycle: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          plan_id: string
+          status?: string
+          started_at?: string
+          expires_at?: string | null
+          billing_cycle?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          plan_id?: string
+          status?: string
+          started_at?: string
+          expires_at?: string | null
+          billing_cycle?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_subscriptions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_tickets: {
+        Row: {
+          id: string
+          organization_id: string
+          user_id: string | null
+          subject: string
+          message: string
+          status: string | null
+          priority: string | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          user_id?: string | null
+          subject: string
+          message: string
+          status?: string | null
+          priority?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          user_id?: string | null
+          subject?: string
+          message?: string
+          status?: string | null
+          priority?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_tickets_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      platform_settings: {
+        Row: {
+          id: string
+          key: string
+          value: Json
+          description: string | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          key: string
+          value: Json
+          description?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          key?: string
+          value?: Json
+          description?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

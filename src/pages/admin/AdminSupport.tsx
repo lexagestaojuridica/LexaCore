@@ -42,7 +42,7 @@ export default function AdminSupport() {
                 *,
                 profiles:user_id(full_name, email),
                 organizations:organization_id(name)
-            `).order("created_at", { ascending: false }) as any;
+            `).order("created_at", { ascending: false });
 
             if (searchTerm) {
                 query = query.ilike("subject", `%${searchTerm}%`);

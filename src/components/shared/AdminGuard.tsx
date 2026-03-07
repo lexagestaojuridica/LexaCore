@@ -7,9 +7,24 @@ interface AdminGuardProps {
     children: ReactNode;
 }
 
+/**
+ * AdminGuard — Protege o Backoffice Admin HQ.
+ * 
+ * Verifica se o usuário autenticado possui role "admin" na tabela profiles
+ * E se o email está na lista de Master Admins autorizados.
+ * 
+ * 🔐 Kai: Usando verificação dupla (email + role) para máxima segurança.
+ * 🗄️ Rafael: Query direta à tabela profiles com campos role e email.
+ */
 export default function AdminGuard({ children }: AdminGuardProps) {
     const { user, loading: authLoading } = useAuth();
     const [isSuperAdmin, setIsSuperAdmin] = useState<boolean | null>(null);
+
+    // Lista de emails autorizados como Master Admin
+    const MASTER_ADMIN_EMAILS = [
+        "lexagestaojuridica@gmail.com",
+        // Adicionar outros emails de Master Admin conforme necessário
+    ];
 
     useEffect(() => {
         const checkMasterRole = async () => {
@@ -18,18 +33,31 @@ export default function AdminGuard({ children }: AdminGuardProps) {
                 return;
             }
 
-            // For now, the ONLY user who can access the SaaS Admin is the platform owner.
-            if (user.email === "lexagestaojuridica@gmail.com") {
-                setIsSuperAdmin(true);
-            } else {
-                // Secondary check: query profiles just in case (leftover logic for future usage)
-                const { data } = await supabase
+            // Verificação 1: Email na lista de Master Admins
+            const isEmailAuthorized = MASTER_ADMIN_EMAILS.includes(user.email ?? "");
+
+            if (!isEmailAuthorized) {
+                setIsSuperAdmin(false);
+                return;
+            }
+
+            // Verificação 2: Confirmar role "admin" no banco de dados
+            try {
+                const { data, error } = await supabase
                     .from("profiles")
-                    .select("id")
-                    .eq("id", user.id)
+                    .select("role")
+                    .eq("user_id", user.id)
                     .single();
 
-                // Block by default if not strictly authorized above
+                if (error || !data) {
+                    console.error("[AdminGuard] Erro ao verificar role:", error?.message);
+                    setIsSuperAdmin(false);
+                    return;
+                }
+
+                setIsSuperAdmin(data.role === "admin");
+            } catch (err) {
+                console.error("[AdminGuard] Exceção inesperada:", err);
                 setIsSuperAdmin(false);
             }
         };
@@ -51,7 +79,6 @@ export default function AdminGuard({ children }: AdminGuardProps) {
     }
 
     if (!isSuperAdmin) {
-        // Kick them back to normal dashboard if they aren't a Master Admin
         return <Navigate to="/dashboard" replace />;
     }
 

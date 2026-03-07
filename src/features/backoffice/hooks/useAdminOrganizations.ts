@@ -11,7 +11,7 @@ export function useAdminOrganizations(searchTerm: string) {
         queryKey: ["admin-subscription-plans-list"],
         queryFn: async () => {
             const { data, error } = await supabase
-                .from("subscription_plans" as any)
+                .from("subscription_plans")
                 .select("id, name, slug")
                 .eq("is_active", true)
                 .order("sort_order", { ascending: true });
@@ -31,7 +31,7 @@ export function useAdminOrganizations(searchTerm: string) {
           status,
           plan:subscription_plans(id, name, slug)
         )
-      `) as any;
+      `);
 
             if (searchTerm) {
                 query = query.ilike("name", `%${searchTerm}%`);

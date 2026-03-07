@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { CreditCard, Edit, Check, X, Shield, Plus } from "lucide-react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -11,13 +12,12 @@ export default function AdminPlans() {
     const { data: plans, isLoading } = useQuery({
         queryKey: ["admin-subscription-plans"],
         queryFn: async () => {
-            // @ts-ignore - bypassing typed supabase client for table that was manually created via migration lately
             const { data, error } = await supabase
-                .from("subscription_plans" as any)
+                .from("subscription_plans")
                 .select("*")
                 .order("sort_order", { ascending: true });
             if (error) throw error;
-            return data as any[];
+            return data;
         },
     });
 
@@ -33,7 +33,10 @@ export default function AdminPlans() {
                         Configure limites do sistema e valores das assinaturas para novos clientes.
                     </p>
                 </div>
-                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2">
+                <Button
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2"
+                    onClick={() => toast.info("Funcionalidade de criação de plano será implementada em breve.")}
+                >
                     <Plus className="h-4 w-4" /> Criar Novo Plano
                 </Button>
             </div>
@@ -116,7 +119,11 @@ export default function AdminPlans() {
 
                                 </CardContent>
                                 <CardFooter className="border-t border-zinc-800 pt-4 mt-auto">
-                                    <Button variant="outline" className="w-full bg-zinc-950 border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white">
+                                    <Button
+                                        variant="outline"
+                                        className="w-full bg-zinc-950 border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white"
+                                        onClick={() => toast.info(`Edição do plano "${plan.name}" será implementada em breve.`)}
+                                    >
                                         <Edit className="h-4 w-4 mr-2" /> Editar {plan.name}
                                     </Button>
                                 </CardFooter>

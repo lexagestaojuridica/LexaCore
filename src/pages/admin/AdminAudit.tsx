@@ -26,7 +26,7 @@ export default function AdminAudit() {
                 *,
                 profiles:user_id(full_name, email),
                 organizations:organization_id(name)
-            `).order("created_at", { ascending: false }).limit(100) as any;
+            `).order("created_at", { ascending: false }).limit(100);
 
             if (searchTerm) {
                 query = query.ilike("action", `%${searchTerm}%`);

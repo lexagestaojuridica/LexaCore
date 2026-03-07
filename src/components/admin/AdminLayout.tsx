@@ -114,7 +114,7 @@ export default function AdminLayout() {
                                 <DropdownMenuContent align="end" className="w-48 bg-zinc-900 border-zinc-800 text-zinc-200">
                                     <DropdownMenuItem
                                         className="text-xs gap-2 cursor-pointer hover:bg-zinc-800 focus:bg-zinc-800"
-                                        onClick={() => navigate("/dashboard/settings")}
+                                        onClick={() => navigate("/admin/hq/settings")}
                                     >
                                         <Settings className="h-3.5 w-3.5" /> Configurações
                                     </DropdownMenuItem>

@@ -29,7 +29,7 @@ export default function AdminDashboard() {
         queryKey: ["admin-active-subs"],
         queryFn: async () => {
             const { count } = await supabase
-                .from("organization_subscriptions" as any)
+                .from("organization_subscriptions")
                 .select("*", { count: "exact", head: true })
                 .eq("status", "active");
             return count || 0;
@@ -47,7 +47,8 @@ export default function AdminDashboard() {
         },
     });
 
-    // Mock data for MRR chart (since calculating dynamic MRR requires complex joins to plans table we'll do later)
+    // TODO: Calcular MRR real via JOIN organization_subscriptions + subscription_plans
+    // Por enquanto, exibimos dados estimados marcados como tal na UI
     const mrrData = [
         { name: "Out", mrr: 12500 },
         { name: "Nov", mrr: 15000 },
@@ -77,7 +78,7 @@ export default function AdminDashboard() {
                         <CreditCard className="h-4 w-4 text-indigo-500" />
                     </CardHeader>
                     <CardContent className="px-5 pb-5">
-                        <div className="text-2xl font-bold text-white">R$ 31.000,00</div>
+                        <div className="text-2xl font-bold text-white">R$ 31.000,00 <span className="text-xs font-normal text-amber-400">(estimado)</span></div>
                         <p className="text-xs text-emerald-500 mt-1 flex items-center gap-1">
                             <TrendingUp className="h-3 w-3" /> +17% em relação ao último mês
                         </p>
