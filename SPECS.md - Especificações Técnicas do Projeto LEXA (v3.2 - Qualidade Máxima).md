@@ -1,15 +1,15 @@
 # SPECS.md - Especificações Técnicas do Projeto LEXA (v3.2 - Qualidade Máxima)
 
 ## 1. Visão Geral da Arquitetura (Marcus - Arquiteto)
-O LEXA opera sob uma arquitetura de SPA (Single Page Application) moderna (Client-side) suportada por um poderoso "Backend-as-a-Service" (BaaS) fornecido pelo **Supabase**. A autenticação e gestão de usuários são providas pelo **Clerk**, um serviço robusto de autenticação e identidade. O frontend é implantado na **Vercel**, que também hospeda Edge Functions para lógica de backend serverless e integrações externas. O **Supabase (PostgreSQL)** atua como o banco de dados principal, delegando regras de negócio granulares para o banco via RLS (Row Level Security), triggers e Functions. A lógica de interface, controle de estado, validações complexas e regras de exibição ficam a cargo do ecossistema React/Vite. **A arquitetura é projetada para suportar funcionalidades offline-first em módulos críticos, garantir alta performance globalmente e segurança em cenários de multitenancy, com foco em isolamento de dados e escalabilidade horizontal. A prioridade máxima é a estabilidade, a ausência de bugs críticos e a aderência inquestionável às regras de negócio e requisitos de front-end.**
+O LEXA opera sob uma arquitetura de Next.js (App Router) moderna suportada por um poderoso "Backend-as-a-Service" (BaaS) fornecido pelo **Supabase**. A autenticação e gestão de usuários são providas pelo **Clerk**, um serviço robusto de autenticação e identidade. O frontend e o backend (Edge Functions/Middleware) são implantados na **Vercel**. O **Supabase (PostgreSQL)** atua como o banco de dados principal, delegando regras de negócio granulares para o banco via RLS (Row Level Security), triggers e Functions. A arquitetura é projetada para suportar funcionalidades offline-first em módulos críticos, garantir alta performance globalmente e segurança em cenários de multitenancy, com foco em isolamento de dados e escalabilidade horizontal. A prioridade máxima é a estabilidade, a ausência de bugs críticos e a aderência inquestionável às regras de negócio e requisitos de front-end.
 
 ## 2. Tecnologias Utilizadas
-*   **Frontend:** React 18, TypeScript, Vite, React Router DOM v6. **Implementação de PWA (Progressive Web App) para capacidades offline.**
+*   **Frontend:** Next.js 15 (App Router), React 18, TypeScript.
 *   **Estilização & UI:** Tailwind CSS, shadcn-ui (Radix UI primitives), framer-motion (animações), lucide-react (ícones).
-*   **Gerenciamento de Estado & Dados:** TanStack React Query (SWR patterns), react-hook-form + zod (validação tipada). **Estratégias de cache local para suporte offline.**
+*   **Gerenciamento de Estado & Dados:** TanStack React Query (SWR patterns), react-hook-form + zod (validação tipada).
 *   **Autenticação & Identidade:** **Clerk** (para autenticação, autorização e gestão de usuários/organizações).
-*   **Backend & Banco de Dados:** **Supabase, PostgreSQL 15+** (para banco de dados, RLS, triggers, functions), **Vercel Edge Functions** (para lógica serverless e integrações externas).
-*   **Outras:** Recharts para B.I, i18next (internacionalização), tiptap (WYSIWYG editor), jspdf / html2canvas (geração de documentos e relatórios).
+*   **Backend & Banco de Dados:** **Supabase, PostgreSQL 15+**, **Vercel Edge Functions**.
+*   **Outras:** Recharts para B.I, i18next (internacionalização), tiptap (WYSIWYG editor), jspdf / html2canvas.
 
 ## 3. Schema do Banco de Dados (Rafael - DBA)
 O banco de dados utiliza **Supabase (PostgreSQL 15+)**, um banco de dados relacional robusto. O modelo de dados é altamente relacional, com mais de 45 migrations complexas rastreadas. 
