@@ -16,10 +16,10 @@ import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
-import { LanguageSwitcher } from "./LanguageSwitcher";
-import { NotificationsDropdown } from "../dashboard/NotificationsDropdown";
-import FacilitadorBar from "../dashboard/FacilitadorBar";
-import ChatWidget from "./ChatWidget";
+import { LanguageSwitcher } from "@/components/shared/LanguageSwitcher";
+import { NotificationsDropdown } from "@/features/meu-dia/components/NotificationsDropdown";
+import FacilitadorBar from "@/features/meu-dia/components/FacilitadorBar";
+import ChatWidget from "@/features/chat/components/ChatWidget";
 
 // Route → i18n key mapping for dynamic TopBar title
 const PAGE_TITLE_KEYS: Record<string, string> = {

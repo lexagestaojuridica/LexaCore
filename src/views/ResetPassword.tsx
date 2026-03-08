@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import { Lock, Eye, EyeOff, ArrowRight, CheckCircle } from "lucide-react";
 import logoLexa from "@/assets/logo-lexa.png";
+import Image from "next/image";
 import { z } from "zod";
 
 const passwordSchema = z
@@ -93,7 +94,7 @@ const ResetPassword = () => {
   if (!isRecovery) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4">
-        <img src={logoLexa} alt="LEXA" className="mb-8 h-20" />
+        <Image src={logoLexa} alt="LEXA" width={160} height={80} className="mb-8 h-20 w-auto" />
         <div className="w-full max-w-md rounded-2xl border border-border bg-card p-8 text-center shadow-lg">
           <h1 className="font-display text-xl font-semibold text-foreground">Link inválido ou expirado</h1>
           <p className="mt-2 text-sm text-muted-foreground">
@@ -110,7 +111,7 @@ const ResetPassword = () => {
   if (success) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4">
-        <img src={logoLexa} alt="LEXA" className="mb-8 h-20" />
+        <Image src={logoLexa} alt="LEXA" width={160} height={80} className="mb-8 h-20 w-auto" />
         <div className="w-full max-w-md rounded-2xl border border-border bg-card p-8 text-center shadow-lg">
           <CheckCircle className="mx-auto h-12 w-12 text-green-500" />
           <h1 className="mt-4 font-display text-xl font-semibold text-foreground">Senha redefinida!</h1>
@@ -124,7 +125,7 @@ const ResetPassword = () => {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4">
-      <img src={logoLexa} alt="LEXA" className="mb-8 h-20" />
+      <Image src={logoLexa} alt="LEXA" width={160} height={80} className="mb-8 h-20 w-auto" />
       <div className="w-full max-w-md rounded-2xl border border-border bg-card p-8 shadow-lg">
         <h1 className="font-display text-2xl font-semibold text-foreground">Redefinir senha</h1>
         <p className="mt-1 text-sm text-muted-foreground">Digite sua nova senha abaixo</p>

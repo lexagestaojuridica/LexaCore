@@ -1,3 +1,5 @@
+"use client";
+
 import { Navbar, HeroSection } from "@/features/landing/components/HeroSection";
 import FeaturesSection from "@/features/landing/components/FeaturesSection";
 import ArunaSection from "@/features/landing/components/ArunaSection";

@@ -1,3 +1,5 @@
+'use client';
+
 import { motion } from "framer-motion";
 import { Scale, Calendar, Calculator, BarChart3, Brain, Shield, ArrowRight, Timer, FileEdit, Users } from "lucide-react";
 

@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import Image from "next/image";
 
 interface PublicProcessData {
     processo: any;
@@ -167,7 +168,7 @@ export default function ProcessPublicView() {
                 <div className="max-w-5xl mx-auto px-6 h-20 flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         {organizacao.logo_url ? (
-                            <img src={organizacao.logo_url} alt={organizacao.name} className="h-10 object-contain" />
+                            <Image src={organizacao.logo_url} alt={organizacao.name} width={120} height={40} className="h-10 w-auto object-contain" unoptimized />
                         ) : (
                             <div className="flex items-center gap-3">
                                 <div className="h-10 w-10 bg-primary rounded-xl flex items-center justify-center shadow-lg border-b-2 border-black/20">

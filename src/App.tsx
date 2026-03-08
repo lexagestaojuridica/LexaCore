@@ -1,12 +1,9 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import RoleGuard from "@/components/shared/RoleGuard";
-import Index from "./pages/Index";
-import Auth from "./pages/Auth";
+import Index from "./views/Index";
+import Auth from "./views/Auth";
 import ProtectedRoute from "@/features/auth/components/ProtectedRoute";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import DashboardOverview from "@/features/meu-dia/pages/DashboardOverview";
@@ -35,7 +32,7 @@ import RecrutamentoPage from "@/features/rh/pages/RecrutamentoPage";
 import PortalLogin from "@/features/portal/pages/PortalLogin";
 import PortalDashboard from "@/features/portal/pages/PortalDashboard";
 import PortalSignature from "@/features/portal/pages/PortalSignature";
-import NotFound from "./pages/NotFound";
+import NotFound from "./views/NotFound";
 import ProcessPublicView from "@/features/portal/pages/ProcessPublicView";
 
 import ResetPassword from "@/features/auth/pages/ResetPassword";
@@ -51,87 +48,80 @@ import AdminAudit from "@/features/admin/pages/AdminAudit";
 import AdminSupport from "@/features/admin/pages/AdminSupport";
 import AdminSettings from "@/features/admin/pages/AdminSettings";
 
-const queryClient = new QueryClient();
-
-import { ThemeProvider } from "@/components/shared/ThemeProvider";
 import { GlobalSearch } from "@/components/shared/GlobalSearch";
+
+const queryClient = new QueryClient();
 
 // ... inside App component ...
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <ThemeProvider defaultTheme="system" storageKey="lexa-theme">
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AuthProvider>
-            <GlobalSearch />
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/update-password" element={<UpdatePassword />} />
-              <Route path="/portal" element={<PortalLogin />} />
-              <Route path="/portal/dashboard" element={<ProtectedRoute><PortalDashboard /></ProtectedRoute>} />
-              <Route path="/portal/assinatura/:token" element={<PortalSignature />} />
-              <Route path="/public/processo/:token" element={<ProcessPublicView />} />
-              <Route
-                path="/dashboard"
-                element={
-                  <ProtectedRoute>
-                    <DashboardLayout />
-                  </ProtectedRoute>
-                }
-              >
-                <Route index element={<DashboardOverview />} />
-                <Route path="processos" element={<ProcessosPage />} />
-                <Route path="clientes" element={<ClientesPage />} />
-                <Route path="agenda" element={<AgendaPage />} />
-                <Route path="financeiro" element={<RoleGuard allowedRoles={["admin", "advogado", "financeiro"]} fallback={<Navigate to="/dashboard" replace />}><FinanceiroPage /></RoleGuard>} />
-                <Route path="ia" element={<IAPage />} />
-                <Route path="configuracoes" element={<RoleGuard allowedRoles={["admin"]} fallback={<Navigate to="/dashboard" replace />}><ConfiguracoesPage /></RoleGuard>} />
-                <Route path="bi" element={<BIPage />} />
-                <Route path="noticias" element={<NoticiasPage />} />
-                <Route path="crm" element={<CrmPage />} />
-                <Route path="workflow" element={<WorkflowPage />} />
-                <Route path="minutas" element={<MinutasPage />} />
-                <Route path="timesheet" element={<TimesheetPage />} />
-                <Route path="chat" element={<ChatPage />} />
-                <Route path="unidades" element={<UnidadesPage />} />
+    <BrowserRouter>
+      <AuthProvider>
+        <GlobalSearch />
+        <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/update-password" element={<UpdatePassword />} />
+                <Route path="/portal" element={<PortalLogin />} />
+                <Route path="/portal/dashboard" element={<ProtectedRoute><PortalDashboard /></ProtectedRoute>} />
+                <Route path="/portal/assinatura/:token" element={<PortalSignature />} />
+                <Route path="/public/processo/:token" element={<ProcessPublicView />} />
+                <Route
+                  path="/dashboard"
+                  element={
+                    <ProtectedRoute>
+                      <DashboardLayout />
+                    </ProtectedRoute>
+                  }
+                >
+                  <Route index element={<DashboardOverview />} />
+                  <Route path="processos" element={<ProcessosPage />} />
+                  <Route path="clientes" element={<ClientesPage />} />
+                  <Route path="agenda" element={<AgendaPage />} />
+                  <Route path="financeiro" element={<RoleGuard allowedRoles={["admin", "advogado", "financeiro"]} fallback={<Navigate to="/dashboard" replace />}><FinanceiroPage /></RoleGuard>} />
+                  <Route path="ia" element={<IAPage />} />
+                  <Route path="configuracoes" element={<RoleGuard allowedRoles={["admin"]} fallback={<Navigate to="/dashboard" replace />}><ConfiguracoesPage /></RoleGuard>} />
+                  <Route path="bi" element={<BIPage />} />
+                  <Route path="noticias" element={<NoticiasPage />} />
+                  <Route path="crm" element={<CrmPage />} />
+                  <Route path="workflow" element={<WorkflowPage />} />
+                  <Route path="minutas" element={<MinutasPage />} />
+                  <Route path="timesheet" element={<TimesheetPage />} />
+                  <Route path="chat" element={<ChatPage />} />
+                  <Route path="unidades" element={<UnidadesPage />} />
 
-                {/* HR Module */}
-                <Route path="rh" element={<RoleGuard allowedRoles={["admin", "advogado"]} fallback={<Navigate to="/dashboard" replace />}><RhDashboardPage /></RoleGuard>} />
-                <Route path="rh/colaboradores" element={<RoleGuard allowedRoles={["admin", "advogado"]} fallback={<Navigate to="/dashboard" replace />}><ColaboradoresPage /></RoleGuard>} />
-                <Route path="rh/ponto" element={<RoleGuard allowedRoles={["admin", "advogado"]} fallback={<Navigate to="/dashboard" replace />}><PontoEletronicoPage /></RoleGuard>} />
-                <Route path="rh/recrutamento" element={<RoleGuard allowedRoles={["admin", "advogado"]} fallback={<Navigate to="/dashboard" replace />}><RecrutamentoPage /></RoleGuard>} />
-              </Route>
-              <Route path="/crm-preview" element={<CrmPage />} />
-              <Route path="/workflow-preview" element={<WorkflowPage />} />
-              <Route path="/minutas-preview" element={<MinutasPage />} />
+                  {/* HR Module */}
+                  <Route path="rh" element={<RoleGuard allowedRoles={["admin", "advogado"]} fallback={<Navigate to="/dashboard" replace />}><RhDashboardPage /></RoleGuard>} />
+                  <Route path="rh/colaboradores" element={<RoleGuard allowedRoles={["admin", "advogado"]} fallback={<Navigate to="/dashboard" replace />}><ColaboradoresPage /></RoleGuard>} />
+                  <Route path="rh/ponto" element={<RoleGuard allowedRoles={["admin", "advogado"]} fallback={<Navigate to="/dashboard" replace />}><PontoEletronicoPage /></RoleGuard>} />
+                  <Route path="rh/recrutamento" element={<RoleGuard allowedRoles={["admin", "advogado"]} fallback={<Navigate to="/dashboard" replace />}><RecrutamentoPage /></RoleGuard>} />
+                </Route>
+                <Route path="/crm-preview" element={<CrmPage />} />
+                <Route path="/workflow-preview" element={<WorkflowPage />} />
+                <Route path="/minutas-preview" element={<MinutasPage />} />
 
-              {/* BACKOFFICE ADMIN HQ */}
-              <Route
-                path="/admin/hq"
-                element={
-                  <AdminGuard>
-                    <AdminLayout />
-                  </AdminGuard>
-                }
-              >
-                <Route index element={<AdminDashboard />} />
-                <Route path="organizations" element={<AdminOrganizations />} />
-                <Route path="plans" element={<AdminPlans />} />
-                <Route path="audit" element={<AdminAudit />} />
-                <Route path="support" element={<AdminSupport />} />
-                <Route path="settings" element={<AdminSettings />} />
-              </Route>
+                {/* BACKOFFICE ADMIN HQ */}
+                <Route
+                  path="/admin/hq"
+                  element={
+                    <AdminGuard>
+                      <AdminLayout />
+                    </AdminGuard>
+                  }
+                >
+                  <Route index element={<AdminDashboard />} />
+                  <Route path="organizations" element={<AdminOrganizations />} />
+                  <Route path="plans" element={<AdminPlans />} />
+                  <Route path="audit" element={<AdminAudit />} />
+                  <Route path="support" element={<AdminSupport />} />
+                  <Route path="settings" element={<AdminSettings />} />
+                </Route>
 
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </AuthProvider>
-        </BrowserRouter>
-      </TooltipProvider>
-    </ThemeProvider>
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </AuthProvider>
+          </BrowserRouter>
   </QueryClientProvider>
 );
 

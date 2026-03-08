@@ -1,9 +1,13 @@
+'use client';
+
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import logoLexa from "@/assets/logo-lexa.png";
+import Image from "next/image";
 import { ArrowRight, Menu, X, Shield, Sparkles, Scale, Sun, Moon } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTheme } from "@/components/shared/ThemeProvider";
+import { SignInButton, SignUpButton, UserButton, useAuth } from "@clerk/nextjs";
 
 const navLinks = [
   { href: "#funcionalidades", label: "Funcionalidades" },
@@ -13,6 +17,14 @@ const navLinks = [
 
 function ThemeToggle() {
   const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return <div className="h-8 w-8 mr-2" />;
+
   const isDark = theme === "dark" || (theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
 
   return (
@@ -29,11 +41,12 @@ function ThemeToggle() {
 
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { isLoaded, isSignedIn } = useAuth();
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/20">
       <div className="container mx-auto flex h-18 items-center justify-between px-4">
-        <img src={logoLexa} alt="LEXA" className="h-16" />
+        <Image src={logoLexa} alt="LEXA" width={140} height={64} className="h-16 w-auto" priority />
         <div className="hidden items-center gap-10 md:flex">
           {navLinks.map((link) => (
             <a
@@ -47,15 +60,24 @@ const Navbar = () => {
         </div>
         <div className="hidden md:flex items-center gap-3">
           <ThemeToggle />
-          <Button variant="ghost" size="sm" className="nav-link-hover relative text-muted-foreground font-medium" asChild>
-            <a href="/auth">Entrar</a>
-          </Button>
-          <Button size="sm" className="btn-glow rounded-full px-6 gap-2 shadow-lg shadow-primary/15" asChild>
-            <a href="/auth">
-              Começar Agora
-              <ArrowRight className="h-3.5 w-3.5" />
-            </a>
-          </Button>
+          {isLoaded && !isSignedIn && (
+            <>
+              <SignInButton mode="modal">
+                <Button variant="ghost" size="sm" className="nav-link-hover relative text-muted-foreground font-medium">
+                  Entrar
+                </Button>
+              </SignInButton>
+              <SignUpButton mode="modal">
+                <Button size="sm" className="btn-glow rounded-full px-6 gap-2 shadow-lg shadow-primary/15">
+                  Começar Agora
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </Button>
+              </SignUpButton>
+            </>
+          )}
+          {isLoaded && isSignedIn && (
+            <UserButton afterSignOutUrl="/" />
+          )}
         </div>
         <div className="md:hidden flex items-center gap-2">
           <ThemeToggle />
@@ -75,9 +97,18 @@ const Navbar = () => {
               {link.label}
             </a>
           ))}
-          <Button className="w-full rounded-full gap-2" asChild>
-            <a href="/auth">Começar Agora <ArrowRight className="h-3.5 w-3.5" /></a>
-          </Button>
+          {isLoaded && !isSignedIn && (
+            <SignUpButton mode="modal">
+              <Button className="w-full rounded-full gap-2">
+                Começar Agora <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
+            </SignUpButton>
+          )}
+          {isLoaded && isSignedIn && (
+            <div className="flex justify-center py-2">
+              <UserButton afterSignOutUrl="/" />
+            </div>
+          )}
         </motion.div>
       )}
     </nav>

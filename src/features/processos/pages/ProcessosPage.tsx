@@ -497,6 +497,7 @@ export default function ProcessosPage() {
           onEdit={openEdit}
           onView={(p) => { setSelectedProcesso(p); setViewDialogOpen(true); }}
           onDelete={(p) => { setSelectedProcesso(p); setDeleteDialogOpen(true); }}
+          onStatusChange={(id, status) => updateMutation.mutate({ id, status })}
         />
       )}
 

@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import arunaAvatar from "@/assets/aruna-avatar.png";
 import ReactMarkdown from "react-markdown";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -87,7 +88,7 @@ const AUDIO_TYPES = [
   { value: "consulta", label: "Consulta com Cliente" },
 ];
 
-const BASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const BASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const CHAT_URL = `${BASE_URL}/functions/v1/aruna-chat`;
 const DOC_GEN_URL = `${BASE_URL}/functions/v1/aruna-generate-doc`;
 const JURIS_URL = `${BASE_URL}/functions/v1/aruna-jurisprudencia`;
@@ -407,7 +408,7 @@ export default function IAPage() {
       {/* ─── Premium Header ───────────────────────────── */}
       <div className="flex items-center gap-4 px-6 py-4 bg-muted/30 border-b border-border/50 relative z-10 backdrop-blur-sm">
         <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-2xl shadow-sm ring-1 ring-border bg-gradient-to-br from-indigo-500/20 to-purple-500/20 p-0.5">
-          <img src={arunaAvatar} alt="ARUNA" className="h-full w-full object-cover rounded-[14px]" />
+          <Image src={arunaAvatar} alt="ARUNA" width={48} height={48} className="h-full w-full object-cover rounded-[14px]" />
           <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-background bg-emerald-500 shadow-sm" />
         </div>
         <div className="min-w-0">
@@ -593,7 +594,7 @@ export default function IAPage() {
             {/* Greeting */}
             <div className="flex items-start gap-5">
               <div className="h-12 w-12 shrink-0 overflow-hidden rounded-2xl shadow-sm bg-gradient-to-br from-indigo-500/20 to-purple-500/20 p-0.5">
-                <img src={arunaAvatar} alt="ARUNA" className="h-full w-full object-cover rounded-[14px]" />
+                <Image src={arunaAvatar} alt="ARUNA" width={48} height={48} className="h-full w-full object-cover rounded-[14px]" />
               </div>
               <div className="rounded-3xl rounded-tl-sm bg-muted/40 border border-border/60 px-6 py-5 shadow-sm">
                 <div className="prose prose-sm md:prose-base max-w-none text-foreground prose-li:my-1 prose-ul:my-2 prose-strong:text-indigo-600 dark:prose-strong:text-indigo-400">
@@ -625,7 +626,7 @@ export default function IAPage() {
             {msgs.map((m) => (
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} key={m.id} className={cn("flex gap-4", m.role === "user" && "flex-row-reverse")}>
                 <div className={cn("h-10 w-10 shrink-0 overflow-hidden rounded-2xl flex items-center justify-center shadow-sm", m.role === "user" ? "bg-primary text-primary-foreground" : "bg-gradient-to-br from-indigo-500/20 to-purple-500/20 p-0.5 ring-1 ring-border/50")}>
-                  {m.role === "user" ? <User className="h-5 w-5" /> : <img src={arunaAvatar} alt="ARUNA" className="h-full w-full object-cover rounded-[14px]" />}
+                  {m.role === "user" ? <User className="h-5 w-5" /> : <Image src={arunaAvatar} alt="ARUNA" width={40} height={40} className="h-full w-full object-cover rounded-[14px]" />}
                 </div>
                 <div className={cn("max-w-[85%] rounded-3xl px-6 py-4 shadow-sm relative", m.role === "user" ? "rounded-tr-sm bg-primary text-primary-foreground" : "rounded-tl-sm bg-card border border-border/60")}>
                   {m.role === "assistant" ? (
@@ -648,7 +649,7 @@ export default function IAPage() {
             {streaming && msgs[msgs.length - 1]?.role !== "assistant" && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-4">
                 <div className="h-10 w-10 shrink-0 overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 p-0.5 ring-1 ring-border/50 shadow-sm">
-                  <img src={arunaAvatar} alt="ARUNA" className="h-full w-full object-cover rounded-[14px]" />
+                  <Image src={arunaAvatar} alt="ARUNA" width={40} height={40} className="h-full w-full object-cover rounded-[14px]" />
                 </div>
                 <div className="rounded-3xl rounded-tl-sm bg-card border border-border/60 px-6 py-5 shadow-sm flex items-center gap-2">
                   <p className="text-sm font-medium text-muted-foreground mr-2">Aruna está processando</p>

@@ -1,4 +1,7 @@
+'use client';
+
 import { useState } from "react";
+
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Check, Star, Zap, Crown, Building2, ArrowRight } from "lucide-react";

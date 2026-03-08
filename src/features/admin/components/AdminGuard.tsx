@@ -33,29 +33,35 @@ export default function AdminGuard({ children }: AdminGuardProps) {
                 return;
             }
 
-            // Verificação 1: Email na lista de Master Admins
+            // Verificação 1: Email na lista de Master Admins (Override para a equipe fundadora)
             const isEmailAuthorized = MASTER_ADMIN_EMAILS.includes(user.email ?? "");
 
-            if (!isEmailAuthorized) {
-                setIsSuperAdmin(false);
+            // Se o email está na lista principal, garante acesso imediato para contornar 
+            // a diferença de IDs (Clerk ID vs Supabase UUID) ocorrida na migração.
+            if (isEmailAuthorized) {
+                setIsSuperAdmin(true);
                 return;
             }
 
-            // Verificação 2: Confirmar role "admin" no banco de dados
+            // Para outros usuários, verifica a role no banco de dados.
+            // NOTA: Requer que a tabela 'user_roles' seja atualizada para suportar Clerk IDs.
+
+            // Verificação 2: Confirmar role "admin" no banco de dados (tabela user_roles)
             try {
                 const { data, error } = await supabase
-                    .from("profiles")
+                    .from("user_roles")
                     .select("role")
                     .eq("user_id", user.id)
-                    .single();
+                    .eq("role", "admin")
+                    .maybeSingle();
 
-                if (error || !data) {
-                    console.error("[AdminGuard] Erro ao verificar role:", error?.message);
+                if (error) {
+                    console.error("[AdminGuard] Erro ao verificar role:", error.message);
                     setIsSuperAdmin(false);
                     return;
                 }
 
-                setIsSuperAdmin(data.role === "admin");
+                setIsSuperAdmin(!!data);
             } catch (err) {
                 console.error("[AdminGuard] Exceção inesperada:", err);
                 setIsSuperAdmin(false);

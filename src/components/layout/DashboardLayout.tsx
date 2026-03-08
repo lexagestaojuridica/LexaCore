@@ -3,7 +3,7 @@ import { AppSidebar } from "./AppSidebar";
 import { Outlet, useLocation } from "react-router-dom";
 import { TopBar } from "@/components/layout/TopBar";
 import ArunaQuickChat from "@/features/ia/components/ArunaQuickChat";
-import { OnboardingTour } from "./OnboardingTour";
+import { OnboardingTour } from "@/features/meu-dia/components/OnboardingTour";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 

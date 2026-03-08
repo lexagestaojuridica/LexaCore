@@ -4,6 +4,7 @@ import {
   SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
+import Image from "next/image";
 import { NavLink } from "@/components/layout/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,7 @@ import {
   GitBranch, FileEdit, ChevronDown, Award, Timer, BookOpen, RotateCcw,
   MessageSquare, Building2, Briefcase, Clock, ShieldAlert,
 } from "lucide-react";
-import { resetOnboardingTour } from "./OnboardingTour";
+import { resetOnboardingTour } from "@/features/meu-dia/components/OnboardingTour";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
@@ -179,9 +180,9 @@ export function AppSidebar() {
       {/* Logo */}
       <div className="flex h-20 shrink-0 items-center justify-center border-b border-white/5 px-4 mb-2">
         {collapsed ? (
-          <img src={iconLexa} alt="LEXA" className="h-8 w-8 object-contain animate-pulse" />
+          <Image src={iconLexa} alt="LEXA" width={32} height={32} className="h-8 w-8 object-contain animate-pulse" />
         ) : (
-          <img src={logoLexaWhite} alt="LEXA" className="h-16 w-auto max-w-[140px] object-contain" />
+          <Image src={logoLexaWhite} alt="LEXA" width={140} height={64} className="h-16 w-auto max-w-[140px] object-contain" />
         )}
       </div>
 

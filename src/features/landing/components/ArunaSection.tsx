@@ -1,3 +1,5 @@
+'use client';
+
 import { motion } from "framer-motion";
 import { MessageSquare, FileText, Mic, Sparkles } from "lucide-react";
 import arunaAvatar from "@/assets/aruna-avatar.png";

@@ -21,6 +21,7 @@ import { useMeuDia } from "@/features/meu-dia/hooks/useMeuDia";
 import { isHappeningNow } from "@/features/meu-dia/utils/helpers";
 import { TimelineEvent } from "@/features/meu-dia/components/TimelineEvent";
 import { ProductivityWidget } from "@/features/meu-dia/components/ProductivityWidget";
+import { DeadlinesChart } from "@/features/meu-dia/components/DeadlinesChart";
 
 // ─── Main ─────────────────────────────────────────────────────
 export default function DashboardOverview() {
@@ -132,8 +133,10 @@ export default function DashboardOverview() {
       <div className="flex-none md:flex-1 md:min-h-0 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
 
         {/* ── Left Column: Events & Processes ── */}
-        <div className="md:col-span-2 lg:col-span-3 overflow-visible md:overflow-hidden flex flex-col md:min-h-0">
-          <div className="flex-none md:flex-1 md:min-h-0 grid grid-cols-1 lg:grid-cols-5 gap-6 overflow-visible md:overflow-hidden">
+        <div className="md:col-span-2 lg:col-span-3 overflow-visible md:overflow-hidden flex flex-col gap-6 md:min-h-0">
+          
+          {/* Timeline & Chart Row */}
+          <div className="flex-none md:flex-1 md:min-h-[220px] grid grid-cols-1 lg:grid-cols-5 gap-6 overflow-visible md:overflow-hidden">
 
             {/* Timeline */}
             <div className="lg:col-span-3 flex flex-col md:min-h-0 overflow-visible md:overflow-hidden">
@@ -171,37 +174,9 @@ export default function DashboardOverview() {
               </div>
             </div>
 
-            {/* Recent Processes */}
+            {/* Chart Graphic Area */}
             <div className="lg:col-span-2 flex flex-col md:min-h-0 overflow-visible md:overflow-hidden">
-              <div className="flex items-center justify-between pl-1 mb-2 shrink-0">
-                <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                  <Activity className="h-3.5 w-3.5" /> {t("dashboard.recentActivity")}
-                </h3>
-              </div>
-
-              <div className="space-y-2 overflow-y-auto flex-1 min-h-0 pr-1 pl-1">
-                {processos.length === 0 ? (
-                  <div className="glass-card border-dashed p-6 text-center rounded-xl">
-                    <p className="text-xs text-muted-foreground">Nenhum processo ativo recente.</p>
-                  </div>
-                ) : (
-                  processos.map((p) => (
-                    <HoverElevate key={p.id} className="bg-card p-3 rounded-xl border border-border/40 cursor-pointer group hover:border-border/80 transition-colors">
-                      <div onClick={() => navigate(`/dashboard/processos?id=${p.id}`)} className="flex items-start justify-between gap-3">
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-semibold text-foreground truncate group-hover:text-primary transition-colors">{p.title}</p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-xs text-muted-foreground font-mono">{p.number || "Sem número"}</span>
-                            <span className="text-muted-foreground/30">•</span>
-                            <span className="text-xs text-muted-foreground/70">{formatDistanceToNow(new Date(p.updated_at), { addSuffix: true, locale: ptBR })}</span>
-                          </div>
-                        </div>
-                        <Badge variant="secondary" className="text-[9px] font-bold uppercase tracking-wider bg-muted text-muted-foreground border-0">{p.status}</Badge>
-                      </div>
-                    </HoverElevate>
-                  ))
-                )}
-              </div>
+               <DeadlinesChart eventos={eventos as any[]} />
             </div>
 
           </div>

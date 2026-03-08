@@ -1,4 +1,5 @@
 import logoLexa from "@/assets/logo-lexa.png";
+import Image from "next/image";
 import { Scale, Mail, Phone, MapPin } from "lucide-react";
 
 const Footer = () => (
@@ -6,7 +7,7 @@ const Footer = () => (
     <div className="container mx-auto px-4">
       <div className="grid gap-12 py-16 md:grid-cols-5">
         <div className="md:col-span-2">
-          <img src={logoLexa} alt="LEXA" className="mb-5 h-14" />
+          <Image src={logoLexa} alt="LEXA" width={120} height={56} className="mb-5 h-14 w-auto" />
           <p className="text-sm leading-relaxed text-muted-foreground max-w-xs">
             Tecnologia a serviço do Direito. Simplifique a gestão do seu escritório jurídico com inteligência artificial.
           </p>

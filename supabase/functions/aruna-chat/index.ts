@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
+import { createClient } from "jsr:@supabase/supabase-js@2";
+import OpenAI from "npm:openai";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -76,9 +77,16 @@ function buildContextBlock(context: any): string {
     }
   }
 
+  if (context.documentosRAG?.length > 0) {
+    parts.push("## Trechos de Documentos Recuperados (RAG - Vector Search)");
+    for (const doc of context.documentosRAG) {
+      parts.push(`- (Confiança: ${(doc.similarity * 100).toFixed(1)}%) Texto:\n"${doc.content}"`);
+    }
+  }
+
   if (parts.length === 0) return "";
 
-  return `\n\n---\n# DADOS ATUAIS DO ESCRITÓRIO (use esses dados para responder com precisão)\n\n${parts.join("\n\n")}`;
+  return `\n\n---\n# BASE DE CONHECIMENTO DO ESCRITÓRIO (use os dados abaixo estruturar a resposta)\n\n${parts.join("\n\n")}`;
 }
 
 serve(async (req) => {
@@ -87,9 +95,44 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, context } = await req.json();
+    const payload = await req.json();
+    const { messages, context, organizationId } = payload;
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    );
+    const openai = new OpenAI({ apiKey: Deno.env.get('OPENAI_API_KEY')! });
+
+    // RAG LOGIC: Convert current message to Embedding
+    let ragDocs = [];
+    if (organizationId && messages.length > 0) {
+       const lastMessage = messages[messages.length - 1].content;
+       try {
+         const embeddingObj = await openai.embeddings.create({
+           model: "text-embedding-3-small",
+           input: lastMessage
+         });
+         
+         const { data: matchedDocs } = await supabaseAdmin.rpc('match_document_embeddings', {
+            query_embedding: embeddingObj.data[0].embedding,
+            match_threshold: 0.5,
+            match_count: 5,
+            org_id: organizationId
+         });
+         
+         if (matchedDocs && matchedDocs.length > 0) {
+            ragDocs = matchedDocs;
+         }
+       } catch (err) {
+         console.error("RAG Error:", err);
+       }
+    }
+    
+    // Inject documents into the context
+    if (!context.documentosRAG) context.documentosRAG = ragDocs;
 
     const contextBlock = buildContextBlock(context);
     const systemContent = SYSTEM_PROMPT + contextBlock;

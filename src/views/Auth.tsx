@@ -1,13 +1,12 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
-import LoginForm from "@/features/auth/components/LoginForm";
-import SignupForm from "@/features/auth/components/SignupForm";
+import { SignIn, SignUp } from "@clerk/react";
 import logoLexaWhite from "@/assets/logo-lexa-white.png";
 import logoLexa from "@/assets/logo-lexa.png";
-import authBgVideo from "@/assets/auth-bg-video.mp4";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Shield, Scale, Bot } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const Auth = () => {
   const [mode, setMode] = useState<"login" | "signup">("login");
@@ -39,20 +38,26 @@ const Auth = () => {
           playsInline
           className="absolute inset-0 h-full w-full object-cover"
         >
-          <source src={authBgVideo} type="video/mp4" />
+          <source src="/auth-bg-video.mp4" type="video/mp4" />
         </video>
         <div className="absolute inset-0 bg-gradient-to-br from-primary/90 via-primary/70 to-primary/50" />
         <div className="absolute inset-0 bg-gradient-to-t from-primary/80 via-transparent to-transparent" />
 
         <div className="relative z-10 max-w-lg px-16 text-center">
-          <motion.img
-            src={logoLexaWhite}
-            alt="LEXA"
-            className="mx-auto mb-12 h-28"
+          <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-          />
+            className="flex justify-center mb-12"
+          >
+            <Image
+              src={logoLexaWhite}
+              alt="LEXA"
+              width={200}
+              height={112}
+              className="h-28 w-auto"
+            />
+          </motion.div>
           <motion.h2
             className="font-display text-4xl font-semibold leading-tight text-primary-foreground"
             initial={{ opacity: 0, y: 20 }}
@@ -117,11 +122,11 @@ const Auth = () => {
 
       {/* Right - Forms */}
       <div className="flex w-full flex-1 flex-col items-center justify-center px-6 lg:w-[45%] bg-background">
-        <div className="w-full max-w-md">
-          <img src={logoLexa} alt="LEXA" className="mx-auto mb-10 h-24 lg:hidden" />
+        <div className="w-full flex flex-col items-center">
+          <Image src={logoLexa} alt="LEXA" width={200} height={96} className="mx-auto mb-10 h-24 w-auto lg:hidden" />
 
           {/* Tab switcher */}
-          <div className="mb-8 flex rounded-xl bg-muted p-1">
+          <div className="mb-8 flex w-full max-w-md rounded-xl bg-muted p-1">
             <button
               onClick={() => setMode("login")}
               className={`flex-1 rounded-lg py-2.5 text-sm font-medium transition-all duration-300 ${
@@ -147,15 +152,48 @@ const Auth = () => {
           <AnimatePresence mode="wait">
             <motion.div
               key={mode}
-              initial={{ opacity: 0, x: mode === "login" ? -20 : 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: mode === "login" ? 20 : -20 }}
-              transition={{ duration: 0.25 }}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              className="w-full flex justify-center"
             >
               {mode === "login" ? (
-                <LoginForm onSwitchToSignup={() => setMode("signup")} />
+                <SignIn 
+                  routing="hash" 
+                  fallbackRedirectUrl="/dashboard" 
+                  signUpUrl="/auth#signup"
+                  appearance={{
+                    elements: {
+                      rootBox: "w-full mx-auto",
+                      card: "shadow-none border-0 bg-transparent p-0",
+                      headerTitle: "hidden",
+                      headerSubtitle: "hidden",
+                      socialButtonsBlockButton: "rounded-xl border-input bg-background hover:bg-muted text-foreground transition-all",
+                      formButtonPrimary: "bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl py-2.5 transition-all",
+                      formFieldInput: "rounded-xl border-input bg-background focus:ring-primary transition-all",
+                      footerAction: "hidden",
+                    }
+                  }}
+                />
               ) : (
-                <SignupForm onSwitchToLogin={() => setMode("login")} />
+                <SignUp 
+                  routing="hash" 
+                  fallbackRedirectUrl="/dashboard" 
+                  signInUrl="/auth"
+                  appearance={{
+                    elements: {
+                      rootBox: "w-full mx-auto",
+                      card: "shadow-none border-0 bg-transparent p-0",
+                      headerTitle: "hidden",
+                      headerSubtitle: "hidden",
+                      socialButtonsBlockButton: "rounded-xl border-input bg-background hover:bg-muted text-foreground transition-all",
+                      formButtonPrimary: "bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl py-2.5 transition-all",
+                      formFieldInput: "rounded-xl border-input bg-background focus:ring-primary transition-all",
+                      footerAction: "hidden",
+                    }
+                  }}
+                />
               )}
             </motion.div>
           </AnimatePresence>
