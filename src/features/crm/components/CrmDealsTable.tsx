@@ -16,7 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 const DEAL_STAGES = [
@@ -41,7 +41,7 @@ export default function CrmDealsTable() {
     const { deals, contacts, addDeal, updateDeal, deleteDeal: deleteDealCtx } = useCrm();
     const { user } = useAuth();
     const queryClient = useQueryClient();
-    const navigate = useNavigate();
+    const navigate = useRouter();
 
     const [search, setSearch] = useState("");
     const debouncedSearch = useDebounce(search, 400);

@@ -248,14 +248,14 @@ export default function BudgetPerformanceTab({ orgId }: Props) {
 
             // Insert log entry
             if (existing) {
-                const userResponse = await supabase.auth.getUser();
+                const clerkUserId = typeof window !== "undefined" ? (window as any).Clerk?.user?.id : null;
                 await supabase.from("orcamentos_log").insert({
                     orcamento_id: data.id,
                     organization_id: orgId,
                     old_amount: existing.amount,
                     new_amount: payload.amount,
                     notes: payload.notes || null,
-                    changed_by: userResponse.data.user?.id ?? null,
+                    changed_by: clerkUserId,
                 });
             }
         },

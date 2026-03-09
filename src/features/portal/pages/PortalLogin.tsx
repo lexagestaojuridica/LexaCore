@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,7 @@ export default function PortalLogin() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
-    const navigate = useNavigate();
+    const navigate = useRouter();
     const { toast } = useToast();
 
     const handleLogin = async (e: React.FormEvent) => {
@@ -37,6 +37,7 @@ export default function PortalLogin() {
                 const { data: clientData, error: clientError } = await supabase
                     .from("clients")
                     .select("id")
+                    // @ts-ignore
                     .eq("auth_user_id", data.user.id)
                     .single();
 
@@ -45,7 +46,7 @@ export default function PortalLogin() {
                     throw new Error("Usuário não possui acesso ao Portal do Cliente.");
                 }
 
-                navigate("/portal/dashboard");
+                navigate.push("/portal/dashboard");
             }
         } catch (error: any) {
             toast({

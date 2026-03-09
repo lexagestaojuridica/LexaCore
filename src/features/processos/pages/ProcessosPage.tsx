@@ -10,7 +10,7 @@ import {
   LayoutList, LayoutGrid, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
   ArrowUpDown, ArrowUp, ArrowDown, Receipt, Bot, SwitchCamera, Share2, MessageCircle, Sparkles, Timer, Clock, Loader2
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { useDebounce } from "@/hooks/useDebounce";
 import { ProcessKanban } from "@/features/processos/components/ProcessKanban";
@@ -124,7 +124,7 @@ export default function ProcessosPage() {
   const [form, setForm] = useState(emptyForm);
   const [isEditing, setIsEditing] = useState(false);
   const [aiSummary, setAiSummary] = useState<string | null>(null);
-  const navigate = useNavigate();
+  const navigate = useRouter();
 
   const totalPages = viewMode === "table" ? Math.max(1, Math.ceil(totalCount / PAGE_SIZE)) : 1;
 
@@ -175,7 +175,7 @@ export default function ProcessosPage() {
       });
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Fatura criada! Redirecionando..."); setViewDialogOpen(false); setTimeout(() => navigate("/dashboard/financeiro"), 1200); },
+    onSuccess: () => { toast.success("Fatura criada! Redirecionando..."); setViewDialogOpen(false); setTimeout(() => navigate.push("/dashboard/financeiro"), 1200); },
     onError: (err: any) => toast.error(`Erro ao faturar: ${err.message}`),
   });
 

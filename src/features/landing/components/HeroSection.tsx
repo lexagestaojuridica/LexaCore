@@ -7,7 +7,8 @@ import Image from "next/image";
 import { ArrowRight, Menu, X, Shield, Sparkles, Scale, Sun, Moon } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useTheme } from "@/components/shared/ThemeProvider";
-import { SignInButton, SignUpButton, UserButton, useAuth } from "@clerk/nextjs";
+import { UserButton, useAuth } from "@clerk/nextjs";
+import Link from "next/link";
 
 const navLinks = [
   { href: "#funcionalidades", label: "Funcionalidades" },
@@ -64,20 +65,20 @@ const Navbar = () => {
             <div className="h-9 w-24 animate-pulse rounded-full bg-muted/20" />
           ) : !isSignedIn ? (
             <>
-              <SignInButton mode="modal">
+              <Link href="/auth">
                 <Button variant="ghost" size="sm" className="nav-link-hover relative text-muted-foreground font-medium">
                   Entrar
                 </Button>
-              </SignInButton>
-              <SignUpButton mode="modal">
+              </Link>
+              <Link href="/auth?sign-up=true">
                 <Button size="sm" className="btn-glow rounded-full px-6 gap-2 shadow-lg shadow-primary/15">
                   Começar Agora
                   <ArrowRight className="h-3.5 w-3.5" />
                 </Button>
-              </SignUpButton>
+              </Link>
             </>
           ) : (
-            <UserButton afterSignOutUrl="/" />
+            <UserButton />
           )}
         </div>
         <div className="md:hidden flex items-center gap-2">
@@ -102,23 +103,23 @@ const Navbar = () => {
             <div className="h-10 w-full animate-pulse rounded-full bg-muted/20" />
           ) : !isSignedIn ? (
             <div className="flex flex-col gap-2">
-              <SignInButton mode="modal">
+              <Link href="/auth" className="w-full">
                 <Button variant="outline" className="w-full rounded-full">
                   Entrar
                 </Button>
-              </SignInButton>
-              <SignUpButton mode="modal">
+              </Link>
+              <Link href="/auth?sign-up=true" className="w-full">
                 <Button className="w-full rounded-full gap-2">
                   Começar Agora <ArrowRight className="h-3.5 w-3.5" />
                 </Button>
-              </SignUpButton>
+              </Link>
             </div>
           ) : (
             <div className="flex flex-col items-center gap-4 py-2">
-              <UserButton afterSignOutUrl="/" />
-              <Button variant="outline" className="w-full rounded-full" asChild>
-                <a href="/dashboard">Acessar Painel</a>
-              </Button>
+              <UserButton />
+              <Link href="/dashboard" className="w-full">
+                <Button variant="outline" className="w-full rounded-full">Acessar Painel</Button>
+              </Link>
             </div>
           )}
         </motion.div>
@@ -200,10 +201,10 @@ const HeroSection = () => (
 
           <div className="mt-12 flex items-center gap-4">
             <Button size="lg" className="btn-glow rounded-full px-10 text-base shadow-xl shadow-primary/15 gap-2" asChild>
-              <a href="/auth">
+              <Link href="/auth">
                 Começar Agora
                 <ArrowRight className="h-4 w-4" />
-              </a>
+              </Link>
             </Button>
             <Button variant="outline" size="lg" className="rounded-full px-8 text-base border-border/60 hover:bg-muted/50" asChild>
               <a href="#funcionalidades">Saiba Mais</a>

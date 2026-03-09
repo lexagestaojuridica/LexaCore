@@ -1,6 +1,6 @@
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
-import { Outlet, useLocation } from "react-router-dom";
+import { usePathname } from "next/navigation";
 import { TopBar } from "@/components/layout/TopBar";
 import ArunaQuickChat from "@/features/ia/components/ArunaQuickChat";
 import { OnboardingTour } from "@/features/meu-dia/components/OnboardingTour";
@@ -9,10 +9,10 @@ import { cn } from "@/lib/utils";
 
 // ─── DashboardLayout ──────────────────────────────────────────
 
-export default function DashboardLayout() {
+export default function DashboardLayout({ children }: { children?: React.ReactNode }) {
   const { user } = useAuth();
-  const location = useLocation();
-  const isOverview = location.pathname === "/dashboard";
+  const pathname = usePathname();
+  const isOverview = pathname === "/dashboard";
 
   return (
     <SidebarProvider>
@@ -33,7 +33,7 @@ export default function DashboardLayout() {
             isOverview ? "overflow-hidden p-4 md:p-6 lg:p-8" : "overflow-y-auto p-6 md:p-8 lg:p-10"
           )}>
             <div className="max-w-7xl mx-auto h-full">
-              <Outlet />
+              {children}
             </div>
           </main>
 

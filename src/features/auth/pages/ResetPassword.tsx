@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,7 +25,7 @@ export default function ResetPassword() {
         setLoading(true);
         try {
             const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                redirectTo: `${window.location.origin}/update-password`,
+                redirectTo: `${window.location.origin}/auth`,
             });
 
             if (error) throw error;
@@ -60,7 +60,7 @@ export default function ResetPassword() {
                                 Enviamos um link de recuperação para <strong>{email}</strong>.
                             </p>
                             <div className="pt-4">
-                                <Link to="/auth">
+                                <Link href="/auth">
                                     <Button variant="outline" className="w-full">Voltar para o Login</Button>
                                 </Link>
                             </div>
@@ -92,7 +92,7 @@ export default function ResetPassword() {
                                     Enviar link de recuperação
                                 </Button>
                                 <div className="text-center">
-                                    <Link to="/auth" className="text-sm text-primary hover:underline flex items-center justify-center gap-1">
+                                    <Link href="/auth" className="text-sm text-primary hover:underline flex items-center justify-center gap-1">
                                         <ArrowLeft className="h-4 w-4" />
                                         Voltar para o login
                                     </Link>

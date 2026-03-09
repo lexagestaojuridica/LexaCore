@@ -37,8 +37,8 @@ export interface AsaasResponse<T = any> {
  */
 export const asaasService = {
     async request<T>(method: string, endpoint: string, organizationId: string, body?: unknown): Promise<T> {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) throw new Error("Usuário não autenticado.");
+        const clerkSession = typeof window !== "undefined" ? (window as any).Clerk?.session : null;
+        if (!clerkSession) throw new Error("Usuário não autenticado.");
 
         const response = await supabase.functions.invoke("asaas-proxy", {
             body: { method, endpoint, body, organizationId },

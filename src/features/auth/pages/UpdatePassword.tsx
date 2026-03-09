@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,7 @@ export default function UpdatePassword() {
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [loading, setLoading] = useState(false);
-    const navigate = useNavigate();
+    const router = useRouter();
     const { toast } = useToast();
 
     useEffect(() => {
@@ -26,11 +26,11 @@ export default function UpdatePassword() {
                     description: "O link de recuperação expirou ou é inválido.",
                     variant: "destructive",
                 });
-                navigate("/auth");
+                router.push("/auth");
             }
         };
         checkSession();
-    }, [navigate, toast]);
+    }, [router, toast]);
 
     const handleUpdate = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -57,7 +57,7 @@ export default function UpdatePassword() {
                 title: "Senha atualizada!",
                 description: "Sua senha foi redefinida com sucesso. Você pode acessar sua conta.",
             });
-            navigate("/dashboard");
+            router.push("/dashboard");
         } catch (error: any) {
             toast({
                 title: "Erro ao atualizar senha",

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useRouter, usePathname } from "next/navigation";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import {
     Search, RefreshCcw, Bell, Moon, Sun,
@@ -44,14 +44,14 @@ export function TopBar() {
     const { user, signOut } = useAuth();
     const { theme, setTheme } = useTheme();
     const { t } = useTranslation();
-    const navigate = useNavigate();
-    const location = useLocation();
+    const navigate = useRouter();
+    const pathname = usePathname();
     const queryClient = useQueryClient();
 
     const handleLogout = async () => {
         queryClient.clear();
         await signOut();
-        navigate("/auth");
+        navigate.push("/auth");
     };
 
     const handleRefresh = () => {
@@ -73,7 +73,7 @@ export function TopBar() {
         .toUpperCase();
 
     // Dynamic Page Title using i18n
-    const titleKey = PAGE_TITLE_KEYS[location.pathname];
+    const titleKey = pathname ? PAGE_TITLE_KEYS[pathname] : null;
     const currentTitle = titleKey ? t(titleKey) : "Dashboard";
 
     return (
@@ -181,14 +181,14 @@ export function TopBar() {
                             </div>
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem className="cursor-pointer gap-2" onClick={() => navigate("/dashboard/configuracoes")}>
+                        <DropdownMenuItem className="cursor-pointer gap-2" onClick={() => navigate.push("/dashboard/configuracoes")}>
                             <Settings className="h-4 w-4 text-muted-foreground" />
                             <span>{t("nav.settings")}</span>
                         </DropdownMenuItem>
                         {user?.email === "lexagestaojuridica@gmail.com" && (
                             <>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem className="cursor-pointer gap-2 text-rose-600 focus:text-rose-700 focus:bg-rose-500/10" onClick={() => navigate("/admin/hq")}>
+                                <DropdownMenuItem className="cursor-pointer gap-2 text-rose-600 focus:text-rose-700 focus:bg-rose-500/10" onClick={() => navigate.push("/admin/hq")}>
                                     <ShieldAlert className="h-4 w-4" />
                                     <span>SaaS Backoffice</span>
                                 </DropdownMenuItem>

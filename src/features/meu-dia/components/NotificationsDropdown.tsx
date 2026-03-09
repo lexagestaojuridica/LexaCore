@@ -9,7 +9,7 @@ import { useRealtimeNotifications, RealtimeNotification } from "@/features/meu-d
 import { formatDistanceToNow, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 const urgencyStyles: Record<string, string> = {
@@ -28,14 +28,14 @@ const urgencyIcon: Record<string, JSX.Element> = {
 
 export function NotificationsDropdown() {
   const { notifications, isLoading, markAsRead, markAllAsRead } = useRealtimeNotifications();
-  const navigate = useNavigate();
+  const navigate = useRouter();
   const criticalCount = notifications.filter((d) => d.type === "critical").length;
   const totalCount = notifications.length;
 
   const handleNotificationClick = (notif: RealtimeNotification) => {
     markAsRead(notif.id);
     if (notif.link) {
-      navigate(notif.link);
+      navigate.push(notif.link);
     }
   };
 

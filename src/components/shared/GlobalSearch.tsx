@@ -13,7 +13,7 @@ import {
     CommandList,
     CommandSeparator,
 } from "@/components/ui/command";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/components/shared/ThemeProvider";
@@ -24,7 +24,7 @@ export function GlobalSearch() {
     const [searchTerm, setSearchTerm] = useState("");
     const [results, setResults] = useState<{ clients: any[]; processes: any[] }>({ clients: [], processes: [] });
     const [isLoading, setIsLoading] = useState(false);
-    const navigate = useNavigate();
+    const navigate = useRouter();
     const { t } = useTranslation();
     const { user } = useAuth();
     const { theme, setTheme } = useTheme();
@@ -49,8 +49,8 @@ export function GlobalSearch() {
 
         setIsLoading(true);
         try {
-            const { data: profile } = await supabase.from("profiles").select("organization_id").eq("user_id", user.id).single();
-            const orgId = profile?.organization_id;
+            const { data } = await supabase.from("profiles").select("organization_id").eq("user_id", user.id).maybeSingle();
+            const orgId = (data as any)?.organization_id;
             if (!orgId) return;
 
             const [{ data: proc }, { data: cli }] = await Promise.all([
@@ -76,7 +76,7 @@ export function GlobalSearch() {
 
     const onSelect = (path: string) => {
         setOpen(false);
-        navigate(path);
+        navigate.push(path);
     };
 
     const askAruna = (query: string) => {

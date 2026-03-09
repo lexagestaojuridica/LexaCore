@@ -22,7 +22,7 @@ import { useMicrosoftCalendar } from "@/features/agenda/hooks/useMicrosoftCalend
 import { useAppleCalendar } from "@/features/agenda/hooks/useAppleCalendar";
 import { AppleCalendarAuthDialog } from "@/features/agenda/components/AppleCalendarAuthDialog";
 import { toast } from "sonner";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from "next/navigation";
 
 // FSD Imports
 import { useConfiguracoes } from "@/features/configuracoes/hooks/useConfiguracoes";
@@ -49,11 +49,11 @@ export default function ConfiguracoesPage() {
     handleSubscribe, handleSaveIntegration,
   } = useConfiguracoes();
 
-  const [searchParams] = useSearchParams();
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState("perfil");
 
   useEffect(() => {
-    const tab = searchParams.get("tab");
+    const tab = searchParams?.get("tab");
     if (tab) setActiveTab(tab);
   }, [searchParams]);
 

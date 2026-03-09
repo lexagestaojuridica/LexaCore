@@ -27,11 +27,7 @@ export const lovable = {
         return result;
       }
 
-      try {
-        await supabase.auth.setSession(result.tokens);
-      } catch (e) {
-        return { error: e instanceof Error ? e : new Error(String(e)) };
-      }
+      // Session management is handled by Clerk now
       return result;
     },
   },

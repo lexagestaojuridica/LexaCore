@@ -3,14 +3,14 @@ import { useMicrosoftCalendar } from "@/features/agenda/hooks/useMicrosoftCalend
 import { useAppleCalendar } from "@/features/agenda/hooks/useAppleCalendar";
 import { Plus, Calendar as CalendarIcon, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 
 interface CalendarEmptyStateProps {
     showTitle?: boolean;
 }
 
 export function CalendarEmptyState({ showTitle = false }: CalendarEmptyStateProps) {
-    const navigate = useNavigate();
+    const navigate = useRouter();
     const gcal = useGoogleCalendar();
     const mscal = useMicrosoftCalendar();
     const appleCal = useAppleCalendar();
@@ -46,7 +46,7 @@ export function CalendarEmptyState({ showTitle = false }: CalendarEmptyStateProp
             </div>
 
             <Button
-                onClick={() => navigate("/dashboard/configuracoes?tab=integracoes")}
+                onClick={() => navigate.push("/dashboard/configuracoes?tab=integracoes")}
                 className="mt-6 px-8 gap-2 group-hover:shadow-lg group-hover:shadow-primary/20 transition-all duration-300 relative z-10"
             >
                 Configurar Integrações

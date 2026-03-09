@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import {
   Scale, Users, CalendarDays, Clock, TrendingUp, AlertTriangle, Activity
 } from "lucide-react";
@@ -25,7 +25,7 @@ import { DeadlinesChart } from "@/features/meu-dia/components/DeadlinesChart";
 
 // ─── Main ─────────────────────────────────────────────────────
 export default function DashboardOverview() {
-  const navigate = useNavigate();
+  const navigate = useRouter();
   const { t } = useTranslation();
   const { user, eventos, processos, stats, timesheetToday, isLoading } = useMeuDia();
 
@@ -124,7 +124,7 @@ export default function DashboardOverview() {
             <p className="text-xs font-semibold text-destructive">{t("dashboard.urgentAlert")}</p>
             <p className="text-[10px] text-destructive/70">{urgentEvents.length} {t("dashboard.deadlinesToday")}</p>
           </div>
-          <Button size="sm" variant="outline" className="border-destructive/30 text-destructive hover:bg-destructive/10 shrink-0 h-7 text-[10px] px-3 rounded-md" onClick={() => navigate("/dashboard/agenda")}>
+          <Button size="sm" variant="outline" className="border-destructive/30 text-destructive hover:bg-destructive/10 shrink-0 h-7 text-[10px] px-3 rounded-md" onClick={() => navigate.push("/dashboard/agenda")}>
             {t("dashboard.seeDetails")}
           </Button>
         </StaggerItem>
@@ -134,7 +134,7 @@ export default function DashboardOverview() {
 
         {/* ── Left Column: Events & Processes ── */}
         <div className="md:col-span-2 lg:col-span-3 overflow-visible md:overflow-hidden flex flex-col gap-6 md:min-h-0">
-          
+
           {/* Timeline & Chart Row */}
           <div className="flex-none md:flex-1 md:min-h-[220px] grid grid-cols-1 lg:grid-cols-5 gap-6 overflow-visible md:overflow-hidden">
 
@@ -144,7 +144,7 @@ export default function DashboardOverview() {
                 <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                   <Clock className="h-3.5 w-3.5" /> {t("dashboard.timeline")}
                 </h3>
-                <Button variant="ghost" size="sm" className="h-6 text-[10px] font-bold uppercase tracking-widest text-primary/70 hover:text-primary transition-colors pr-0" onClick={() => navigate("/dashboard/agenda")}>
+                <Button variant="ghost" size="sm" className="h-6 text-[10px] font-bold uppercase tracking-widest text-primary/70 hover:text-primary transition-colors pr-0" onClick={() => navigate.push("/dashboard/agenda")}>
                   {t("common.seeAll", "Ver todos")}
                 </Button>
               </div>
@@ -158,7 +158,7 @@ export default function DashboardOverview() {
                   <div className="space-y-3">
                     <p className="text-[10px] font-bold text-primary/60 uppercase tracking-widest pl-6 mb-2">Hoje</p>
                     {todayEvents.map((ev, i) => (
-                      <TimelineEvent key={ev.id} event={ev} isLast={i === todayEvents.length - 1 && tomorrowEvents.length === 0} onNavigate={() => navigate("/dashboard/agenda")} />
+                      <TimelineEvent key={ev.id} event={ev} isLast={i === todayEvents.length - 1 && tomorrowEvents.length === 0} onNavigate={() => navigate.push("/dashboard/agenda")} />
                     ))}
                   </div>
                 )}
@@ -167,7 +167,7 @@ export default function DashboardOverview() {
                   <div className="space-y-3 mt-6">
                     <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest pl-6 mb-2">Amanhã</p>
                     {tomorrowEvents.map((ev, i) => (
-                      <TimelineEvent key={ev.id} event={ev} isLast={i === tomorrowEvents.length - 1} onNavigate={() => navigate("/dashboard/agenda")} />
+                      <TimelineEvent key={ev.id} event={ev} isLast={i === tomorrowEvents.length - 1} onNavigate={() => navigate.push("/dashboard/agenda")} />
                     ))}
                   </div>
                 )}
@@ -176,7 +176,7 @@ export default function DashboardOverview() {
 
             {/* Chart Graphic Area */}
             <div className="lg:col-span-2 flex flex-col md:min-h-0 overflow-visible md:overflow-hidden">
-               <DeadlinesChart eventos={eventos as any[]} />
+              <DeadlinesChart eventos={eventos as any[]} />
             </div>
 
           </div>

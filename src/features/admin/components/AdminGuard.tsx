@@ -1,6 +1,6 @@
 import { ReactNode, useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { Navigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/integrations/supabase/client";
 
 interface AdminGuardProps {
@@ -19,6 +19,7 @@ interface AdminGuardProps {
 export default function AdminGuard({ children }: AdminGuardProps) {
     const { user, loading: authLoading } = useAuth();
     const [isSuperAdmin, setIsSuperAdmin] = useState<boolean | null>(null);
+    const router = useRouter();
 
     // Lista de emails autorizados como Master Admin
     const MASTER_ADMIN_EMAILS = [
@@ -33,20 +34,15 @@ export default function AdminGuard({ children }: AdminGuardProps) {
                 return;
             }
 
-            // Verificação 1: Email na lista de Master Admins (Override para a equipe fundadora)
+            // Verificação 1: Email na lista de Master Admins
             const isEmailAuthorized = MASTER_ADMIN_EMAILS.includes(user.email ?? "");
 
-            // Se o email está na lista principal, garante acesso imediato para contornar 
-            // a diferença de IDs (Clerk ID vs Supabase UUID) ocorrida na migração.
             if (isEmailAuthorized) {
                 setIsSuperAdmin(true);
                 return;
             }
 
-            // Para outros usuários, verifica a role no banco de dados.
-            // NOTA: Requer que a tabela 'user_roles' seja atualizada para suportar Clerk IDs.
-
-            // Verificação 2: Confirmar role "admin" no banco de dados (tabela user_roles)
+            // Verificação 2: Confirmar role "admin" no banco de dados
             try {
                 const { data, error } = await supabase
                     .from("user_roles")
@@ -73,6 +69,12 @@ export default function AdminGuard({ children }: AdminGuardProps) {
         }
     }, [user, authLoading]);
 
+    useEffect(() => {
+        if (isSuperAdmin === false) {
+            router.replace("/dashboard");
+        }
+    }, [isSuperAdmin, router]);
+
     if (authLoading || isSuperAdmin === null) {
         return (
             <div className="flex h-screen w-full items-center justify-center bg-zinc-950">
@@ -85,7 +87,7 @@ export default function AdminGuard({ children }: AdminGuardProps) {
     }
 
     if (!isSuperAdmin) {
-        return <Navigate to="/dashboard" replace />;
+        return null;
     }
 
     return <>{children}</>;

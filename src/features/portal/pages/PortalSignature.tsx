@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 
 export default function PortalSignature() {
     const { token } = useParams();
-    const navigate = useNavigate();
+    const navigate = useRouter();
 
     const [signerDoc, setSignerDoc] = useState("");
     const [hasError, setHasError] = useState(false);

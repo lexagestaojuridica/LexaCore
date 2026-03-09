@@ -1,12 +1,13 @@
 import { useAuth } from "@/contexts/AuthContext";
-import { Navigate, useLocation } from "react-router-dom";
-import { ReactNode } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import { ReactNode, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   const { session, user, loading } = useAuth();
-  const location = useLocation();
+  const pathname = usePathname();
+  const router = useRouter();
 
   const { data: userRoleData, isLoading: roleLoading } = useQuery({
     queryKey: ["user-role", user?.id],
@@ -19,6 +20,12 @@ const ProtectedRoute = ({ children }: { children: ReactNode }) => {
     gcTime: 1000 * 60 * 60,
   });
 
+  useEffect(() => {
+    if (!loading && !session) {
+      router.replace("/auth");
+    }
+  }, [loading, session, router]);
+
   if (loading || (session && roleLoading)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -27,23 +34,21 @@ const ProtectedRoute = ({ children }: { children: ReactNode }) => {
     );
   }
 
-  if (!session) {
-    // Save the attempted URL for redirecting after login, if needed
-    return <Navigate to="/auth" state={{ from: location }} replace />;
-  }
+  if (!session) return null;
 
-  const role = (userRoleData?.role) ?? (user?.user_metadata?.app_role) ?? "admin";
-  const isPortalRoute = location.pathname.startsWith('/portal');
+  const role = (userRoleData as any)?.role ?? (user?.user_metadata?.app_role) ?? "admin";
+  const isPortalRoute = (pathname ?? "").startsWith('/portal');
 
   // Hard barrier: Clients cannot access HQ (Dashboard/Admin)
   if (role === 'cliente' && !isPortalRoute) {
-    return <Navigate to="/portal/dashboard" replace />;
+    router.replace("/portal/dashboard");
+    return null;
   }
 
   // Hard barrier: HQ Staff (Advogados, Admins) should not access Portal directly
-  // (Unless they are testing, but normally they shouldn't use the client portal interface)
   if (role !== 'cliente' && isPortalRoute) {
-    return <Navigate to="/dashboard" replace />;
+    router.replace("/dashboard");
+    return null;
   }
 
   return <>{children}</>;

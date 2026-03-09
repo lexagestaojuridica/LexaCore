@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import type { TimesheetSummary } from "../types";
 
@@ -12,7 +12,7 @@ interface ProductivityWidgetProps {
 }
 
 export function ProductivityWidget({ timesheetToday }: ProductivityWidgetProps) {
-    const navigate = useNavigate();
+    const navigate = useRouter();
     const { t } = useTranslation();
 
     const { totalHoursToday, totalMinsRemainder, progressPct } = useMemo(() => {

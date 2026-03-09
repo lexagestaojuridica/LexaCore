@@ -1,8 +1,8 @@
-import { Outlet, useLocation } from "react-router-dom";
+import { usePathname } from "next/navigation";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AdminSidebar } from "./AdminSidebar";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
     DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger
@@ -20,10 +20,10 @@ const ADMIN_TITLES: Record<string, string> = {
     "/admin/hq/settings": "Configurações Globais",
 };
 
-export default function AdminLayout() {
+export default function AdminLayout({ children }: { children?: React.ReactNode }) {
     const { user, signOut } = useAuth();
-    const navigate = useNavigate();
-    const location = useLocation();
+    const navigate = useRouter();
+    const pathname = usePathname();
     const { theme, setTheme } = useTheme();
 
     const displayName = user?.user_metadata?.full_name || user?.email || "Super Admin";
@@ -34,7 +34,7 @@ export default function AdminLayout() {
         .join("")
         .toUpperCase();
 
-    const pageTitle = ADMIN_TITLES[location.pathname] || "Backoffice";
+    const pageTitle = pathname ? ADMIN_TITLES[pathname] : "Backoffice";
 
     return (
         <SidebarProvider>
@@ -51,7 +51,7 @@ export default function AdminLayout() {
                             variant="ghost"
                             size="sm"
                             className="h-8 gap-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800 px-2"
-                            onClick={() => navigate("/dashboard")}
+                            onClick={() => navigate.push("/dashboard")}
                         >
                             <ArrowLeft className="h-3.5 w-3.5" />
                             <span className="text-xs font-medium hidden sm:inline">Dashboard</span>
@@ -114,13 +114,13 @@ export default function AdminLayout() {
                                 <DropdownMenuContent align="end" className="w-48 bg-zinc-900 border-zinc-800 text-zinc-200">
                                     <DropdownMenuItem
                                         className="text-xs gap-2 cursor-pointer hover:bg-zinc-800 focus:bg-zinc-800"
-                                        onClick={() => navigate("/admin/hq/settings")}
+                                        onClick={() => navigate.push("/admin/hq/settings")}
                                     >
                                         <Settings className="h-3.5 w-3.5" /> Configurações
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
                                         className="text-xs gap-2 cursor-pointer hover:bg-zinc-800 focus:bg-zinc-800"
-                                        onClick={() => navigate("/dashboard")}
+                                        onClick={() => navigate.push("/dashboard")}
                                     >
                                         <User className="h-3.5 w-3.5" /> Ir para Dashboard
                                     </DropdownMenuItem>
@@ -139,7 +139,7 @@ export default function AdminLayout() {
                     <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 relative">
                         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/10 via-zinc-950 to-zinc-950 pointer-events-none" />
                         <div className="relative z-10 max-w-7xl mx-auto">
-                            <Outlet />
+                            {children}
                         </div>
                     </main>
                 </div>

@@ -94,9 +94,13 @@ const DOC_GEN_URL = `${BASE_URL}/functions/v1/aruna-generate-doc`;
 const JURIS_URL = `${BASE_URL}/functions/v1/aruna-jurisprudencia`;
 const ANALYZE_URL = `${BASE_URL}/functions/v1/aruna-analyze-doc`;
 const TRANSCRIBE_URL = `${BASE_URL}/functions/v1/aruna-transcribe`;
-const AUTH_HEADER = () => supabase.auth.getSession().then(({ data }) => ({
-  Authorization: `Bearer ${data.session?.access_token ?? ""}`,
-}));
+const AUTH_HEADER = async () => {
+  let token = "";
+  if (typeof window !== "undefined" && (window as any).Clerk?.session) {
+    token = await (window as any).Clerk.session.getToken({ template: "supabase" });
+  }
+  return { Authorization: `Bearer ${token}` };
+};
 
 type Tool = null | "doc" | "juris" | "analyze" | "transcribe";
 

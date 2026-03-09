@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Check, Star, Zap, Crown, Building2, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 const plans = [
   {
@@ -192,10 +193,10 @@ const PricingSection = () => {
                 size="lg"
                 asChild
               >
-                <a href="/auth">
+                <Link href="/auth">
                   {plan.cta}
                   <ArrowRight className="h-4 w-4" />
-                </a>
+                </Link>
               </Button>
 
               <div className="mt-8 flex-1">

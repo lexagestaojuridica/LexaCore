@@ -1,7 +1,7 @@
-# SPECS.md - Especificações Técnicas do Projeto LEXA (v3.2 - Qualidade Máxima)
+# SPECS.md - Especificações Técnicas do Projeto LEXA (v3.3 - Skill-Driven com Qualidade Máxima, Desacoplamento e Escalabilidade)
 
 ## 1. Visão Geral da Arquitetura (Marcus - Arquiteto)
-O LEXA opera sob uma arquitetura de Next.js (App Router) moderna suportada por um poderoso "Backend-as-a-Service" (BaaS) fornecido pelo **Supabase**. A autenticação e gestão de usuários são providas pelo **Clerk**, um serviço robusto de autenticação e identidade. O frontend e o backend (Edge Functions/Middleware) são implantados na **Vercel**. O **Supabase (PostgreSQL)** atua como o banco de dados principal, delegando regras de negócio granulares para o banco via RLS (Row Level Security), triggers e Functions. A arquitetura é projetada para suportar funcionalidades offline-first em módulos críticos, garantir alta performance globalmente e segurança em cenários de multitenancy, com foco em isolamento de dados e escalabilidade horizontal. A prioridade máxima é a estabilidade, a ausência de bugs críticos e a aderência inquestionável às regras de negócio e requisitos de front-end.
+O LEXA opera sob uma arquitetura de Next.js (App Router) moderna suportada por um poderoso "Backend-as-a-Service" (BaaS) fornecido pelo **Supabase**. A autenticação e gestão de usuários são providas pelo **Clerk**, um serviço robusto de autenticação e identidade. O frontend e o backend (Edge Functions/Middleware) são implantados na **Vercel**. O **Supabase (PostgreSQL)** atua como o banco de dados principal, delegando regras de negócio granulares para o banco via RLS (Row Level Security), triggers e Functions. A arquitetura é projetada para suportar funcionalidades offline-first em módulos críticos, garantir alta performance globalmente e segurança em cenários de multitenancy, com foco central em **desacoplamento**, isolamento de dados e **escalabilidade horizontal**. A prioridade máxima é a estabilidade, promovida através de uma infraestrutura intrinsecamente **modular**, garantindo a ausência de bugs críticos e a aderência inquestionável às regras de negócio e requisitos de front-end.
 
 ## 2. Tecnologias Utilizadas
 *   **Frontend:** Next.js 15 (App Router), React 18, TypeScript.
@@ -38,13 +38,13 @@ O sistema provê multitenancy robusto, com isolamento de dados garantido por **R
 *   **Performance:** Code-splitting out-of-the-box pelo Vite. **Monitoramento contínuo de performance das Edge Functions, queries do Supabase e APIs críticas, com alertas proativos para identificar e resolver gargalos antes que afetem os usuários.**
 
 ## 7. Estrutura de Pastas e Módulos
-O monorepo do front-end está modelado baseado em Features e responsabilidades:
-*   `src/components/`: Componentes agnósticos e atômicos (UI Kit liderado por Theo).
-*   `src/features/`: Lógica de negócio compartimentada por domínio (ex: `/agenda`, `/processos`, `/financeiro`, `/timesheet`).
+O monorepo do front-end está modelado sob os princípios de Feature-Sliced Design (FSD), com foco extremo em **modularidade** e separação de responsabilidades:
+*   `src/components/`: Componentes agnósticos e atômicos (UI Kit liderado por Theo), sem acoplamento de regras de negócios.
+*   `src/features/`: Lógica de negócio altamente compartimentada e **desacoplada** por domínio (ex: `/agenda`, `/processos`, `/financeiro`, `/timesheet`). Cada feature deve funcionar de forma independente e testável.
 *   `src/pages/`: Camada de roteamento e views (Containers de página).
 *   `src/integrations/`: Hooks pré-configurados do React Query para interação com entidades externas e cache.
-*   `supabase/migrations/`: Fonte da verdade do Schema relacional, segurança e auditoria (domínio liderado por Rafael e Kai).
-*   `api/edge-functions/`: Lógica de backend serverless para **Vercel Edge Functions**.
+*   `supabase/migrations/`: Fonte da verdade do Schema relacional, segurança e auditoria, promovendo independência dos módulos de dados (domínio liderado por Rafael e Kai).
+*   `api/edge-functions/`: Lógica de backend serverless para **Vercel Edge Functions**, garantindo pipelines isolados e suporte nativo à escalabilidade horizontal do sistema.
 
 ## 8. Padrões de Código e Boas Práticas (Leo - Tech Lead)
 *   **Validação de Dados:** Sempre utilizar `zod` para validação de esquemas e `react-hook-form` para validação de formulários. **Garantia de tipagem forte e validação em todas as camadas da aplicação (frontend e backend).**

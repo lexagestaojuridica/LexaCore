@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useMinutas, CATEGORY_CONFIG, LibraryTemplate } from "@/features/minutas/contexts/MinutasContext";
 import { autoFillTemplate } from "@/lib/DocumentTemplateEngine";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 
 interface Props {
     open: boolean;
@@ -17,7 +17,7 @@ interface Props {
 export function MinutaTemplateSelector({ open, onOpenChange, processo }: Props) {
     const { library, createDocument, setOpenDocument } = useMinutas();
     const [search, setSearch] = useState("");
-    const navigate = useNavigate();
+    const navigate = useRouter();
 
     const filtered = library.filter(t =>
         t.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -43,7 +43,7 @@ export function MinutaTemplateSelector({ open, onOpenChange, processo }: Props) 
         // Open editor
         setOpenDocument(newId);
         onOpenChange(false);
-        navigate("/dashboard/minutas");
+        navigate.push("/dashboard/minutas");
     };
 
     return (
