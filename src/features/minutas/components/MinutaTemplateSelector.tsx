@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useMinutas, CATEGORY_CONFIG, LibraryTemplate } from "@/features/minutas/contexts/MinutasContext";
 import { autoFillTemplate } from "@/lib/DocumentTemplateEngine";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 interface Props {
     open: boolean;
@@ -103,9 +104,9 @@ export function MinutaTemplateSelector({ open, onOpenChange, processo }: Props) 
 
                     <div className="pt-4 border-t border-border/40">
                         <Button variant="ghost" className="w-full gap-2 text-xs font-bold text-muted-foreground uppercase tracking-widest" asChild>
-                            <a href="/dashboard/minutas">
+                            <Link href="/dashboard/minutas">
                                 <FilePlus className="h-4 w-4" /> Ir para Biblioteca Completa
-                            </a>
+                            </Link>
                         </Button>
                     </div>
                 </div>
