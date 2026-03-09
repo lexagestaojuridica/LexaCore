@@ -65,6 +65,8 @@ export default function ColaboradoresPage() {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [form, setForm] = useState(emptyForm);
     const [step, setStep] = useState(1);
+    const [searchTerm, setSearchTerm] = useState("");
+    const debouncedSearch = useDebounce(searchTerm, 500);
     const totalSteps = 3;
 
     const nextStep = () => setStep(s => Math.min(s + 1, totalSteps));
