@@ -60,7 +60,9 @@ const Navbar = () => {
         </div>
         <div className="hidden md:flex items-center gap-3">
           <ThemeToggle />
-          {isLoaded && !isSignedIn && (
+          {!isLoaded ? (
+            <div className="h-9 w-24 animate-pulse rounded-full bg-muted/20" />
+          ) : !isSignedIn ? (
             <>
               <SignInButton mode="modal">
                 <Button variant="ghost" size="sm" className="nav-link-hover relative text-muted-foreground font-medium">
@@ -74,8 +76,7 @@ const Navbar = () => {
                 </Button>
               </SignUpButton>
             </>
-          )}
-          {isLoaded && isSignedIn && (
+          ) : (
             <UserButton afterSignOutUrl="/" />
           )}
         </div>
@@ -97,16 +98,27 @@ const Navbar = () => {
               {link.label}
             </a>
           ))}
-          {isLoaded && !isSignedIn && (
-            <SignUpButton mode="modal">
-              <Button className="w-full rounded-full gap-2">
-                Começar Agora <ArrowRight className="h-3.5 w-3.5" />
-              </Button>
-            </SignUpButton>
-          )}
-          {isLoaded && isSignedIn && (
-            <div className="flex justify-center py-2">
+          {!isLoaded ? (
+            <div className="h-10 w-full animate-pulse rounded-full bg-muted/20" />
+          ) : !isSignedIn ? (
+            <div className="flex flex-col gap-2">
+              <SignInButton mode="modal">
+                <Button variant="outline" className="w-full rounded-full">
+                  Entrar
+                </Button>
+              </SignInButton>
+              <SignUpButton mode="modal">
+                <Button className="w-full rounded-full gap-2">
+                  Começar Agora <ArrowRight className="h-3.5 w-3.5" />
+                </Button>
+              </SignUpButton>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-4 py-2">
               <UserButton afterSignOutUrl="/" />
+              <Button variant="outline" className="w-full rounded-full" asChild>
+                <a href="/dashboard">Acessar Painel</a>
+              </Button>
             </div>
           )}
         </motion.div>
