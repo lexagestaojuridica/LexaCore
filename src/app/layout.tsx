@@ -1,4 +1,4 @@
-import { ClerkProvider, SignInButton, SignUpButton, Show, UserButton } from "@clerk/nextjs";
+import { ClerkProvider } from "@clerk/nextjs";
 import "../index.css";
 import { ThemeProvider } from "@/components/shared/ThemeProvider";
 import { TooltipProvider } from "@/components/ui/tooltip";
