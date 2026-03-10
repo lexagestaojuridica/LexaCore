@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { MessageSquare, FileText, Mic, Sparkles } from "lucide-react";
+import Image from "next/image";
 import arunaAvatar from "@/assets/aruna-avatar.png";
 
 const capabilities = [
@@ -87,14 +88,20 @@ const ArunaSection = () => (
           {/* Subtle radial glow behind ARUNA */}
           <div className="absolute bottom-10 left-1/2 -translate-x-1/2 h-80 w-80 rounded-full bg-accent/8 blur-[80px]" />
 
-          <motion.img
-            src={arunaAvatar}
-            alt="ARUNA — Assistente Virtual"
-            className="relative h-[32rem] w-auto object-contain drop-shadow-2xl"
-            style={{ mixBlendMode: "normal", background: "transparent" }}
+          <motion.div
             animate={{ y: [0, -8, 0] }}
             transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-          />
+            className="relative"
+          >
+            <Image
+              src={arunaAvatar}
+              alt="ARUNA — Assistente Virtual"
+              width={500}
+              height={500}
+              className="h-[32rem] w-auto object-contain drop-shadow-2xl"
+              priority
+            />
+          </motion.div>
         </motion.div>
       </div>
     </div>

@@ -215,14 +215,16 @@ const Auth = () => {
                 >
                   {mode === "login" ? (
                     <SignIn
-                      routing="hash"
+                      routing="path"
+                      path="/auth"
                       fallbackRedirectUrl="/dashboard"
-                      signUpUrl="/auth#signup"
+                      signUpUrl="/auth?sign-up=true"
                       appearance={clerkAppearance}
                     />
                   ) : (
                     <SignUp
-                      routing="hash"
+                      routing="path"
+                      path="/auth"
                       fallbackRedirectUrl="/dashboard"
                       signInUrl="/auth"
                       appearance={clerkAppearance}
