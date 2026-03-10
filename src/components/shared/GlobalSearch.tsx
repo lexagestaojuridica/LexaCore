@@ -19,6 +19,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/components/shared/ThemeProvider";
 import { supabase } from "@/integrations/supabase/client";
 
+interface AuthContextType {
+    session: { user: any } | null;
+    user: any | null; // Tipagem flexível para acomodar o enriquecimento customizado
+    loading: boolean;
+    signOut: () => Promise<void>;
+}
+
 export function GlobalSearch() {
     const [open, setOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
@@ -26,7 +33,7 @@ export function GlobalSearch() {
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useRouter();
     const { t } = useTranslation();
-    const { user } = useAuth();
+    const { user } = useAuth() as AuthContextType;
     const { theme, setTheme } = useTheme();
 
 
@@ -49,13 +56,14 @@ export function GlobalSearch() {
 
         setIsLoading(true);
         try {
-            const { data } = await supabase.from("profiles").select("organization_id").eq("user_id", user.id).maybeSingle();
-            const orgId = (data as any)?.organization_id;
+            const { data: profile } = await supabase.from("profiles").select("organization_id").eq("user_id", user.id).maybeSingle();
+            // @ts-ignore - Supabase types can be complex with joins/selects
+            const orgId = profile?.organization_id;
             if (!orgId) return;
 
             const [{ data: proc }, { data: cli }] = await Promise.all([
-                supabase.from("processos_juridicos").select("id, title, number").eq("organization_id", orgId).ilike("title", `%${q}%`).limit(5),
-                supabase.from("clients").select("id, name").eq("organization_id", orgId).ilike("name", `%${q}%`).limit(5)
+                supabase.from("processos_juridicos").select("id, title, number").eq("organization_id" as any, orgId as any).ilike("title", `%${q}%`).limit(5),
+                supabase.from("clients").select("id, name").eq("organization_id" as any, orgId as any).ilike("name", `%${q}%`).limit(5)
             ]);
 
             setResults({

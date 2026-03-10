@@ -3,9 +3,12 @@
 import { createContext, useContext, ReactNode } from "react";
 import { useAuth as useClerkAuth, useUser } from "@clerk/nextjs";
 
+// @ts-ignore
+import { UserResource } from "@clerk/types";
+
 interface AuthContextType {
-  session: any | null;
-  user: any | null;
+  session: { user: any } | null;
+  user: UserResource | null;
   loading: boolean;
   signOut: () => Promise<void>;
 }
