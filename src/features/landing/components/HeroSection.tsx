@@ -84,7 +84,7 @@ const Navbar = () => {
                   Acessar Painel
                 </Button>
               </Link>
-              <UserButton afterSignOutUrl="/" />
+              <UserButton />
             </div>
           )}
         </div>
