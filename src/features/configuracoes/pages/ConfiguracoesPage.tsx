@@ -6,16 +6,16 @@ import {
   Briefcase, Phone, Mail, Hash, MapPin, UserPlus, Minus,
   Globe, CreditCard, Link, ExternalLink, Key, Scale, Link2, Bot, CalendarDays
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import LexaLoadingOverlay from "@/components/shared/LexaLoadingOverlay";
-import { cn } from "@/lib/utils";
+import { Button } from "@/shared/ui/button";
+import { Input } from "@/shared/ui/input";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/shared/ui/card";
+import { Label } from "@/shared/ui/label";
+import { Separator } from "@/shared/ui/separator";
+import { Badge } from "@/shared/ui/badge";
+import { Switch } from "@/shared/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
+import LexaLoadingOverlay from "@/shared/components/LexaLoadingOverlay";
+import { cn } from "@/shared/lib/utils";
 import { motion } from "framer-motion";
 import { useGoogleCalendar } from "@/features/agenda/hooks/useGoogleCalendar";
 import { useMicrosoftCalendar } from "@/features/agenda/hooks/useMicrosoftCalendar";

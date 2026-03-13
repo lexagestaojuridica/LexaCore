@@ -4,10 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Timer, Plus, Calendar, AlertCircle, CheckCircle2, Trash2, Clock } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { calculateDeadline, isOverdue } from "@/lib/legalDates";
+import { Button } from "@/shared/ui/button";
+import { Input } from "@/shared/ui/input";
+import { Badge } from "@/shared/ui/badge";
+import { calculateDeadline, isOverdue } from "@/shared/lib/legalDates";
 import { toast } from "sonner";
 
 interface Deadline {

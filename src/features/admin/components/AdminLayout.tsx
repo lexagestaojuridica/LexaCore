@@ -1,14 +1,14 @@
 import { usePathname } from "next/navigation";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarProvider, SidebarTrigger } from "@/shared/ui/sidebar";
 import { AdminSidebar } from "./AdminSidebar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/shared/ui/button";
 import {
     DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger
-} from "@/components/ui/dropdown-menu";
+} from "@/shared/ui/dropdown-menu";
 import { LogOut, Settings, User, RefreshCw, Moon, Sun, ChevronDown, ArrowLeft } from "lucide-react";
-import { useTheme } from "@/components/shared/ThemeProvider";
+import { useTheme } from "@/shared/components/ThemeProvider";
 
 // ─── Admin page titles ────────────────────────────────────────
 const ADMIN_TITLES: Record<string, string> = {

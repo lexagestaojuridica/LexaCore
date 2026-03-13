@@ -3,9 +3,9 @@
 import { useState } from "react";
 
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/shared/ui/button";
 import { Check, Star, Zap, Crown, Building2, ArrowRight } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/shared/lib/utils";
 import Link from "next/link";
 
 const plans = [

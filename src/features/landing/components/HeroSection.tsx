@@ -1,12 +1,12 @@
 'use client';
 
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/shared/ui/button";
 import logoLexa from "@/assets/logo-lexa.png";
 import Image from "next/image";
 import { ArrowRight, Menu, X, Shield, Sparkles, Scale, Sun, Moon } from "lucide-react";
 import { useState, useEffect } from "react";
-import { useTheme } from "@/components/shared/ThemeProvider";
+import { useTheme } from "@/shared/components/ThemeProvider";
 import { UserButton, useAuth } from "@clerk/nextjs";
 import Link from "next/link";
 

@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { useDebounce } from "@/hooks/useDebounce";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 import { ProcessKanban } from "@/features/processos/components/ProcessKanban";
 import { ProcessCalculator } from "@/features/processos/components/ProcessCalculator";
 import { ProcessoDialog } from "@/features/processos/components/ProcessoDialog";
@@ -20,33 +20,33 @@ import { ProcessoViewSheet } from "@/features/processos/components/ProcessoViewS
 import type { Processo, Documento } from "@/features/processos/types";
 import { STATUS_OPTIONS, INSTANCIAS, FASES_PROCESSUAIS, UFS } from "@/features/processos/constants";
 import type { TablesInsert } from "@/integrations/supabase/types";
-import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Input } from "@/components/ui/input";
+import { Button } from "@/shared/ui/button";
+import { Switch } from "@/shared/ui/switch";
+import { Input } from "@/shared/ui/input";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from "@/components/ui/table";
+} from "@/shared/ui/table";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
-} from "@/components/ui/dialog";
+} from "@/shared/ui/dialog";
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
-} from "@/components/ui/sheet";
+} from "@/shared/ui/sheet";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { PageHeader } from "@/components/shared/PageHeader";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
-import { StatCard } from "@/components/shared/StatCard";
-import { TableSkeleton } from "@/components/shared/SkeletonLoaders";
-import FormField from "@/components/shared/FormField";
-import LexaLoadingOverlay from "@/components/shared/LexaLoadingOverlay";
-import { formatCurrencyInput, parseCurrencyToNumber } from "@/lib/formatters";
-import { cn } from "@/lib/utils";
+} from "@/shared/ui/select";
+import { Textarea } from "@/shared/ui/textarea";
+import { Badge } from "@/shared/ui/badge";
+import { Card, CardContent } from "@/shared/ui/card";
+import { PageHeader } from "@/shared/components/PageHeader";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
+import { Separator } from "@/shared/ui/separator";
+import { StatCard } from "@/shared/components/StatCard";
+import { TableSkeleton } from "@/shared/components/SkeletonLoaders";
+import FormField from "@/shared/components/FormField";
+import LexaLoadingOverlay from "@/shared/components/LexaLoadingOverlay";
+import { formatCurrencyInput, parseCurrencyToNumber } from "@/shared/lib/formatters";
+import { cn } from "@/shared/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
 // FSD Imports

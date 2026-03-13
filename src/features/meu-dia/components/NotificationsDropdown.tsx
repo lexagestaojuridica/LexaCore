@@ -1,16 +1,16 @@
 import { Bell, AlertTriangle, Info, CheckCircle, InfoIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/shared/ui/button";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
+} from "@/shared/ui/popover";
 import { useRealtimeNotifications, RealtimeNotification } from "@/features/meu-dia/hooks/useRealtimeNotifications";
 import { formatDistanceToNow, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { cn } from "@/lib/utils";
+import { cn } from "@/shared/lib/utils";
 import { useRouter } from "next/navigation";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea } from "@/shared/ui/scroll-area";
 
 const urgencyStyles: Record<string, string> = {
   critical: "border-l-destructive bg-destructive/5",

@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { useDebounce } from "@/hooks/useDebounce";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -8,15 +8,15 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
-import { Button } from "@/components/ui/button";
-import { StatCard } from "@/components/shared/StatCard";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/shared/ui/button";
+import { StatCard } from "@/shared/components/StatCard";
+import { Input } from "@/shared/ui/input";
+import { Badge } from "@/shared/ui/badge";
+import { Label } from "@/shared/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/shared/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/shared/ui/dropdown-menu";
+import { Card, CardContent } from "@/shared/ui/card";
 
 // FSD Imports
 import { useDocumentos } from "@/features/documentos/hooks/useDocumentos";

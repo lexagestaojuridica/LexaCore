@@ -1,15 +1,15 @@
 import { useMemo } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@/shared/ui/badge";
+import { Button } from "@/shared/ui/button";
 import { useRouter } from "next/navigation";
 import {
   Scale, Users, CalendarDays, Clock, TrendingUp, AlertTriangle, Activity
 } from "lucide-react";
 import { format, isToday, isTomorrow, parseISO, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { cn } from "@/lib/utils";
-import { Skeleton, KPISkeleton } from "@/components/shared/SkeletonLoaders";
-import { StaggerContainer, StaggerItem, HoverElevate } from "@/components/shared/AnimatedTransitions";
+import { cn } from "@/shared/lib/utils";
+import { Skeleton, KPISkeleton } from "@/shared/components/SkeletonLoaders";
+import { StaggerContainer, StaggerItem, HoverElevate } from "@/shared/components/AnimatedTransitions";
 import { useTranslation } from "react-i18next";
 import { useGoogleCalendar } from "@/features/agenda/hooks/useGoogleCalendar";
 import { useMicrosoftCalendar } from "@/features/agenda/hooks/useMicrosoftCalendar";

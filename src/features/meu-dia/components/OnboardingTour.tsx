@@ -5,9 +5,9 @@ import {
     CheckCircle2, ChevronRight, X, Sparkles,
     ArrowRight, Scale, CalendarDays, DollarSign, BarChart3, ChevronLeft
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { Button } from "@/shared/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/shared/ui/card";
+import { cn } from "@/shared/lib/utils";
 
 interface TourStep {
     title: string;

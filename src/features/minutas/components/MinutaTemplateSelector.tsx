@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { Search, FileText, ChevronRight, FilePlus, Bot, Sparkles } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/shared/ui/dialog";
+import { Input } from "@/shared/ui/input";
+import { Badge } from "@/shared/ui/badge";
+import { Button } from "@/shared/ui/button";
 import { useMinutas, CATEGORY_CONFIG, LibraryTemplate } from "@/features/minutas/contexts/MinutasContext";
-import { autoFillTemplate } from "@/lib/DocumentTemplateEngine";
+import { autoFillTemplate } from "@/shared/lib/DocumentTemplateEngine";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 

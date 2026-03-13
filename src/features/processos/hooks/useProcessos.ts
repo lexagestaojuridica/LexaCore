@@ -1,8 +1,5 @@
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import type { Database } from "@/integrations/supabase/types";
-import { useAuth } from "@/contexts/AuthContext";
+import { trpc } from "@/shared/lib/trpc";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { Processo } from "../types";
 
@@ -16,107 +13,59 @@ export function useProcessos(
     sortDir: "asc" | "desc",
     viewMode: "table" | "kanban"
 ) {
-    const { user } = useAuth();
     const queryClient = useQueryClient();
 
-    // ── Profile query (org_id) ──
-    const { data: profile } = useQuery({
-        queryKey: ["profile", user?.id],
-        queryFn: async () => {
-            const { data } = await supabase.from("profiles").select("organization_id").eq("user_id", user!.id).single();
-            return data;
-        },
-        enabled: !!user,
+    const processesQuery = trpc.processo.list.useQuery({
+        page,
+        search,
+        statusFilter,
+        sortField,
+        sortDir,
+        viewMode,
+        pageSize: PAGE_SIZE,
     });
 
-    const orgId = profile?.organization_id;
-
-    // ── Processes (filtered & paginated) ──
-    const { data: processosData, isLoading } = useQuery({
-        queryKey: ["processos", orgId, page, search, statusFilter, sortField, sortDir, viewMode],
-        queryFn: async () => {
-            let query = supabase.from("processos_juridicos")
-                .select("*, clients(id, name, phone, asaas_customer_id)", { count: "exact" })
-                .eq("organization_id", orgId!);
-
-            if (statusFilter !== "all") {
-                query = query.eq("status", statusFilter);
-            }
-
-            if (search) {
-                query = query.or(`title.ilike.%${search}%,number.ilike.%${search}%,court.ilike.%${search}%,subject.ilike.%${search}%`);
-            }
-
-            query = query.order(sortField, { ascending: sortDir === "asc" });
-
-            if (viewMode === "table") {
-                const from = (page - 1) * PAGE_SIZE;
-                const to = from + PAGE_SIZE - 1;
-                query = query.range(from, to);
-            } else {
-                query = query.limit(200);
-            }
-
-            const { data, error, count } = await query;
-            if (error) throw error;
-            return { data: (data as unknown) as Processo[], count: count ?? 0 };
-        },
-        enabled: !!orgId,
-        placeholderData: keepPreviousData,
-    });
-
-    // ── BI Counts (for StatCards) ──
-    const { data: biCounts } = useQuery({
-        queryKey: ["processos-bi", orgId],
-        queryFn: async () => {
-            const { count: total } = await supabase.from("processos_juridicos").select("*", { count: "exact", head: true }).eq("organization_id", orgId!);
-            const { count: ativos } = await supabase.from("processos_juridicos").select("*", { count: "exact", head: true }).eq("organization_id", orgId!).eq("status", "ativo");
-            const { count: suspensos } = await supabase.from("processos_juridicos").select("*", { count: "exact", head: true }).eq("organization_id", orgId!).eq("status", "suspenso");
-            return { total: total || 0, ativos: ativos || 0, suspensos: suspensos || 0 };
-        },
-        enabled: !!orgId,
-    });
+    const biCounts = trpc.processo.getCounts.useQuery();
 
     // ── Mutations ──
-    const createMutation = useMutation({
-        mutationFn: async (payload: Partial<Processo>) => {
-            const { error } = await supabase.from("processos_juridicos").insert({ ...payload, organization_id: orgId, responsible_user_id: user?.id } as Database["public"]["Tables"]["processos_juridicos"]["Insert"]);
-            if (error) throw error;
+    const createMutation = trpc.processo.create.useMutation({
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: trpc.processo.list.getQueryKey() });
+            toast.success("Processo criado");
         },
-        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["processos"] }); toast.success("Processo criado"); },
         onError: () => toast.error("Erro ao criar processo"),
     });
 
-    const updateMutation = useMutation({
-        mutationFn: async ({ id, ...payload }: { id: string } & Partial<Processo>) => {
-            const updatePayload: Record<string, any> = { ...payload };
-            delete updatePayload.organization_id;
-            delete updatePayload.created_at;
-            delete updatePayload.responsible_user_id;
-            const { error } = await supabase.from("processos_juridicos").update(updatePayload as Database["public"]["Tables"]["processos_juridicos"]["Update"]).eq("id", id).eq("organization_id", orgId!);
-            if (error) throw error;
+    const updateMutation = trpc.processo.update.useMutation({
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: trpc.processo.list.getQueryKey() });
+            toast.success("Processo atualizado");
         },
-        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["processos"] }); toast.success("Processo atualizado"); },
         onError: () => toast.error("Erro ao atualizar processo"),
     });
 
-    const deleteMutation = useMutation({
-        mutationFn: async (id: string) => {
-            const { error } = await supabase.from("processos_juridicos").delete().eq("id", id);
-            if (error) throw error;
+    const deleteMutation = trpc.processo.delete.useMutation({
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: trpc.processo.list.getQueryKey() });
+            toast.success("Processo excluído");
         },
-        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["processos"] }); toast.success("Processo excluído"); },
         onError: () => toast.error("Erro ao excluir processo"),
     });
 
     return {
-        orgId,
-        processos: processosData?.data || [],
-        totalCount: processosData?.count || 0,
-        biCounts: biCounts || { total: 0, ativos: 0, suspensos: 0 },
-        isLoading,
+        orgId: "trpc-managed",
+        processos: (processesQuery.data?.data as unknown as Processo[]) || [],
+        totalCount: processesQuery.data?.count || 0,
+        biCounts: biCounts.data || { total: 0, ativos: 0, suspensos: 0 },
+        isLoading: processesQuery.isLoading,
         createMutation,
-        updateMutation,
+        updateMutation: {
+            ...updateMutation,
+            mutate: (payload: { id: string } & Partial<Processo>) => {
+                const { id, ...data } = payload;
+                updateMutation.mutate({ id, data });
+            }
+        },
         deleteMutation,
         PAGE_SIZE,
     };

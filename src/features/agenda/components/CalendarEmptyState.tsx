@@ -2,7 +2,7 @@ import { useGoogleCalendar } from "@/features/agenda/hooks/useGoogleCalendar";
 import { useMicrosoftCalendar } from "@/features/agenda/hooks/useMicrosoftCalendar";
 import { useAppleCalendar } from "@/features/agenda/hooks/useAppleCalendar";
 import { Plus, Calendar as CalendarIcon, CheckCircle2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/shared/ui/button";
 import { useRouter } from "next/navigation";
 
 interface CalendarEmptyStateProps {

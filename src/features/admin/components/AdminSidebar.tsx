@@ -3,9 +3,9 @@ import {
     SidebarContent,
     SidebarFooter,
     useSidebar,
-} from "@/components/ui/sidebar";
-import { NavLink } from "@/components/layout/NavLink";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+} from "@/shared/ui/sidebar";
+import { NavLink } from "@/widgets/layout/NavLink";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";
 import {
     LogOut,
     Building2,

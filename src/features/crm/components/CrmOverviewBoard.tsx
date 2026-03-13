@@ -1,7 +1,7 @@
 import { TrendingUp, Users, Activity, Briefcase, Plus, Filter, Download, Search, BarChart3 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useCrm } from "@/features/crm/contexts/CrmContext";
-import { cn } from "@/lib/utils";
+import { cn } from "@/shared/lib/utils";
 
 const formatCurrencyShort = (v: number) => {
     if (v >= 1000000) return `R$ ${(v / 1000000).toFixed(1)}M`;

@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/shared/ui/card";
 import { ShieldAlert, Search, Activity, User, Building, Clock, FileJson } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { Input } from "@/components/ui/input";
+import { Input } from "@/shared/ui/input";
 import {
     Table,
     TableBody,
@@ -11,10 +11,10 @@ import {
     TableHead,
     TableHeader,
     TableRow,
-} from "@/components/ui/table";
-import { Skeleton } from "@/components/ui/skeleton";
-import { EmptyState } from "@/components/shared/EmptyState";
-import { Badge } from "@/components/ui/badge";
+} from "@/shared/ui/table";
+import { Skeleton } from "@/shared/ui/skeleton";
+import { EmptyState } from "@/shared/components/EmptyState";
+import { Badge } from "@/shared/ui/badge";
 
 export default function AdminAudit() {
     const [searchTerm, setSearchTerm] = useState("");

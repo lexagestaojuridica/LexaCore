@@ -5,12 +5,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { format, isAfter } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Scale, Building2, Calendar, FileText, CheckCircle2, Clock, AlertCircle, ShieldCheck, Lock, ChevronRight, Timer } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/shared/ui/card";
+import { Badge } from "@/shared/ui/badge";
+import { Separator } from "@/shared/ui/separator";
+import { Button } from "@/shared/ui/button";
+import { Input } from "@/shared/ui/input";
+import { cn } from "@/shared/lib/utils";
 import { toast } from "sonner";
 import Image from "next/image";
 

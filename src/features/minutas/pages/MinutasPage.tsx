@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { FileEdit, FileText, BookOpen, PenTool } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { MinutasProvider, useMinutas } from "@/features/minutas/contexts/MinutasContext";
 import MinutasMyDocuments from "@/features/minutas/components/MinutasMyDocuments";
 import MinutasLibrary from "@/features/minutas/components/MinutasLibrary";

@@ -1,11 +1,8 @@
-import { createContext, useContext, ReactNode, useCallback, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { createContext, useContext, ReactNode, useCallback } from "react";
+import { trpc } from "@/shared/lib/trpc";
 import { toast } from "sonner";
-import { isBusinessDay } from "@/lib/utils";
 
-// ── Types ──────────────────────────────────────────────
+// ── Types (Reusing existing or defining for tRPC) ──────────────────────
 export interface WorkflowStep {
     id: string;
     title: string;
@@ -13,31 +10,6 @@ export interface WorkflowStep {
     completed: boolean;
     dueDate: string;
     notes: string;
-}
-
-export interface WorkflowTemplate {
-    id: string;
-    name: string;
-    emoji: string;
-    category: string;
-    description: string;
-    steps: Omit<WorkflowStep, "id" | "completed" | "notes">[];
-}
-
-export interface Member {
-    id: string;
-    name: string;
-    role: string;
-    avatar: string;
-}
-
-export interface Sector {
-    id: string;
-    name: string;
-    emoji: string;
-    color: string;
-    coordinatorId: string;
-    memberIds: string[];
 }
 
 export interface WorkflowInstance {
@@ -56,7 +28,32 @@ export interface WorkflowInstance {
     createdBy: string;
 }
 
-// ── Templates (static reference data) ──────────────────
+export interface Member {
+    id: string;
+    name: string;
+    role: string;
+    avatar: string;
+}
+
+export interface Sector {
+    id: string;
+    name: string;
+    emoji: string;
+    color: string;
+    coordinatorId: string;
+    memberIds: string[];
+}
+
+export interface WorkflowTemplate {
+    id: string;
+    name: string;
+    emoji: string;
+    category: string;
+    description: string;
+    steps: any[];
+}
+
+// ── Static/Placeholder Data ──────────────────────────────
 const TEMPLATES: WorkflowTemplate[] = [
     {
         id: "t1", name: "Onboarding de Cliente", emoji: "📋", category: "Geral",
@@ -135,18 +132,6 @@ const TEMPLATES: WorkflowTemplate[] = [
     },
 ];
 
-// ── Static reference data ──────────────────────────────
-const SAMPLE_MEMBERS: Member[] = [
-    { id: "m1", name: "Dr. Carlos Silva", role: "Sócio", avatar: "CS" },
-    { id: "m2", name: "Dra. Maria Santos", role: "Coordenadora", avatar: "MS" },
-    { id: "m3", name: "Dr. João Pereira", role: "Advogado", avatar: "JP" },
-    { id: "m4", name: "Dra. Ana Costa", role: "Advogada", avatar: "AC" },
-    { id: "m5", name: "Dr. Pedro Almeida", role: "Advogado", avatar: "PA" },
-    { id: "m6", name: "Dra. Fernanda Lima", role: "Estagiária", avatar: "FL" },
-    { id: "m7", name: "Dr. Roberto Dias", role: "Advogado", avatar: "RD" },
-    { id: "m8", name: "Dra. Luciana Ferreira", role: "Coordenadora", avatar: "LF" },
-];
-
 const SAMPLE_SECTORS: Sector[] = [
     { id: "s1", name: "Trabalhista", emoji: "⚖️", color: "bg-blue-500", coordinatorId: "m2", memberIds: ["m3", "m5", "m6"] },
     { id: "s2", name: "Civil", emoji: "📜", color: "bg-emerald-500", coordinatorId: "m8", memberIds: ["m4", "m7"] },
@@ -154,41 +139,6 @@ const SAMPLE_SECTORS: Sector[] = [
     { id: "s4", name: "Tributário", emoji: "💰", color: "bg-amber-500", coordinatorId: "m2", memberIds: ["m5"] },
     { id: "s5", name: "Empresarial", emoji: "🏢", color: "bg-violet-500", coordinatorId: "m8", memberIds: ["m4", "m6"] },
 ];
-
-// ── Helpers ────────────────────────────────────────────
-async function getOrgId(userId: string): Promise<string> {
-    const { data } = await supabase.from("profiles").select("organization_id").eq("user_id", userId).single();
-    return data?.organization_id || "";
-}
-
-// ── Supabase Types ──
-interface SupabaseWorkflowInstance {
-    id: string;
-    organization_id: string;
-    user_id: string;
-    template_id: string;
-    template_name: string;
-    template_emoji: string;
-    sector_id: string;
-    assigned_to: string;
-    assigned_to_name: string;
-    priority: "alta" | "media" | "baixa";
-    deadline: string | null;
-    status: string;
-    created_at: string;
-    created_by: string;
-}
-
-interface SupabaseWorkflowStep {
-    id: string;
-    workflow_id: string;
-    title: string;
-    description: string | null;
-    completed: boolean;
-    due_date: string | null;
-    notes: string | null;
-    sort_order: number;
-}
 
 function computeStatus(steps: WorkflowStep[], deadline: string): WorkflowInstance["status"] {
     const allDone = steps.every((s) => s.completed);
@@ -198,15 +148,12 @@ function computeStatus(steps: WorkflowStep[], deadline: string): WorkflowInstanc
     if (deadline && !allDone) {
         const deadlineDate = new Date(deadline);
         const today = new Date();
-        // Só marcamos atraso se a data atual for maior que o deadline
-        // Futuramente podemos adicionar um 'buffer' de dias úteis aqui
         overdue = today > deadlineDate;
     }
 
     return allDone ? "concluido" : overdue ? "atrasado" : anyDone ? "em_andamento" : "pendente";
 }
 
-// ── Context ────────────────────────────────────────────
 interface WorkflowContextType {
     templates: WorkflowTemplate[];
     members: Member[];
@@ -236,189 +183,145 @@ export const useWorkflow = () => {
 };
 
 export function WorkflowProvider({ children }: { children: ReactNode }) {
-    const { user } = useAuth();
-    const qc = useQueryClient();
-    const uid = user?.id || "";
-    const [sectors, setSectors] = useState<Sector[]>(SAMPLE_SECTORS);
+    const utils = trpc.useUtils();
 
-    const invalidate = () => qc.invalidateQueries({ queryKey: ["workflow_instances"] });
+    // ── Queries ──
+    const instancesQuery = trpc.workflow.listInstances.useQuery();
+    const collaboratorsQuery = trpc.rh.listColaboradores.useQuery();
 
-    // ── Fetch org_id once ──
-    const { data: orgProfile } = useQuery({
-        queryKey: ["workflow_org_profile", uid],
-        queryFn: async () => {
-            const { data } = await supabase.from("profiles").select("organization_id").eq("user_id", uid).single();
-            return data;
-        },
-        enabled: !!uid,
-    });
-    const orgId = orgProfile?.organization_id || "";
-
-    // ── Fetch instances + steps from Supabase ──
-    const { data: instances = [], isLoading } = useQuery({
-        queryKey: ["workflow_instances", orgId], enabled: !!orgId,
-        queryFn: async () => {
-            const { data: rows, error } = await supabase
-                .from("workflow_instances")
-                .select("*")
-                .eq("organization_id", orgId)
-                .order("created_at", { ascending: false });
-            if (error) throw error;
-            if (!rows?.length) return [];
-
-            const ids = (rows as SupabaseWorkflowInstance[]).map((r) => r.id);
-            const { data: stepRows } = await supabase
-                .from("workflow_steps").select("*").in("workflow_id", ids).order("sort_order");
-
-            const stepsByWf: Record<string, WorkflowStep[]> = {};
-            ((stepRows as SupabaseWorkflowStep[]) || []).forEach((s) => {
-                if (!stepsByWf[s.workflow_id]) stepsByWf[s.workflow_id] = [];
-                stepsByWf[s.workflow_id].push({
-                    id: s.id, title: s.title, description: s.description || "",
-                    completed: s.completed, dueDate: s.due_date || "", notes: s.notes || "",
-                });
-            });
-
-            return (rows as SupabaseWorkflowInstance[]).map((r): WorkflowInstance => {
-                const steps = stepsByWf[r.id] || [];
-                return {
-                    id: r.id, templateId: r.template_id || "", templateName: r.template_name || "",
-                    templateEmoji: r.template_emoji || "📋", sectorId: r.sector_id || "",
-                    assignedTo: r.assigned_to || "", assignedToName: r.assigned_to_name || "",
-                    priority: r.priority || "media", deadline: r.deadline || "",
-                    steps, status: computeStatus(steps, r.deadline || ""),
-                    createdAt: r.created_at?.split("T")[0] || "", createdBy: r.created_by || "",
-                };
-            });
-        },
+    const instanceIds = (instancesQuery.data || []).map(i => i.id);
+    const stepsQuery = trpc.workflow.getSteps.useQuery(instanceIds, {
+        enabled: instanceIds.length > 0
     });
 
-    // ── Fetch real members from rh_colaboradores ──
-    const { data: members = [] } = useQuery({
-        queryKey: ["workflow_members", orgId],
-        queryFn: async () => {
-            const { data } = await supabase
-                .from("rh_colaboradores")
-                .select("id, full_name, position")
-                .eq("organization_id", orgId)
-                .eq("status", "active");
-            return (data || []).map((c): Member => ({
-                id: c.id,
-                name: c.full_name || "",
-                role: c.position || "Colaborador",
-                avatar: (c.full_name || "").split(" ").map((n: string) => n[0]).slice(0, 2).join(""),
-            }));
-        },
-        enabled: !!orgId,
+    // ── Mapping Members ──
+    const members: Member[] = (collaboratorsQuery.data || []).map(c => ({
+        id: c.id,
+        name: c.full_name || "",
+        role: c.position || "Colaborador",
+        avatar: (c.full_name || "").split(" ").map((n: any) => n[0]).slice(0, 2).join(""),
+    }));
+
+    // ── Mapping Instances ──
+    const instances: WorkflowInstance[] = (instancesQuery.data || []).map(r => {
+        const rawSteps = (stepsQuery.data || []).filter(s => s.workflow_id === r.id);
+        const steps: WorkflowStep[] = rawSteps.map(s => ({
+            id: s.id,
+            title: s.title,
+            description: s.description || "",
+            completed: s.completed,
+            dueDate: s.due_date || "",
+            notes: s.notes || "",
+        }));
+
+        return {
+            id: r.id,
+            templateId: r.template_id || "",
+            templateName: r.template_name || "",
+            templateEmoji: r.template_emoji || "📋",
+            sectorId: r.sector_id || "",
+            assignedTo: r.assigned_to || "",
+            assignedToName: r.assigned_to_name || "",
+            priority: r.priority || "media",
+            deadline: r.deadline || "",
+            steps,
+            status: computeStatus(steps, r.deadline || ""),
+            createdAt: r.created_at?.split("T")[0] || "",
+            createdBy: r.created_by || "",
+        };
     });
 
+    // ── Mutations ──
+    const startMut = trpc.workflow.startWorkflow.useMutation({
+        onSuccess: () => {
+            utils.workflow.listInstances.invalidate();
+            toast.success("Workflow iniciado");
+        },
+        onError: (err) => toast.error(err.message),
+    });
+
+    const stepMut = trpc.workflow.updateStep.useMutation({
+        onSuccess: () => utils.workflow.getSteps.invalidate(),
+        onError: (err) => toast.error(err.message),
+    });
+
+    const addStepMut = trpc.workflow.addStep.useMutation({
+        onSuccess: () => utils.workflow.getSteps.invalidate(),
+        onError: (err) => toast.error(err.message),
+    });
+
+    const deleteMut = trpc.workflow.deleteWorkflow.useMutation({
+        onSuccess: () => {
+            utils.workflow.listInstances.invalidate();
+            toast.success("Workflow excluído");
+        },
+        onError: (err) => toast.error(err.message),
+    });
+
+    const reassignMut = trpc.workflow.reassignWorkflow.useMutation({
+        onSuccess: () => utils.workflow.listInstances.invalidate(),
+        onError: (err) => toast.error(err.message),
+    });
+
+    // ── Helpers & Handlers ──
     const getMember = useCallback((id: string) => members.find((m) => m.id === id), [members]);
-    const getSector = useCallback((id: string) => sectors.find((s) => s.id === id), [sectors]);
+    const getSector = useCallback((id: string) => SAMPLE_SECTORS.find((s) => s.id === id), []);
 
+    const startWorkflow = useCallback((templateId: string, sectorId: string, assignedTo: string, priority: any, deadline: string) => {
+        const template = TEMPLATES.find((t) => t.id === templateId);
+        if (!template) return;
+        const member = members.find((m) => m.id === assignedTo);
 
-    const addSector = useCallback((data: Omit<Sector, "id">) => {
-        setSectors((prev) => [...prev, { ...data, id: crypto.randomUUID() }]);
-    }, []);
-    const updateSector = useCallback((id: string, data: Partial<Sector>) => {
-        setSectors((prev) => prev.map((s) => s.id === id ? { ...s, ...data } : s));
-    }, []);
-    const deleteSector = useCallback((id: string) => {
-        setSectors((prev) => prev.filter((s) => s.id !== id));
-    }, []);
+        startMut.mutate({
+            templateId,
+            templateName: template.name,
+            templateEmoji: template.emoji,
+            sectorId,
+            assignedTo,
+            assignedToName: member?.name || "—",
+            priority,
+            deadline: deadline || null,
+            steps: template.steps.map(s => ({
+                title: s.title,
+                description: s.description,
+                due_date: s.dueDate || null
+            }))
+        });
+    }, [members, startMut]);
 
-    // ── Start workflow ──
-    const startMut = useMutation({
-        mutationFn: async ({ templateId, sectorId, assignedTo, priority, deadline }: { templateId: string; sectorId: string; assignedTo: string; priority: "alta" | "media" | "baixa"; deadline: string }) => {
-            const template = TEMPLATES.find((t) => t.id === templateId);
-            if (!template) throw new Error("Template not found");
-            const member = members.find((m) => m.id === assignedTo);
-            const orgId = await getOrgId(uid);
-
-            const { data: wf, error } = await supabase.from("workflow_instances").insert({
-                organization_id: orgId, user_id: uid, template_id: templateId,
-                template_name: template.name, template_emoji: template.emoji,
-                sector_id: sectorId, assigned_to: assignedTo,
-                assigned_to_name: member?.name || "—", priority, deadline: deadline || null,
-                status: "pendente", created_by: "m1",
-            }).select("id").single();
-            if (error) throw error;
-
-            const steps = template.steps.map((s, i) => ({
-                workflow_id: wf!.id, title: s.title, description: s.description,
-                completed: false, due_date: s.dueDate || null, notes: "", sort_order: i,
-            }));
-            const { error: stepErr } = await supabase.from("workflow_steps").insert(steps);
-            if (stepErr) throw stepErr;
-        },
-        onSuccess: () => { invalidate(); toast.success("Workflow iniciado"); },
-        onError: (e: Error) => toast.error(e.message),
-    });
-    const startWorkflow = useCallback((templateId: string, sectorId: string, assignedTo: string, priority: "alta" | "media" | "baixa", deadline: string) => {
-        startMut.mutate({ templateId, sectorId, assignedTo, priority, deadline });
-    }, [startMut]);
-
-    // ── Step mutations ──
-    const stepMut = useMutation({
-        mutationFn: async ({ stepId, data }: { stepId: string; data: Partial<WorkflowStep> | Record<string, any> }) => {
-            const { error } = await supabase.from("workflow_steps").update(data).eq("id", stepId);
-            if (error) throw error;
-        },
-        onSuccess: () => invalidate(),
-        onError: (e: Error) => toast.error(e.message),
-    });
-
-    const completeStep = useCallback((instanceId: string, stepId: string) => {
+    const completeStep = useCallback((_instanceId: string, stepId: string) => {
         stepMut.mutate({ stepId, data: { completed: true } });
     }, [stepMut]);
-    const uncompleteStep = useCallback((instanceId: string, stepId: string) => {
+
+    const uncompleteStep = useCallback((_instanceId: string, stepId: string) => {
         stepMut.mutate({ stepId, data: { completed: false } });
     }, [stepMut]);
-    const updateStepNotes = useCallback((instanceId: string, stepId: string, notes: string) => {
+
+    const updateStepNotes = useCallback((_instanceId: string, stepId: string, notes: string) => {
         stepMut.mutate({ stepId, data: { notes } });
     }, [stepMut]);
 
-    const addStepMut = useMutation({
-        mutationFn: async ({ instanceId, title, description }: { instanceId: string; title: string; description: string }) => {
-            const { error } = await supabase.from("workflow_steps").insert({
-                workflow_id: instanceId, title, description, completed: false, sort_order: 999,
-            });
-            if (error) throw error;
-        },
-        onSuccess: () => invalidate(),
-        onError: (e: Error) => toast.error(e.message),
-    });
     const addCustomStep = useCallback((instanceId: string, title: string, description: string) => {
         addStepMut.mutate({ instanceId, title, description });
     }, [addStepMut]);
 
-    const deleteMut = useMutation({
-        mutationFn: async (id: string) => {
-            const { error } = await supabase.from("workflow_instances").delete().eq("id", id);
-            if (error) throw error;
-        },
-        onSuccess: () => { invalidate(); toast.success("Workflow excluído"); },
-        onError: (e: Error) => toast.error(e.message),
-    });
     const deleteWorkflow = useCallback((id: string) => deleteMut.mutate(id), [deleteMut]);
 
-    const reassignMut = useMutation({
-        mutationFn: async ({ id, assignedTo }: { id: string; assignedTo: string }) => {
-            const member = members.find((m) => m.id === assignedTo);
-            const { error } = await supabase.from("workflow_instances")
-                .update({ assigned_to: assignedTo, assigned_to_name: member?.name || "—" }).eq("id", id);
-            if (error) throw error;
-        },
-        onSuccess: () => invalidate(),
-        onError: (e: Error) => toast.error(e.message),
-    });
     const reassignWorkflow = useCallback((id: string, assignedTo: string) => {
-        reassignMut.mutate({ id, assignedTo });
-    }, [reassignMut]);
+        const member = members.find((m) => m.id === assignedTo);
+        reassignMut.mutate({ id, assignedTo, assignedToName: member?.name || "—" });
+    }, [members, reassignMut]);
 
     return (
         <WorkflowContext.Provider value={{
-            templates: TEMPLATES, members, sectors, instances, isLoading,
-            addSector, updateSector, deleteSector,
+            templates: TEMPLATES,
+            members,
+            sectors: SAMPLE_SECTORS,
+            instances,
+            isLoading: instancesQuery.isLoading || collaboratorsQuery.isLoading || stepsQuery.isLoading,
+            addSector: () => { }, // Mocked for now
+            updateSector: () => { },
+            deleteSector: () => { },
             startWorkflow, completeStep, uncompleteStep, updateStepNotes, addCustomStep,
             deleteWorkflow, reassignWorkflow, getMember, getSector,
         }}>

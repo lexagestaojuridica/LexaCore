@@ -1,12 +1,12 @@
 import { useState, DragEvent } from "react";
 import { Plus, GripVertical, User, Calendar, DollarSign, Trash2, Edit2, Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import FormField from "@/components/shared/FormField";
+import { Button } from "@/shared/ui/button";
+import { Badge } from "@/shared/ui/badge";
+import { Card } from "@/shared/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
+import { Textarea } from "@/shared/ui/textarea";
+import FormField from "@/shared/components/FormField";
 import { useCrm } from "@/features/crm/contexts/CrmContext";
 
 // ── Stages ─────────────────────────────────────────────

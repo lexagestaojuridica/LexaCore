@@ -1,6 +1,6 @@
 import { parseISO, format } from "date-fns";
 import { Clock } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/shared/lib/utils";
 import { getCategoryConfig } from "@/features/agenda/utils/categories";
 import { isHappeningNow, getDurationLabel } from "../utils/helpers";
 import type { Evento } from "../types";

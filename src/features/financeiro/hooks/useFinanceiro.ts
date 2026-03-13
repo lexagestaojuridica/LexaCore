@@ -1,86 +1,61 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { asaasService } from "@/services/asaasService";
+import { trpc } from "@/shared/lib/trpc";
 import { toast } from "sonner";
 import type { TipoConta, ContaBase } from "../types";
 
-export function useFinanceiro(orgId: string | undefined, tab: TipoConta) {
-    const queryClient = useQueryClient();
-    const tableName = tab === "receber" ? "contas_receber" : "contas_pagar";
+export function useFinanceiro(tab: TipoConta) {
+    const utils = trpc.useUtils();
 
-    const { data: contas = [], isLoading } = useQuery({
-        queryKey: [tableName, orgId],
-        queryFn: async () => {
-            const { data, error } = await supabase
-                .from(tableName)
-                .select("*")
-                .eq("organization_id", orgId!)
-                .order("due_date", { ascending: true });
-            if (error) throw error;
-            return data as ContaBase[];
-        },
-        enabled: !!orgId,
-    });
+    const contasQuery = trpc.financeiro.list.useQuery({ type: tab });
 
-    const createMutation = useMutation({
-        mutationFn: async (payload: any) => {
-            const { error } = await supabase.from(tableName).insert({
-                ...payload,
-                organization_id: orgId
-            });
-            if (error) throw error;
-        },
+    const createMutation = trpc.financeiro.create.useMutation({
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: [tableName] });
-            queryClient.invalidateQueries({ queryKey: ["contas_receber"] });
-            queryClient.invalidateQueries({ queryKey: ["contas_pagar"] });
+            utils.financeiro.list.invalidate();
+            utils.financeiro.getMetrics.invalidate();
             toast.success("Conta criada");
         },
         onError: (e: any) => toast.error(e.message),
     });
 
-    const updateMutation = useMutation({
-        mutationFn: async ({ id, ...payload }: any) => {
-            const { error } = await supabase
-                .from(tableName)
-                .update(payload)
-                .eq("id", id)
-                .eq("organization_id", orgId!);
-            if (error) throw error;
-        },
+    const updateMutation = trpc.financeiro.update.useMutation({
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: [tableName] });
-            queryClient.invalidateQueries({ queryKey: ["contas_receber"] });
-            queryClient.invalidateQueries({ queryKey: ["contas_pagar"] });
+            utils.financeiro.list.invalidate();
+            utils.financeiro.getMetrics.invalidate();
             toast.success("Conta atualizada");
         },
         onError: (e: any) => toast.error(e.message),
     });
 
-    const deleteMutation = useMutation({
-        mutationFn: async (id: string) => {
-            const { error } = await supabase.from(tableName).delete().eq("id", id);
-            if (error) throw error;
-        },
+    const deleteMutation = trpc.financeiro.delete.useMutation({
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: [tableName] });
-            queryClient.invalidateQueries({ queryKey: ["contas_receber"] });
-            queryClient.invalidateQueries({ queryKey: ["contas_pagar"] });
+            utils.financeiro.list.invalidate();
+            utils.financeiro.getMetrics.invalidate();
             toast.success("Conta excluída");
         },
         onError: (e: any) => toast.error(e.message),
     });
 
     const markAsPaid = (id: string) => {
-        updateMutation.mutate({ id, status: "pago" });
+        updateMutation.mutate({ type: tab, id, data: { status: "pago" } });
     };
 
     return {
-        contas,
-        isLoading,
-        createMutation,
-        updateMutation,
-        deleteMutation,
+        contas: (contasQuery.data as unknown as ContaBase[]) || [],
+        isLoading: contasQuery.isLoading,
+        createMutation: {
+            ...createMutation,
+            mutate: (payload: any) => createMutation.mutate({ type: tab, data: payload })
+        },
+        updateMutation: {
+            ...updateMutation,
+            mutate: (payload: { id: string } & Record<string, any>) => {
+                const { id, ...data } = payload;
+                updateMutation.mutate({ type: tab, id, data });
+            }
+        },
+        deleteMutation: {
+            ...deleteMutation,
+            mutate: (id: string) => deleteMutation.mutate({ type: tab, id })
+        },
         markAsPaid
     };
 }

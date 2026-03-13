@@ -1,17 +1,16 @@
-import { useState, useRef, useEffect, useCallback } from "react";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { trpc } from "@/shared/lib/trpc";
 import { motion, AnimatePresence } from "framer-motion";
 import { Send, X, Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/shared/ui/button";
+import { Textarea } from "@/shared/ui/textarea";
 import arunaAvatar from "@/assets/aruna-avatar.png";
 import ReactMarkdown from "react-markdown";
 import Image from "next/image";
+import { useUser, useSession } from "@clerk/nextjs";
+
 const BASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const CHAT_URL = `${BASE_URL}/functions/v1/aruna-chat`;
-const AUTH_HEADER = { Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY}` };
 
 interface Msg {
   id: string;
@@ -20,34 +19,53 @@ interface Msg {
 }
 
 export default function ArunaQuickChat() {
-  const { user } = useAuth();
+  const { user } = useUser();
+  const { session } = useSession();
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
-  const [msgs, setMsgs] = useState<Msg[]>([]);
   const [streaming, setStreaming] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
 
-  const { data: profileData } = useQuery({
-    queryKey: ["profile", user?.id],
-    queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("organization_id").eq("user_id", user!.id).single();
-      return data;
-    },
-    enabled: !!user?.id,
-  });
-  const orgId = profileData?.organization_id;
+  const utils = trpc.useUtils();
 
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs]);
+  const { data: history = [] } = trpc.ia.listHistory.useQuery(undefined, {
+    enabled: open,
+  });
+
+  const saveMsgMut = trpc.ia.saveMessage.useMutation({
+    onSuccess: () => utils.ia.listHistory.invalidate(),
+  });
+
+  // Local state for streaming response
+  const [localMsgs, setLocalMsgs] = useState<Msg[]>([]);
+
+  // Sync history to localMsgs when not streaming
+  useEffect(() => {
+    if (!streaming) {
+      setLocalMsgs(history.map(h => ({
+        id: h.id,
+        role: h.role as "user" | "assistant",
+        content: h.content
+      })));
+    }
+  }, [history, streaming]);
+
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [localMsgs]);
 
   const stream = useCallback(async (url: string, body: Record<string, unknown>, aId: string) => {
+    const token = await session?.getToken({ template: "supabase" });
     let content = "";
     const resp = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json", ...AUTH_HEADER },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      },
       body: JSON.stringify(body),
     });
     if (!resp.ok) throw new Error(`Erro ${resp.status}`);
     if (!resp.body) throw new Error("Sem resposta");
+
     const reader = resp.body.getReader();
     const dec = new TextDecoder();
     let buf = "";
@@ -64,27 +82,46 @@ export default function ArunaQuickChat() {
         if (js === "[DONE]") break;
         try {
           const c = JSON.parse(js).choices?.[0]?.delta?.content;
-          if (c) { content += c; setMsgs((p) => p.map((m) => m.id === aId ? { ...m, content } : m)); }
+          if (c) {
+            content += c;
+            setLocalMsgs((p) => p.map((m) => m.id === aId ? { ...m, content } : m));
+          }
         } catch { break; }
       }
     }
     return content;
-  }, []);
+  }, [session]);
 
   const handleSend = async () => {
     const t = input.trim();
+    const orgId = session?.publicMetadata?.organizationId as string;
     if (!t || streaming || !orgId) return;
-    const userMsg: Msg = { id: crypto.randomUUID(), role: "user", content: t };
-    setMsgs((p) => [...p, userMsg]);
+
+    const uId = crypto.randomUUID();
+    const userMsg: Msg = { id: uId, role: "user", content: t };
+
+    // Save user message immediately to DB
+    saveMsgMut.mutate({ id: uId, role: "user", content: t });
+
+    setLocalMsgs((p) => [...p, userMsg]);
     setInput("");
     setStreaming(true);
+
     const aId = crypto.randomUUID();
-    setMsgs((p) => [...p, { id: aId, role: "assistant", content: "" }]);
+    setLocalMsgs((p) => [...p, { id: aId, role: "assistant", content: "" }]);
+
     try {
-      const history = [...msgs, userMsg].slice(-10).map((m) => ({ role: m.role, content: m.content }));
-      await stream(CHAT_URL, { messages: history, context: {} }, aId);
+      const hist = [...localMsgs, userMsg].slice(-10).map((m) => ({ role: m.role, content: m.content }));
+      const content = await stream(CHAT_URL, {
+        messages: hist,
+        organization_id: orgId,
+        context: "quick_chat"
+      }, aId);
+
+      // Save assistant message to DB
+      saveMsgMut.mutate({ id: aId, role: "assistant", content });
     } catch {
-      setMsgs((p) => p.filter((m) => m.id !== aId));
+      setLocalMsgs((p) => p.filter((m) => m.id !== aId));
     } finally { setStreaming(false); }
   };
 
@@ -118,10 +155,10 @@ export default function ArunaQuickChat() {
             {/* Header Premium */}
             <div className="flex items-center gap-3 border-b border-border/50 bg-muted/30 px-5 py-4 relative">
               <div className="absolute inset-0 z-0 opacity-[0.02] pointer-events-none mix-blend-overlay" style={{ backgroundImage: "url('data:image/svg+xml,%3Csvg width=\\'60\\' height=\\'60\\' viewBox=\\'0 0 60 60\\' xmlns=\\'http://www.w3.org/2000/svg\\'%3E%3Cg fill=\\'none\\' fill-rule=\\'evenodd\\'%3E%3Cg fill=\\'%239C92AC\\' fill-opacity=\\'1\\'%3E%3Cpath d=\\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')" }} />
-              
+
               <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-[14px] shadow-sm ring-1 ring-border bg-gradient-to-br from-indigo-500/20 to-purple-500/20 p-0.5 z-10">
-                 <Image src={arunaAvatar} alt="ARUNA" width={40} height={40} className="h-full w-full object-cover rounded-[12px]" />
-                 <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-background bg-emerald-500 shadow-sm" />
+                <Image src={arunaAvatar} alt="ARUNA" width={40} height={40} className="h-full w-full object-cover rounded-[12px]" />
+                <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-background bg-emerald-500 shadow-sm" />
               </div>
               <div className="flex-1 z-10">
                 <p className="text-sm font-bold text-foreground flex items-center gap-1.5 font-display tracking-tight">
@@ -136,24 +173,24 @@ export default function ArunaQuickChat() {
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto px-4 py-5 space-y-5 scroll-smooth relative">
-              {msgs.length === 0 && (
+              {localMsgs.length === 0 && (
                 <div className="flex flex-col items-center justify-center h-full text-center space-y-4 max-w-[240px] mx-auto">
-                   <div className="h-20 w-20 shrink-0 overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-500/10 to-purple-500/10 p-1 ring-1 ring-border/50">
-                     <Image src={arunaAvatar} alt="ARUNA" width={80} height={80} className="h-full w-full object-cover rounded-[20px] opacity-60 grayscale-[30%]" />
-                   </div>
+                  <div className="h-20 w-20 shrink-0 overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-500/10 to-purple-500/10 p-1 ring-1 ring-border/50">
+                    <Image src={arunaAvatar} alt="ARUNA" width={80} height={80} className="h-full w-full object-cover rounded-[20px] opacity-60 grayscale-[30%]" />
+                  </div>
                   <div>
                     <p className="text-sm font-semibold text-foreground">Acesso Rápido</p>
                     <p className="text-xs text-muted-foreground/80 mt-1 leading-relaxed">Pergunte sobre seus processos ou peça resumos de atividades do dia.</p>
                   </div>
                 </div>
               )}
-              {msgs.map((m) => (
+              {localMsgs.map((m) => (
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} key={m.id} className={`flex gap-3 ${m.role === "user" ? "flex-row-reverse" : "flex-row"}`}>
-                   {m.role === "assistant" && (
-                       <div className="h-8 w-8 shrink-0 overflow-hidden rounded-[10px] bg-gradient-to-br from-indigo-500/20 to-purple-500/20 p-px ring-1 ring-border/50 mt-1">
-                          <Image src={arunaAvatar} alt="ARUNA" width={32} height={32} className="h-full w-full object-cover rounded-[8px]" />
-                       </div>
-                   )}
+                  {m.role === "assistant" && (
+                    <div className="h-8 w-8 shrink-0 overflow-hidden rounded-[10px] bg-gradient-to-br from-indigo-500/20 to-purple-500/20 p-px ring-1 ring-border/50 mt-1">
+                      <Image src={arunaAvatar} alt="ARUNA" width={32} height={32} className="h-full w-full object-cover rounded-[8px]" />
+                    </div>
+                  )}
                   <div className={`shadow-sm px-4 py-3 text-[13px] relative ${m.role === "user"
                     ? "bg-primary text-primary-foreground rounded-2xl rounded-tr-sm max-w-[80%]"
                     : "bg-card border border-border/60 rounded-2xl rounded-tl-sm w-full"
@@ -163,23 +200,23 @@ export default function ArunaQuickChat() {
                         <ReactMarkdown>{m.content || "..."}</ReactMarkdown>
                       </div>
                     ) : (
-                       <div className="leading-relaxed whitespace-pre-wrap">{m.content}</div>
+                      <div className="leading-relaxed whitespace-pre-wrap">{m.content}</div>
                     )}
                   </div>
                 </motion.div>
               ))}
-              {streaming && msgs[msgs.length - 1]?.role !== "assistant" && (
+              {streaming && localMsgs[localMsgs.length - 1]?.role !== "assistant" && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-3">
-                    <div className="h-8 w-8 shrink-0 overflow-hidden rounded-[10px] bg-gradient-to-br from-indigo-500/20 to-purple-500/20 p-px ring-1 ring-border/50">
-                          <Image src={arunaAvatar} alt="ARUNA" width={32} height={32} className="h-full w-full object-cover rounded-[8px]" />
+                  <div className="h-8 w-8 shrink-0 overflow-hidden rounded-[10px] bg-gradient-to-br from-indigo-500/20 to-purple-500/20 p-px ring-1 ring-border/50">
+                    <Image src={arunaAvatar} alt="ARUNA" width={32} height={32} className="h-full w-full object-cover rounded-[8px]" />
+                  </div>
+                  <div className="rounded-2xl rounded-tl-sm bg-card border border-border/60 px-4 py-3 shadow-sm flex items-center justify-center">
+                    <div className="flex gap-1.5">
+                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary/60" />
+                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary/60 [animation-delay:0.15s]" />
+                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary/60 [animation-delay:0.3s]" />
                     </div>
-                    <div className="rounded-2xl rounded-tl-sm bg-card border border-border/60 px-4 py-3 shadow-sm flex items-center justify-center">
-                        <div className="flex gap-1.5">
-                            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary/60" />
-                            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary/60 [animation-delay:0.15s]" />
-                            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary/60 [animation-delay:0.3s]" />
-                        </div>
-                    </div>
+                  </div>
                 </motion.div>
               )}
               <div ref={endRef} className="h-2" />

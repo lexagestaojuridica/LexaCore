@@ -2,9 +2,9 @@ import { format, isAfter, isToday, parseISO, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CalendarDays, Trash2 } from "lucide-react";
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { Button } from "@/shared/ui/button";
+import { Badge } from "@/shared/ui/badge";
+import { cn } from "@/shared/lib/utils";
 import { Evento } from "../types";
 import { getCategoryConfig } from "../utils/categories";
 

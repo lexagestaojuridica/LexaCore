@@ -2,9 +2,9 @@ import { useState, useEffect } from "react";
 import { Check, ChevronsUpDown, Search, Loader2, Briefcase } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useDebounce } from "@/hooks/useDebounce";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { useDebounce } from "@/shared/hooks/useDebounce";
+import { cn } from "@/shared/lib/utils";
+import { Button } from "@/shared/ui/button";
 import {
     Command,
     CommandEmpty,
@@ -12,12 +12,12 @@ import {
     CommandInput,
     CommandItem,
     CommandList,
-} from "@/components/ui/command";
+} from "@/shared/ui/command";
 import {
     Popover,
     PopoverContent,
     PopoverTrigger,
-} from "@/components/ui/popover";
+} from "@/shared/ui/popover";
 
 interface AsyncProcessComboboxProps {
     organizationId: string | undefined;

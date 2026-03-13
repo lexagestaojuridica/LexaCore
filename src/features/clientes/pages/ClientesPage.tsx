@@ -10,22 +10,22 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { ConflitosInteresseDialog } from "@/features/clientes/components/ConflitosInteresseDialog";
-import { Button } from "@/components/ui/button";
-import { StatCard } from "@/components/shared/StatCard";
-import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import FormField from "@/components/shared/FormField";
-import LexaLoadingOverlay from "@/components/shared/LexaLoadingOverlay";
-import { formatDocument, formatPhone, formatCEP, fetchAddressByCEP } from "@/lib/formatters";
-import { TableSkeleton } from "@/components/shared/SkeletonLoaders";
-import { cn } from "@/lib/utils";
+import { Button } from "@/shared/ui/button";
+import { StatCard } from "@/shared/components/StatCard";
+import { Input } from "@/shared/ui/input";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
+import { Textarea } from "@/shared/ui/textarea";
+import { Card, CardContent } from "@/shared/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
+import { Badge } from "@/shared/ui/badge";
+import { Separator } from "@/shared/ui/separator";
+import FormField from "@/shared/components/FormField";
+import LexaLoadingOverlay from "@/shared/components/LexaLoadingOverlay";
+import { formatDocument, formatPhone, formatCEP, fetchAddressByCEP } from "@/shared/lib/formatters";
+import { TableSkeleton } from "@/shared/components/SkeletonLoaders";
+import { cn } from "@/shared/lib/utils";
 
 // FSD Imports
 import { useClientes } from "@/features/clientes/hooks/useClientes";

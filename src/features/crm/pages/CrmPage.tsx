@@ -1,16 +1,16 @@
 import { useState } from "react";
 import { TrendingUp, Users, Activity, Briefcase, Plus, Filter, Download, Search, BarChart3 } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { CrmProvider, useCrm } from "@/features/crm/contexts/CrmContext";
 import { useTranslation } from "react-i18next";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/shared/ui/button";
+import { Badge } from "@/shared/ui/badge";
 import CrmPipelineBoard from "@/features/crm/components/CrmPipelineBoard";
 import CrmContactsList from "@/features/crm/components/CrmContactsList";
 import CrmActivitiesTimeline from "@/features/crm/components/CrmActivitiesTimeline";
 import CrmDealsTable from "@/features/crm/components/CrmDealsTable";
 import CrmOverviewBoard from "@/features/crm/components/CrmOverviewBoard";
-import { cn } from "@/lib/utils";
+import { cn } from "@/shared/lib/utils";
 
 function CrmPageInner() {
     const [activeTab, setActiveTab] = useState("pipeline");

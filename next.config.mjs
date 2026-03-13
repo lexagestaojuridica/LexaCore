@@ -10,6 +10,7 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  // Removing standalone output to avoid dev filesystem issues on Windows
 };
 
 export default nextConfig;

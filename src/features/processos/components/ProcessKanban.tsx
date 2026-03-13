@@ -3,8 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Edit2, Trash2 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { Badge } from "@/shared/ui/badge";
+import { cn } from "@/shared/lib/utils";
 import type { Processo } from "../types";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 

@@ -8,12 +8,12 @@ import {
     List, ListOrdered, Heading1, Heading2, Heading3, Undo2, Redo2,
     Save, FileDown, ArrowLeft, PanelRightOpen, PanelRightClose, History,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Separator } from "@/components/ui/separator";
-import FormField from "@/components/shared/FormField";
+import { Button } from "@/shared/ui/button";
+import { Badge } from "@/shared/ui/badge";
+import { Card } from "@/shared/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
+import { Separator } from "@/shared/ui/separator";
+import FormField from "@/shared/components/FormField";
 import { useMinutas, MinutaDocument } from "@/features/minutas/contexts/MinutasContext";
 
 interface Props {

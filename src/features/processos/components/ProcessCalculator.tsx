@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Calculator } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
+import { Input } from "@/shared/ui/input";
+import { Separator } from "@/shared/ui/separator";
 
 export function ProcessCalculator({ estimatedValue }: { estimatedValue: number | null }) {
     const [percentual, setPercentual] = useState("20");

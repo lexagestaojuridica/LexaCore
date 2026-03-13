@@ -1,7 +1,7 @@
 import { createContext, useContext, ReactNode, useCallback, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client"; // Only for Realtime now
 import { useAuth } from "@/contexts/AuthContext";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { trpc } from "@/shared/lib/trpc";
 import { toast } from "sonner";
 
 // ── Shared CRM Types ───────────────────────────────────
@@ -91,7 +91,7 @@ interface CrmContextType {
     deals: CrmDeal[];
     activities: CrmActivity[];
     isLoading: boolean;
-    addContact: (contact: Omit<CrmContact, "id" | "createdAt">) => CrmContact;
+    addContact: (contact: Omit<CrmContact, "id" | "createdAt">) => Promise<CrmContact>;
     updateContact: (id: string, data: Partial<CrmContact>) => void;
     deleteContact: (id: string) => void;
     addLead: (lead: Omit<CrmLead, "id" | "contactId">) => void;
@@ -103,7 +103,7 @@ interface CrmContextType {
     addActivity: (activity: Omit<CrmActivity, "id" | "contactId">) => void;
     updateActivity: (id: string, data: Partial<CrmActivity>) => void;
     deleteActivity: (id: string) => void;
-    findOrCreateContact: (name: string) => CrmContact;
+    findOrCreateContact: (name: string) => Promise<CrmContact>;
 }
 
 const CrmContext = createContext<CrmContextType | null>(null);
@@ -114,313 +114,164 @@ export const useCrm = () => {
     return ctx;
 };
 
-// ── Helper: get org_id ─────────────────────────────────
-async function getOrgId(userId: string): Promise<string> {
-    const { data } = await supabase.from("profiles").select("organization_id").eq("user_id", userId).single();
-    return data?.organization_id || "";
-}
-
 // ── Provider ───────────────────────────────────────────
 export function CrmProvider({ children }: { children: ReactNode }) {
     const { user } = useAuth();
-    const qc = useQueryClient();
-    const uid = user?.id || "";
-
-    // ── Fetch org_id once ──
-    const { data: orgProfile } = useQuery({
-        queryKey: ["crm_org_profile", uid],
-        queryFn: async () => {
-            const { data } = await supabase.from("profiles").select("organization_id").eq("user_id", uid).single();
-            return data;
-        },
-        enabled: !!uid,
-    });
-    const orgId = orgProfile?.organization_id || "";
+    const utils = trpc.useUtils();
 
     // ── Queries ──
-    const { data: contacts = [], isLoading: loadingContacts } = useQuery({
-        queryKey: ["crm_contacts", orgId], enabled: !!orgId,
-        queryFn: async () => {
-            const { data, error } = await supabase.from("crm_contacts").select("*").eq("organization_id", orgId).order("created_at", { ascending: false }).limit(300);
-            if (error) throw error;
-            return (data || []).map(mapContact);
-        },
-    });
+    const contactsQuery = trpc.crm.listContacts.useQuery(undefined, { enabled: !!user });
+    const leadsQuery = trpc.crm.listLeads.useQuery(undefined, { enabled: !!user });
+    const dealsQuery = trpc.crm.listDeals.useQuery(undefined, { enabled: !!user });
+    const activitiesQuery = trpc.crm.listActivities.useQuery(undefined, { enabled: !!user });
 
-    const { data: leads = [], isLoading: loadingLeads } = useQuery({
-        queryKey: ["crm_leads", orgId], enabled: !!orgId,
-        queryFn: async () => {
-            const { data, error } = await supabase.from("crm_leads").select("*").eq("organization_id", orgId).order("created_at", { ascending: false }).limit(300);
-            if (error) throw error;
-            return (data || []).map(mapLead);
-        },
-    });
+    const contacts = (contactsQuery.data || []).map(mapContact);
+    const leads = (leadsQuery.data || []).map(mapLead);
+    const deals = (dealsQuery.data || []).map(mapDeal);
+    const activities = (activitiesQuery.data || []).map(mapActivity);
 
-    const { data: deals = [], isLoading: loadingDeals } = useQuery({
-        queryKey: ["crm_deals", orgId], enabled: !!orgId,
-        queryFn: async () => {
-            const { data, error } = await supabase.from("crm_deals").select("*").eq("organization_id", orgId).order("created_at", { ascending: false }).limit(300);
-            if (error) throw error;
-            return (data || []).map(mapDeal);
-        },
-    });
+    const isLoading = contactsQuery.isLoading || leadsQuery.isLoading || dealsQuery.isLoading || activitiesQuery.isLoading;
 
-    const { data: activities = [], isLoading: loadingActivities } = useQuery({
-        queryKey: ["crm_activities", orgId], enabled: !!orgId,
-        queryFn: async () => {
-            const { data, error } = await supabase.from("crm_activities").select("*").eq("organization_id", orgId).order("created_at", { ascending: false }).limit(300);
-            if (error) throw error;
-            return (data || []).map(mapActivity);
-        },
-    });
-
-    const isLoading = loadingContacts || loadingLeads || loadingDeals || loadingActivities;
-    const invalidate = useCallback((keys: string[]) => keys.forEach((k) => qc.invalidateQueries({ queryKey: [k] })), [qc]);
-
-    // ── Realtime Subscriptions ──
+    // ── Realtime Subscriptions (Keeping legacy sync for now) ──
     useEffect(() => {
-        if (!uid) return;
+        if (!user?.id) return;
         const channel = supabase.channel('crm_realtime_changes')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'crm_leads' }, () => {
-                invalidate(["crm_leads"]);
+                utils.crm.listLeads.invalidate();
             })
             .on('postgres_changes', { event: '*', schema: 'public', table: 'crm_contacts' }, () => {
-                invalidate(["crm_contacts"]);
+                utils.crm.listContacts.invalidate();
             })
             .on('postgres_changes', { event: '*', schema: 'public', table: 'crm_deals' }, () => {
-                invalidate(["crm_deals"]);
+                utils.crm.listDeals.invalidate();
             })
             .on('postgres_changes', { event: '*', schema: 'public', table: 'crm_activities' }, () => {
-                invalidate(["crm_activities"]);
+                utils.crm.listActivities.invalidate();
             })
             .subscribe();
 
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [uid, invalidate]);
+    }, [user?.id, utils]);
 
-    // ── findOrCreateContact ──
-    const findOrCreateContact = useCallback((name: string): CrmContact => {
+    // ── Mutations ──
+    const findOrCreateMut = trpc.crm.findOrCreateContact.useMutation({
+        onSuccess: () => utils.crm.listContacts.invalidate(),
+    });
+
+    const findOrCreateContact = async (name: string): Promise<CrmContact> => {
         const existing = contacts.find((c) => c.name.toLowerCase() === name.toLowerCase());
         if (existing) return existing;
-        // Optimistic: return a temp object. The DB insert happens async.
-        const tempId = crypto.randomUUID();
-        const temp: CrmContact = {
-            id: tempId, name, email: "", phone: "", type: "pessoa_fisica",
-            company: "", city: "", state: "", tags: ["Novo"], score: 1,
-            notes: "", createdAt: new Date().toISOString().split("T")[0], source: "lead",
-        };
-        // Fire-and-forget insert
-        (async () => {
-            const orgId = await getOrgId(uid);
-            if (!orgId) return;
-            await supabase.from("crm_contacts").insert({
-                id: tempId, name, organization_id: orgId, user_id: uid, source: "lead", tags: ["Novo"],
-            });
-            invalidate(["crm_contacts"]);
-        })();
-        return temp;
-    }, [contacts, uid]);
+        const data = await findOrCreateMut.mutateAsync(name);
+        return mapContact(data);
+    };
 
-    // ── Contact mutations ──
-    const addContactMut = useMutation({
-        mutationFn: async (data: Omit<CrmContact, "id" | "createdAt"> & { _tempId: string }) => {
-            const orgId = await getOrgId(uid);
-            const { error } = await supabase.from("crm_contacts").insert({
-                id: data._tempId, organization_id: orgId, user_id: uid,
-                name: data.name, email: data.email, phone: data.phone, type: data.type,
-                company: data.company, city: data.city, state: data.state,
-                tags: data.tags, score: data.score, notes: data.notes, source: data.source,
-            });
-            if (error) throw error;
-        },
-        onSuccess: () => invalidate(["crm_contacts"]),
-        onError: (e: Error) => toast.error(e.message),
+    const contactUpsertMut = trpc.crm.upsertContact.useMutation({
+        onSuccess: () => utils.crm.listContacts.invalidate(),
+        onError: (e) => toast.error(e.message),
     });
 
-    const addContact = useCallback((data: Omit<CrmContact, "id" | "createdAt">): CrmContact => {
-        const id = crypto.randomUUID();
-        addContactMut.mutate({ ...data, _tempId: id });
-        return { ...data, id, createdAt: new Date().toISOString().split("T")[0] };
-    }, []);
-
-    const updateContactMut = useMutation({
-        mutationFn: async ({ id, ...data }: { id: string } & Partial<CrmContact>) => {
-            const payload: Record<string, any> = {};
-            if (data.name !== undefined) payload.name = data.name;
-            if (data.email !== undefined) payload.email = data.email;
-            if (data.phone !== undefined) payload.phone = data.phone;
-            if (data.type !== undefined) payload.type = data.type;
-            if (data.company !== undefined) payload.company = data.company;
-            if (data.city !== undefined) payload.city = data.city;
-            if (data.state !== undefined) payload.state = data.state;
-            if (data.tags !== undefined) payload.tags = data.tags;
-            if (data.score !== undefined) payload.score = data.score;
-            if (data.notes !== undefined) payload.notes = data.notes;
-            const orgId = await getOrgId(uid);
-            const { error } = await supabase.from("crm_contacts").update(payload).eq("id", id).eq("organization_id", orgId);
-            if (error) throw error;
-        },
-        onSuccess: () => invalidate(["crm_contacts"]),
-        onError: (e: Error) => toast.error(e.message),
+    const contactDeleteMut = trpc.crm.deleteContact.useMutation({
+        onSuccess: () => utils.crm.listContacts.invalidate(),
+        onError: (e) => toast.error(e.message),
     });
-    const updateContact = useCallback((id: string, data: Partial<CrmContact>) => updateContactMut.mutate({ id, ...data }), []);
 
-    const deleteContactMut = useMutation({
-        mutationFn: async (id: string) => {
-            const { error } = await supabase.from("crm_contacts").delete().eq("id", id);
-            if (error) throw error;
-        },
-        onSuccess: () => invalidate(["crm_contacts"]),
-        onError: (e: Error) => toast.error(e.message),
-    });
-    const deleteContact = useCallback((id: string) => deleteContactMut.mutate(id), []);
+    const addContact = async (data: Omit<CrmContact, "id" | "createdAt">): Promise<CrmContact> => {
+        const res = await contactUpsertMut.mutateAsync({ data });
+        return mapContact(res);
+    };
+    const updateContact = (id: string, data: Partial<CrmContact>) => contactUpsertMut.mutate({ id, data });
+    const deleteContact = (id: string) => contactDeleteMut.mutate(id);
 
-    // ── Lead mutations ──
-    const addLeadMut = useMutation({
-        mutationFn: async (data: Omit<CrmLead, "id" | "contactId">) => {
-            const orgId = await getOrgId(uid);
-            const contact = findOrCreateContact(data.contactName);
-            const { error } = await supabase.from("crm_leads").insert({
-                organization_id: orgId, contact_id: contact.id, name: data.name,
-                contact_name: data.contactName, value: data.value, priority: data.priority,
-                date: data.date || null, notes: data.notes, stage_id: data.stageId,
-            });
-            if (error) throw error;
+    // Lead
+    const leadUpsertMut = trpc.crm.upsertLead.useMutation({
+        onSuccess: () => {
+            utils.crm.listLeads.invalidate();
+            utils.crm.listContacts.invalidate();
         },
-        onSuccess: () => invalidate(["crm_leads", "crm_contacts"]),
-        onError: (e: Error) => toast.error(e.message),
+        onError: (e) => toast.error(e.message),
     });
-    const addLead = useCallback((data: Omit<CrmLead, "id" | "contactId">) => addLeadMut.mutate(data), []);
+    const leadDeleteMut = trpc.crm.deleteLead.useMutation({
+        onSuccess: () => utils.crm.listLeads.invalidate(),
+    });
 
-    const updateLeadMut = useMutation({
-        mutationFn: async ({ id, ...data }: { id: string } & Partial<CrmLead>) => {
-            const payload: Record<string, any> = {};
-            if (data.name !== undefined) payload.name = data.name;
-            if (data.contactName !== undefined) {
-                payload.contact_name = data.contactName;
-                const c = findOrCreateContact(data.contactName);
-                payload.contact_id = c.id;
-            }
-            if (data.value !== undefined) payload.value = data.value;
-            if (data.priority !== undefined) payload.priority = data.priority;
-            if (data.date !== undefined) payload.date = data.date;
-            if (data.notes !== undefined) payload.notes = data.notes;
-            if (data.stageId !== undefined) payload.stage_id = data.stageId;
-            const orgId = await getOrgId(uid);
-            const { error } = await supabase.from("crm_leads").update(payload).eq("id", id).eq("organization_id", orgId);
-            if (error) throw error;
-        },
-        onSuccess: () => invalidate(["crm_leads"]),
-        onError: (e: Error) => toast.error(e.message),
-    });
-    const updateLead = useCallback((id: string, data: Partial<CrmLead>) => updateLeadMut.mutate({ id, ...data }), []);
+    const addLead = async (data: Omit<CrmLead, "id" | "contactId">) => {
+        const contact = await findOrCreateContact(data.contactName);
+        leadUpsertMut.mutate({ data: { ...data, contact_id: contact.id, contact_name: data.contactName, stage_id: data.stageId } });
+    };
+    const updateLead = async (id: string, data: Partial<CrmLead>) => {
+        let payload = { ...data };
+        if (data.contactName) {
+            const c = await findOrCreateContact(data.contactName);
+            payload = { ...payload, contactId: c.id } as any;
+        }
+        // Map camelCase to snake_case if needed, but our router handles any. Let's be consistent.
+        const dbData: any = {};
+        if (data.name !== undefined) dbData.name = data.name;
+        if (data.contactName !== undefined) dbData.contact_name = data.contactName;
+        if (data.value !== undefined) dbData.value = data.value;
+        if (data.priority !== undefined) dbData.priority = data.priority;
+        if (data.date !== undefined) dbData.date = data.date;
+        if (data.notes !== undefined) dbData.notes = data.notes;
+        if (data.stageId !== undefined) dbData.stage_id = data.stageId;
 
-    const deleteLeadMut = useMutation({
-        mutationFn: async (id: string) => {
-            const { error } = await supabase.from("crm_leads").delete().eq("id", id);
-            if (error) throw error;
-        },
-        onSuccess: () => invalidate(["crm_leads"]),
-        onError: (e: Error) => toast.error(e.message),
-    });
-    const deleteLead = useCallback((id: string) => deleteLeadMut.mutate(id), []);
+        leadUpsertMut.mutate({ id, data: dbData });
+    };
+    const deleteLead = (id: string) => leadDeleteMut.mutate(id);
 
-    // ── Deal mutations ──
-    const addDealMut = useMutation({
-        mutationFn: async (data: Omit<CrmDeal, "id" | "contactId" | "createdAt">) => {
-            const orgId = await getOrgId(uid);
-            const contact = findOrCreateContact(data.contactName);
-            const { error } = await supabase.from("crm_deals").insert({
-                organization_id: orgId, contact_id: contact.id, name: data.name,
-                contact_name: data.contactName, value: data.value, probability: data.probability,
-                stage: data.stage, due_date: data.dueDate || null, notes: data.notes,
-            });
-            if (error) throw error;
+    // Deal
+    const dealUpsertMut = trpc.crm.upsertDeal.useMutation({
+        onSuccess: () => {
+            utils.crm.listDeals.invalidate();
+            utils.crm.listContacts.invalidate();
         },
-        onSuccess: () => invalidate(["crm_deals", "crm_contacts"]),
-        onError: (e: Error) => toast.error(e.message),
+        onError: (e) => toast.error(e.message),
     });
-    const addDeal = useCallback((data: Omit<CrmDeal, "id" | "contactId" | "createdAt">) => addDealMut.mutate(data), []);
+    const dealDeleteMut = trpc.crm.deleteDeal.useMutation({
+        onSuccess: () => utils.crm.listDeals.invalidate(),
+    });
 
-    const updateDealMut = useMutation({
-        mutationFn: async ({ id, ...data }: { id: string } & Partial<CrmDeal>) => {
-            const payload: Record<string, any> = {};
-            if (data.name !== undefined) payload.name = data.name;
-            if (data.contactName !== undefined) {
-                payload.contact_name = data.contactName;
-                const c = findOrCreateContact(data.contactName);
-                payload.contact_id = c.id;
-            }
-            if (data.value !== undefined) payload.value = data.value;
-            if (data.probability !== undefined) payload.probability = data.probability;
-            if (data.stage !== undefined) payload.stage = data.stage;
-            if (data.dueDate !== undefined) payload.due_date = data.dueDate;
-            if (data.notes !== undefined) payload.notes = data.notes;
-            const orgId = await getOrgId(uid);
-            const { error } = await supabase.from("crm_deals").update(payload).eq("id", id).eq("organization_id", orgId);
-            if (error) throw error;
-        },
-        onSuccess: () => invalidate(["crm_deals"]),
-        onError: (e: Error) => toast.error(e.message),
-    });
-    const updateDeal = useCallback((id: string, data: Partial<CrmDeal>) => updateDealMut.mutate({ id, ...data }), []);
+    const addDeal = async (data: Omit<CrmDeal, "id" | "contactId" | "createdAt">) => {
+        const contact = await findOrCreateContact(data.contactName);
+        dealUpsertMut.mutate({ data: { ...data, contact_id: contact.id, contact_name: data.contactName, due_date: data.dueDate } });
+    };
+    const updateDeal = async (id: string, data: Partial<CrmDeal>) => {
+        const dbData: any = {};
+        if (data.name !== undefined) dbData.name = data.name;
+        if (data.contactName !== undefined) {
+            const c = await findOrCreateContact(data.contactName);
+            dbData.contact_id = c.id;
+            dbData.contact_name = data.contactName;
+        }
+        if (data.value !== undefined) dbData.value = data.value;
+        if (data.probability !== undefined) dbData.probability = data.probability;
+        if (data.stage !== undefined) dbData.stage = data.stage;
+        if (data.dueDate !== undefined) dbData.due_date = data.dueDate;
+        if (data.notes !== undefined) dbData.notes = data.notes;
 
-    const deleteDealMut = useMutation({
-        mutationFn: async (id: string) => {
-            const { error } = await supabase.from("crm_deals").delete().eq("id", id);
-            if (error) throw error;
-        },
-        onSuccess: () => invalidate(["crm_deals"]),
-        onError: (e: Error) => toast.error(e.message),
-    });
-    const deleteDeal = useCallback((id: string) => deleteDealMut.mutate(id), []);
+        dealUpsertMut.mutate({ id, data: dbData });
+    };
+    const deleteDeal = (id: string) => dealDeleteMut.mutate(id);
 
-    // ── Activity mutations ──
-    const addActivityMut = useMutation({
-        mutationFn: async (data: Omit<CrmActivity, "id" | "contactId">) => {
-            const orgId = await getOrgId(uid);
-            const contact = findOrCreateContact(data.contactName);
-            const { error } = await supabase.from("crm_activities").insert({
-                organization_id: orgId, contact_id: contact.id, type: data.type,
-                title: data.title, description: data.description, contact_name: data.contactName,
-                date: data.date || null, time: data.time, completed: data.completed,
-            });
-            if (error) throw error;
+    // Activity
+    const activityUpsertMut = trpc.crm.upsertActivity.useMutation({
+        onSuccess: () => {
+            utils.crm.listActivities.invalidate();
+            utils.crm.listContacts.invalidate();
         },
-        onSuccess: () => invalidate(["crm_activities", "crm_contacts"]),
-        onError: (e: Error) => toast.error(e.message),
+        onError: (e) => toast.error(e.message),
     });
-    const addActivity = useCallback((data: Omit<CrmActivity, "id" | "contactId">) => addActivityMut.mutate(data), []);
+    const activityDeleteMut = trpc.crm.deleteActivity.useMutation({
+        onSuccess: () => utils.crm.listActivities.invalidate(),
+    });
 
-    const updateActivityMut = useMutation({
-        mutationFn: async ({ id, ...data }: { id: string } & Partial<CrmActivity>) => {
-            const payload: Record<string, any> = {};
-            if (data.type !== undefined) payload.type = data.type;
-            if (data.title !== undefined) payload.title = data.title;
-            if (data.description !== undefined) payload.description = data.description;
-            if (data.date !== undefined) payload.date = data.date;
-            if (data.time !== undefined) payload.time = data.time;
-            if (data.completed !== undefined) payload.completed = data.completed;
-            const orgId = await getOrgId(uid);
-            const { error } = await supabase.from("crm_activities").update(payload).eq("id", id).eq("organization_id", orgId);
-            if (error) throw error;
-        },
-        onSuccess: () => invalidate(["crm_activities"]),
-        onError: (e: Error) => toast.error(e.message),
-    });
-    const updateActivity = useCallback((id: string, data: Partial<CrmActivity>) => updateActivityMut.mutate({ id, ...data }), []);
-
-    const deleteActivityMut = useMutation({
-        mutationFn: async (id: string) => {
-            const { error } = await supabase.from("crm_activities").delete().eq("id", id);
-            if (error) throw error;
-        },
-        onSuccess: () => invalidate(["crm_activities"]),
-        onError: (e: Error) => toast.error(e.message),
-    });
-    const deleteActivity = useCallback((id: string) => deleteActivityMut.mutate(id), []);
+    const addActivity = async (data: Omit<CrmActivity, "id" | "contactId">) => {
+        const contact = await findOrCreateContact(data.contactName);
+        activityUpsertMut.mutate({ data: { ...data, contact_id: contact.id, contact_name: data.contactName } });
+    };
+    const updateActivity = (id: string, data: Partial<CrmActivity>) => activityUpsertMut.mutate({ id, data });
+    const deleteActivity = (id: string) => activityDeleteMut.mutate(id);
 
     return (
         <CrmContext.Provider value={{

@@ -1,172 +1,105 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { Database } from "@/integrations/supabase/types";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { asaasService } from "@/services/asaasService";
 import type { Client, ClientDocumento } from "../types";
+import { trpc } from "@/shared/lib/trpc";
 
 const PAGE_SIZE = 15;
 
 export function useClientes() {
     const { user } = useAuth();
     const queryClient = useQueryClient();
+    const utils = trpc.useUtils();
 
     const [page, setPage] = useState(1);
     const [search, setSearch] = useState("");
 
-    // ── Profile query (org_id) ──
-    const { data: profile } = useQuery({
-        queryKey: ["profile", user?.id],
-        queryFn: async () => {
-            const { data } = await supabase.from("profiles").select("organization_id").eq("user_id", user!.id).single();
-            return data;
-        },
-        enabled: !!user,
+    const clientsQuery = trpc.cliente.list.useQuery({
+        page,
+        search,
+        pageSize: PAGE_SIZE,
     });
 
-    const orgId = profile?.organization_id;
+    const biCountsQuery = trpc.cliente.getCounts.useQuery();
 
-    // ── Clients (paginated) ──
-    const { data: clientsData, isLoading } = useQuery({
-        queryKey: ["clients", orgId, page, search],
-        queryFn: async () => {
-            let query = supabase.from("clients").select("*", { count: "exact" }).eq("organization_id", orgId!).order("created_at", { ascending: false });
-            if (search) {
-                query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%,document.ilike.%${search}%,company_name.ilike.%${search}%`);
-            }
-            const from = (page - 1) * PAGE_SIZE;
-            query = query.range(from, from + PAGE_SIZE - 1);
-            const { data, error, count } = await query;
-            if (error) throw error;
-            return { data: (data ?? []) as unknown as Client[], count: count ?? 0 };
-        },
-        enabled: !!orgId,
-        placeholderData: keepPreviousData,
-    });
-
-    const clients = clientsData?.data || [];
-    const totalCount = clientsData?.count || 0;
+    const clients = (clientsQuery.data?.data as unknown as Client[]) || [];
+    const totalCount = clientsQuery.data?.count || 0;
     const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
     // ── Client Docs ──
     const useClientDocs = (clientId: string | undefined, enabled: boolean) =>
-        useQuery({
-            queryKey: ["client-docs", clientId],
-            queryFn: async () => {
-                const { data } = await supabase.from("documentos").select("id, file_name, file_path, file_type, created_at").eq("client_id", clientId!).order("created_at", { ascending: false });
-                return (data || []) as ClientDocumento[];
-            },
+        trpc.cliente.getDocs.useQuery(clientId as string, {
             enabled: !!clientId && enabled,
         });
 
     // ── Mutations ──
-    const createMutation = useMutation({
-        mutationFn: async (payload: Record<string, unknown>) => {
-            const { error } = await supabase.from("clients").insert(payload as Database["public"]["Tables"]["clients"]["Insert"]);
-            if (error) throw error;
+    const createMutation = trpc.cliente.create.useMutation({
+        onSuccess: () => {
+            utils.cliente.list.invalidate();
+            toast.success("Cliente criado com sucesso");
         },
-        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["clients"] }); toast.success("Cliente criado com sucesso"); },
-        onError: (err: Error) => toast.error(`Erro ao criar cliente: ${err.message}`),
+        onError: (err: any) => toast.error(`Erro ao criar cliente: ${err.message}`),
     });
 
-    const updateMutation = useMutation({
-        mutationFn: async ({ id, ...payload }: Record<string, unknown> & { id: string }) => {
-            delete payload.organization_id;
-            delete payload.created_at;
-            const { error } = await supabase.from("clients").update(payload).eq("id", id).eq("organization_id", orgId!);
-            if (error) throw error;
+    const updateMutation = trpc.cliente.update.useMutation({
+        onSuccess: () => {
+            utils.cliente.list.invalidate();
+            toast.success("Cliente atualizado com sucesso");
         },
-        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["clients"] }); toast.success("Cliente atualizado com sucesso"); },
-        onError: (err: Error) => toast.error(`Erro ao atualizar cliente: ${err.message}`),
+        onError: (err: any) => toast.error(`Erro ao atualizar cliente: ${err.message}`),
     });
 
-    const deleteMutation = useMutation({
-        mutationFn: async (id: string) => {
-            const { error } = await supabase.from("clients").delete().eq("id", id);
-            if (error) throw error;
+    const deleteMutation = trpc.cliente.delete.useMutation({
+        onSuccess: () => {
+            utils.cliente.list.invalidate();
+            toast.success("Cliente excluído com sucesso");
         },
-        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["clients"] }); toast.success("Cliente excluído com sucesso"); },
-        onError: (err: Error) => toast.error(`Erro ao excluir cliente: ${err.message}`),
+        onError: (err: any) => toast.error(`Erro ao excluir cliente: ${err.message}`),
     });
 
-    const uploadDocMutation = useMutation({
-        mutationFn: async ({ file, clientId }: { file: File; clientId: string }) => {
-            const filePath = `${orgId}/${crypto.randomUUID()}-${file.name}`;
-            const { error: uploadError } = await supabase.storage.from("documentos").upload(filePath, file);
-            if (uploadError) throw uploadError;
-            const { error: dbError } = await supabase.from("documentos").insert({
-                file_name: file.name, file_path: filePath, file_type: file.type || null,
-                user_id: user!.id, organization_id: orgId!, client_id: clientId,
-            });
-            if (dbError) throw dbError;
-        },
-        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["client-docs"] }); toast.success("Documento vinculado ao cliente"); },
-        onError: () => toast.error("Erro ao enviar documento"),
-    });
-
-    const requestSignatureMutation = useMutation({
-        mutationFn: async ({ doc, client }: { doc: ClientDocumento; client: Client }) => {
-            const token = crypto.randomUUID();
-            const { error } = await supabase.from("document_signatures").insert({
-                document_id: doc.id, organization_id: orgId,
-                signer_name: client.name, signer_email: client.email, signer_document: client.document,
-                token, status: "pendente",
-                expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-            });
-            if (error) throw error;
-            return `${window.location.origin}/portal/assinatura/${token}`;
-        },
-        onSuccess: (link) => {
-            if (link) { navigator.clipboard.writeText(link); toast.success("Link de assinatura copiado!"); }
-        },
-        onError: (err: Error) => toast.error(`Erro ao solicitar assinatura: ${err.message}`),
-    });
-
-    const syncAsaasMutation = useMutation({
-        mutationFn: async (client: Client) => {
-            if (!orgId) throw new Error("ID da organização não encontrado");
-            const customerData = {
-                name: client.name, email: client.email || "", phone: client.phone || "",
-                cpfCnpj: client.document || "", externalReference: client.id,
-                address: client.address_street || "", addressNumber: client.address_number || "",
-                complement: client.address_complement || "", province: client.address_neighborhood || "",
-                postalCode: client.address_zip || "",
-            };
-            let asaasId = client.asaas_customer_id;
-            if (asaasId) {
-                await asaasService.updateCustomer(orgId, asaasId, customerData);
-            } else {
-                const response = await asaasService.createCustomer(orgId, customerData);
-                asaasId = response.id;
-                const { error } = await supabase.from("clients").update({ asaas_customer_id: asaasId }).eq("id", client.id);
-                if (error) throw error;
+    const uploadDocMutation = trpc.documento.create.useMutation({
+        onSuccess: (_, variables) => {
+            toast.success("Documento enviado com sucesso");
+            if (variables.client_id) {
+                utils.cliente.getDocs.invalidate(variables.client_id);
             }
         },
-        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["clients"] }); toast.success("Sincronizado com Asaas!"); },
-        onError: (err: Error) => toast.error(`Erro ao sincronizar: ${err.message}`),
+        onError: (error) => {
+            console.error("Erro ao enviar documento:", error);
+            toast.error("Erro ao enviar documento");
+        },
     });
 
-    const generatePortalAuth = useMutation({
-        mutationFn: async (client: Client) => {
-            if (!client.email) throw new Error("O cliente precisa de um e-mail cadastrado.");
-            if (!orgId) throw new Error("Organização não encontrada.");
-            const token = crypto.randomUUID();
-            const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-            // client_portal_tokens type now available in types.ts
-            const { error } = await supabase.from("client_portal_tokens").insert({
-                client_id: client.id, organization_id: orgId, token, expires_at: expiresAt,
-            });
-            if (error && !error.message.includes("does not exist")) throw error;
-            const portalUrl = `${window.location.origin}/portal?token=${token}&email=${encodeURIComponent(client.email)}`;
-            return { portalUrl, client };
+    const requestSignatureMutation = trpc.documento.requestSignature.useMutation({
+        onSuccess: () => {
+            toast.success("Solicitação de assinatura enviada");
         },
-        onSuccess: ({ portalUrl, client }) => {
+        onError: (error) => {
+            console.error("Erro ao solicitar assinatura:", error);
+            toast.error("Erro ao solicitar assinatura");
+        },
+    });
+
+    const syncAsaasMutation = trpc.cliente.syncAsaas.useMutation({
+        onSuccess: () => {
+            toast.success("Sincronizado com Asaas!");
+            utils.cliente.list.invalidate();
+        },
+        onError: (err: any) => toast.error(`Erro ao sincronizar: ${err.message}`),
+    });
+
+    const generatePortalAuth = trpc.cliente.generatePortalAuth.useMutation({
+        onSuccess: (data) => {
+            const portalUrl = `${window.location.origin}/portal?token=${data.token}&email=${encodeURIComponent(data.email)}`;
             navigator.clipboard.writeText(portalUrl).catch(() => { });
-            toast.success(`Link do portal gerado para ${client.name}!`, { duration: 6000, description: "Compartilhe com o cliente para acesso ao portal." });
+            toast.success(`Link do portal gerado!`, {
+                duration: 6000,
+                description: "Link copiado para a área de transferência."
+            });
         },
-        onError: (err: Error) => toast.error(`Erro ao gerar portal: ${err.message}`),
+        onError: (err: any) => toast.error(`Erro ao gerar portal: ${err.message}`),
     });
 
     // ── Helpers ──
@@ -177,24 +110,66 @@ export function useClientes() {
         if (data?.signedUrl) window.open(data.signedUrl, "_blank");
     };
 
-    // ── BI Counts (for StatCards) ──
-    const { data: biCounts } = useQuery({
-        queryKey: ["clients-bi", orgId],
-        queryFn: async () => {
-            const { count: total } = await supabase.from("clients").select("*", { count: "exact", head: true }).eq("organization_id", orgId!);
-            const { count: pf } = await supabase.from("clients").select("*", { count: "exact", head: true }).eq("organization_id", orgId!).eq("client_type", "pessoa_fisica");
-            const { count: pj } = await supabase.from("clients").select("*", { count: "exact", head: true }).eq("organization_id", orgId!).eq("client_type", "pessoa_juridica");
-            return { total: total || 0, pf: pf || 0, pj: pj || 0 };
-        },
-        enabled: !!orgId,
-    });
+    const handleUpload = async (file: File, clientId: string) => {
+        try {
+            const fileExt = file.name.split(".").pop();
+            const filePath = `docs/${clientId}/${crypto.randomUUID()}.${fileExt}`;
+
+            const { error: uploadError } = await supabase.storage
+                .from("documentos")
+                .upload(filePath, file);
+
+            if (uploadError) throw uploadError;
+
+            await uploadDocMutation.mutateAsync({
+                file_name: file.name,
+                file_path: filePath,
+                file_type: file.type || null,
+                client_id: clientId,
+                size: file.size,
+            });
+        } catch (error: any) {
+            console.error("Erro no upload:", error);
+            throw error;
+        }
+    };
 
     return {
-        user, orgId, clients, totalCount, totalPages, page, setPage, search, isLoading,
-        biCounts: biCounts || { total: 0, pf: 0, pj: 0 },
-        handleSearch, handleDocDownload, useClientDocs,
-        createMutation, updateMutation, deleteMutation, uploadDocMutation,
-        requestSignatureMutation, syncAsaasMutation, generatePortalAuth,
+        user,
+        clients,
+        totalCount,
+        totalPages,
+        page,
+        setPage,
+        search,
+        isLoading: clientsQuery.isLoading,
+        biCounts: biCountsQuery.data || { total: 0, pf: 0, pj: 0 },
+        handleSearch,
+        handleDocDownload,
+        useClientDocs,
+        createMutation,
+        updateMutation: {
+            ...updateMutation,
+            mutate: (payload: { id: string } & Record<string, any>) => {
+                const { id, ...data } = payload;
+                updateMutation.mutate({ id, data });
+            }
+        },
+        deleteMutation,
+        uploadDoc: handleUpload,
+        requestSignature: (docId: string, clientId: string, signerData: any) =>
+            requestSignatureMutation.mutate({
+                document_id: docId,
+                client_id: clientId,
+                signer_name: signerData.name,
+                signer_email: signerData.email,
+                signer_document: signerData.document || null,
+            }),
+        syncAsaas: (client: Client) => syncAsaasMutation.mutate(client.id),
+        generatePortalAuth: {
+            ...generatePortalAuth,
+            mutate: (client: Client) => generatePortalAuth.mutate(client.id)
+        },
         PAGE_SIZE,
     };
 }

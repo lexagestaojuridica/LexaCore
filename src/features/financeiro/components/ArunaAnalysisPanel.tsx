@@ -1,13 +1,11 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { trpc } from "@/shared/lib/trpc";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Sparkles, X, Copy, Check } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/shared/ui/sheet";
+import { Button } from "@/shared/ui/button";
+import { Sparkles, Check, Copy } from "lucide-react";
 import { toast } from "sonner";
-import { fmtCurrency, fmtPct, getMonthLabel, type CategoryRow } from "@/lib/budgetUtils";
+import { getMonthLabel, type CategoryRow } from "@/shared/lib/budgetUtils";
 
 interface ArunaAnalysisPanelProps {
     open: boolean;
@@ -21,71 +19,6 @@ interface ArunaAnalysisPanelProps {
     orgId: string;
 }
 
-function buildPrompt(
-    rows: CategoryRow[],
-    month: number,
-    year: number,
-    executionRate: number,
-    type: "despesa" | "receita"
-): string {
-    const period = getMonthLabel(month, year);
-    const exceeded = rows.filter((r) => r.status === "exceeded");
-    const warning = rows.filter((r) => r.status === "warning");
-    const ok = rows.filter((r) => r.status === "ok" && r.budgeted > 0);
-    const unbudgeted = rows.filter((r) => r.status === "unbudgeted");
-
-    const lines: string[] = [
-        `Analise o desempenho orçamentário de ${type === "despesa" ? "despesas" : "receitas"} do escritório para o período de ${period}.`,
-        ``,
-        `Dados do período:`,
-        `- Taxa de execução global: ${executionRate.toFixed(1)}%`,
-        `- Total de categorias analisadas: ${rows.length}`,
-        ``,
-    ];
-
-    if (exceeded.length > 0) {
-        lines.push(`Categorias EXCEDIDAS (acima de 100% do orçado):`);
-        exceeded.forEach((r) => {
-            lines.push(
-                `  • ${r.category}: orçado ${fmtCurrency(r.budgeted)}, realizado ${fmtCurrency(r.realized)} (${r.variationPct?.toFixed(1)}%)`
-            );
-        });
-        lines.push("");
-    }
-
-    if (warning.length > 0) {
-        lines.push(`Categorias em ATENÇÃO (80–100% do orçado):`);
-        warning.forEach((r) => {
-            lines.push(
-                `  • ${r.category}: orçado ${fmtCurrency(r.budgeted)}, realizado ${fmtCurrency(r.realized)} (${r.variationPct?.toFixed(1)}%)`
-            );
-        });
-        lines.push("");
-    }
-
-    if (ok.length > 0) {
-        lines.push(`Categorias DENTRO do orçado:`);
-        ok.forEach((r) => {
-            lines.push(`  • ${r.category}: ${r.variationPct?.toFixed(1)}% executado`);
-        });
-        lines.push("");
-    }
-
-    if (unbudgeted.length > 0) {
-        lines.push(`Categorias SEM ORÇAMENTO mas com lançamentos:`);
-        unbudgeted.forEach((r) => {
-            lines.push(`  • ${r.category}: ${fmtCurrency(r.realized)} sem orçamento definido`);
-        });
-        lines.push("");
-    }
-
-    lines.push(
-        `Por favor, gere um resumo executivo em português, em 3–5 parágrafos, destacando os principais desvios, possíveis causas, e recomendações concretas para o próximo ciclo. Seja objetivo e profissional.`
-    );
-
-    return lines.join("\n");
-}
-
 export default function ArunaAnalysisPanel({
     open,
     onClose,
@@ -95,55 +28,31 @@ export default function ArunaAnalysisPanel({
     executionRate,
     healthScore,
     type,
-    orgId,
 }: ArunaAnalysisPanelProps) {
     const [analysis, setAnalysis] = useState<string>("");
-    const [isGenerating, setIsGenerating] = useState(false);
     const [copied, setCopied] = useState(false);
 
-    const { data: profile } = useQuery({
-        queryKey: ["profile-for-aruna", orgId],
-        queryFn: async () => {
-            const { data } = await supabase
-                .from("profiles")
-                .select("user_id")
-                .eq("organization_id", orgId)
-                .limit(1)
-                .single();
-            return data;
+    const utils = trpc.useUtils();
+
+    const analyzeMut = trpc.ia.analyzeBudget.useMutation({
+        onSuccess: (data) => {
+            setAnalysis(data.content);
+            utils.ia.listHistory.invalidate();
         },
-        enabled: !!orgId,
+        onError: (err) => {
+            toast.error("Erro ao gerar análise: " + err.message);
+        }
     });
 
     const handleGenerate = async () => {
-        setIsGenerating(true);
         setAnalysis("");
-
-        try {
-            const prompt = buildPrompt(rows, month, year, executionRate, type);
-
-            // Save to conversas_ia and use existing AI infrastructure
-            const { data, error } = await supabase.functions.invoke("aruna-chat", {
-                body: {
-                    message: prompt,
-                    organization_id: orgId,
-                    context: "budget_analysis",
-                },
-            });
-
-            if (error) throw error;
-
-            const content =
-                data?.content ||
-                data?.message ||
-                "Não foi possível gerar a análise. Verifique a configuração da ARUNA.";
-
-            setAnalysis(content);
-        } catch (err: any) {
-            toast.error("Erro ao gerar análise: " + (err.message ?? "Tente novamente."));
-        } finally {
-            setIsGenerating(false);
-        }
+        analyzeMut.mutate({
+            rows,
+            month,
+            year,
+            executionRate,
+            type
+        });
     };
 
     const handleCopy = () => {
@@ -216,23 +125,23 @@ export default function ArunaAnalysisPanel({
                     <Button
                         className="w-full gap-2 mb-6"
                         onClick={handleGenerate}
-                        disabled={isGenerating || rows.length === 0}
+                        disabled={analyzeMut.isPending || rows.length === 0}
                     >
                         <Sparkles className="h-4 w-4" />
-                        {isGenerating ? "Analisando..." : "Gerar Análise com ARUNA"}
+                        {analyzeMut.isPending ? "Analisando..." : "Gerar Análise com ARUNA"}
                     </Button>
                 )}
 
                 {/* Streaming effect for analysis text */}
                 <AnimatePresence>
-                    {(isGenerating || analysis) && (
+                    {(analyzeMut.isPending || analysis) && (
                         <motion.div
                             initial={{ opacity: 0, y: 8 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0 }}
                             className="space-y-4"
                         >
-                            {isGenerating && (
+                            {analyzeMut.isPending && (
                                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                                     Gerando análise...
@@ -262,7 +171,7 @@ export default function ArunaAnalysisPanel({
                                             size="sm"
                                             className="gap-2"
                                             onClick={handleGenerate}
-                                            disabled={isGenerating}
+                                            disabled={analyzeMut.isPending}
                                         >
                                             <Sparkles className="h-3.5 w-3.5" />
                                             Regenerar

@@ -15,16 +15,16 @@ import {
   Filter, Plus, Link2, CalendarDays, Clock, AlertTriangle
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/shared/ui/button";
 import { CalendarEmptyState } from "@/features/agenda/components/CalendarEmptyState";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { KPISkeleton } from "@/components/shared/SkeletonLoaders";
-import { cn } from "@/lib/utils";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/shared/ui/alert-dialog";
+import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
+import { Badge } from "@/shared/ui/badge";
+import { Card, CardContent } from "@/shared/ui/card";
+import { KPISkeleton } from "@/shared/components/SkeletonLoaders";
+import { cn } from "@/shared/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
-import { PageHeader } from "@/components/shared/PageHeader";
+import { PageHeader } from "@/shared/components/PageHeader";
 
 // FSD Feature Imports
 import { Evento, ViewMode, EventFormState, emptyEventForm } from "@/features/agenda/types";

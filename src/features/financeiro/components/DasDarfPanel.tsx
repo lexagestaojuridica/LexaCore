@@ -2,10 +2,10 @@ import { useState } from "react";
 import { format, subMonths, addMonths, startOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Bell, CheckCircle2, AlertTriangle, Clock, ChevronLeft, ChevronRight, Download } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
+import { Badge } from "@/shared/ui/badge";
+import { Button } from "@/shared/ui/button";
+import { cn } from "@/shared/lib/utils";
 import { motion } from "framer-motion";
 
 // ─── Types & Constants ────────────────────────────────────────

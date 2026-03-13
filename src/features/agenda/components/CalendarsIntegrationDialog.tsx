@@ -1,6 +1,6 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
+import { Button } from "@/shared/ui/button";
+import { Badge } from "@/shared/ui/badge";
 import { Loader2, CalendarDays, ExternalLink, Download, Upload, Unplug, Trash2 } from "lucide-react";
 import { useGoogleCalendar } from "@/features/agenda/hooks/useGoogleCalendar";
 import { useMicrosoftCalendar } from "@/features/agenda/hooks/useMicrosoftCalendar";

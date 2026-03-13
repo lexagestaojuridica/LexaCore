@@ -1,12 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/shared/ui/card";
 import { Users, UserMinus, UserCheck, CalendarDays, TrendingUp, Briefcase, DollarSign, PieChart as PieChartIcon } from "lucide-react";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from "recharts";
-import LexaLoadingOverlay from "@/components/shared/LexaLoadingOverlay";
+import LexaLoadingOverlay from "@/shared/components/LexaLoadingOverlay";
 import { useTranslation } from "react-i18next";
-import { PageHeader } from "@/components/shared/PageHeader";
+import { PageHeader } from "@/shared/components/PageHeader";
 
 const COLORS = ["#0ea5e9", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#6366f1"];
 

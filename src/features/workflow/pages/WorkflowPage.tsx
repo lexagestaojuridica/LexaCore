@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { GitBranch, ClipboardList, Users, Building2, LayoutTemplate, Zap } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { WorkflowProvider, useWorkflow } from "@/features/workflow/contexts/WorkflowContext";
 import WorkflowMyList from "@/features/workflow/components/WorkflowMyList";
 import WorkflowTeamView from "@/features/workflow/components/WorkflowTeamView";

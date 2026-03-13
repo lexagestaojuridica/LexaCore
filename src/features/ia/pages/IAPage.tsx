@@ -1,10 +1,8 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
+import { trpc } from "@/shared/lib/trpc";
+import { Button } from "@/shared/ui/button";
+import { Textarea } from "@/shared/ui/textarea";
+import { Input } from "@/shared/ui/input";
 import {
   Send, Sparkles, User, Trash2, FileText, Loader2,
   Search, FileSearch, Mic, X, ChevronRight,
@@ -12,15 +10,16 @@ import {
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { cn } from "@/lib/utils";
-import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/shared/lib/utils";
+import { useToast } from "@/shared/hooks/use-toast";
 import arunaAvatar from "@/assets/aruna-avatar.png";
 import ReactMarkdown from "react-markdown";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/shared/ui/dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/shared/ui/tooltip";
+import { useAuth, useSession } from "@clerk/nextjs";
 
 /* ─── Types ──────────────────────────────────────── */
 interface LocalMsg {
@@ -94,22 +93,16 @@ const DOC_GEN_URL = `${BASE_URL}/functions/v1/aruna-generate-doc`;
 const JURIS_URL = `${BASE_URL}/functions/v1/aruna-jurisprudencia`;
 const ANALYZE_URL = `${BASE_URL}/functions/v1/aruna-analyze-doc`;
 const TRANSCRIBE_URL = `${BASE_URL}/functions/v1/aruna-transcribe`;
-const AUTH_HEADER = async () => {
-  let token = "";
-  if (typeof window !== "undefined" && (window as any).Clerk?.session) {
-    token = await (window as any).Clerk.session.getToken({ template: "supabase" });
-  }
-  return { Authorization: `Bearer ${token}` };
-};
 
 type Tool = null | "doc" | "juris" | "analyze" | "transcribe";
 
 /* ═══════════════════════════════════════════════════ */
 
 export default function IAPage() {
-  const { user } = useAuth();
+  const { userId } = useAuth();
+  const { session } = useSession();
   const { toast } = useToast();
-  const qc = useQueryClient();
+  const utils = trpc.useUtils();
   const endRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -131,85 +124,39 @@ export default function IAPage() {
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [audioInstr, setAudioInstr] = useState("");
 
-  /* ─── Queries ────────────────────────────────────── */
-  const { data: profileData } = useQuery({
-    queryKey: ["profile", user?.id],
-    queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("organization_id").eq("user_id", user!.id).single();
-      return data;
-    },
-    enabled: !!user?.id,
-  });
-  const orgId = profileData?.organization_id;
+  /* ─── tRPC Queries ────────────────────────────────── */
+  const contextQuery = trpc.ia.getContext.useQuery();
+  const historyQuery = trpc.ia.listHistory.useQuery();
 
-  const { data: processosData } = useQuery({
-    queryKey: ["processos_context", orgId],
-    queryFn: async () => {
-      const { data } = await supabase.from("processos_juridicos")
-        .select("title, number, court, status, subject, estimated_value, notes, client_id, clients(name)")
-        .eq("organization_id", orgId!).order("updated_at", { ascending: false }).limit(50);
-      return data;
-    },
-    enabled: !!orgId,
-  });
+  const ctx = useMemo(() => {
+    const data = contextQuery.data;
+    return {
+      processos: data?.processos.map((p: any) => ({ ...p, client_name: p.clients?.name, clients: undefined })) || [],
+      clientes: data?.clientes || [],
+      eventos: data?.eventos || [],
+    };
+  }, [contextQuery.data]);
 
-  const { data: clientesData } = useQuery({
-    queryKey: ["clientes_context", orgId],
-    queryFn: async () => {
-      const { data } = await supabase.from("clients").select("name, email, phone, document")
-        .eq("organization_id", orgId!).order("name").limit(50);
-      return data;
-    },
-    enabled: !!orgId,
-  });
-
-  const { data: eventosData } = useQuery({
-    queryKey: ["eventos_context", orgId],
-    queryFn: async () => {
-      const { data } = await supabase.from("eventos_agenda")
-        .select("title, start_time, end_time, category, description")
-        .eq("organization_id", orgId!).gte("start_time", new Date().toISOString())
-        .order("start_time").limit(30);
-      return data;
-    },
-    enabled: !!orgId,
-  });
-
-  const { data: docsData } = useQuery({
-    queryKey: ["documentos_for_analysis", orgId],
-    queryFn: async () => {
-      const { data } = await supabase.from("documentos").select("id, file_name, file_type, created_at")
-        .eq("organization_id", orgId!).order("created_at", { ascending: false }).limit(50);
-      return data;
-    },
-    enabled: !!orgId,
-  });
-
-  const ctx = useMemo(() => ({
-    processos: processosData?.map((p: any) => ({ ...p, client_name: p.clients?.name, clients: undefined })) || [],
-    clientes: clientesData || [],
-    eventos: eventosData || [],
-  }), [processosData, clientesData, eventosData]);
-
-  const { data: dbMsgs = [], isLoading } = useQuery({
-    queryKey: ["conversas_ia", user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("conversas_ia").select("*")
-        .eq("user_id", user!.id).order("created_at", { ascending: true });
-      if (error) throw error;
-      return data as Message[];
-    },
-    enabled: !!user?.id,
-  });
+  const docsData = contextQuery.data?.docs || [];
 
   useEffect(() => {
-    if (dbMsgs.length > 0 && msgs.length === 0)
-      setMsgs(dbMsgs.map((m) => ({ id: m.id, role: m.role as "user" | "assistant", content: m.content, created_at: m.created_at })));
-  }, [dbMsgs, msgs.length]);
+    if (historyQuery.data && historyQuery.data.length > 0 && msgs.length === 0)
+      setMsgs(historyQuery.data.map((m: any) => ({
+        id: m.id,
+        role: m.role as "user" | "assistant",
+        content: m.content,
+        created_at: m.created_at
+      })));
+  }, [historyQuery.data, msgs.length]);
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs, streaming]);
 
-  /* ─── SSE Stream Helper ──────────────────────────── */
+  /* ─── SSE Stream Header Helper ────────────────────── */
+  const AUTH_HEADER = async () => {
+    const token = await session?.getToken({ template: "supabase" });
+    return { Authorization: `Bearer ${token} ` };
+  };
+
   const stream = useCallback(async (url: string, body: Record<string, unknown>, aId: string) => {
     let content = "";
     const authHeader = await AUTH_HEADER();
@@ -218,7 +165,7 @@ export default function IAPage() {
       headers: { "Content-Type": "application/json", ...authHeader },
       body: JSON.stringify(body),
     });
-    if (!resp.ok) { const e = await resp.json().catch(() => ({})); throw new Error(e.error || `Erro ${resp.status}`); }
+    if (!resp.ok) { const e = await resp.json().catch(() => ({})); throw new Error(e.error || `Erro ${resp.status} `); }
     if (!resp.body) throw new Error("Sem resposta");
 
     const reader = resp.body.getReader();
@@ -253,11 +200,24 @@ export default function IAPage() {
     return content;
   }, []);
 
+  /* ─── tRPC Mutations ────────────────────────────── */
+  const saveMsgMut = trpc.ia.saveMessage.useMutation({
+    onSuccess: () => utils.ia.listHistory.invalidate(),
+  });
+
+  const clearHistMut = trpc.ia.clearHistory.useMutation({
+    onSuccess: () => {
+      setMsgs([]);
+      utils.ia.listHistory.invalidate();
+      toast({ title: "Amnésia induzida! Histórico apagado." });
+    },
+  });
+
   /* ─── Add message helpers ────────────────────────── */
   const addUser = (text: string) => {
     const m: LocalMsg = { id: crypto.randomUUID(), role: "user", content: text, created_at: new Date().toISOString() };
     setMsgs((p) => [...p, m]);
-    if (orgId) supabase.from("conversas_ia").insert({ content: text, role: "user", user_id: user!.id, organization_id: orgId });
+    saveMsgMut.mutate({ role: "user", content: text });
     return m;
   };
   const addAssistant = () => {
@@ -266,13 +226,13 @@ export default function IAPage() {
     return id;
   };
   const saveAssistant = (content: string) => {
-    if (content && orgId) supabase.from("conversas_ia").insert({ content, role: "assistant", user_id: user!.id, organization_id: orgId });
+    if (content) saveMsgMut.mutate({ role: "assistant", content });
   };
 
   /* ─── Chat ──────────────────────────────────────── */
   const handleSend = async () => {
     const t = input.trim();
-    if (!t || streaming || !orgId) return;
+    if (!t || streaming) return;
     const um = addUser(t);
     setInput("");
     setStreaming(true);
@@ -289,47 +249,45 @@ export default function IAPage() {
 
   const handleKey = (e: React.KeyboardEvent) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } };
 
-  const handleClear = async () => {
-    if (!user?.id || streaming) return;
-    await supabase.from("conversas_ia").delete().eq("user_id", user.id);
-    setMsgs([]);
-    qc.invalidateQueries({ queryKey: ["conversas_ia", user.id] });
-    toast({ title: "Amnésia induzida! Histórico apagado." });
+  const handleClear = () => {
+    if (!userId || streaming) return;
+    clearHistMut.mutate();
   };
 
   /* ─── Generate Doc ──────────────────────────────── */
   const handleGenDoc = async () => {
-    if (!docType || !orgId || !user?.id || busy) return;
+    if (!docType || !userId || busy) return;
     setBusy(true);
     const label = DOC_TYPES.find((d) => d.value === docType)?.label || "Documento";
-    addUser(`📝 Gerar: **${label}**${docInstr ? ` — ${docInstr}` : ""}`);
+    addUser(`📝 Gerar: ** ${label}** ${docInstr ? ` — ${docInstr}` : ""} `);
     setTool(null);
     const aId = addAssistant();
     setMsgs((p) => p.map((m) => m.id === aId ? { ...m, content: "⏳ Estou redigindo o documento para você. Por favor, aguarde alguns segundos..." } : m));
     try {
       const authHeader = await AUTH_HEADER();
-      const r = await fetch(DOC_GEN_URL, { method: "POST", headers: { "Content-Type": "application/json", ...authHeader }, body: JSON.stringify({ doc_type: docType, instructions: docInstr, organization_id: orgId, user_id: user.id }) });
-      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || `Erro ${r.status}`);
+      const r = await fetch(DOC_GEN_URL, { method: "POST", headers: { "Content-Type": "application/json", ...authHeader }, body: JSON.stringify({ doc_type: docType, instructions: docInstr, organization_id: session?.publicMetadata?.organizationId, user_id: userId }) });
+      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || `Erro ${r.status} `);
       const res = await r.json();
-      const c = `✅ **${res.document.file_name}** gerado com sucesso e salvo no seu módulo de **Documentos (GED)**.\n\n### Preview Rápido:\n${res.content_preview?.slice(0, 400)}...`;
+      const c = `✅ ** ${res.document.file_name}** gerado com sucesso e salvo no seu módulo de ** Documentos(GED) **.\n\n### Preview Rápido: \n${res.content_preview?.slice(0, 400)}...`;
       setMsgs((p) => p.map((m) => m.id === aId ? { ...m, content: c } : m));
       saveAssistant(c);
-      qc.invalidateQueries({ queryKey: ["documentos"] });
+      utils.documento.list.invalidate(); // Correct invalidation name
       toast({ title: "Minuta jurídica redigida com sucesso!" });
     } catch (e: any) {
-      setMsgs((p) => p.map((m) => m.id === aId ? { ...m, content: `❌ Tive um problema ao gerar o documento: ${e.message}` } : m));
+      setMsgs((p) => p.map((m) => m.id === aId ? { ...m, content: `❌ Tive um problema ao gerar o documento: ${e.message} ` } : m));
     } finally { setBusy(false); setDocType(""); setDocInstr(""); }
   };
 
   /* ─── Jurisprudence ─────────────────────────────── */
   const handleJuris = async () => {
+    const orgId = session?.publicMetadata?.organizationId as string;
     if (!jurisQ.trim() || streaming || !orgId) return;
     setStreaming(true); setTool(null);
     const area = jurisArea !== "all" ? jurisArea : "";
-    addUser(`🔍 Pesquisar Jurisprudência: **${jurisQ}**${area ? ` (${AREAS_DIREITO.find(a => a.value === jurisArea)?.label})` : ""}`);
+    addUser(`🔍 Pesquisar Jurisprudência: ** ${jurisQ}** ${area ? ` (${AREAS_DIREITO.find(a => a.value === jurisArea)?.label})` : ""} `);
     const aId = addAssistant();
     try {
-      const c = await stream(JURIS_URL, { query: jurisQ, area }, aId);
+      const c = await stream(JURIS_URL, { query: jurisQ, area, organization_id: orgId }, aId);
       saveAssistant(c);
       setJurisQ(""); setJurisArea("all");
     } catch (e: any) {
@@ -340,10 +298,11 @@ export default function IAPage() {
 
   /* ─── Analyze Doc ───────────────────────────────── */
   const handleAnalyze = async () => {
+    const orgId = session?.publicMetadata?.organizationId as string;
     if (!analyzeDocId || !orgId || streaming) return;
     setStreaming(true); setTool(null);
     const dn = docsData?.find((d) => d.id === analyzeDocId)?.file_name || "Documento";
-    addUser(`📄 Analisar PDF: **${dn}** (${ANALYSIS_TYPES.find(a => a.value === analyzeType)?.label})`);
+    addUser(`📄 Analisar PDF: ** ${dn}** (${ANALYSIS_TYPES.find(a => a.value === analyzeType)?.label})`);
     const aId = addAssistant();
     try {
       const c = await stream(ANALYZE_URL, { document_id: analyzeDocId, organization_id: orgId, analysis_type: analyzeType, custom_instructions: analyzeInstr }, aId);
@@ -357,10 +316,11 @@ export default function IAPage() {
 
   /* ─── Transcribe Audio ──────────────────────────── */
   const handleTranscribe = async () => {
-    if (!audioFile || !orgId || !user?.id || streaming) return;
+    const orgId = session?.publicMetadata?.organizationId as string;
+    if (!audioFile || !orgId || !userId || streaming) return;
     setStreaming(true); setTool(null);
     const typeLabel = AUDIO_TYPES.find(t => t.value === audioType)?.label || audioType;
-    addUser(`🎙️ Transcrever gravação: **${audioFile.name}** (${typeLabel})`);
+    addUser(`🎙️ Transcrever gravação: ** ${audioFile.name}** (${typeLabel})`);
     const aId = addAssistant();
     try {
       const fd = new FormData();
@@ -368,11 +328,11 @@ export default function IAPage() {
       fd.append("audio_type", audioType);
       fd.append("instructions", audioInstr);
       fd.append("organization_id", orgId);
-      fd.append("user_id", user.id);
+      fd.append("user_id", userId);
 
       const authHeader = await AUTH_HEADER();
       const resp = await fetch(TRANSCRIBE_URL, { method: "POST", headers: { ...authHeader }, body: fd });
-      if (!resp.ok) throw new Error((await resp.json().catch(() => ({}))).error || `Erro ${resp.status}`);
+      if (!resp.ok) throw new Error((await resp.json().catch(() => ({}))).error || `Erro ${resp.status} `);
       if (!resp.body) throw new Error("Sem resposta");
 
       let content = "";

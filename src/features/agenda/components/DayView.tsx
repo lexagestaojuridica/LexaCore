@@ -3,8 +3,8 @@ import { format, isSameDay, parseISO, differenceInMinutes } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Clock, Briefcase } from "lucide-react";
 import { motion } from "framer-motion";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { Badge } from "@/shared/ui/badge";
+import { cn } from "@/shared/lib/utils";
 import { Evento } from "../types";
 import { getCategoryConfig } from "../utils/categories";
 

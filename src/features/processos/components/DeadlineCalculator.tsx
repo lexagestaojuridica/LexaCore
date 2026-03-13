@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { Timer, Calendar as CalendarIcon, ArrowRight } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { Input } from "@/shared/ui/input";
+import { Button } from "@/shared/ui/button";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { addBusinessDays } from "@/lib/utils";
-import { cn } from "@/lib/utils";
+import { addBusinessDays } from "@/shared/lib/utils";
+import { cn } from "@/shared/lib/utils";
 
 export function DeadlineCalculator() {
     const [days, setDays] = useState("15");

@@ -10,28 +10,28 @@ import {
   ArrowUpRight, ArrowDownRight, Wallet, Receipt, BarChart2, Bell, CheckCircle2, QrCode, Copy,
   RefreshCw, ExternalLink, RefreshCcw, Sparkles, Bot
 } from "lucide-react";
-import { StatCard } from "@/components/shared/StatCard";
-import { PageHeader } from "@/components/shared/PageHeader";
+import { StatCard } from "@/shared/components/StatCard";
+import { PageHeader } from "@/shared/components/PageHeader";
 import { DasDarfPanel } from "@/features/financeiro/components/DasDarfPanel";
 import { useTranslation } from "react-i18next";
-import { useDebounce } from "@/hooks/useDebounce";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 import { useFinanceiro } from "@/features/financeiro/hooks/useFinanceiro";
 import { useFinanceiroMetrics } from "@/features/financeiro/hooks/useFinanceiroMetrics";
 import { useAsaasBilling } from "@/features/financeiro/hooks/useAsaasBilling";
 import type { TipoConta, ContaBase } from "@/features/financeiro/types";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import FormField from "@/components/shared/FormField";
-import LexaLoadingOverlay from "@/components/shared/LexaLoadingOverlay";
-import { formatCurrencyInput, parseCurrencyToNumber } from "@/lib/formatters";
-import { cn } from "@/lib/utils";
+import { Button } from "@/shared/ui/button";
+import { Input } from "@/shared/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/shared/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
+import { Badge } from "@/shared/ui/badge";
+import { Card, CardContent } from "@/shared/ui/card";
+import FormField from "@/shared/components/FormField";
+import LexaLoadingOverlay from "@/shared/components/LexaLoadingOverlay";
+import { formatCurrencyInput, parseCurrencyToNumber } from "@/shared/lib/formatters";
+import { cn } from "@/shared/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-import { TableSkeleton } from "@/components/shared/SkeletonLoaders";
+import { TableSkeleton } from "@/shared/components/SkeletonLoaders";
 import BudgetPerformanceTab from "@/features/financeiro/components/BudgetPerformanceTab";
 
 const STATUS_OPTIONS = (t: (key: string) => string) => [

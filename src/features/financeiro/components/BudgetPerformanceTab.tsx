@@ -15,13 +15,13 @@ import {
     HelpCircle, TrendingUp, TrendingDown, Wallet, Activity,
     ToggleLeft, ToggleRight, RotateCcw, Edit2, Check, X,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/shared/ui/button";
+import { Badge } from "@/shared/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
+import { Input } from "@/shared/ui/input";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/shared/ui/collapsible";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/shared/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
 import ArunaAnalysisPanel from "@/features/financeiro/components/ArunaAnalysisPanel";
 import {
     EXPENSE_CATEGORIES, REVENUE_CATEGORIES,
@@ -30,8 +30,8 @@ import {
     getMonthLabel, prevPeriod, nextPeriod, monthElapsedFraction,
     fmtCurrency, fmtPct,
     type Orcamento, type CategoryRow,
-} from "@/lib/budgetUtils";
-import { formatCurrencyInput, parseCurrencyToNumber } from "@/lib/formatters";
+} from "@/shared/lib/budgetUtils";
+import { formatCurrencyInput, parseCurrencyToNumber } from "@/shared/lib/formatters";
 
 // ─── Types ─────────────────────────────────────────────────────
 

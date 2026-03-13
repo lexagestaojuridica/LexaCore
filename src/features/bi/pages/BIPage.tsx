@@ -2,11 +2,11 @@ import { useEffect, useState, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/shared/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
+import { Badge } from "@/shared/ui/badge";
+import { Button } from "@/shared/ui/button";
+import { Separator } from "@/shared/ui/separator";
 import {
   BarChart3, TrendingUp, TrendingDown, Scale, Users, DollarSign, CalendarDays,
   PieChart, Activity, Target, ArrowUpRight, ArrowDownRight, Clock,
@@ -21,9 +21,9 @@ import {
 } from "recharts";
 import { format, subMonths, startOfMonth, endOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { cn } from "@/lib/utils";
+import { cn } from "@/shared/lib/utils";
 import { motion } from "framer-motion";
-import { PageHeader } from "@/components/shared/PageHeader";
+import { PageHeader } from "@/shared/components/PageHeader";
 
 import { toast } from "sonner";
 

@@ -3,30 +3,30 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/shared/ui/card";
+import { Button } from "@/shared/ui/button";
 import {
     Plus, Search, Filter, Edit, Trash2, Building2, Mail, Download, User,
     ArrowRightLeft, ChevronRight, ChevronLeft, Check, X, Loader2, Users, Briefcase, Wallet
 } from "lucide-react";
 import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from "@/components/ui/table";
+} from "@/shared/ui/table";
 import {
     Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
-} from "@/components/ui/dialog";
-import { PageHeader } from "@/components/shared/PageHeader";
+} from "@/shared/ui/dialog";
+import { PageHeader } from "@/shared/components/PageHeader";
 import { motion, AnimatePresence } from "framer-motion";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Input } from "@/shared/ui/input";
+import { Label } from "@/shared/ui/label";
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import LexaLoadingOverlay from "@/components/shared/LexaLoadingOverlay";
+} from "@/shared/ui/select";
+import { Badge } from "@/shared/ui/badge";
+import LexaLoadingOverlay from "@/shared/components/LexaLoadingOverlay";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { useDebounce } from "@/hooks/useDebounce";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 
 type Colaborador = {
     id: string;

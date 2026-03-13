@@ -2,24 +2,24 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/shared/ui/card";
+import { Button } from "@/shared/ui/button";
 import {
     Plus, Briefcase, Users, Search, Filter, MoreVertical,
     ArrowRight, Star, Mail, Phone, ExternalLink, Calendar
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
+import { Badge } from "@/shared/ui/badge";
+import { Input } from "@/shared/ui/input";
 import {
     Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
+} from "@/shared/ui/dialog";
+import { Label } from "@/shared/ui/label";
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
+} from "@/shared/ui/select";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import LexaLoadingOverlay from "@/components/shared/LexaLoadingOverlay";
+import LexaLoadingOverlay from "@/shared/components/LexaLoadingOverlay";
 
 const STAGES = [
     { id: "novo", label: "Novos", color: "bg-blue-500" },

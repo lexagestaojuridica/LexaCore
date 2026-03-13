@@ -5,10 +5,10 @@ import {
     CheckCircle2, ChevronRight, X, Sparkles,
     ArrowRight
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { cn } from "@/lib/utils";
+import { Button } from "@/shared/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/shared/ui/card";
+import { Progress } from "@/shared/ui/progress";
+import { cn } from "@/shared/lib/utils";
 
 interface Step {
     title: string;
