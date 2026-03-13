@@ -59,26 +59,33 @@ const Navbar = () => {
             </a>
           ))}
         </div>
-        <div className="hidden md:flex items-center gap-3">
+        <div className="hidden md:flex items-center gap-4">
           <ThemeToggle />
           {!isLoaded ? (
             <div className="h-9 w-24 animate-pulse rounded-full bg-muted/20" />
           ) : !isSignedIn ? (
             <>
               <Link href="/auth">
-                <Button variant="ghost" size="sm" className="nav-link-hover relative text-muted-foreground font-medium">
+                <Button variant="ghost" size="sm" className="text-muted-foreground font-semibold hover:text-foreground">
                   Entrar
                 </Button>
               </Link>
               <Link href="/auth?sign-up=true">
-                <Button size="sm" className="btn-glow rounded-full px-6 gap-2 shadow-lg shadow-primary/15">
+                <Button size="sm" className="btn-glow rounded-full px-6 gap-2 shadow-lg shadow-primary/15 font-bold">
                   Começar Agora
                   <ArrowRight className="h-3.5 w-3.5" />
                 </Button>
               </Link>
             </>
           ) : (
-            <UserButton />
+            <div className="flex items-center gap-3">
+              <Link href="/dashboard">
+                <Button variant="outline" size="sm" className="rounded-full px-5 font-semibold">
+                  Acessar Painel
+                </Button>
+              </Link>
+              <UserButton />
+            </div>
           )}
         </div>
         <div className="md:hidden flex items-center gap-2">
@@ -128,7 +135,10 @@ const Navbar = () => {
   );
 };
 
-const HeroSection = () => (
+const HeroSection = () => {
+  const { isSignedIn } = useAuth();
+  
+  return (
   <section className="relative min-h-screen overflow-hidden pt-20">
     {/* Premium gradient background */}
     <div className="absolute inset-0">
@@ -201,8 +211,8 @@ const HeroSection = () => (
 
           <div className="mt-12 flex items-center gap-4">
             <Button size="lg" className="btn-glow rounded-full px-10 text-base shadow-xl shadow-primary/15 gap-2" asChild>
-              <Link href="/auth">
-                Começar Agora
+              <Link href={isSignedIn ? "/dashboard" : "/auth"}>
+                {isSignedIn ? "Acessar Painel" : "Começar Agora"}
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
@@ -321,6 +331,7 @@ const HeroSection = () => (
       </div>
     </div>
   </section>
-);
+  );
+};
 
 export { Navbar, HeroSection };

@@ -168,7 +168,7 @@ export default function PontoEletronicoPage() {
                                 </Button>
 
                                 <p className="text-[10px] text-center text-muted-foreground bg-muted/50 px-3 py-2 rounded-lg border border-border/50">
-                                    Ao registrar o ponto, seus dados de geolocalização e endereço IP {window.location.hostname} são validados para fins de auditoria interna.
+                                    Ao registrar o ponto, seus dados de geolocalização e endereço IP {typeof window !== "undefined" ? window.location.hostname : ""} são validados para fins de auditoria interna.
                                 </p>
                             </div>
                         </CardContent>
