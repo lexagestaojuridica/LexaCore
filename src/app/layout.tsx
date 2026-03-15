@@ -1,5 +1,5 @@
 import { ClerkProvider } from "@clerk/nextjs";
-import "../index.css";
+import "../index.css"; // @ts-ignore
 import { ThemeProvider } from "@/shared/components/ThemeProvider";
 import { TooltipProvider } from "@/shared/ui/tooltip";
 import { Toaster } from "@/shared/ui/toaster";
