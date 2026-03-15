@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { db as supabase } from "@/integrations/supabase/db";
+import { db as supabase, supabaseClient } from "@/integrations/supabase/db";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
