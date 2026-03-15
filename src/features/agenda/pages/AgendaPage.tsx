@@ -58,7 +58,7 @@ export default function AgendaPage() {
 
   const organizationId = (user as { organization_id?: string })?.organization_id as string | undefined;
 
-  const { eventos, isLoading, createMutation, updateMutation, deleteMutation } = useAgenda(organizationId, user?.id, currentMonth);
+  const { eventos, isLoading, createMutation, updateMutation, deleteMutation } = useAgenda(currentMonth);
 
 
   // ─── Handlers ───

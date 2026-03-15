@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Headset, Search, MailQuestion, Building, User, Info, CheckCircle2, Clock, MoreVertical, AlertTriangle } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { db as supabase } from "@/integrations/supabase/db";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Input } from "@/shared/ui/input";
 import { Button } from "@/shared/ui/button";
@@ -38,7 +38,7 @@ export default function AdminSupport() {
     const { data: tickets, isLoading } = useQuery({
         queryKey: ["admin-support-tickets", searchTerm],
         queryFn: async () => {
-            let query = supabase.from("support_tickets").select(`
+            let query = (supabase as any).from("support_tickets").select(`
                 *,
                 profiles:user_id(full_name, email),
                 organizations:organization_id(name)
@@ -56,7 +56,7 @@ export default function AdminSupport() {
 
     const updateTicketMutation = useMutation({
         mutationFn: async ({ id, status }: { id: string, status: string }) => {
-            const { error } = await supabase
+            const { error } = await (supabase as any)
                 .from("support_tickets")
                 .update({ status })
                 .eq("id", id);

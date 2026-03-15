@@ -10,7 +10,6 @@ import {
 import { LogOut, Settings, User, RefreshCw, Moon, Sun, ChevronDown, ArrowLeft } from "lucide-react";
 import { useTheme } from "@/shared/components/ThemeProvider";
 
-// ─── Admin page titles ────────────────────────────────────────
 const ADMIN_TITLES: Record<string, string> = {
     "/admin/hq": "Painel Executivo",
     "/admin/hq/organizations": "Escritórios & Clientes",
@@ -27,7 +26,7 @@ export default function AdminLayout({ children }: { children?: React.ReactNode }
     const { theme, setTheme } = useTheme();
 
     const displayName = user?.user_metadata?.full_name || user?.email || "Super Admin";
-    const initials = displayName
+    const initials = (displayName as string)
         .split(" ")
         .map((n: string) => n[0])
         .slice(0, 2)
@@ -41,12 +40,8 @@ export default function AdminLayout({ children }: { children?: React.ReactNode }
             <div className="flex min-h-screen w-full bg-zinc-950 text-zinc-50 overflow-hidden font-sans">
                 <AdminSidebar />
                 <div className="flex flex-1 flex-col min-w-0 transition-all duration-300 ease-in-out">
-
-                    {/* ── TopBar (Admin) ── */}
                     <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-4 border-b border-zinc-900 bg-zinc-950/80 px-4 backdrop-blur-md">
                         <SidebarTrigger className="text-zinc-400 hover:text-white" />
-
-                        {/* Back to Dashboard */}
                         <Button
                             variant="ghost"
                             size="sm"
@@ -56,9 +51,7 @@ export default function AdminLayout({ children }: { children?: React.ReactNode }
                             <ArrowLeft className="h-3.5 w-3.5" />
                             <span className="text-xs font-medium hidden sm:inline">Dashboard</span>
                         </Button>
-
                         <div className="h-5 w-px bg-zinc-800" />
-
                         <div className="flex items-center gap-2">
                             <span className="flex h-5 w-5 items-center justify-center rounded bg-indigo-500/20 text-[10px] font-bold text-indigo-400 border border-indigo-500/20">
                                 HQ
@@ -67,37 +60,18 @@ export default function AdminLayout({ children }: { children?: React.ReactNode }
                                 {pageTitle}
                             </h1>
                         </div>
-
                         <div className="ml-auto flex items-center gap-2">
-                            {/* System status */}
                             <div className="hidden sm:flex items-center gap-2 px-3 py-1 bg-emerald-500/10 rounded-full border border-emerald-500/20">
                                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                                 <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Online</span>
                             </div>
-
-                            {/* Refresh */}
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-zinc-400 hover:text-white hover:bg-zinc-800"
-                                onClick={() => window.location.reload()}
-                            >
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-white hover:bg-zinc-800" onClick={() => window.location.reload()}>
                                 <RefreshCw className="h-3.5 w-3.5" />
                             </Button>
-
-                            {/* Theme Toggle */}
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-zinc-400 hover:text-white hover:bg-zinc-800"
-                                onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-                            >
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-white hover:bg-zinc-800" onClick={() => setTheme(theme === "light" ? "dark" : "light")}>
                                 {theme === "light" ? <Moon className="h-3.5 w-3.5" /> : <Sun className="h-3.5 w-3.5" />}
                             </Button>
-
                             <div className="h-5 w-px bg-zinc-800 mx-1" />
-
-                            {/* Profile Dropdown */}
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <button className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-zinc-800 transition-colors">
@@ -112,30 +86,20 @@ export default function AdminLayout({ children }: { children?: React.ReactNode }
                                     </button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end" className="w-48 bg-zinc-900 border-zinc-800 text-zinc-200">
-                                    <DropdownMenuItem
-                                        className="text-xs gap-2 cursor-pointer hover:bg-zinc-800 focus:bg-zinc-800"
-                                        onClick={() => navigate.push("/admin/hq/settings")}
-                                    >
+                                    <DropdownMenuItem className="text-xs gap-2 cursor-pointer hover:bg-zinc-800 focus:bg-zinc-800" onClick={() => navigate.push("/admin/hq/settings")}>
                                         <Settings className="h-3.5 w-3.5" /> Configurações
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                        className="text-xs gap-2 cursor-pointer hover:bg-zinc-800 focus:bg-zinc-800"
-                                        onClick={() => navigate.push("/dashboard")}
-                                    >
+                                    <DropdownMenuItem className="text-xs gap-2 cursor-pointer hover:bg-zinc-800 focus:bg-zinc-800" onClick={() => navigate.push("/dashboard")}>
                                         <User className="h-3.5 w-3.5" /> Ir para Dashboard
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator className="bg-zinc-800" />
-                                    <DropdownMenuItem
-                                        className="text-xs gap-2 cursor-pointer text-red-400 hover:bg-red-500/10 focus:bg-red-500/10"
-                                        onClick={() => signOut()}
-                                    >
+                                    <DropdownMenuItem className="text-xs gap-2 cursor-pointer text-red-400 hover:bg-red-500/10 focus:bg-red-500/10" onClick={() => signOut()}>
                                         <LogOut className="h-3.5 w-3.5" /> Sair
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         </div>
                     </header>
-
                     <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 relative">
                         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/10 via-zinc-950 to-zinc-950 pointer-events-none" />
                         <div className="relative z-10 max-w-7xl mx-auto">

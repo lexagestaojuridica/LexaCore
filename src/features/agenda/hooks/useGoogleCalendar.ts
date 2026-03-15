@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import { db as supabase, supabaseClient } from "@/integrations/supabase/db";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+
+const db = supabase as any;
 
 interface GoogleCalendarConnection {
   id: string;
@@ -29,17 +31,16 @@ export function useGoogleCalendar() {
   const queryClient = useQueryClient();
   const [connecting, setConnecting] = useState(false);
 
-  // Check if connected
   const { data: connection, isLoading: loadingConnection } = useQuery({
     queryKey: ["google-calendar-connection", user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("google_calendar_tokens")
         .select("*")
         .eq("user_id", user!.id)
         .maybeSingle();
       if (error) throw error;
-      return data as unknown as GoogleCalendarConnection | null;
+      return data as GoogleCalendarConnection | null;
     },
     enabled: !!user?.id,
   });
@@ -48,35 +49,26 @@ export function useGoogleCalendar() {
   const lastSyncAt = connection?.last_sync_at;
   const syncEnabled = connection?.sync_enabled ?? false;
 
-  // Check URL for OAuth callback code on mount (only once)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const handleCodeFromUrl = async () => {
       const searchParams = new URLSearchParams(window.location.search);
       const code = searchParams.get("code");
-
       if (!code) return;
 
       setConnecting(true);
       try {
-        // Remove code from URL immediately for clean UI
         window.history.replaceState({}, document.title, window.location.pathname);
-
         const redirectUri = `${window.location.origin}/dashboard/agenda`;
 
         const { data: tokenData, error } = await supabase.functions.invoke<GoogleAuthResponse>("google-calendar-auth", {
-          body: {
-            action: "exchange_code",
-            code,
-            redirect_uri: redirectUri,
-          },
+          body: { action: "exchange_code", code, redirect_uri: redirectUri },
         });
 
         if (error) throw error;
         if (!tokenData || tokenData.error) throw new Error(tokenData?.error || "Unknown auth error");
 
-        // Get user profile for org_id
-        const { data: profile } = await supabase
+        const { data: profile } = await db
           .from("profiles")
           .select("organization_id")
           .eq("user_id", user!.id)
@@ -86,14 +78,13 @@ export function useGoogleCalendar() {
 
         const expiresAt = new Date(Date.now() + tokenData.expires_in * 1000).toISOString();
 
-        // Store tokens
-        const { error: insertError } = await supabase
+        const { error: insertError } = await db
           .from("google_calendar_tokens")
           .upsert({
             user_id: user!.id,
             organization_id: profile.organization_id,
             access_token: tokenData.access_token,
-            refresh_token: tokenData.refresh_token,
+            refresh_token: tokenData.refresh_token ?? null,
             token_expires_at: expiresAt,
           });
 
@@ -109,24 +100,20 @@ export function useGoogleCalendar() {
     };
 
     handleCodeFromUrl();
-    // Only run on mount + when user becomes available. Do NOT include 'connecting' — it changes inside the effect.
   }, [user?.id, queryClient]);
 
-  // Start OAuth flow
   const connect = useCallback(async () => {
     setConnecting(true);
     try {
       const redirectUri = `${window.location.origin}/dashboard/agenda`;
-
       const { data, error } = await supabase.functions.invoke<GoogleAuthResponse>("google-calendar-auth", {
         body: { action: "get_auth_url", redirect_uri: redirectUri },
       });
 
       if (error) throw error;
-      if (data.error) throw new Error(data.error);
+      if (!data || data.error) throw new Error(data?.error || "Unknown error");
 
-      // Redirect full page
-      window.location.href = data.url;
+      window.location.href = data.url!;
     } catch (err: unknown) {
       const error = err as Error;
       toast.error(error.message || "Erro ao iniciar conexão");
@@ -134,10 +121,9 @@ export function useGoogleCalendar() {
     }
   }, []);
 
-  // Disconnect
   const disconnect = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase
+      const { error } = await db
         .from("google_calendar_tokens")
         .delete()
         .eq("user_id", user!.id);
@@ -150,12 +136,9 @@ export function useGoogleCalendar() {
     onError: (err: Error) => toast.error(err.message),
   });
 
-  // Import events from Google
   const importEvents = useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke("google-calendar-sync", {
-        body: { action: "import" },
-      });
+      const { data, error } = await supabase.functions.invoke("google-calendar-sync", { body: { action: "import" } });
       if (error) throw error;
       if (data.error) throw new Error(data.error);
       return data;
@@ -168,12 +151,9 @@ export function useGoogleCalendar() {
     onError: (err: Error) => toast.error(err.message || "Erro ao importar"),
   });
 
-  // Clear events from Google
   const clearEvents = useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke("google-calendar-sync", {
-        body: { action: "clear" },
-      });
+      const { data, error } = await supabase.functions.invoke("google-calendar-sync", { body: { action: "clear" } });
       if (error) throw error;
       if (data.error) throw new Error(data.error);
       return data;
@@ -185,12 +165,9 @@ export function useGoogleCalendar() {
     onError: (err: any) => toast.error(err.message || "Erro ao limpar agenda"),
   });
 
-  // Export events to Google
   const exportEvents = useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke("google-calendar-sync", {
-        body: { action: "export" },
-      });
+      const { data, error } = await supabase.functions.invoke("google-calendar-sync", { body: { action: "export" } });
       if (error) throw error;
       if (data.error) throw new Error(data.error);
       return data;

@@ -119,7 +119,7 @@ export default function BudgetPerformanceTab({ orgId }: Props) {
     const { data: orcamentos = [] } = useQuery({
         queryKey: ["orcamentos", orgId, month, year, typeTab],
         queryFn: async () => {
-            const { data, error } = await supabase
+            const { data, error } = await (supabase as any)
                 .from("orcamentos")
                 .select("*")
                 .eq("organization_id", orgId)

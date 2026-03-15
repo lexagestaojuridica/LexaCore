@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { useUpcomingDeadlines } from "@/features/agenda/hooks/useUpcomingDeadlines";
 
 export function PrazosFataisBanner({ onSelectDate }: { onSelectDate: (d: Date) => void }) {
-    const { deadlines, isLoading } = useUpcomingDeadlines();
+    const { data: deadlines, isLoading } = useUpcomingDeadlines();
 
     // Filter only the critical ones (within next 48h)
     const prazosCriticos = (deadlines || []).filter((e) => {

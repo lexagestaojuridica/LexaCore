@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Check, ChevronsUpDown, Search, Loader2, Briefcase } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db as supabase } from "@/integrations/supabase/db";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/button";
