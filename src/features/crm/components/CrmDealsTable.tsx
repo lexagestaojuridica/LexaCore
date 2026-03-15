@@ -12,7 +12,7 @@ import FormField from "@/shared/components/FormField";
 import { Separator } from "@/shared/ui/separator";
 import { useCrm, CrmDeal } from "@/features/crm/contexts/CrmContext";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
-import { supabase } from "@/integrations/supabase/client";
+import { db as supabase } from "@/integrations/supabase/db";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";

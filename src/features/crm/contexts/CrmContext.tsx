@@ -1,5 +1,5 @@
 import { createContext, useContext, ReactNode, useCallback, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client"; // Only for Realtime now
+import { db as supabase } from "@/integrations/supabase/db"; // Only for Realtime now
 import { useAuth } from "@/contexts/AuthContext";
 import { trpc } from "@/shared/lib/trpc";
 import { toast } from "sonner";

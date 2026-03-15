@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db as supabase } from "@/integrations/supabase/db";
 import {
   Newspaper, ExternalLink, Search, Clock, ArrowLeft, RefreshCw,
   Scale, Briefcase, FileText, Shield, Building2, Users, Landmark, ShoppingBag,

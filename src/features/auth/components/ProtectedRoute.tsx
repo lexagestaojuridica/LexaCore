@@ -2,7 +2,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useRouter, usePathname } from "next/navigation";
 import { ReactNode, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db as supabase } from "@/integrations/supabase/db";
 
 const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   const { session, user, loading } = useAuth();

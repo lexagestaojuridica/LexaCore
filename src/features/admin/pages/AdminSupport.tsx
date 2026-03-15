@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Headset, Search, MailQuestion, Building, User, Info, CheckCircle2, Clock, MoreVertical, AlertTriangle } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { db as supabase } from "@/integrations/supabase/db";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Input } from "@/shared/ui/input";
 import { Button } from "@/shared/ui/button";

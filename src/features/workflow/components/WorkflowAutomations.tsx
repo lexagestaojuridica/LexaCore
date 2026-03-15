@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db as supabase } from "@/integrations/supabase/db";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Bot, Plus, Zap, ArrowRight, Activity, Trash2, Edit2, Play, ToggleLeft, ToggleRight, X } from "lucide-react";

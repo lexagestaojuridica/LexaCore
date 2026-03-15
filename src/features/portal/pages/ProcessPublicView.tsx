@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db as supabase } from "@/integrations/supabase/db";
 import { format, isAfter } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Scale, Building2, Calendar, FileText, CheckCircle2, Clock, AlertCircle, ShieldCheck, Lock, ChevronRight, Timer } from "lucide-react";

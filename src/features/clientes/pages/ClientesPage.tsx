@@ -32,7 +32,7 @@ import { useClientes } from "@/features/clientes/hooks/useClientes";
 import type { Client, ClientDocumento } from "@/features/clientes/types";
 import { emptyClientForm } from "@/features/clientes/types";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db as supabase } from "@/integrations/supabase/db";
 
 // New Components
 import { ClientFormDialog } from "@/features/clientes/components/ClientFormDialog";
