@@ -38,7 +38,7 @@ export default function AdminSupport() {
     const { data: tickets, isLoading } = useQuery({
         queryKey: ["admin-support-tickets", searchTerm],
         queryFn: async () => {
-            let query = supabase.from("support_tickets").select(`
+            let query = (supabase as any).from("support_tickets").select(`
                 *,
                 profiles:user_id(full_name, email),
                 organizations:organization_id(name)
