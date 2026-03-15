@@ -3,12 +3,25 @@
 import { createContext, useContext, ReactNode } from "react";
 import { useAuth as useClerkAuth, useUser } from "@clerk/nextjs";
 
-// @ts-ignore
-import { UserResource } from "@clerk/types";
+/**
+ * AuthUser — Shape interna do usuário no contexto da aplicação.
+ * Desacoplada de qualquer tipo externo (Clerk/Supabase).
+ */
+export interface AuthUser {
+  id: string;
+  email: string | undefined;
+  fullName: string | null;
+  imageUrl: string;
+  user_metadata: {
+    full_name: string | null;
+    avatar_url: string;
+    [key: string]: unknown;
+  };
+}
 
 interface AuthContextType {
-  session: { user: any } | null;
-  user: UserResource | null;
+  session: { user: AuthUser } | null;
+  user: AuthUser | null;
   loading: boolean;
   signOut: () => Promise<void>;
 }
@@ -30,10 +43,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await clerkSignOut();
   };
 
-  const user = clerkUser ? {
-    ...clerkUser,
+  const user: AuthUser | null = clerkUser ? {
     id: clerkUser.id,
     email: clerkUser.primaryEmailAddress?.emailAddress,
+    fullName: clerkUser.fullName,
+    imageUrl: clerkUser.imageUrl,
     user_metadata: {
       ...clerkUser.publicMetadata,
       full_name: clerkUser.fullName,
@@ -42,7 +56,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   } : null;
 
   return (
-    <AuthContext.Provider value={{ session: userId ? { user } : null, user, loading: !isLoaded || !isUserLoaded, signOut }}>
+    <AuthContext.Provider value={{ session: userId ? { user: user! } : null, user, loading: !isLoaded || !isUserLoaded, signOut }}>
       {children}
     </AuthContext.Provider>
   );

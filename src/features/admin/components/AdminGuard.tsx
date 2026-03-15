@@ -7,24 +7,13 @@ interface AdminGuardProps {
     children: ReactNode;
 }
 
-/**
- * AdminGuard — Protege o Backoffice Admin HQ.
- * 
- * Verifica se o usuário autenticado possui role "admin" na tabela profiles
- * E se o email está na lista de Master Admins autorizados.
- * 
- * 🔐 Kai: Usando verificação dupla (email + role) para máxima segurança.
- * 🗄️ Rafael: Query direta à tabela profiles com campos role e email.
- */
 export default function AdminGuard({ children }: AdminGuardProps) {
     const { user, loading: authLoading } = useAuth();
     const [isSuperAdmin, setIsSuperAdmin] = useState<boolean | null>(null);
     const router = useRouter();
 
-    // Lista de emails autorizados como Master Admin
     const MASTER_ADMIN_EMAILS = [
         "lexagestaojuridica@gmail.com",
-        // Adicionar outros emails de Master Admin conforme necessário
     ];
 
     useEffect(() => {
@@ -34,7 +23,6 @@ export default function AdminGuard({ children }: AdminGuardProps) {
                 return;
             }
 
-            // Verificação 1: Email na lista de Master Admins
             const isEmailAuthorized = MASTER_ADMIN_EMAILS.includes(user.email ?? "");
 
             if (isEmailAuthorized) {
@@ -42,9 +30,8 @@ export default function AdminGuard({ children }: AdminGuardProps) {
                 return;
             }
 
-            // Verificação 2: Confirmar role "admin" no banco de dados
             try {
-                const { data, error } = await supabase
+                const { data, error } = await (supabase as any)
                     .from("user_roles")
                     .select("role")
                     .eq("user_id", user.id)
