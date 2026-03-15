@@ -212,7 +212,6 @@ export type Database = {
           secondary_email: string | null
           secondary_phone: string | null
           updated_at: string
-          asaas_customer_id: string | null
         }
         Insert: {
           address_city?: string | null
@@ -243,7 +242,6 @@ export type Database = {
           secondary_email?: string | null
           secondary_phone?: string | null
           updated_at?: string
-          asaas_customer_id?: string | null
         }
         Update: {
           address_city?: string | null
@@ -274,7 +272,6 @@ export type Database = {
           secondary_email?: string | null
           secondary_phone?: string | null
           updated_at?: string
-          asaas_customer_id?: string | null
         }
         Relationships: [
           {
@@ -1007,77 +1004,6 @@ export type Database = {
           },
         ]
       }
-      platform_settings: {
-        Row: {
-          created_at: string | null
-          description: string | null
-          id: string
-          key: string
-          updated_at: string | null
-          value: Json
-        }
-        Insert: {
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          key: string
-          updated_at?: string | null
-          value: Json
-        }
-        Update: {
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          key?: string
-          updated_at?: string | null
-          value?: Json
-        }
-        Relationships: []
-      }
-      support_tickets: {
-        Row: {
-          created_at: string | null
-          id: string
-          message: string
-          organization_id: string
-          priority: string | null
-          status: string | null
-          subject: string
-          updated_at: string | null
-          user_id: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          message: string
-          organization_id: string
-          priority?: string | null
-          status?: string | null
-          subject: string
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          message?: string
-          organization_id?: string
-          priority?: string | null
-          status?: string | null
-          subject?: string
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "support_tickets_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
       minutas_documents: {
         Row: {
           category: string | null
@@ -1284,7 +1210,6 @@ export type Database = {
           number: string | null
           organization_id: string
           parte_contraria: string | null
-          public_token: string | null
           responsible_user_id: string | null
           status: string
           subject: string | null
@@ -1309,7 +1234,6 @@ export type Database = {
           number?: string | null
           organization_id: string
           parte_contraria?: string | null
-          public_token?: string | null
           responsible_user_id?: string | null
           status?: string
           subject?: string | null
@@ -1334,7 +1258,6 @@ export type Database = {
           number?: string | null
           organization_id?: string
           parte_contraria?: string | null
-          public_token?: string | null
           responsible_user_id?: string | null
           status?: string
           subject?: string | null
@@ -1834,457 +1757,6 @@ export type Database = {
           },
         ]
       }
-      subscription_plans: {
-        Row: {
-          id: string
-          name: string
-          slug: string
-          price_monthly: number
-          price_yearly: number
-          max_users: number
-          max_processes: number
-          features: Json
-          is_active: boolean
-          sort_order: number
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          name: string
-          slug: string
-          price_monthly?: number
-          price_yearly?: number
-          max_users?: number
-          max_processes?: number
-          features?: Json
-          is_active?: boolean
-          sort_order?: number
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          name?: string
-          slug?: string
-          price_monthly?: number
-          price_yearly?: number
-          max_users?: number
-          max_processes?: number
-          features?: Json
-          is_active?: boolean
-          sort_order?: number
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      organization_subscriptions: {
-        Row: {
-          id: string
-          organization_id: string
-          plan_id: string
-          status: string
-          started_at: string
-          expires_at: string | null
-          billing_cycle: string
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          organization_id: string
-          plan_id: string
-          status?: string
-          started_at?: string
-          expires_at?: string | null
-          billing_cycle?: string
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          organization_id?: string
-          plan_id?: string
-          status?: string
-          started_at?: string
-          expires_at?: string | null
-          billing_cycle?: string
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "organization_subscriptions_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "organization_subscriptions_plan_id_fkey"
-            columns: ["plan_id"]
-            isOneToOne: false
-            referencedRelation: "subscription_plans"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      timesheet_timer_logs: {
-        Row: {
-          id: string
-          timesheet_entry_id: string
-          action: string
-          logged_at: string
-          notes: string | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          timesheet_entry_id: string
-          action: string
-          logged_at?: string
-          notes?: string | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          timesheet_entry_id?: string
-          action?: string
-          logged_at?: string
-          notes?: string | null
-          created_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "timesheet_timer_logs_timesheet_entry_id_fkey"
-            columns: ["timesheet_entry_id"]
-            isOneToOne: false
-            referencedRelation: "timesheet_entries"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      gateway_settings: {
-        Row: {
-          id: string
-          organization_id: string
-          gateway_name: string
-          api_key: string
-          environment: string | null
-          webhook_secret: string | null
-          status: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          organization_id: string
-          gateway_name?: string
-          api_key: string
-          environment?: string | null
-          webhook_secret?: string | null
-          status?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          organization_id?: string
-          gateway_name?: string
-          api_key?: string
-          environment?: string | null
-          webhook_secret?: string | null
-          status?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "gateway_settings_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      custom_options: {
-        Row: {
-          id: string
-          organization_id: string
-          module: string
-          field_name: string
-          label: string
-          value: string
-          color: string | null
-          icon: string | null
-          sort_order: number
-          is_active: boolean
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          organization_id: string
-          module: string
-          field_name: string
-          label: string
-          value: string
-          color?: string | null
-          icon?: string | null
-          sort_order?: number
-          is_active?: boolean
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          organization_id?: string
-          module?: string
-          field_name?: string
-          label?: string
-          value?: string
-          color?: string | null
-          icon?: string | null
-          sort_order?: number
-          is_active?: boolean
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "custom_options_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      notifications: {
-        Row: {
-          id: string
-          organization_id: string
-          user_id: string | null
-          title: string
-          description: string | null
-          type: string
-          link: string | null
-          is_read: boolean
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          organization_id: string
-          user_id?: string | null
-          title: string
-          description?: string | null
-          type?: string
-          link?: string | null
-          is_read?: boolean
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          organization_id?: string
-          user_id?: string | null
-          title?: string
-          description?: string | null
-          type?: string
-          link?: string | null
-          is_read?: boolean
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "notifications_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      microsoft_calendar_tokens: {
-        Row: {
-          id: string
-          user_id: string
-          organization_id: string
-          access_token: string
-          refresh_token: string | null
-          token_expires_at: string
-          calendar_id: string | null
-          sync_enabled: boolean
-          last_sync_at: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          organization_id: string
-          access_token: string
-          refresh_token?: string | null
-          token_expires_at: string
-          calendar_id?: string | null
-          sync_enabled?: boolean
-          last_sync_at?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          organization_id?: string
-          access_token?: string
-          refresh_token?: string | null
-          token_expires_at?: string
-          calendar_id?: string | null
-          sync_enabled?: boolean
-          last_sync_at?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "microsoft_calendar_tokens_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      apple_calendar_tokens: {
-        Row: {
-          id: string
-          user_id: string
-          organization_id: string
-          apple_id: string
-          app_specific_password: string
-          caldav_url: string | null
-          sync_enabled: boolean
-          last_sync_at: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          organization_id: string
-          apple_id: string
-          app_specific_password: string
-          caldav_url?: string | null
-          sync_enabled?: boolean
-          last_sync_at?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          organization_id?: string
-          apple_id?: string
-          app_specific_password?: string
-          caldav_url?: string | null
-          sync_enabled?: boolean
-          last_sync_at?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "apple_calendar_tokens_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      client_portal_tokens: {
-        Row: {
-          id: string
-          client_id: string
-          organization_id: string
-          token: string
-          expires_at: string
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          client_id: string
-          organization_id: string
-          token: string
-          expires_at: string
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          client_id?: string
-          organization_id?: string
-          token?: string
-          expires_at?: string
-          created_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "client_portal_tokens_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      rh_recrutamento_vagas: {
-        Row: {
-          id: string
-          organization_id: string
-          title: string
-          department: string
-          description: string | null
-          requirements: string | null
-          status: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          organization_id: string
-          title: string
-          department: string
-          description?: string | null
-          requirements?: string | null
-          status?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          organization_id?: string
-          title?: string
-          department?: string
-          description?: string | null
-          requirements?: string | null
-          status?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "rh_recrutamento_vagas_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
     }
     Views: {
       [_ in never]: never
@@ -2322,116 +1794,116 @@ type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
-  | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-    DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-  : never = never,
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-    DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
-  ? R
-  : never
+    ? R
+    : never
   : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-    DefaultSchema["Views"])
-  ? (DefaultSchema["Tables"] &
-    DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
-      Row: infer R
-    }
-  ? R
-  : never
-  : never
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-  | keyof DefaultSchema["Tables"]
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-  : never = never,
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-    Insert: infer I
-  }
-  ? I
-  : never
+      Insert: infer I
+    }
+    ? I
+    : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-    Insert: infer I
-  }
-  ? I
-  : never
-  : never
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-  | keyof DefaultSchema["Tables"]
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-  : never = never,
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-    Update: infer U
-  }
-  ? U
-  : never
+      Update: infer U
+    }
+    ? U
+    : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-    Update: infer U
-  }
-  ? U
-  : never
-  : never
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-  | keyof DefaultSchema["Enums"]
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-  : never = never,
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-  ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-  : never
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-  | keyof DefaultSchema["CompositeTypes"]
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-  : never = never,
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-  ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-  : never
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
 
 export const Constants = {
   public: {
