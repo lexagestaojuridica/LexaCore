@@ -56,7 +56,7 @@ export default function AdminSupport() {
 
     const updateTicketMutation = useMutation({
         mutationFn: async ({ id, status }: { id: string, status: string }) => {
-            const { error } = await supabase
+            const { error } = await (supabase as any)
                 .from("support_tickets")
                 .update({ status })
                 .eq("id", id);

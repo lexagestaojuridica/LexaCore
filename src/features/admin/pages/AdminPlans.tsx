@@ -12,12 +12,12 @@ export default function AdminPlans() {
     const { data: plans, isLoading } = useQuery({
         queryKey: ["admin-plans"],
         queryFn: async () => {
-            const { data, error } = await supabase
+            const { data, error } = await (supabase as any)
                 .from("plans")
                 .select("*")
                 .order("price_cents", { ascending: true });
             if (error) throw error;
-            return data;
+            return data as any[];
         },
     });
 
