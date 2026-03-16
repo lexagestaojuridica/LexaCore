@@ -511,9 +511,11 @@ export default function ProcessosPage() {
         isSaving={isSaving}
         onSave={(payload) => {
           if (isEditing && selectedProcesso) {
-            updateMutation.mutate({ id: selectedProcesso.id, ...payload }, { onSuccess: closeDialog });
+            updateMutation.mutate({ id: selectedProcesso.id, ...payload });
+            closeDialog();
           } else {
-            createMutation.mutate(payload, { onSuccess: closeDialog });
+            createMutation.mutate(payload);
+            closeDialog();
           }
         }}
         onUploadDoc={(file) => selectedProcesso && uploadDocMutation.mutate({ file, processId: selectedProcesso.id })}

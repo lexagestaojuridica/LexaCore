@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db as supabase } from "@/integrations/supabase/db";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTimer } from "@/features/timesheet/hooks/useTimer";
 import { useTimesheet } from "@/features/timesheet/hooks/useTimesheet";
@@ -90,7 +90,7 @@ export default function TimesheetPage() {
 
     const {
         entries, isLoading, processos, createMutation, deleteMutation, handleBilling
-    } = useTimesheet(orgId, user?.id);
+    } = useTimesheet();
 
     // ── Timer logs query ──
     const { data: rawTimerLogs = [] } = useQuery({
@@ -521,7 +521,7 @@ export default function TimesheetPage() {
                                                                             title="Faturar Honorários"
                                                                             className="h-7 w-7 text-amber-600/60 hover:text-amber-600 hover:bg-amber-600/10 opacity-0 group-hover:opacity-100 transition-all"
                                                                             onClick={(e) => { e.stopPropagation(); handleBilling(entry, value); }}
-                                                                            disabled={bilMutation.isPending}
+                                                                            disabled={false}
                                                                         >
                                                                             <Receipt className="h-3.5 w-3.5" />
                                                                         </Button>

@@ -25,7 +25,6 @@ export default function PortalDashboard() {
     const { data: clientUser, isLoading: loadingClient } = useQuery({
         queryKey: ["portal-client-user", user?.id],
         queryFn: async () => {
-            // @ts-expect-error - Supabase type inference bug here
             const { data, error } = await supabase
                 .from("clients")
                 .select("*")
@@ -390,7 +389,7 @@ export default function PortalDashboard() {
                                     size="icon"
                                     className="absolute right-0 top-0 bottom-0 rounded-l-none"
                                     onClick={() => {
-                                        navigator.clipboard.writeText(selectedPix?.pix_code);
+                                        navigator.clipboard.writeText(selectedPix?.pix_code ?? "");
                                         toast.success("Código PIX copiado!");
                                     }}
                                 >

@@ -42,11 +42,11 @@ import { ClientDeleteDialog } from "@/features/clientes/components/ClientDeleteD
 export default function ClientesPage() {
   const { t } = useTranslation();
   const {
-    orgId, clients, totalCount, totalPages, page, setPage, search, isLoading,
+    clients, totalCount, totalPages, page, setPage, search, isLoading,
     biCounts, handleSearch, handleDocDownload,
-    createMutation, updateMutation, deleteMutation, uploadDocMutation,
-    requestSignatureMutation, syncAsaasMutation, generatePortalAuth,
-    PAGE_SIZE,
+    createMutation, updateMutation, deleteMutation, uploadDoc,
+    requestSignature, syncAsaas, generatePortalAuth,
+    PAGE_SIZE, user,
   } = useClientes();
 
   // ── Local UI State ──
@@ -73,7 +73,7 @@ export default function ClientesPage() {
   const openCreate = () => { setForm(emptyClientForm); setIsEditing(false); setDialogOpen(true); };
   const openEdit = (c: Client) => {
     const f: Record<string, string> = {};
-    Object.keys(emptyClientForm).forEach((k) => { f[k] = (c as Record<string, string | null>)[k] ?? ""; });
+    Object.keys(emptyClientForm).forEach((k) => { f[k] = (c as unknown as Record<string, string | null>)[k] ?? ""; });
     setForm(f); setSelectedClient(c); setIsEditing(true); setDialogOpen(true);
   };
 
@@ -83,9 +83,11 @@ export default function ClientesPage() {
     Object.entries(dataToSave).forEach(([k, v]) => { payload[k] = v || null; });
     payload.name = dataToSave.name;
     if (isEditing && selectedClient) {
-      updateMutation.mutate({ id: selectedClient.id, ...payload } as Parameters<typeof updateMutation.mutate>[0], { onSuccess: closeDialog });
+      updateMutation.mutate({ id: selectedClient.id, ...payload });
+      closeDialog();
     } else {
-      createMutation.mutate({ ...payload, organization_id: orgId! }, { onSuccess: closeDialog });
+      createMutation.mutate(payload);
+      closeDialog();
     }
   };
 
@@ -202,8 +204,8 @@ export default function ClientesPage() {
                                   <MessageCircle className="h-4 w-4" />
                                 </Button>
                               )}
-                              <Button variant="ghost" size="icon" title={c.asaas_customer_id ? "Sincronizado" : "Sincronizar Asaas"} className={cn("h-8 w-8", c.asaas_customer_id ? "text-emerald-500" : "text-muted-foreground hover:text-primary")} onClick={() => syncAsaasMutation.mutate(c)} disabled={syncAsaasMutation.isPending}>
-                                {c.asaas_customer_id ? <CheckCircle2 className="h-4 w-4" /> : <RefreshCw className={cn("h-4 w-4", syncAsaasMutation.isPending && "animate-spin")} />}
+                              <Button variant="ghost" size="icon" title={c.asaas_customer_id ? "Sincronizado" : "Sincronizar Asaas"} className={cn("h-8 w-8", c.asaas_customer_id ? "text-emerald-500" : "text-muted-foreground hover:text-primary")} onClick={() => syncAsaas(c)}>
+                                {c.asaas_customer_id ? <CheckCircle2 className="h-4 w-4" /> : <RefreshCw className="h-4 w-4" />}
                               </Button>
                               <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => { setSelectedClient(c); setViewDialogOpen(true); }}><Eye className="h-4 w-4" /></Button>
                               <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => openEdit(c)}><Edit2 className="h-4 w-4" /></Button>
@@ -243,8 +245,8 @@ export default function ClientesPage() {
         isEditing={isEditing}
         isSaving={isSaving}
         clientId={selectedClient?.id}
-        onUploadDoc={(file) => uploadDocMutation.mutate({ file, clientId: selectedClient!.id })}
-        isUploading={uploadDocMutation.isPending}
+        onUploadDoc={(file) => selectedClient && uploadDoc(file, selectedClient.id)}
+        isUploading={false}
       />
 
       <ClientViewDialog
@@ -255,12 +257,12 @@ export default function ClientesPage() {
         onEdit={openEdit}
         onGeneratePortal={(c) => generatePortalAuth.mutate(c)}
         isGeneratingPortal={generatePortalAuth.isPending}
-        onAsaasSync={(c) => syncAsaasMutation.mutate(c)}
-        isAsaasSyncing={syncAsaasMutation.isPending}
+        onAsaasSync={(c) => syncAsaas(c)}
+        isAsaasSyncing={false}
         onDocDownload={handleDocDownload}
-        onSignatureRequest={(doc, c) => requestSignatureMutation.mutate({ doc, client: c })}
-        isSignatureRequesting={requestSignatureMutation.isPending}
-        onUploadDoc={(file) => uploadDocMutation.mutate({ file, clientId: selectedClient!.id })}
+        onSignatureRequest={(doc, c) => requestSignature(doc.id, c.id, { name: c.name, email: c.email })}
+        isSignatureRequesting={false}
+        onUploadDoc={(file) => selectedClient && uploadDoc(file, selectedClient.id)}
       />
 
       <ClientDeleteDialog

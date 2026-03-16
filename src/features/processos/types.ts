@@ -11,6 +11,7 @@ export type Processo = Tables<"processos_juridicos"> & {
     } | null;
     estimated_value_display?: string;
     segredo_de_justica?: boolean;
+    public_token?: string | null;
     public_link_password?: string | null;
     public_link_expires_at?: string | null;
 };

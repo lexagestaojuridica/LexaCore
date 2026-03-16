@@ -88,14 +88,12 @@ export default function FinanceiroPage() {
   const orgId = profile?.organization_id;
 
   const { contas, isLoading, createMutation, updateMutation, deleteMutation, markAsPaid } = useFinanceiro(
-    orgId,
     (tab === "dasdarf" || tab === "orcamento") ? "receber" : tab
   );
 
-  const { totalReceber, totalPagar, totalRecebido, saldo, healthPercent } = useFinanceiroMetrics(orgId);
+  const { totalReceber, totalPagar, totalRecebido, saldo, healthPercent } = useFinanceiroMetrics();
 
   const { generatePixMutation, reconcileAsaasMutation, reconcileAllAsaas } = useAsaasBilling(
-    orgId,
     (tab === "dasdarf" || tab === "orcamento") ? "receber" : tab,
     setPixModalOpen,
     setSelectedPix
@@ -145,12 +143,9 @@ export default function FinanceiroPage() {
     if (editingId) {
       updateMutation.mutate({ id: editingId, ...payload });
     } else {
-      createMutation.mutate(payload, {
-        onSuccess: () => {
-          closeDialog();
-        }
-      });
+      createMutation.mutate(payload);
     }
+    closeDialog();
   };
 
   const filtered = contas.filter((c: ContaBase) => {
@@ -421,7 +416,7 @@ export default function FinanceiroPage() {
                                             size="icon"
                                             title="Ver Fatura no Asaas"
                                             className="h-8 w-8 text-blue-600 hover:bg-blue-500/10"
-                                            onClick={() => window.open(c.asaas_billing_url, "_blank")}
+                                            onClick={() => window.open(c.asaas_billing_url ?? undefined, "_blank")}
                                           >
                                             <ExternalLink className="h-4 w-4" />
                                           </Button>
@@ -432,7 +427,7 @@ export default function FinanceiroPage() {
                                             size="icon"
                                             title="Verificar Pagamento"
                                             className="h-8 w-8 text-amber-600 hover:bg-amber-500/10"
-                                            onClick={() => reconcileAsaasMutation.mutate(c)}
+                                            onClick={() => reconcileAsaasMutation.mutate({ id: c.id, type: tab as TipoConta })}
                                             disabled={reconcileAsaasMutation.isPending}
                                           >
                                             <RefreshCw className={cn("h-4 w-4", reconcileAsaasMutation.isPending && "animate-spin")} />
@@ -571,7 +566,7 @@ export default function FinanceiroPage() {
                   size="icon"
                   className="absolute right-0 top-0 bottom-0 rounded-l-none"
                   onClick={() => {
-                    navigator.clipboard.writeText(selectedPix?.pix_code);
+                    navigator.clipboard.writeText(selectedPix?.pix_code ?? "");
                     toast.success("OK!");
                   }}
                 >

@@ -60,7 +60,7 @@ export default function LexaLoadingOverlay({ visible, message = "Processando..."
                 className="absolute inset-4 rounded-full bg-gradient-to-br from-primary/10 to-accent/10"
               />
               <motion.img
-                src={lexaIcon}
+                src={typeof lexaIcon === 'string' ? lexaIcon : lexaIcon.src}
                 alt="LEXA"
                 className="relative z-10 h-14 w-14 object-contain drop-shadow-lg"
                 animate={{ scale: [1, 1.08, 1] }}

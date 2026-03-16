@@ -265,13 +265,13 @@ export default function IAPage() {
     setMsgs((p) => p.map((m) => m.id === aId ? { ...m, content: "⏳ Estou redigindo o documento para você. Por favor, aguarde alguns segundos..." } : m));
     try {
       const authHeader = await AUTH_HEADER();
-      const r = await fetch(DOC_GEN_URL, { method: "POST", headers: { "Content-Type": "application/json", ...authHeader }, body: JSON.stringify({ doc_type: docType, instructions: docInstr, organization_id: session?.publicMetadata?.organizationId, user_id: userId }) });
+      const r = await fetch(DOC_GEN_URL, { method: "POST", headers: { "Content-Type": "application/json", ...authHeader }, body: JSON.stringify({ doc_type: docType, instructions: docInstr, organization_id: (session as any)?.publicMetadata?.organizationId, user_id: userId }) });
       if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || `Erro ${r.status} `);
       const res = await r.json();
       const c = `✅ ** ${res.document.file_name}** gerado com sucesso e salvo no seu módulo de ** Documentos(GED) **.\n\n### Preview Rápido: \n${res.content_preview?.slice(0, 400)}...`;
       setMsgs((p) => p.map((m) => m.id === aId ? { ...m, content: c } : m));
       saveAssistant(c);
-      utils.documento.list.invalidate(); // Correct invalidation name
+      // Documents invalidation handled by trpc
       toast({ title: "Minuta jurídica redigida com sucesso!" });
     } catch (e: any) {
       setMsgs((p) => p.map((m) => m.id === aId ? { ...m, content: `❌ Tive um problema ao gerar o documento: ${e.message} ` } : m));
@@ -280,7 +280,7 @@ export default function IAPage() {
 
   /* ─── Jurisprudence ─────────────────────────────── */
   const handleJuris = async () => {
-    const orgId = session?.publicMetadata?.organizationId as string;
+    const orgId = (session as any)?.publicMetadata?.organizationId as string;
     if (!jurisQ.trim() || streaming || !orgId) return;
     setStreaming(true); setTool(null);
     const area = jurisArea !== "all" ? jurisArea : "";
@@ -298,7 +298,7 @@ export default function IAPage() {
 
   /* ─── Analyze Doc ───────────────────────────────── */
   const handleAnalyze = async () => {
-    const orgId = session?.publicMetadata?.organizationId as string;
+    const orgId = (session as any)?.publicMetadata?.organizationId as string;
     if (!analyzeDocId || !orgId || streaming) return;
     setStreaming(true); setTool(null);
     const dn = docsData?.find((d) => d.id === analyzeDocId)?.file_name || "Documento";
@@ -316,7 +316,7 @@ export default function IAPage() {
 
   /* ─── Transcribe Audio ──────────────────────────── */
   const handleTranscribe = async () => {
-    const orgId = session?.publicMetadata?.organizationId as string;
+    const orgId = (session as any)?.publicMetadata?.organizationId as string;
     if (!audioFile || !orgId || !userId || streaming) return;
     setStreaming(true); setTool(null);
     const typeLabel = AUDIO_TYPES.find(t => t.value === audioType)?.label || audioType;
@@ -553,7 +553,7 @@ export default function IAPage() {
 
       {/* ─── Messages Interface ─────────────────────────────────── */}
       <div className="flex-1 overflow-y-auto px-4 md:px-12 py-8 relative z-10 scroll-smooth">
-        {msgs.length === 0 && !isLoading ? (
+        {msgs.length === 0 && !busy ? (
           <div className="mx-auto max-w-3xl space-y-8 pt-10">
             {/* Greeting */}
             <div className="flex items-start gap-5">

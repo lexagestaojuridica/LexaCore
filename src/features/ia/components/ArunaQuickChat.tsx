@@ -94,7 +94,7 @@ export default function ArunaQuickChat() {
 
   const handleSend = async () => {
     const t = input.trim();
-    const orgId = session?.publicMetadata?.organizationId as string;
+    const orgId = (session as any)?.publicMetadata?.organizationId as string;
     if (!t || streaming || !orgId) return;
 
     const uId = crypto.randomUUID();

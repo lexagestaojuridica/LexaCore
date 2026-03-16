@@ -120,14 +120,14 @@ export function useConfiguracoes() {
             // TODO: Add whatsapp_instance_id, jusbrasil_token, escavador_token to organizations type
             const o = org as Record<string, unknown>;
             setOrgForm({
-                whatsapp_instance_id: o.whatsapp_instance_id || "",
-                whatsapp_token: o.whatsapp_token || "",
-                whatsapp_enabled: o.whatsapp_enabled || false,
+                whatsapp_instance_id: (o.whatsapp_instance_id as string) || "",
+                whatsapp_token: (o.whatsapp_token as string) || "",
+                whatsapp_enabled: (o.whatsapp_enabled as boolean) || false,
                 asaas_api_key: "",
                 asaas_environment: "sandbox",
                 asaas_enabled: false,
-                jusbrasil_token: o.jusbrasil_token || "",
-                escavador_token: o.escavador_token || "",
+                jusbrasil_token: (o.jusbrasil_token as string) || "",
+                escavador_token: (o.escavador_token as string) || "",
             });
             setFormInitialized(true);
         }
