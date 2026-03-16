@@ -245,8 +245,8 @@ export default function ClientesPage() {
         isEditing={isEditing}
         isSaving={isSaving}
         clientId={selectedClient?.id}
-        onUploadDoc={(file) => uploadDocMutation.mutate({ file, clientId: selectedClient!.id })}
-        isUploading={uploadDocMutation.isPending}
+        onUploadDoc={(file) => selectedClient && uploadDoc(file, selectedClient.id)}
+        isUploading={false}
       />
 
       <ClientViewDialog
