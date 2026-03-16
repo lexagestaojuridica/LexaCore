@@ -298,7 +298,7 @@ export default function IAPage() {
 
   /* ─── Analyze Doc ───────────────────────────────── */
   const handleAnalyze = async () => {
-    const orgId = session?.publicMetadata?.organizationId as string;
+    const orgId = (session as any)?.publicMetadata?.organizationId as string;
     if (!analyzeDocId || !orgId || streaming) return;
     setStreaming(true); setTool(null);
     const dn = docsData?.find((d) => d.id === analyzeDocId)?.file_name || "Documento";
