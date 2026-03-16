@@ -42,11 +42,11 @@ import { ClientDeleteDialog } from "@/features/clientes/components/ClientDeleteD
 export default function ClientesPage() {
   const { t } = useTranslation();
   const {
-    orgId, clients, totalCount, totalPages, page, setPage, search, isLoading,
+    clients, totalCount, totalPages, page, setPage, search, isLoading,
     biCounts, handleSearch, handleDocDownload,
-    createMutation, updateMutation, deleteMutation, uploadDocMutation,
-    requestSignatureMutation, syncAsaasMutation, generatePortalAuth,
-    PAGE_SIZE,
+    createMutation, updateMutation, deleteMutation, uploadDoc,
+    requestSignature, syncAsaas, generatePortalAuth,
+    PAGE_SIZE, user,
   } = useClientes();
 
   // ── Local UI State ──
