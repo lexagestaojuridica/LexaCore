@@ -280,7 +280,7 @@ export default function IAPage() {
 
   /* ─── Jurisprudence ─────────────────────────────── */
   const handleJuris = async () => {
-    const orgId = session?.publicMetadata?.organizationId as string;
+    const orgId = (session as any)?.publicMetadata?.organizationId as string;
     if (!jurisQ.trim() || streaming || !orgId) return;
     setStreaming(true); setTool(null);
     const area = jurisArea !== "all" ? jurisArea : "";
