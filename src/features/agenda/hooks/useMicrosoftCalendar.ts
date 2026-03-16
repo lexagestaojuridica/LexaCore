@@ -61,7 +61,7 @@ export function useMicrosoftCalendar() {
                 window.history.replaceState({}, document.title, window.location.pathname);
                 const redirectUri = `${window.location.origin}/dashboard/agenda`;
 
-                const { data: tokenData, error } = await supabase.functions.invoke<MicrosoftAuthResponse>("microsoft-calendar-auth", {
+                const { data: tokenData, error } = await supabase.functions.invoke("microsoft-calendar-auth", {
                     body: { action: "exchange_code", code, redirect_uri: redirectUri },
                 });
 
