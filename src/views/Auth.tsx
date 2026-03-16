@@ -11,13 +11,16 @@ const Auth = () => {
 
   const clerkAppearance = {
     elements: {
-      rootBox: "w-full",
-      card: "shadow-none border-0 bg-transparent p-0 w-full",
+      rootBox: "w-full shadow-none",
+      card: "shadow-none border-0 bg-transparent w-full",
+      main: "bg-transparent shadow-none",
       header: "hidden",
-      socialButtonsBlockButton: "rounded-2xl border-2 border-border/50 bg-muted/30 hover:bg-muted/50 text-foreground transition-all h-12 text-sm font-bold",
-      formButtonPrimary: "bg-primary text-primary-foreground hover:opacity-90 rounded-2xl h-14 text-lg font-bold transition-all shadow-xl shadow-primary/20 btn-glow",
-      formFieldInput: "rounded-2xl border-2 border-border/50 bg-muted/20 focus:bg-background focus:ring-2 focus:ring-primary/10 transition-all h-12 px-4",
-      formFieldLabel: "text-xs font-black text-foreground/70 mb-2 uppercase tracking-widest ml-1",
+      footer: "bg-transparent shadow-none",
+      socialButtonsBlockButton: "rounded-2xl border-2 border-border/50 bg-muted/30 hover:bg-muted/50 text-foreground transition-all font-bold",
+      socialButtonsBlockButtonIcon: "opacity-80",
+      formButtonPrimary: "bg-primary text-primary-foreground hover:opacity-90 rounded-2xl font-bold transition-all shadow-xl shadow-primary/20 btn-glow",
+      formFieldInput: "rounded-xl border-2 border-border/50 bg-muted/20 focus:bg-background focus:ring-2 focus:ring-primary/10 transition-all px-4",
+      formFieldLabel: "text-xs font-black text-foreground/70 mb-1.5 uppercase tracking-widest ml-1",
       footerAction: "hidden",
       dividerLine: "bg-border/50 h-[1px]",
       dividerText: "text-muted-foreground text-[10px] uppercase tracking-[0.2em] font-black",
@@ -25,6 +28,7 @@ const Auth = () => {
       identityPreviewText: "text-foreground font-bold",
       formHeaderTitle: "hidden",
       formHeaderSubtitle: "hidden",
+      otpCodeFieldInput: "bg-muted/20 border-2 border-border/50 focus:border-primary",
     },
     variables: {
       colorPrimary: "#1a1f2c",
@@ -97,7 +101,7 @@ const Auth = () => {
 
       {/* Right Column - Interaction */}
       <div className="flex-1 flex flex-col items-center justify-center relative p-6 md:p-12 z-10">
-        <div className="w-full max-w-[460px]">
+        <div className="w-full max-w-[480px]">
           <div className="text-center mb-8">
             <motion.div
               initial={{ opacity: 0, y: -10 }}
@@ -111,8 +115,8 @@ const Auth = () => {
               <button
                 onClick={() => setMode("login")}
                 className={`px-10 py-2.5 rounded-xl text-xs font-black tracking-widest transition-all duration-300 ${mode === "login"
-                    ? "bg-background text-primary shadow-xl scale-100 border border-border/20"
-                    : "text-muted-foreground hover:text-foreground scale-95"
+                  ? "bg-background text-primary shadow-xl scale-100 border border-border/20"
+                  : "text-muted-foreground hover:text-foreground scale-95"
                   }`}
               >
                 LOGIN
@@ -120,8 +124,8 @@ const Auth = () => {
               <button
                 onClick={() => setMode("signup")}
                 className={`px-10 py-2.5 rounded-xl text-xs font-black tracking-widest transition-all duration-300 ${mode === "signup"
-                    ? "bg-background text-primary shadow-xl scale-100 border border-border/20"
-                    : "text-muted-foreground hover:text-foreground scale-95"
+                  ? "bg-background text-primary shadow-xl scale-100 border border-border/20"
+                  : "text-muted-foreground hover:text-foreground scale-95"
                   }`}
               >
                 CADASTRO
@@ -132,14 +136,14 @@ const Auth = () => {
               {mode === "login" ? "Bem-vindo de volta" : "Comece sua jornada"}
             </h2>
             <p className="text-muted-foreground mt-3 text-sm">
-              {mode === "login" 
-                ? "Entre com suas credenciais para acessar o Lexa." 
+              {mode === "login"
+                ? "Entre com suas credenciais para acessar o Lexa."
                 : "Preencha os dados abaixo para criar sua conta profissional."}
             </p>
           </div>
 
-          <div className="glass-card p-1 rounded-[2.5rem] bg-gradient-to-b from-primary/10 to-transparent shadow-2xl">
-            <div className="bg-background/80 backdrop-blur-xl rounded-[2.3rem] p-6 md:p-8 border border-white/20 min-h-[400px]">
+          <div className="p-1 rounded-[2.5rem] bg-gradient-to-b from-primary/5 to-transparent shadow-xl border border-white/5">
+            <div className="bg-card/98 backdrop-blur-2xl rounded-[2.3rem] p-4 border border-white/10 overflow-hidden">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={mode}
@@ -149,14 +153,16 @@ const Auth = () => {
                   transition={{ duration: 0.3 }}
                 >
                   {mode === "login" ? (
-                    <SignIn 
-                      routing="hash" 
+                    <SignIn
+                      routing="path"
+                      path="/auth"
                       appearance={clerkAppearance}
                       fallbackRedirectUrl="/dashboard"
                     />
                   ) : (
-                    <SignUp 
-                      routing="hash" 
+                    <SignUp
+                      routing="path"
+                      path="/auth"
                       appearance={clerkAppearance}
                       fallbackRedirectUrl="/dashboard"
                     />
