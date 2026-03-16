@@ -47,6 +47,7 @@ export default function PortalSignature() {
 
     const signMutation = useMutation({
         mutationFn: async () => {
+            if (!signature) throw new Error("Assinatura não encontrada.");
             if (signature.signer_document && signerDoc !== signature.signer_document) {
                 throw new Error("Documento informado não confere com o registrado pelo emissor.");
             }
