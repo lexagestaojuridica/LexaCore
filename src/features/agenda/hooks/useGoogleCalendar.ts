@@ -106,7 +106,7 @@ export function useGoogleCalendar() {
     setConnecting(true);
     try {
       const redirectUri = `${window.location.origin}/dashboard/agenda`;
-      const { data, error } = await supabase.functions.invoke<GoogleAuthResponse>("google-calendar-auth", {
+      const { data, error } = await supabase.functions.invoke("google-calendar-auth", {
         body: { action: "get_auth_url", redirect_uri: redirectUri },
       });
 

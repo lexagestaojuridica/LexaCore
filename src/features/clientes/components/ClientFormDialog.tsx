@@ -10,7 +10,7 @@ import FormField from "@/shared/components/FormField";
 import { formatDocument, formatPhone, formatCEP, fetchAddressByCEP } from "@/shared/lib/formatters";
 import { GENDER_OPTIONS, MARITAL_OPTIONS, STATE_OPTIONS } from "../types";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db as supabase } from "@/integrations/supabase/db";
 import { Download, File } from "lucide-react";
 
 interface ClientFormDialogProps {
