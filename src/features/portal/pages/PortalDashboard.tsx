@@ -25,7 +25,6 @@ export default function PortalDashboard() {
     const { data: clientUser, isLoading: loadingClient } = useQuery({
         queryKey: ["portal-client-user", user?.id],
         queryFn: async () => {
-            // @ts-expect-error - Supabase type inference bug here
             const { data, error } = await supabase
                 .from("clients")
                 .select("*")
