@@ -43,12 +43,12 @@ export default function PontoEletronicoPage() {
         queryKey: ["rh-employees-for-ponto", orgId],
         queryFn: async () => {
             const { data, error } = await supabase
-                .from("rh_colaboradores")
+                .from("employees")
                 .select("id, full_name, status")
                 .eq("organization_id", orgId!);
             if (error) throw error;
             // Permitir tanto 'active' quanto 'ativo' (BR)
-            return data.filter(emp =>
+            return data.filter((emp: any) =>
                 emp.status?.toLowerCase() === 'active' ||
                 emp.status?.toLowerCase() === 'ativo'
             );
@@ -57,13 +57,13 @@ export default function PontoEletronicoPage() {
     });
 
     const { data: todayRecords, isLoading: isLoadingRecords } = useQuery({
-        queryKey: ["rh-ponto-records-today", selectedEmployeeId],
+        queryKey: ["ponto-registros", selectedEmployeeId],
         queryFn: async () => {
             const startOfDay = new Date();
             startOfDay.setHours(0, 0, 0, 0);
 
             const { data, error } = await supabase
-                .from("rh_ponto_registros")
+                .from("ponto_registros")
                 .select("*")
                 .eq("employee_id", selectedEmployeeId)
                 .gte("event_time", startOfDay.toISOString())
@@ -74,11 +74,12 @@ export default function PontoEletronicoPage() {
         enabled: !!selectedEmployeeId,
     });
 
+
     const mutation = useMutation({
         mutationFn: async (eventType: string) => {
             if (!selectedEmployeeId) throw new Error("Selecione um colaborador");
 
-            const { error } = await supabase.from("rh_ponto_registros").insert([{
+            const { error } = await supabase.from("ponto_registros").insert([{
                 employee_id: selectedEmployeeId,
                 organization_id: orgId!,
                 event_type: eventType,
@@ -88,9 +89,10 @@ export default function PontoEletronicoPage() {
             if (error) throw error;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["rh-ponto-records-today"] });
+            queryClient.invalidateQueries({ queryKey: ["ponto-registros"] });
             toast.success("Ponto registrado com sucesso!");
         },
+
         onError: (err: any) => toast.error(`Erro: ${err.message}`),
     });
 
@@ -144,7 +146,7 @@ export default function PontoEletronicoPage() {
                                             <SelectValue placeholder="Selecione seu nome..." />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {employees?.map(emp => (
+                                            {employees?.map((emp: any) => (
                                                 <SelectItem key={emp.id} value={emp.id}>{emp.full_name}</SelectItem>
                                             ))}
                                         </SelectContent>
@@ -244,7 +246,7 @@ export default function PontoEletronicoPage() {
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {todayRecords?.map((record) => (
+                                        {todayRecords?.map((record: any) => (
                                             <TableRow key={record.id} className="group">
                                                 <TableCell>
                                                     <span className="text-xs font-bold uppercase flex items-center gap-2">

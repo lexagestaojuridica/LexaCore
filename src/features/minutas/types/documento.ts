@@ -1,5 +1,5 @@
 // ─── Documentos Types ──────────────────────────────────────
-import { FileText, FileSpreadsheet, Image, FileArchive, File } from "lucide-react";
+import { FileText, FileSpreadsheet, Image as ImageIcon, FileArchive, File } from "lucide-react";
 
 export interface Documento {
     id: string;
@@ -18,7 +18,7 @@ export interface Documento {
 const FILE_ICONS: Record<string, any> = {
     pdf: FileText, doc: FileText, docx: FileText, txt: FileText,
     xls: FileSpreadsheet, xlsx: FileSpreadsheet, csv: FileSpreadsheet,
-    jpg: Image, jpeg: Image, png: Image, webp: Image, svg: Image,
+    jpg: ImageIcon, jpeg: ImageIcon, png: ImageIcon, webp: ImageIcon, svg: ImageIcon,
     zip: FileArchive, rar: FileArchive, "7z": FileArchive,
 };
 

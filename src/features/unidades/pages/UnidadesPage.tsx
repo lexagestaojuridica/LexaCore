@@ -67,10 +67,10 @@ export default function UnidadesPage() {
     const isSuperAdmin = true; // Admin check via RLS
 
     const { data: units = [], isLoading } = useQuery({
-        queryKey: ["units", orgId],
+        queryKey: ["unidades", orgId],
         queryFn: async () => {
             const { data, error } = await supabase
-                .from("units")
+                .from("unidades")
                 .select("*")
                 .eq("organization_id", orgId!)
                 .order("is_headquarters", { ascending: false })
@@ -83,10 +83,10 @@ export default function UnidadesPage() {
 
     const createMutation = useMutation({
         mutationFn: async (payload: Omit<Unit, "id" | "created_at" | "updated_at"> & { organization_id: string }) => {
-            const { error } = await supabase.from("units").insert(payload as Database["public"]["Tables"]["units"]["Insert"]);
+            const { error } = await supabase.from("unidades").insert(payload as Database["public"]["Tables"]["unidades"]["Insert"]);
             if (error) throw error;
         },
-        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["units"] }); toast.success("Unidade criada!"); closeDialog(); },
+        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["unidades"] }); toast.success("Unidade criada!"); closeDialog(); },
         onError: (e: Error) => toast.error(`Erro ao criar unidade: ${e.message}`),
     });
 
@@ -94,19 +94,19 @@ export default function UnidadesPage() {
         mutationFn: async ({ id, ...payload }: { id: string } & Partial<Unit>) => {
             const { organization_id, created_at, ...cleanPayload } = payload as Partial<Unit> & { organization_id?: string; created_at?: string };
 
-            const { error } = await supabase.from("units").update(cleanPayload as Database["public"]["Tables"]["units"]["Update"]).eq("id", id).eq("organization_id", orgId!);
+            const { error } = await supabase.from("unidades").update(cleanPayload as Database["public"]["Tables"]["unidades"]["Update"]).eq("id", id).eq("organization_id", orgId!);
             if (error) throw error;
         },
-        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["units"] }); toast.success("Unidade atualizada!"); closeDialog(); },
+        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["unidades"] }); toast.success("Unidade atualizada!"); closeDialog(); },
         onError: (e: Error) => toast.error(`Erro ao atualizar unidade: ${e.message}`),
     });
 
     const deleteMutation = useMutation({
         mutationFn: async (id: string) => {
-            const { error } = await supabase.from("units").delete().eq("id", id);
+            const { error } = await supabase.from("unidades").delete().eq("id", id);
             if (error) throw error;
         },
-        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["units"] }); toast.success("Unidade excluída permanentemente!"); setDeleteDialogOpen(false); setEditingUnit(null); },
+        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["unidades"] }); toast.success("Unidade excluída permanentemente!"); setDeleteDialogOpen(false); setEditingUnit(null); },
         onError: (e: any) => toast.error(`Erro ao excluir unidade: ${e.message}`),
     });
 

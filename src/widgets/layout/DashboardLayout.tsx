@@ -29,10 +29,10 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
 
           {/* ── Page Content ── */}
           <main className={cn(
-            "flex-1 overflow-x-hidden transition-all duration-500",
-            isOverview ? "overflow-hidden p-4 md:p-6 lg:p-8" : "overflow-y-auto p-6 md:p-8 lg:p-10"
+            "flex-1 relative overflow-x-hidden overflow-y-auto transition-all duration-500",
+            isOverview ? "bg-transparent p-4 md:p-6 lg:p-8" : "p-6 md:p-8 lg:p-10"
           )}>
-            <div className="max-w-7xl mx-auto h-full">
+            <div className="max-w-7xl mx-auto min-h-full">
               {children}
             </div>
           </main>

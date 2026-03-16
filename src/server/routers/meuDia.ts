@@ -33,7 +33,7 @@ export const meuDiaRouter = createTRPCRouter({
                 .eq("status", "ativo" as any),
 
             // Stats Count Clientes
-            db.from("clients")
+            db.from("clientes")
                 .select("*", { count: "exact", head: true })
                 .eq("organization_id", tenantId as any),
 
@@ -81,7 +81,7 @@ export const meuDiaRouter = createTRPCRouter({
                     .eq("organization_id", tenantId as any)
                     .ilike("title", searchTerm)
                     .limit(5) as any,
-                db.from("clients")
+                db.from("clientes")
                     .select("id, name")
                     .eq("organization_id", tenantId as any)
                     .ilike("name", searchTerm)

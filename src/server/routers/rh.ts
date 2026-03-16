@@ -6,7 +6,7 @@ export const rhRouter = createTRPCRouter({
     listColaboradores: tenantProcedure.query(async ({ ctx }) => {
         const { tenantId, db } = ctx;
         const { data, error } = await db
-            .from("rh_colaboradores")
+            .from("employees")
             .select("*")
             .eq("organization_id", tenantId as any)
             .eq("status", "active" as any) as any;

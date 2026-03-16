@@ -19,7 +19,7 @@ export const timesheetRouter = createTRPCRouter({
         const { tenantId, db } = ctx;
         const { data, error } = await db
             .from("processos_juridicos")
-            .select("id, title, number, client_id, clients(id, name, asaas_customer_id)")
+            .select("id, title, number, client_id, clientes(id, name, asaas_customer_id)")
             .eq("organization_id", tenantId as any)
             .eq("status", "ativo" as any) as any;
 

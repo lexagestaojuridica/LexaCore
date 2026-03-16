@@ -128,10 +128,10 @@ export default function ProcessosPage() {
 
   const totalPages = viewMode === "table" ? Math.max(1, Math.ceil(totalCount / PAGE_SIZE)) : 1;
 
-  const { data: clients = [] } = useQuery({
-    queryKey: ["clients-list", orgId],
+  const { data: clientes = [] } = useQuery({
+    queryKey: ["clientes-select", orgId],
     queryFn: async () => {
-      const { data } = await supabase.from("clients").select("id, name").eq("organization_id", orgId!);
+      const { data } = await supabase.from("clientes").select("id, name").eq("organization_id", orgId!);
       return data ?? [];
     },
     enabled: !!orgId,
@@ -233,8 +233,7 @@ export default function ProcessosPage() {
 
       // UX AUTOMATION: Prompt for invoicing when case is closed
       if (rest.status === "encerrado" && selectedProcesso.status !== "encerrado" && rest.estimated_value) {
-        // @ts-ignore
-        const isAsaasConfigured = !!selectedProcesso.clients?.asaas_customer_id;
+        const isAsaasConfigured = !!selectedProcesso.clientes?.asaas_customer_id;
         const msg = isAsaasConfigured
           ? `Processo encerrado! Deseja faturar Honorários no valor de ${rest.estimated_value_display} com cobrança no Asaas?`
           : `Processo encerrado! Deseja registrar os Honorários (${rest.estimated_value_display}) no Financeiro local?`;
@@ -244,8 +243,7 @@ export default function ProcessosPage() {
             processoTitle: rest.title || selectedProcesso.title,
             value: Number(rest.estimated_value),
             clientId: selectedProcesso.client_id,
-            // @ts-ignore
-            asaasCustomerId: selectedProcesso.clients?.asaas_customer_id || null
+            asaasCustomerId: selectedProcesso.clientes?.asaas_customer_id || null
           });
         }
       }
@@ -444,13 +442,13 @@ export default function ProcessosPage() {
                               <TableCell className="text-muted-foreground">{format(new Date(p.created_at), "dd/MM/yyyy", { locale: ptBR })}</TableCell>
                               <TableCell>
                                 <div className="flex items-center justify-end gap-1">
-                                  {p.clients?.phone && (
+                                  {p.clientes?.phone && (
                                     <Button
                                       variant="ghost"
                                       size="icon"
                                       title="WhatsApp do Cliente"
                                       className="h-8 w-8 text-emerald-500/80 hover:bg-emerald-500/10 hover:text-emerald-600"
-                                      onClick={() => window.open(`https://wa.me/55${p.clients?.phone?.replace(/\\D/g, '')}`, '_blank')}
+                                      onClick={() => window.open(`https://wa.me/55${p.clientes?.phone?.replace(/\D/g, '')}`, '_blank')}
                                     >
                                       <MessageCircle className="h-4 w-4" />
                                     </Button>
@@ -506,7 +504,7 @@ export default function ProcessosPage() {
         onOpenChange={(o) => { if (!o) closeDialog(); }}
         isEditing={isEditing}
         selectedProcesso={selectedProcesso}
-        clients={clients}
+        clientes={clientes}
         processDocs={processDocs}
         isSaving={isSaving}
         onSave={(payload) => {
@@ -537,8 +535,7 @@ export default function ProcessosPage() {
           processoTitle: p.title,
           value: Number(p.estimated_value),
           clientId: p.client_id,
-          // @ts-ignore
-          asaasCustomerId: p.clients?.asaas_customer_id || null
+          asaasCustomerId: p.clientes?.asaas_customer_id || null
         })}
         onEdit={(p) => openEdit(p)}
         isBillingLoading={createContaMutation.isPending}

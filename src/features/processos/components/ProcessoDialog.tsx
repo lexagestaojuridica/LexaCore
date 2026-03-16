@@ -24,7 +24,7 @@ interface ProcessoDialogProps {
     onOpenChange: (open: boolean) => void;
     isEditing: boolean;
     selectedProcesso: Processo | null;
-    clients: { id: string, name: string }[];
+    clientes: { id: string, name: string }[];
     processDocs: Documento[];
     onSave: (data: Partial<Processo>) => void;
     isSaving: boolean;
@@ -33,7 +33,7 @@ interface ProcessoDialogProps {
 }
 
 export function ProcessoDialog({
-    open, onOpenChange, isEditing, selectedProcesso, clients, processDocs,
+    open, onOpenChange, isEditing, selectedProcesso, clientes, processDocs,
     onSave, isSaving, onUploadDoc, onDownloadDoc
 }: ProcessoDialogProps) {
     const [form, setForm] = useState<Partial<Processo>>({});
@@ -151,7 +151,7 @@ export function ProcessoDialog({
                                                     <SelectTrigger className="h-10 bg-background/50 border-border/40 shadow-sm focus:ring-primary/20"><SelectValue placeholder="Selecione um cliente" /></SelectTrigger>
                                                     <SelectContent>
                                                         <SelectItem value="none">Sem cliente vinculado</SelectItem>
-                                                        {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                                                        {clientes.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                                                     </SelectContent>
                                                 </Select>
                                             </div>

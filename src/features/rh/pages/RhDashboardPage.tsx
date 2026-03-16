@@ -28,19 +28,19 @@ export default function RhDashboardPage() {
         queryKey: ["hr-dashboard-stats", orgId],
         queryFn: async () => {
             const { data, error } = await supabase
-                .from("rh_colaboradores")
+                .from("employees")
                 .select("*")
                 .eq("organization_id", orgId!);
             if (error) throw error;
 
-            const active = data?.filter(e => e.status === 'active').length || 0;
-            const onLeave = data?.filter(e => e.status === 'on_leave').length || 0;
-            const terminated = data?.filter(e => e.status === 'terminated').length || 0;
+            const active = data?.filter((e: any) => e.status === 'active').length || 0;
+            const onLeave = data?.filter((e: any) => e.status === 'on_leave').length || 0;
+            const terminated = data?.filter((e: any) => e.status === 'terminated').length || 0;
             const total = active + onLeave;
 
             // Group by department for charts
             const deptMap: Record<string, number> = {};
-            data?.forEach(e => {
+            data?.forEach((e: any) => {
                 const dept = e.department || "Geral";
                 deptMap[dept] = (deptMap[dept] || 0) + 1;
             });
@@ -52,7 +52,7 @@ export default function RhDashboardPage() {
             const year = new Date().getFullYear();
             const monthlyMap: Record<string, { admission: number; termination: number }> = {};
             months.forEach((m) => { monthlyMap[m] = { admission: 0, termination: 0 }; });
-            data?.forEach(e => {
+            data?.forEach((e: any) => {
                 if (e.admission_date) {
                     const d = new Date(e.admission_date);
                     if (d.getFullYear() === year) {
@@ -63,7 +63,7 @@ export default function RhDashboardPage() {
             });
             const monthlyData = months.slice(0, new Date().getMonth() + 1).map(m => ({ month: m, ...monthlyMap[m] }));
 
-            const totalPayroll = data?.filter(e => e.status === 'active').reduce((acc, curr) => acc + (Number(curr.base_salary) || 0), 0) || 0;
+            const totalPayroll = data?.filter((e: any) => e.status === 'active').reduce((acc: number, curr: any) => acc + (Number(curr.base_salary) || 0), 0) || 0;
 
             return {
                 total, active, onLeave, terminated,

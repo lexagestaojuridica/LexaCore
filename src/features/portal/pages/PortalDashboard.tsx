@@ -26,7 +26,7 @@ export default function PortalDashboard() {
         queryKey: ["portal-client-user", user?.id],
         queryFn: async () => {
             const { data, error } = await supabase
-                .from("clients")
+                .from("clientes")
                 .select("*")
                 .eq("auth_user_id", user?.id)
                 .single();
@@ -204,7 +204,7 @@ export default function PortalDashboard() {
                             </Card>
                         ) : (
                             <div className="grid gap-4">
-                                {processos?.map((proc) => {
+                                {processos?.map((proc: any) => {
                                     return (
                                         <Card key={proc.id} className="overflow-hidden hover:shadow-md transition-shadow">
                                             <CardHeader className="bg-muted/30 pb-3">
@@ -260,7 +260,7 @@ export default function PortalDashboard() {
                                     <div className="p-6 text-center text-sm text-muted-foreground">Você não possui faturas pendentes.</div>
                                 ) : (
                                     <div className="divide-y divide-border/50">
-                                        {faturas?.map((fat) => {
+                                        {faturas?.map((fat: any) => {
                                             const isVencido = new Date(fat.due_date) < new Date() && fat.status === 'pendente';
                                             return (
                                                 <div key={fat.id} className="p-4 flex items-center justify-between hover:bg-muted/20 transition-colors">
@@ -331,7 +331,7 @@ export default function PortalDashboard() {
                                     <div className="p-6 text-center text-sm text-muted-foreground">Nenhum documento anexado.</div>
                                 ) : (
                                     <div className="divide-y divide-border/50 max-h-[300px] overflow-y-auto">
-                                        {documentos?.map((doc) => (
+                                        {documentos?.map((doc: any) => (
                                             <div key={doc.id} className="p-3 hover:bg-muted/30 transition-colors flex items-center justify-between group">
                                                 <div className="flex items-center gap-2 overflow-hidden mx-1">
                                                     <div className="p-1.5 rounded bg-primary/10 text-primary shrink-0"><FileText className="w-3.5 h-3.5" /></div>

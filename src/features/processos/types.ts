@@ -3,7 +3,7 @@ import type { Tables } from "@/integrations/supabase/types";
 export type Processo = Tables<"processos_juridicos"> & {
     cliente_nome?: string | null;
     counts?: { count: number };
-    clients?: {
+    clientes?: {
         id: string;
         name: string;
         phone: string | null;

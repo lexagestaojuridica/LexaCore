@@ -57,7 +57,7 @@ export default function DashboardOverview() {
   }
 
   return (
-    <StaggerContainer className="h-full flex flex-col gap-4 md:gap-3 overflow-y-auto md:overflow-hidden pb-20 md:pb-0 hide-scrollbar">
+    <StaggerContainer className="h-full flex flex-col gap-4 md:gap-3 overflow-y-auto pb-20 md:pb-8 hide-scrollbar">
 
       {/* ── Sleek Header ── */}
       <StaggerItem className="mb-2 shrink-0 flex flex-col md:flex-row md:items-center justify-between gap-4">

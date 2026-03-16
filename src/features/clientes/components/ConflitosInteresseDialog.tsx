@@ -57,7 +57,7 @@ export function ConflitosInteresseDialog({
             // Check clients with similar name
             if (clientName.trim().length >= 3) {
                 const { data: nameMatches } = await supabase
-                    .from("clients")
+                    .from("clientes")
                     .select("id, name, email, phone")
                     .eq("organization_id", orgId)
                     .ilike("name", `%${clientName.trim()}%`)
@@ -69,7 +69,7 @@ export function ConflitosInteresseDialog({
             // Check by email
             if (clientEmail.trim()) {
                 const { data: emailMatches } = await supabase
-                    .from("clients")
+                    .from("clientes")
                     .select("id, name, email, phone")
                     .eq("organization_id", orgId)
                     .eq("email", clientEmail.trim())
@@ -85,7 +85,7 @@ export function ConflitosInteresseDialog({
             // Check by CPF/CNPJ
             if (clientDocument.replace(/\D/g, "").length >= 11) {
                 const { data: docMatches } = await supabase
-                    .from("clients")
+                    .from("clientes")
                     .select("id, name, email, phone")
                     .eq("organization_id", orgId)
                     .eq("document", clientDocument.trim())

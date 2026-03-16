@@ -100,7 +100,7 @@ export default function ColaboradoresPage() {
     const { data: colaboradores, isLoading } = useQuery({
         queryKey: ["colaboradores", orgId, debouncedSearch],
         queryFn: async () => {
-            let query = supabase.from("rh_colaboradores").select("*").eq("organization_id", orgId!);
+            let query = supabase.from("employees").select("*").eq("organization_id", orgId!);
             if (debouncedSearch) {
                 query = query.ilike("full_name", `%${debouncedSearch}%`);
             }
@@ -116,10 +116,10 @@ export default function ColaboradoresPage() {
             if (editingId) {
                 delete payload.organization_id;
                 delete payload.created_at;
-                const { error } = await supabase.from("rh_colaboradores").update(payload).eq("id", editingId).eq("organization_id", orgId!);
+                const { error } = await supabase.from("employees").update(payload).eq("id", editingId).eq("organization_id", orgId!);
                 if (error) throw error;
             } else {
-                const { error } = await supabase.from("rh_colaboradores").insert([{ ...payload, organization_id: orgId! }]);
+                const { error } = await supabase.from("employees").insert([{ ...payload, organization_id: orgId! }]);
                 if (error) throw error;
             }
         },
@@ -135,7 +135,7 @@ export default function ColaboradoresPage() {
 
     const deleteMutation = useMutation({
         mutationFn: async (id: string) => {
-            const { error } = await supabase.from("rh_colaboradores").delete().eq("id", id);
+            const { error } = await supabase.from("employees").delete().eq("id", id);
             if (error) throw error;
         },
         onSuccess: () => {

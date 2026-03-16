@@ -21,7 +21,7 @@ export const processoRouter = createTRPCRouter({
 
             let query = db
                 .from("processos_juridicos")
-                .select("*, clients(id, name, phone, asaas_customer_id)", { count: "exact" })
+                .select("*, clientes(id, name, phone, asaas_customer_id)", { count: "exact" })
                 .eq("organization_id" as any, tenantId as string);
 
             if (statusFilter !== "all") {

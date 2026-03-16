@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { FileEdit, FileText, BookOpen, PenTool } from "lucide-react";
+import { FileEdit, FileText, BookOpen, PenTool, FolderOpen } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { MinutasProvider, useMinutas } from "@/features/minutas/contexts/MinutasContext";
 import MinutasMyDocuments from "@/features/minutas/components/MinutasMyDocuments";
 import MinutasLibrary from "@/features/minutas/components/MinutasLibrary";
 import MinutasEditor from "@/features/minutas/components/MinutasEditor";
+import MinutasGed from "@/features/minutas/components/MinutasGed";
 
 function MinutasPageInner() {
     const { documents, openDocument, setOpenDocument } = useMinutas();
@@ -31,7 +32,8 @@ function MinutasPageInner() {
     const favCount = documents.filter((d) => d.favorite).length;
 
     const tabConfig = [
-        { value: "minutas", label: "Minhas Minutas", icon: FileText },
+        { value: "minutas", label: "Modelos", icon: FileEdit },
+        { value: "arquivos", label: "Arquivos (GED)", icon: FolderOpen },
         { value: "biblioteca", label: "Biblioteca", icon: BookOpen },
         { value: "editor", label: "Editor", icon: PenTool, hidden: !currentDoc },
     ];
@@ -47,19 +49,19 @@ function MinutasPageInner() {
                 <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-center gap-4">
                         <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 backdrop-blur-sm ring-1 ring-white/20">
-                            <FileEdit className="h-7 w-7 text-primary-foreground" />
+                            <FileText className="h-7 w-7 text-primary-foreground" />
                         </div>
                         <div>
-                            <h1 className="text-2xl font-bold text-primary-foreground tracking-tight">Minutas</h1>
+                            <h1 className="text-2xl font-bold text-primary-foreground tracking-tight">Documentos & Minutas</h1>
                             <p className="text-sm text-primary-foreground/60 mt-0.5">
-                                Modelos jurídicos, biblioteca pública e editor integrado
+                                Gestão centralizada de arquivos, modelos jurídicos e assinaturas
                             </p>
                         </div>
                     </div>
 
                     <div className="flex items-center gap-6">
                         {[
-                            { label: "Documentos", value: documents.length },
+                            { label: "Modelos", value: documents.length },
                             { label: "Favoritos", value: favCount },
                         ].map((stat) => (
                             <div key={stat.label} className="text-right">
@@ -73,7 +75,7 @@ function MinutasPageInner() {
 
             {/* Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="h-12 p-1 bg-muted/50 border border-border/50 rounded-xl max-w-xl">
+                <TabsList className="h-12 p-1 bg-muted/50 border border-border/50 rounded-xl max-w-2xl">
                     {tabConfig.filter((t) => !t.hidden).map((tab) => (
                         <TabsTrigger
                             key={tab.value}
@@ -88,6 +90,9 @@ function MinutasPageInner() {
 
                 <TabsContent value="minutas" className="mt-5">
                     <MinutasMyDocuments onOpenEditor={handleOpenEditor} />
+                </TabsContent>
+                <TabsContent value="arquivos" className="mt-5">
+                    <MinutasGed />
                 </TabsContent>
                 <TabsContent value="biblioteca" className="mt-5">
                     <MinutasLibrary onOpenEditor={handleOpenEditor} />

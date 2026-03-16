@@ -16,7 +16,7 @@ export const clienteRouter = createTRPCRouter({
             const { page, pageSize, search } = input;
 
             let query = db
-                .from("clients")
+                .from("clientes")
                 .select("*", { count: "exact" })
                 .eq("organization_id", tenantId as any)
                 .order("created_at", { ascending: false });
@@ -73,7 +73,7 @@ export const clienteRouter = createTRPCRouter({
         .mutation(async ({ ctx, input }) => {
             const { tenantId, db } = ctx;
             const { error, data } = await db
-                .from("clients")
+                .from("clientes")
                 .insert({ ...input, organization_id: tenantId })
                 .select()
                 .single();
@@ -103,7 +103,7 @@ export const clienteRouter = createTRPCRouter({
             delete filteredData.created_at;
 
             const { error } = await db
-                .from("clients")
+                .from("clientes")
                 .update(filteredData)
                 .eq("id", id as any)
                 .eq("organization_id", tenantId as any);
@@ -124,7 +124,7 @@ export const clienteRouter = createTRPCRouter({
         .mutation(async ({ ctx, input: id }) => {
             const { tenantId, db } = ctx;
             const { error } = await db
-                .from("clients")
+                .from("clientes")
                 .delete()
                 .eq("id", id)
                 .eq("organization_id", tenantId);
@@ -143,9 +143,9 @@ export const clienteRouter = createTRPCRouter({
     getCounts: tenantProcedure.query(async ({ ctx }) => {
         const { tenantId, db } = ctx;
         const [total, pf, pj] = await Promise.all([
-            db.from("clients").select("*", { count: "exact", head: true }).eq("organization_id", tenantId as any),
-            db.from("clients").select("*", { count: "exact", head: true }).eq("organization_id", tenantId as any).eq("client_type", "pessoa_fisica" as any),
-            db.from("clients").select("*", { count: "exact", head: true }).eq("organization_id", tenantId as any).eq("client_type", "pessoa_juridica" as any),
+            db.from("clientes").select("*", { count: "exact", head: true }).eq("organization_id", tenantId as any),
+            db.from("clientes").select("*", { count: "exact", head: true }).eq("organization_id", tenantId as any).eq("client_type", "pessoa_fisica" as any),
+            db.from("clientes").select("*", { count: "exact", head: true }).eq("organization_id", tenantId as any).eq("client_type", "pessoa_juridica" as any),
         ]);
 
         return {
@@ -162,7 +162,7 @@ export const clienteRouter = createTRPCRouter({
             const { tenantId, db } = ctx;
 
             const { data: client, error: clientErr } = await db
-                .from("clients")
+                .from("clientes")
                 .select("email, name")
                 .eq("id", clientId as any)
                 .single() as any;
@@ -177,7 +177,7 @@ export const clienteRouter = createTRPCRouter({
             const token = Math.random().toString(36).substring(2) + Math.random().toString(36).substring(2);
             const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
-            const { error } = await db.from("client_portal_tokens").insert({
+            const { error } = await db.from("clientes_portal_tokens").insert({
                 client_id: clientId,
                 organization_id: tenantId,
                 token,
@@ -206,7 +206,7 @@ export const clienteRouter = createTRPCRouter({
 
             // 1. Get Client
             const { data: client, error: clientErr } = await db
-                .from("clients")
+                .from("clientes")
                 .select("*")
                 .eq("id", clientId as any)
                 .single() as any;
@@ -278,7 +278,7 @@ export const clienteRouter = createTRPCRouter({
             // 3. Update client if it was a new creation
             if (!(client as any).asaas_customer_id && responseData.id) {
                 await db
-                    .from("clients")
+                    .from("clientes")
                     .update({ asaas_customer_id: responseData.id } as any)
                     .eq("id", clientId as any);
             }

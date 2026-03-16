@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { db as supabase } from "@/integrations/supabase/db";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import type { Documento } from "../types";
+import type { Documento } from "../types/documento";
 
 export function useDocumentos() {
     const { user } = useAuth();
@@ -35,7 +35,7 @@ export function useDocumentos() {
     const { data: clientes = [] } = useQuery({
         queryKey: ["clientes-select", orgId],
         queryFn: async () => {
-            const { data } = await supabase.from("clients").select("id, name").eq("organization_id", orgId!).order("name");
+            const { data } = await supabase.from("clientes").select("id, name").eq("organization_id", orgId!).order("name");
             return data || [];
         },
         enabled: !!orgId,

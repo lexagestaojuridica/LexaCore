@@ -35,7 +35,7 @@ export default function PortalLogin() {
             if (data.user) {
                 // Verificar se é relamente um cliente
                 const { data: clientData, error: clientError } = await supabase
-                    .from("clients")
+                    .from("clientes")
                     .select("id")
                     // @ts-ignore
                     .eq("auth_user_id", data.user.id)

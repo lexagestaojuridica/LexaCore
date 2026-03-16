@@ -72,7 +72,7 @@ export function useConfiguracoes() {
     const { data: employees = [] } = useQuery({
         queryKey: ["employees", orgId],
         queryFn: async () => {
-            const { data, error } = await supabase.from("rh_colaboradores").select("*").eq("organization_id", orgId!);
+            const { data, error } = await supabase.from("employees").select("*").eq("organization_id", orgId!);
             if (error) throw error;
             return data ?? [];
         },
@@ -80,9 +80,9 @@ export function useConfiguracoes() {
     });
 
     const { data: units = [] } = useQuery({
-        queryKey: ["units", orgId],
+        queryKey: ["unidades", orgId],
         queryFn: async () => {
-            const { data, error } = await supabase.from("units").select("*").eq("organization_id", orgId!);
+            const { data, error } = await supabase.from("unidades").select("*").eq("organization_id", orgId!);
             if (error) throw error;
             return data ?? [];
         },
@@ -190,7 +190,7 @@ export function useConfiguracoes() {
 
     const createEmployeeMutation = useMutation({
         mutationFn: async (payload: Record<string, unknown>) => {
-            const { error } = await supabase.from("rh_colaboradores").insert(payload);
+            const { error } = await supabase.from("employees").insert(payload);
             if (error) throw error;
         },
         onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["employees"] }); toast.success("Funcionário cadastrado!"); },
@@ -199,7 +199,7 @@ export function useConfiguracoes() {
 
     const updateEmployeeMutation = useMutation({
         mutationFn: async ({ id, ...payload }: { id: string } & Record<string, unknown>) => {
-            const { error } = await supabase.from("rh_colaboradores").update(payload).eq("id", id).eq("organization_id", orgId!);
+            const { error } = await supabase.from("employees").update(payload).eq("id", id).eq("organization_id", orgId!);
             if (error) throw error;
         },
         onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["employees"] }); toast.success("Funcionário atualizado!"); },
@@ -208,7 +208,7 @@ export function useConfiguracoes() {
 
     const deleteEmployeeMutation = useMutation({
         mutationFn: async (id: string) => {
-            const { error } = await supabase.from("rh_colaboradores").delete().eq("id", id).eq("organization_id", orgId!);
+            const { error } = await supabase.from("employees").delete().eq("id", id).eq("organization_id", orgId!);
             if (error) throw error;
         },
         onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["employees"] }); toast.success("Funcionário removido"); },

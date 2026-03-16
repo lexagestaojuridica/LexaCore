@@ -70,7 +70,7 @@ export default function CrmDealsTable() {
             if (!orgId) throw new Error("Org ID not found");
 
             // 1. Create client
-            const { data: client, error: clientErr } = await supabase.from("clients").insert({
+            const { data: client, error: clientErr } = await supabase.from("clientes").insert({
                 name: deal.contactName,
                 organization_id: orgId,
                 status: "ativo",
@@ -96,7 +96,7 @@ export default function CrmDealsTable() {
             toast.success("Cliente e Processo gerados com sucesso!");
             setWinDialogOpen(null);
             queryClient.invalidateQueries({ queryKey: ["processos"] });
-            queryClient.invalidateQueries({ queryKey: ["clients"] });
+            queryClient.invalidateQueries({ queryKey: ["clientes"] });
             // Optional: navigate("/dashboard/processos");
         },
         onError: (err: Error) => toast.error(`Erro: ${err.message}`)

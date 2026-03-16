@@ -22,7 +22,7 @@ export default function AdminAudit() {
     const { data: logs, isLoading } = useQuery({
         queryKey: ["admin-audit-logs", searchTerm],
         queryFn: async () => {
-            let query = supabase.from("logs_auditoria").select(`
+            let query = supabase.from("universal_audit_logs").select(`
                 *,
                 profiles:user_id(full_name, email),
                 organizations:organization_id(name)
