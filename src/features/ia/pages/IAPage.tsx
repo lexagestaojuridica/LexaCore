@@ -553,7 +553,7 @@ export default function IAPage() {
 
       {/* ─── Messages Interface ─────────────────────────────────── */}
       <div className="flex-1 overflow-y-auto px-4 md:px-12 py-8 relative z-10 scroll-smooth">
-        {msgs.length === 0 && !isLoading ? (
+        {msgs.length === 0 && !busy ? (
           <div className="mx-auto max-w-3xl space-y-8 pt-10">
             {/* Greeting */}
             <div className="flex items-start gap-5">

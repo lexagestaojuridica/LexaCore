@@ -427,7 +427,7 @@ export default function FinanceiroPage() {
                                             size="icon"
                                             title="Verificar Pagamento"
                                             className="h-8 w-8 text-amber-600 hover:bg-amber-500/10"
-                                            onClick={() => reconcileAsaasMutation.mutate({ id: c.id, type: (tab === "dasdarf" || tab === "orcamento") ? "receber" : tab })}
+                                            onClick={() => reconcileAsaasMutation.mutate({ id: c.id, type: tab as TipoConta })}
                                             disabled={reconcileAsaasMutation.isPending}
                                           >
                                             <RefreshCw className={cn("h-4 w-4", reconcileAsaasMutation.isPending && "animate-spin")} />

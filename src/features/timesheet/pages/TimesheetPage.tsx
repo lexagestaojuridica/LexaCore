@@ -521,7 +521,7 @@ export default function TimesheetPage() {
                                                                             title="Faturar Honorários"
                                                                             className="h-7 w-7 text-amber-600/60 hover:text-amber-600 hover:bg-amber-600/10 opacity-0 group-hover:opacity-100 transition-all"
                                                                             onClick={(e) => { e.stopPropagation(); handleBilling(entry, value); }}
-                                                                            disabled={bilMutation.isPending}
+                                                                            disabled={false}
                                                                         >
                                                                             <Receipt className="h-3.5 w-3.5" />
                                                                         </Button>
