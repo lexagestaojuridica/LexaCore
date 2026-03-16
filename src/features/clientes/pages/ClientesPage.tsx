@@ -83,9 +83,11 @@ export default function ClientesPage() {
     Object.entries(dataToSave).forEach(([k, v]) => { payload[k] = v || null; });
     payload.name = dataToSave.name;
     if (isEditing && selectedClient) {
-      updateMutation.mutate({ id: selectedClient.id, ...payload } as Parameters<typeof updateMutation.mutate>[0], { onSuccess: closeDialog });
+      updateMutation.mutate({ id: selectedClient.id, ...payload });
+      closeDialog();
     } else {
-      createMutation.mutate({ ...payload, organization_id: orgId! }, { onSuccess: closeDialog });
+      createMutation.mutate(payload);
+      closeDialog();
     }
   };
 
