@@ -265,7 +265,7 @@ export default function IAPage() {
     setMsgs((p) => p.map((m) => m.id === aId ? { ...m, content: "⏳ Estou redigindo o documento para você. Por favor, aguarde alguns segundos..." } : m));
     try {
       const authHeader = await AUTH_HEADER();
-      const r = await fetch(DOC_GEN_URL, { method: "POST", headers: { "Content-Type": "application/json", ...authHeader }, body: JSON.stringify({ doc_type: docType, instructions: docInstr, organization_id: session?.publicMetadata?.organizationId, user_id: userId }) });
+      const r = await fetch(DOC_GEN_URL, { method: "POST", headers: { "Content-Type": "application/json", ...authHeader }, body: JSON.stringify({ doc_type: docType, instructions: docInstr, organization_id: (session as any)?.publicMetadata?.organizationId, user_id: userId }) });
       if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || `Erro ${r.status} `);
       const res = await r.json();
       const c = `✅ ** ${res.document.file_name}** gerado com sucesso e salvo no seu módulo de ** Documentos(GED) **.\n\n### Preview Rápido: \n${res.content_preview?.slice(0, 400)}...`;
