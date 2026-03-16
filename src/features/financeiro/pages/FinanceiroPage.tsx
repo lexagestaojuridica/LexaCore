@@ -143,11 +143,9 @@ export default function FinanceiroPage() {
     if (editingId) {
       updateMutation.mutate({ id: editingId, ...payload });
     } else {
-      createMutation.mutate(payload, {
-        onSuccess: () => {
-          closeDialog();
-        }
-      });
+      createMutation.mutate(payload);
+    }
+    closeDialog();
     }
   };
 
