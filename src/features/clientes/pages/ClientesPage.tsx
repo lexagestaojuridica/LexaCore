@@ -73,7 +73,7 @@ export default function ClientesPage() {
   const openCreate = () => { setForm(emptyClientForm); setIsEditing(false); setDialogOpen(true); };
   const openEdit = (c: Client) => {
     const f: Record<string, string> = {};
-    Object.keys(emptyClientForm).forEach((k) => { f[k] = (c as Record<string, string | null>)[k] ?? ""; });
+    Object.keys(emptyClientForm).forEach((k) => { f[k] = (c as unknown as Record<string, string | null>)[k] ?? ""; });
     setForm(f); setSelectedClient(c); setIsEditing(true); setDialogOpen(true);
   };
 
