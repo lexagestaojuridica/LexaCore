@@ -2,7 +2,7 @@
 
 ## 1. Visão Geral da Arquitetura
 
-O LEXA opera sob arquitetura **Next.js 15 (App Router)** com backend-as-a-service provido pelo **Supabase**. Autenticação e gestão de usuários são providas pelo **Clerk**. Frontend e Edge Functions são implantados na **Vercel**. O **Supabase (PostgreSQL)** atua como banco de dados principal com RLS nativo para multitenancy.
+O LEXA opera sob arquitetura **Next.js 15 (App Router)** com backend-as-a-service provido pelo **Supabase**. Autenticação e gestão de usuários são providas pelo **Clerk**. Frontend e serverless functions são implantados na **Hostinger**. O **Supabase (PostgreSQL)** atua como banco de dados principal com RLS nativo para multitenancy.
 
 **Princípio central: Feature-Sliced Design (FSD) + Clean Architecture + Zero Acoplamento.**
 
@@ -16,10 +16,10 @@ O LEXA opera sob arquitetura **Next.js 15 (App Router)** com backend-as-a-servic
 | Estilização | Tailwind CSS, shadcn-ui (Radix UI), framer-motion |
 | Estado/Dados | TanStack React Query, react-hook-form + zod |
 | Autenticação | **Clerk** (Auth, RBAC, Organizações) |
-| Backend/DB | **Supabase** (PostgreSQL 15+), Vercel Edge Functions |
-| Pagamentos | **Asaas** (via Edge Functions) |
+| Backend/DB | **Supabase** (PostgreSQL 15+), Hostinger Edge Functions |
+| Pagamentos | **Asaas** (via Hostinger Edge Functions) |
 | Testes | Vitest, React Testing Library, Cypress (E2E) |
-| CI/CD | GitHub Actions → Vercel |
+| CI/CD | GitHub Actions → Hostinger |
 | Ícones | lucide-react |
 | Charts | Recharts |
 | i18n | i18next, react-i18next |
@@ -45,9 +45,9 @@ Domínios modelados (45+ migrations):
 ## 4. APIs e Integrações
 
 - **Supabase Client:** `@supabase/supabase-js` com JWT do Clerk via template `supabase`
-- **Asaas:** Gateway de pagamento via Vercel Edge Functions
+- **Asaas:** Gateway de pagamento via Hostinger Edge Functions
 - **Clerk:** Auth, RBAC, Organizations, Webhooks
-- **Calendários:** Google Calendar, Microsoft Calendar, Apple Calendar (via Edge Functions)
+- **Calendários:** Google Calendar, Microsoft Calendar, Apple Calendar (via Hostinger Edge Functions)
 - **WhatsApp:** Integração nativa para notificações e triggers
 - **Armazenamento:** Supabase Storage (GED)
 
@@ -67,11 +67,11 @@ Domínios modelados (45+ migrations):
 
 ## 6. Infraestrutura e DevOps
 
-- **CI/CD:** GitHub Actions → testes → build → deploy Vercel
+- **CI/CD:** GitHub Actions → testes → build → deploy Hostinger
 - **Ambientes:** Development, Staging, Production
 - **Migrations:** Supabase CLI, versionadas por data/hora
-- **Monitoramento:** Logs na Vercel, alertas de performance
-- **Performance:** Code-splitting Next.js, Edge Functions, CDN global Vercel
+- **Monitoramento:** Logs na Hostinger, alertas de performance
+- **Performance:** Code-splitting Next.js, Hostinger Edge Functions, CDN global Hostinger
 
 ---
 

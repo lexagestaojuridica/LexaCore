@@ -187,7 +187,7 @@ O projeto usa **GitHub Actions** para CI/CD automático:
 - `quality-gate.yml`: Verificação de cobertura de testes
 - `security-scan.yml`: Análise de segurança (dependências)
 
-O deploy é feito automaticamente na **Vercel** após merge na branch `main`.
+O deploy é feito automaticamente na **Hostinger** após merge na branch `main`.
 
 ---
 

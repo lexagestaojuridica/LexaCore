@@ -39,7 +39,7 @@ src/features/<feature>/
 ├─────────────────────────────────────────┤
 │          Integrations Layer              │  Supabase, Clerk, Asaas
 ├─────────────────────────────────────────┤
-│           Infrastructure                 │  Supabase DB + RLS, Vercel Edge
+│           Infrastructure                 │  Supabase DB + RLS, Hostinger Edge
 └─────────────────────────────────────────┘
 ```
 

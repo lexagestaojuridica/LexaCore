@@ -2,7 +2,7 @@
  * Asaas Payment Gateway Integration
  *
  * Client-side constants and types for Asaas integration.
- * Actual API calls are made from Vercel Edge Functions / tRPC routes
+ * Actual API calls are made from Hostinger Edge Functions / tRPC routes
  * to keep the API key server-side only.
  *
  * Usage:
