@@ -146,7 +146,6 @@ export default function FinanceiroPage() {
       createMutation.mutate(payload);
     }
     closeDialog();
-    }
   };
 
   const filtered = contas.filter((c: ContaBase) => {
