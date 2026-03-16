@@ -164,23 +164,23 @@ export default function BudgetPerformanceTab({ orgId }: Props) {
     const { data: historicalData = [] } = useQuery({
         queryKey: ["budget-historical", orgId, typeTab, periodKey],
         queryFn: async () => {
-            const results = [];
+            const results: { name: string; Orçado: number; Realizado: number }[] = [];
             for (let i = 5; i >= 0; i--) {
                 const d = subMonths(new Date(year, month - 1, 1), i);
                 const m = d.getMonth() + 1;
                 const y = d.getFullYear();
 
                 const [{ data: orc }, { data: ct }] = await Promise.all([
-                    supabase.from("orcamentos").select("amount").eq("organization_id", orgId).eq("type", typeTab).eq("period_month", m).eq("period_year", y),
-                    supabase.from(contaTable).select("amount, status, due_date, category").eq("organization_id", orgId),
+                    (supabase as any).from("orcamentos").select("amount").eq("organization_id", orgId).eq("type", typeTab).eq("period_month", m).eq("period_year", y),
+                    (supabase as any).from(contaTable).select("amount, status, due_date, category").eq("organization_id", orgId),
                 ]);
 
-                const budgeted = (orc ?? []).reduce((s, o) => s + Number(o.amount), 0);
-                const monthContas = (ct ?? []).filter((c) => {
+                const budgeted = (orc ?? []).reduce((s: number, o: any) => s + Number(o.amount), 0);
+                const monthContas = (ct ?? []).filter((c: any) => {
                     const dd = new Date(c.due_date + "T00:00:00");
                     return dd.getMonth() + 1 === m && dd.getFullYear() === y && (c.status === "pago" || c.status === "pendente");
                 });
-                const realized = monthContas.reduce((s, c) => s + Number(c.amount), 0);
+                const realized = monthContas.reduce((s: number, c: any) => s + Number(c.amount), 0);
 
                 results.push({
                     name: format(d, "MMM/yy", { locale: ptBR }),
