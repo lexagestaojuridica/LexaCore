@@ -271,7 +271,7 @@ export default function IAPage() {
       const c = `✅ ** ${res.document.file_name}** gerado com sucesso e salvo no seu módulo de ** Documentos(GED) **.\n\n### Preview Rápido: \n${res.content_preview?.slice(0, 400)}...`;
       setMsgs((p) => p.map((m) => m.id === aId ? { ...m, content: c } : m));
       saveAssistant(c);
-      utils.documento.list.invalidate(); // Correct invalidation name
+      utils.documento.create.reset(); // Invalidate documents
       toast({ title: "Minuta jurídica redigida com sucesso!" });
     } catch (e: any) {
       setMsgs((p) => p.map((m) => m.id === aId ? { ...m, content: `❌ Tive um problema ao gerar o documento: ${e.message} ` } : m));
