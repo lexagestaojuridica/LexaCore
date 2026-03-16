@@ -417,7 +417,7 @@ export default function FinanceiroPage() {
                                             size="icon"
                                             title="Ver Fatura no Asaas"
                                             className="h-8 w-8 text-blue-600 hover:bg-blue-500/10"
-                                            onClick={() => window.open(c.asaas_billing_url, "_blank")}
+                                            onClick={() => window.open(c.asaas_billing_url ?? undefined, "_blank")}
                                           >
                                             <ExternalLink className="h-4 w-4" />
                                           </Button>
