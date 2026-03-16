@@ -204,8 +204,8 @@ export default function ClientesPage() {
                                   <MessageCircle className="h-4 w-4" />
                                 </Button>
                               )}
-                              <Button variant="ghost" size="icon" title={c.asaas_customer_id ? "Sincronizado" : "Sincronizar Asaas"} className={cn("h-8 w-8", c.asaas_customer_id ? "text-emerald-500" : "text-muted-foreground hover:text-primary")} onClick={() => syncAsaasMutation.mutate(c)} disabled={syncAsaasMutation.isPending}>
-                                {c.asaas_customer_id ? <CheckCircle2 className="h-4 w-4" /> : <RefreshCw className={cn("h-4 w-4", syncAsaasMutation.isPending && "animate-spin")} />}
+                              <Button variant="ghost" size="icon" title={c.asaas_customer_id ? "Sincronizado" : "Sincronizar Asaas"} className={cn("h-8 w-8", c.asaas_customer_id ? "text-emerald-500" : "text-muted-foreground hover:text-primary")} onClick={() => syncAsaas(c)}>
+                                {c.asaas_customer_id ? <CheckCircle2 className="h-4 w-4" /> : <RefreshCw className="h-4 w-4" />}
                               </Button>
                               <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => { setSelectedClient(c); setViewDialogOpen(true); }}><Eye className="h-4 w-4" /></Button>
                               <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => openEdit(c)}><Edit2 className="h-4 w-4" /></Button>
