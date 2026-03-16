@@ -196,7 +196,7 @@ export default function BudgetPerformanceTab({ orgId }: Props) {
     // ─── Computed Data ────────────────────────────────────────
 
     const rows = useMemo(
-        () => buildCategoryRows(orcamentos as Orcamento[], contas as unknown as Record<string, unknown>[], month, year, typeTab, categories),
+        () => buildCategoryRows(orcamentos as Orcamento[], contas as any as ContaItem[], month, year, typeTab, categories),
         [orcamentos, contas, month, year, typeTab, categories]
     );
 
