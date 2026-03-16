@@ -88,14 +88,12 @@ export default function FinanceiroPage() {
   const orgId = profile?.organization_id;
 
   const { contas, isLoading, createMutation, updateMutation, deleteMutation, markAsPaid } = useFinanceiro(
-    orgId,
     (tab === "dasdarf" || tab === "orcamento") ? "receber" : tab
   );
 
-  const { totalReceber, totalPagar, totalRecebido, saldo, healthPercent } = useFinanceiroMetrics(orgId);
+  const { totalReceber, totalPagar, totalRecebido, saldo, healthPercent } = useFinanceiroMetrics();
 
   const { generatePixMutation, reconcileAsaasMutation, reconcileAllAsaas } = useAsaasBilling(
-    orgId,
     (tab === "dasdarf" || tab === "orcamento") ? "receber" : tab,
     setPixModalOpen,
     setSelectedPix
