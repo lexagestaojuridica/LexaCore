@@ -5,7 +5,7 @@ import { createTRPCContext } from "@/server/context";
 
 /**
  * Handler HTTP para as requisições tRPC.
- * Roda no Runtime Node.js (Zero Vercel Edge).
+ * Roda no Runtime Node.js padrão.
  */
 const handler = (req: NextRequest) =>
     fetchRequestHandler({
