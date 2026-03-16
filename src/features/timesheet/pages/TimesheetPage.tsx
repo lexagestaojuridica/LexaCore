@@ -90,7 +90,7 @@ export default function TimesheetPage() {
 
     const {
         entries, isLoading, processos, createMutation, deleteMutation, handleBilling
-    } = useTimesheet(orgId, user?.id);
+    } = useTimesheet();
 
     // ── Timer logs query ──
     const { data: rawTimerLogs = [] } = useQuery({

@@ -62,7 +62,7 @@ export default function PortalSignature() {
                     signed_at: new Date().toISOString(),
                     ip_address: clientIp,
                     user_agent: userAgent,
-                    signature_hash: btoa(`signed-${signature.id}-${Date.now()}`) // Basic hash mock
+                    signature_hash: btoa(`signed-${signature!.id}-${Date.now()}`) // Basic hash mock
                 } as Record<string, unknown>)
                 .eq("token" as "user_id", token as string);
 

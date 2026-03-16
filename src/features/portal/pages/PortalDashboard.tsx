@@ -389,7 +389,7 @@ export default function PortalDashboard() {
                                     size="icon"
                                     className="absolute right-0 top-0 bottom-0 rounded-l-none"
                                     onClick={() => {
-                                        navigator.clipboard.writeText(selectedPix?.pix_code);
+                                        navigator.clipboard.writeText(selectedPix?.pix_code ?? "");
                                         toast.success("Código PIX copiado!");
                                     }}
                                 >

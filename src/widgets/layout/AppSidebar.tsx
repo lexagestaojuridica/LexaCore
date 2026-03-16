@@ -23,7 +23,7 @@ import logoLexaWhite from "@/assets/logo-lexa-white.png";
 import iconLexa from "@/assets/icon-lexa.png";
 import { Search } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db as supabase } from "@/integrations/supabase/db";
 
 // ─── Nav structure grouped by journey ───────────────────────
 

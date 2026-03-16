@@ -54,7 +54,7 @@ export function ProductivityWidget({ timesheetToday }: ProductivityWidgetProps) 
                     </div>
                 </div>
 
-                <Button variant="outline" className="w-full mt-auto text-sm font-medium hover:bg-muted" onClick={() => navigate("/dashboard/timesheet")}>
+                <Button variant="outline" className="w-full mt-auto text-sm font-medium hover:bg-muted" onClick={() => navigate.push("/dashboard/timesheet")}>
                     {t("dashboard.openTimesheet")}
                 </Button>
             </CardContent>

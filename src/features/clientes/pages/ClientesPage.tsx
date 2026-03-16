@@ -257,12 +257,12 @@ export default function ClientesPage() {
         onEdit={openEdit}
         onGeneratePortal={(c) => generatePortalAuth.mutate(c)}
         isGeneratingPortal={generatePortalAuth.isPending}
-        onAsaasSync={(c) => syncAsaasMutation.mutate(c)}
-        isAsaasSyncing={syncAsaasMutation.isPending}
+        onAsaasSync={(c) => syncAsaas(c)}
+        isAsaasSyncing={false}
         onDocDownload={handleDocDownload}
-        onSignatureRequest={(doc, c) => requestSignatureMutation.mutate({ doc, client: c })}
-        isSignatureRequesting={requestSignatureMutation.isPending}
-        onUploadDoc={(file) => uploadDocMutation.mutate({ file, clientId: selectedClient!.id })}
+        onSignatureRequest={(doc, c) => requestSignature(doc.id, c.id, { name: c.name, email: c.email })}
+        isSignatureRequesting={false}
+        onUploadDoc={(file) => selectedClient && uploadDoc(file, selectedClient.id)}
       />
 
       <ClientDeleteDialog

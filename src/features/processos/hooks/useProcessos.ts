@@ -1,5 +1,4 @@
 import { trpc } from "@/shared/lib/trpc";
-import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { Processo } from "../types";
 
@@ -13,7 +12,7 @@ export function useProcessos(
     sortDir: "asc" | "desc",
     viewMode: "table" | "kanban"
 ) {
-    const queryClient = useQueryClient();
+    const utils = trpc.useUtils();
 
     const processesQuery = trpc.processo.list.useQuery({
         page,
@@ -30,7 +29,7 @@ export function useProcessos(
     // ── Mutations ──
     const createMutation = trpc.processo.create.useMutation({
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: trpc.processo.list.getQueryKey() });
+            utils.processo.list.invalidate();
             toast.success("Processo criado");
         },
         onError: () => toast.error("Erro ao criar processo"),
@@ -38,7 +37,7 @@ export function useProcessos(
 
     const updateMutation = trpc.processo.update.useMutation({
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: trpc.processo.list.getQueryKey() });
+            utils.processo.list.invalidate();
             toast.success("Processo atualizado");
         },
         onError: () => toast.error("Erro ao atualizar processo"),
@@ -46,7 +45,7 @@ export function useProcessos(
 
     const deleteMutation = trpc.processo.delete.useMutation({
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: trpc.processo.list.getQueryKey() });
+            utils.processo.list.invalidate();
             toast.success("Processo excluído");
         },
         onError: () => toast.error("Erro ao excluir processo"),
