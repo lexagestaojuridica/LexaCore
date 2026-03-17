@@ -2,146 +2,78 @@
 
 ## Visão Geral
 
-O LEXA adota **Feature-Sliced Design (FSD)** combinado com princípios de **Clean Architecture** para garantir desacoplamento total, testabilidade e escalabilidade horizontal.
+O LEXA v3.5 adota **Feature-Sliced Design (FSD)** para o frontend, **tRPC** para comunicação type-safe, e **Supabase** (Postgres + RLS + Edge Functions) para a camada de persistência e lógica de borda. A autenticação e multitenancy são geridas pelo **Clerk**.
 
 ---
 
 ## Feature-Sliced Design (FSD)
 
-Cada feature é uma unidade autônoma e testável. A estrutura segue:
+Cada funcionalidade reside em `src/features/` e segue uma estrutura rígida:
 
 ```
 src/features/<feature>/
-├── components/          # Componentes React da feature
-├── hooks/               # Custom hooks (React Query, state)
-├── pages/               # Componentes de página (containers)
-├── types/               # Tipos TypeScript da feature
-├── utils/               # Funções utilitárias da feature
-└── __tests__/           # Testes da feature
+├── components/          # UI components locais
+├── hooks/               # Custom hooks (usando useQuery/useMutation)
+├── pages/               # Containers de página (exportados para /app)
+├── types/               # Definições TypeScript específicas
+├── utils/               # Lógica de negócio isolada
+└── __tests__/           # Testes unitários (Vitest)
 ```
 
-**Regras de isolamento:**
-- Features NÃO importam de outras features diretamente.
-- Shared entre features vai para `src/shared/`.
-- Integrações externas ficam em `src/integrations/`.
+**Isolamento:**
+
+- Dependências entre features são PROIBIDAS.
+- Componentes reutilizáveis devem residir em `src/shared/ui/`.
+- Lógica comum deve residir em `src/shared/lib/` ou `src/shared/api/`.
 
 ---
 
 ## Camadas da Arquitetura
 
-```
-┌─────────────────────────────────────────┐
-│              App Layer (Next.js)         │  Pages, Layouts, API routes
-├─────────────────────────────────────────┤
-│             Features Layer               │  Business logic por domínio
-├─────────────────────────────────────────┤
-│             Shared Layer                 │  UI, utils, types, validators
-├─────────────────────────────────────────┤
-│          Integrations Layer              │  Supabase, Clerk, Asaas
-├─────────────────────────────────────────┤
-│           Infrastructure                 │  Supabase DB + RLS, Hostinger Edge
-└─────────────────────────────────────────┘
-```
+1. **App Layer (Next.js 15)**: Gerencia rotas, layouts globais e provedores.
+2. **Widgets Layer**: Componentes complexos que combinam múltiplas features (ex: `Sidebar`, `TopBar`).
+3. **Features Layer**: Onde a lógica de negócio principal reside.
+4. **Shared Layer**: Fundamentos do sistema (Design System, Utils, Tipos Globais).
+5. **Data Layer**: tRPC (Internal API) + Supabase JS Client.
 
 ---
 
-## Fluxo de Dados
+## Fluxo de Autenticação e Multitenancy
 
-```
-User Action
-    ↓
-React Component (feature/components/)
-    ↓
-Custom Hook (feature/hooks/) — React Query
-    ↓
-Integration Client (integrations/supabase/)
-    ↓
-Supabase (PostgreSQL + RLS)
-```
+O LEXA é **Multi-tenant por design**:
 
-Para operações que exigem lógica serverless:
-
-```
-Client Hook → tRPC Router → Supabase/Asaas/etc.
-```
+1. **Clerk**: Única fonte de verdade para Auth.
+2. **JWT Custom claims**: O JWT do Clerk contém `org_id`.
+3. **Supabase RLS**: O banco de dados valida o `org_id` em cada query.
+    - O frontend envia o token do Clerk no header `Authorization`.
+    - Políticas RLS verificam `organization_id = auth.jwt() ->> 'org_id'`.
 
 ---
 
-## Multitenancy e Segurança
+## Gestão de Débito Técnico
 
-O LEXA usa **RLS (Row Level Security)** no PostgreSQL para isolamento de dados por tenant:
+A partir da v3.5, adotamos uma postura rigorosa contra o débito técnico:
 
-1. Clerk emite JWT com `org_id` e `user_id`.
-2. Next.js middleware valida sessão via `clerkMiddleware`.
-3. Supabase client usa JWT do Clerk via template `supabase`.
-4. Políticas RLS no PostgreSQL validam `tenant_id = auth.jwt()->'org_id'`.
-
----
-
-## Padrões de Código
-
-### TypeScript Strict
-Todos os arquivos usam TypeScript com `strict: true`. Zero `any` implícito.
-
-### Validação com Zod
-```typescript
-import { z } from 'zod';
-
-export const ProcessoSchema = z.object({
-  numero: z.string().min(1, 'Número obrigatório'),
-  titulo: z.string().min(3).max(200),
-  status: z.enum(['ativo', 'arquivado', 'suspenso']),
-  clienteId: z.string().uuid(),
-});
-
-export type Processo = z.infer<typeof ProcessoSchema>;
-```
-
-### React Query Pattern
-```typescript
-export function useProcessos() {
-  return useQuery({
-    queryKey: ['processos'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('processos_juridicos')
-        .select('*');
-      if (error) throw error;
-      return data;
-    },
-  });
-}
-```
+1. **100% Type Safety**: Proibido o uso de `any` ou `@ts-ignore` (salvo casos extremos documentados).
+2. **Consolidação de API**: Migração progressiva de chamadas diretas do SDK para tRPC.
+3. **Audit Logs**: Toda alteração crítica de esquema ou RLS deve ser acompanhada de uma migration documentada em `supabase/migrations/`.
+4. **Relatório de Débito**: Veja `docs/TECH_DEBT.md` para o mapeamento atual e planos de remediação.
 
 ---
 
-## Convenções de Nomeação
+## ADRs Ativos (Architectural Decision Records)
 
-| Tipo | Convenção | Exemplo |
-|------|-----------|---------|
-| Variáveis/funções | camelCase | `clienteId`, `getProcessos()` |
-| Componentes/Types | PascalCase | `ProcessoCard`, `ProcessoType` |
-| Constantes | SCREAMING_SNAKE_CASE | `MAX_FILE_SIZE`, `ROLES` |
-| Arquivos de componente | PascalCase | `ProcessoCard.tsx` |
-| Arquivos de hook | camelCase prefixo `use` | `useProcessos.ts` |
-| Arquivos de type | camelCase | `index.ts` em `types/` |
+### ADR-001: tRPC como API Principal
 
----
+- **Status:** Implementado.
+- **Contexto:** Necessidade de sincronia de tipos entre backend e frontend sem gerar código extra.
 
-## Decisões de Arquitetura (ADRs)
+### ADR-002: Edge Functions para I/O Externo
 
-### ADR-001: Feature-Sliced Design
-- **Decisão:** Adotar FSD para organização do código.
-- **Motivo:** Cada feature é autônoma, facilitando manutenção, onboarding e testes isolados.
+- **Status:** Ativo.
+- **Contexto:** Calendar Sync (Google/Apple), Webhooks (WhatsApp/Asaas) devem ser processados via Edge Functions para evitar sobrecarga no servidor principal.
 
-### ADR-002: tRPC para API interna
-- **Decisão:** Usar tRPC para comunicação type-safe entre frontend e backend.
-- **Motivo:** Zero geração de código, type safety end-to-end, integração natural com React Query.
+### ADR-003: Shadcn UI + Tailwind v3
 
-### ADR-003: Clerk para autenticação
-- **Decisão:** Usar Clerk em vez de NextAuth ou Supabase Auth.
-- **Motivo:** Suporte nativo a organizações (multitenancy), RBAC avançado, UI components prontos.
-
-### ADR-004: Supabase com RLS
-- **Decisão:** Toda autorização de dados via RLS no PostgreSQL.
-- **Motivo:** Impossível contornar por bug de frontend, performance nativa, auditoria via triggers.
+- **Status:** Ativo.
+- **Contexto:** Baseado em Radix UI para acessibilidade e Tailwind para estilização rápida e coesa.
