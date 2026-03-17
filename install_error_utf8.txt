@@ -1,0 +1,112 @@
+﻿node.exe : npm error 
+code ERESOLVE
+No linha:1 caractere:1
++ & "C:\Program 
+Files\nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo 
+...
++ ~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~
+    + CategoryInfo     
+         : NotSpecifi  
+  ed: (npm error cod   
+ e ERESOLVE:String)    
+ [], RemoteExcepti    
+on
+    + FullyQualifiedEr 
+   rorId : NativeComm  
+  andError
+ 
+npm error ERESOLVE 
+could not resolve
+npm error
+npm error While 
+resolving: 
+lovable-tagger@1.1.13
+npm error Found: 
+vite@8.0.0
+npm error 
+node_modules/vite
+npm error   peer 
+vite@"^8.0.0" from @vit
+ejs/plugin-react@6.0.1
+npm error   node_module
+s/@vitejs/plugin-react
+npm error     dev @vite
+js/plugin-react@"^6.0.1
+" from the root project
+npm error   
+peerOptional 
+vite@"^6.0.0 || ^7.0.0 
+|| ^8.0.0-0" from 
+@vitest/mocker@4.1.0
+npm error   node_module
+s/@vitest/mocker
+npm error     
+@vitest/mocker@"4.1.0" 
+from vitest@4.1.0
+npm error     
+node_modules/vitest
+npm error       dev 
+vitest@"^4.1.0" from 
+the root project
+npm error       1 more 
+(@vitest/coverage-v8)
+npm error   1 more 
+(vitest)
+npm error
+npm error Could not 
+resolve dependency:
+npm error peer 
+vite@">=5.0.0 <8.0.0" 
+from 
+lovable-tagger@1.1.13
+npm error node_modules/
+lovable-tagger
+npm error   dev lovable
+-tagger@"^1.1.13" from 
+the root project
+npm error
+npm error Conflicting 
+peer dependency: 
+vite@7.3.1
+npm error 
+node_modules/vite
+npm error   peer 
+vite@">=5.0.0 <8.0.0" 
+from 
+lovable-tagger@1.1.13
+npm error   node_module
+s/lovable-tagger
+npm error     dev lovab
+le-tagger@"^1.1.13" 
+from the root project
+npm error
+npm error Fix the 
+upstream dependency 
+conflict, or retry
+npm error this command 
+with --force or 
+--legacy-peer-deps
+npm error to accept an 
+incorrect (and 
+potentially broken) 
+dependency resolution.
+npm error
+npm error
+npm error For a full 
+report see:
+npm error C:\Users\user
+\AppData\Local\npm-cach
+e\_logs\2026-03-17T11_2
+1_31_069Z-eresolve-repo
+rt.txt
+npm error A complete 
+log of this run can be 
+found in: C:\Users\user
+\AppData\Local\npm-cach
+e\_logs\2026-03-17T11_2
+1_31_069Z-debug-0.log

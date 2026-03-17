@@ -13,7 +13,10 @@ export function useFinanceiro(tab: TipoConta) {
             utils.financeiro.getMetrics.invalidate();
             toast.success("Conta criada");
         },
-        onError: (e: any) => toast.error(e.message),
+        onError: (e: unknown) => {
+            const message = e instanceof Error ? e.message : "Erro desconhecido";
+            toast.error(message);
+        },
     });
 
     const updateMutation = trpc.financeiro.update.useMutation({
@@ -22,7 +25,10 @@ export function useFinanceiro(tab: TipoConta) {
             utils.financeiro.getMetrics.invalidate();
             toast.success("Conta atualizada");
         },
-        onError: (e: any) => toast.error(e.message),
+        onError: (e: unknown) => {
+            const message = e instanceof Error ? e.message : "Erro desconhecido";
+            toast.error(message);
+        },
     });
 
     const deleteMutation = trpc.financeiro.delete.useMutation({
@@ -31,7 +37,10 @@ export function useFinanceiro(tab: TipoConta) {
             utils.financeiro.getMetrics.invalidate();
             toast.success("Conta excluída");
         },
-        onError: (e: any) => toast.error(e.message),
+        onError: (e: unknown) => {
+            const message = e instanceof Error ? e.message : "Erro desconhecido";
+            toast.error(message);
+        },
     });
 
     const markAsPaid = (id: string) => {
@@ -39,17 +48,17 @@ export function useFinanceiro(tab: TipoConta) {
     };
 
     return {
-        contas: (contasQuery.data as unknown as ContaBase[]) || [],
+        contas: (contasQuery.data || []) as ContaBase[],
         isLoading: contasQuery.isLoading,
         createMutation: {
             ...createMutation,
-            mutate: (payload: any) => createMutation.mutate({ type: tab, data: payload })
+            mutate: (payload: Partial<ContaBase> & { organization_id: string }) => createMutation.mutate({ type: tab, data: payload as any })
         },
         updateMutation: {
             ...updateMutation,
-            mutate: (payload: { id: string } & Record<string, any>) => {
+            mutate: (payload: { id: string } & Partial<ContaBase>) => {
                 const { id, ...data } = payload;
-                updateMutation.mutate({ type: tab, id, data });
+                updateMutation.mutate({ type: tab, id, data: data as any });
             }
         },
         deleteMutation: {

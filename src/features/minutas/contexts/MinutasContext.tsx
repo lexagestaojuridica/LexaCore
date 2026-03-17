@@ -1,9 +1,8 @@
 import { createContext, useContext, ReactNode, useCallback, useState } from "react";
-import { db as supabase } from "@/integrations/supabase/db";
-import type { Json } from "@/integrations/supabase/types";
 import { useAuth } from "@/contexts/AuthContext";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { trpc } from "@/shared/lib/trpc";
 
 // ── Types ──────────────────────────────────────────────
 export type DocumentCategory = "peticoes" | "contratos" | "procuracoes" | "notificacoes" | "pareceres" | "recursos" | "outros";
@@ -243,36 +242,9 @@ const LIBRARY_TEMPLATES: LibraryTemplate[] = [
 ];
 
 // ── Supabase Types ──
-interface SupabaseMinutaDocument {
-    id: string;
-    title: string;
-    category: DocumentCategory;
-    content: string | null;
-    variables: DocumentVariable[] | null;
-    tags: string[] | null;
-    favorite: boolean | null;
-    usage_count: number | null;
-    created_at: string;
-    updated_at: string;
-    source: "manual" | "library" | null;
-}
-
-interface SupabaseMinutaVersion {
-    id: string;
-    document_id: string;
-    content: string | null;
-    label: string | null;
-    saved_at: string;
-}
-
-async function getOrgId(userId: string): Promise<string> {
-    const { data } = await supabase.from("profiles").select("organization_id").eq("user_id", userId).single();
-    return data?.organization_id || "";
-}
-
-const mapDoc = (r: SupabaseMinutaDocument, versions: DocumentVersion[]): MinutaDocument => ({
-    id: r.id, title: r.title, category: r.category || "outros",
-    content: r.content || "", variables: r.variables || [],
+const mapDoc = (r: any, versions: DocumentVersion[]): MinutaDocument => ({
+    id: r.id, title: r.title, category: (r.category as DocumentCategory) || "outros",
+    content: r.content || "", variables: (r.variables as unknown as DocumentVariable[]) || [],
     tags: r.tags || [], favorite: r.favorite || false,
     usageCount: r.usage_count || 0, createdAt: r.created_at?.split("T")[0] || "",
     updatedAt: r.updated_at?.split("T")[0] || "", source: r.source || "manual", versions,
@@ -302,103 +274,49 @@ export const useMinutas = () => {
 };
 
 export function MinutasProvider({ children }: { children: ReactNode }) {
-    const { user } = useAuth();
-    const qc = useQueryClient();
-    const uid = user?.id || "";
+    const utils = trpc.useUtils();
     const [openDocument, setOpenDocument] = useState<string | null>(null);
 
-    const invalidate = () => qc.invalidateQueries({ queryKey: ["minutas_documents"] });
+    const invalidate = () => utils.minutas.list.invalidate();
 
-    // ── Fetch org_id once ──
-    const { data: orgProfile } = useQuery({
-        queryKey: ["minutas_org_profile", uid],
-        queryFn: async () => {
-            const { data } = await supabase.from("profiles").select("organization_id").eq("user_id", uid).single();
-            return data;
-        },
-        enabled: !!uid,
+    // ── Queries ──
+    const documentsQuery = trpc.minutas.list.useQuery();
+    const docIds = (documentsQuery.data || []).map((d: any) => d.id);
+    const versionsQuery = trpc.minutas.getVersions.useQuery(docIds, { enabled: docIds.length > 0 });
+
+    const documents = (documentsQuery.data || []).map((r: any) => {
+        const docVersions = (versionsQuery.data || [])
+            .filter((v: any) => v.document_id === r.id)
+            .map((v: any) => ({
+                id: v.id,
+                content: v.content || "",
+                savedAt: v.saved_at || "",
+                label: v.label || "",
+            }));
+        return mapDoc(r, docVersions);
     });
-    const orgId = orgProfile?.organization_id || "";
 
-    // ── Fetch documents + versions ──
-    const { data: documents = [], isLoading } = useQuery({
-        queryKey: ["minutas_documents", orgId], enabled: !!orgId,
-        queryFn: async () => {
-            const { data: rows, error } = await supabase
-                .from("minutas_documents")
-                .select("*")
-                .eq("organization_id", orgId)
-                .order("updated_at", { ascending: false });
-            if (error) throw error;
-            if (!rows?.length) return [];
-
-            const ids = (rows as unknown as SupabaseMinutaDocument[]).map((r) => r.id);
-            const { data: verRows } = await supabase
-                .from("minutas_versions").select("*").in("document_id", ids).order("saved_at");
-
-            const versByDoc: Record<string, DocumentVersion[]> = {};
-            ((verRows as unknown as SupabaseMinutaVersion[]) || []).forEach((v) => {
-                if (!versByDoc[v.document_id]) versByDoc[v.document_id] = [];
-                versByDoc[v.document_id].push({
-                    id: v.id, content: v.content || "", savedAt: v.saved_at || "", label: v.label || "",
-                });
-            });
-
-            return (rows as unknown as SupabaseMinutaDocument[]).map((r) => mapDoc(r, versByDoc[r.id] || []));
-        },
-    });
+    const isLoading = documentsQuery.isLoading || versionsQuery.isLoading;
 
     // ── Mutations ──
-    const createMut = useMutation({
-        mutationFn: async (data: Partial<MinutaDocument> & { id: string }) => {
-            const orgId = await getOrgId(uid);
-            const { error } = await supabase.from("minutas_documents").insert({
-                id: data.id, organization_id: orgId, user_id: uid,
-                title: data.title, category: data.category, content: data.content,
-                variables: data.variables as unknown as Json, tags: data.tags, favorite: data.favorite,
-                source: data.source,
-            });
-            if (error) throw error;
-        },
+    const upsertMut = trpc.minutas.upsert.useMutation({
         onSuccess: () => invalidate(),
-        onError: (e: Error) => toast.error(e.message),
+        onError: (err) => toast.error(err.message),
     });
 
     const createDocument = useCallback((data: Omit<MinutaDocument, "id" | "createdAt" | "updatedAt" | "usageCount" | "versions">): string => {
         const id = crypto.randomUUID();
-        createMut.mutate({ ...data, id });
+        upsertMut.mutate({ id, data: { ...data, id } });
         return id;
-    }, [createMut]);
-
-    const updateMut = useMutation({
-        mutationFn: async ({ id, ...data }: Partial<MinutaDocument> & { id: string }) => {
-            const payload: Record<string, any> = { updated_at: new Date().toISOString() };
-            if (data.title !== undefined) payload.title = data.title;
-            if (data.category !== undefined) payload.category = data.category;
-            if (data.content !== undefined) payload.content = data.content;
-            if (data.variables !== undefined) payload.variables = data.variables as unknown as Json;
-            if (data.tags !== undefined) payload.tags = data.tags;
-            if (data.favorite !== undefined) payload.favorite = data.favorite;
-            if (data.usageCount !== undefined) payload.usage_count = data.usageCount;
-            const orgId = await getOrgId(uid);
-            const { error } = await supabase.from("minutas_documents").update(payload).eq("id", id).eq("organization_id", orgId);
-            if (error) throw error;
-        },
-        onSuccess: () => invalidate(),
-        onError: (e: Error) => toast.error(e.message),
-    });
+    }, [upsertMut]);
 
     const updateDocument = useCallback((id: string, data: Partial<MinutaDocument>) => {
-        updateMut.mutate({ id, ...data });
-    }, [updateMut]);
+        upsertMut.mutate({ id, data });
+    }, [upsertMut]);
 
-    const deleteMut = useMutation({
-        mutationFn: async (id: string) => {
-            const { error } = await supabase.from("minutas_documents").delete().eq("id", id);
-            if (error) throw error;
-        },
+    const deleteMut = trpc.minutas.delete.useMutation({
         onSuccess: () => invalidate(),
-        onError: (e: Error) => toast.error(e.message),
+        onError: (err) => toast.error(err.message),
     });
 
     const deleteDocument = useCallback((id: string) => {
@@ -407,38 +325,40 @@ export function MinutasProvider({ children }: { children: ReactNode }) {
     }, [openDocument, deleteMut]);
 
     const toggleFavorite = useCallback((id: string) => {
-        const doc = documents.find((d) => d.id === id);
+        const doc = documents.find((d: MinutaDocument) => d.id === id);
         if (!doc) return;
-        updateMut.mutate({ id, favorite: !doc.favorite });
-    }, [documents, updateMut]);
+        upsertMut.mutate({ id, data: { favorite: !doc.favorite } });
+    }, [documents, upsertMut]);
 
     const duplicateFromLibrary = useCallback((templateId: string): string => {
         const template = LIBRARY_TEMPLATES.find((t) => t.id === templateId);
         if (!template) return "";
         const id = crypto.randomUUID();
-        createMut.mutate({
-            id, title: template.title, category: template.category,
-            content: template.content, variables: template.variables.map((v) => ({ ...v })),
-            tags: [template.area], favorite: false, source: "library",
+        upsertMut.mutate({
+            id,
+            data: {
+                id,
+                title: template.title,
+                category: template.category,
+                content: template.content,
+                variables: template.variables.map((v) => ({ ...v })),
+                tags: [template.area],
+                favorite: false,
+                source: "library",
+            }
         });
         return id;
-    }, [createMut]);
+    }, [upsertMut]);
 
-    const saveVersionMut = useMutation({
-        mutationFn: async ({ docId, label }: { docId: string; label: string }) => {
-            const doc = documents.find((d) => d.id === docId);
-            if (!doc) throw new Error("Document not found");
-            const { error } = await supabase.from("minutas_versions").insert({
-                document_id: docId, content: doc.content, label,
-            });
-            if (error) throw error;
-        },
+    const saveVersionMut = trpc.minutas.saveVersion.useMutation({
         onSuccess: () => { invalidate(); toast.success("Versão salva"); },
-        onError: (e: Error) => toast.error(e.message),
+        onError: (err) => toast.error(err.message),
     });
 
     const saveVersion = useCallback((docId: string, label: string) => {
-        saveVersionMut.mutate({ docId, label });
+        const doc = documents.find((d: MinutaDocument) => d.id === docId);
+        if (!doc) return;
+        saveVersionMut.mutate({ document_id: docId, content: doc.content, label });
     }, [documents, saveVersionMut]);
 
     return (

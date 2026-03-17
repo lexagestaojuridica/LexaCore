@@ -9,9 +9,9 @@ export function useTimesheet() {
     const timesheetQuery = trpc.timesheet.listEntries.useQuery();
     const processosQuery = trpc.timesheet.listProcessos.useQuery();
 
-    const rawEntries = timesheetQuery.data || [];
-    const entries = rawEntries.filter((e: any) => e.started_at && isValid(parseISO(e.started_at))) as unknown as TimesheetEntry[];
-    const processos = (processosQuery.data || []) as unknown as ProcessoTimesheet[];
+    const rawEntries = (timesheetQuery.data || []) as TimesheetEntry[];
+    const entries = rawEntries.filter((e: TimesheetEntry) => e.started_at && isValid(parseISO(e.started_at)));
+    const processos = (processosQuery.data || []) as ProcessoTimesheet[];
 
     const createMutation = trpc.timesheet.createEntry.useMutation({
         onSuccess: () => {
@@ -46,7 +46,7 @@ export function useTimesheet() {
 
     const handleBilling = async (entry: TimesheetEntry, value: number) => {
         const processo = processos.find(p => p.id === entry.process_id);
-        const client = (processo as any)?.clientes;
+        const client = processo?.clients;
 
         const isAsaasConfigured = !!client?.asaas_customer_id;
         const confirmMsg = isAsaasConfigured

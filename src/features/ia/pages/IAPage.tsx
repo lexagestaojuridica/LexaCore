@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { trpc } from "@/shared/lib/trpc";
 import { Button } from "@/shared/ui/button";
 import { Textarea } from "@/shared/ui/textarea";
@@ -17,24 +17,10 @@ import ReactMarkdown from "react-markdown";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/shared/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/shared/ui/tooltip";
 import { useAuth, useSession } from "@clerk/nextjs";
-
-/* ─── Types ──────────────────────────────────────── */
-interface LocalMsg {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  created_at: string;
-}
-
-interface Message {
-  id: string;
-  role: string;
-  content: string;
-  created_at: string;
-}
+import { useArunaChat } from "../hooks/useArunaChat";
+import type { ArunaContext, ArunaMessage } from "../types";
 
 /* ─── Constants ──────────────────────────────────── */
 const ARUNA_GREETING = `Olá! Sou a **ARUNA**, sua assistente jurídica avançada da Lexa Nova. ⚖️✨
@@ -88,7 +74,6 @@ const AUDIO_TYPES = [
 ];
 
 const BASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const CHAT_URL = `${BASE_URL}/functions/v1/aruna-chat`;
 const DOC_GEN_URL = `${BASE_URL}/functions/v1/aruna-generate-doc`;
 const JURIS_URL = `${BASE_URL}/functions/v1/aruna-jurisprudencia`;
 const ANALYZE_URL = `${BASE_URL}/functions/v1/aruna-analyze-doc`;
@@ -102,13 +87,10 @@ export default function IAPage() {
   const { userId } = useAuth();
   const { session } = useSession();
   const { toast } = useToast();
-  const utils = trpc.useUtils();
   const endRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [input, setInput] = useState("");
-  const [msgs, setMsgs] = useState<LocalMsg[]>([]);
-  const [streaming, setStreaming] = useState(false);
   const [busy, setBusy] = useState(false);
   const [tool, setTool] = useState<Tool>(null);
 
@@ -126,12 +108,11 @@ export default function IAPage() {
 
   /* ─── tRPC Queries ────────────────────────────────── */
   const contextQuery = trpc.ia.getContext.useQuery();
-  const historyQuery = trpc.ia.listHistory.useQuery();
 
-  const ctx = useMemo(() => {
+  const ctx = useMemo((): ArunaContext => {
     const data = contextQuery.data;
     return {
-      processos: data?.processos.map((p: any) => ({ ...p, client_name: p.clients?.name, clients: undefined })) || [],
+      processos: (data?.processos || []).map((p: { clients?: { name: string } }) => ({ ...p, client_name: p.clients?.name, clients: undefined })),
       clientes: data?.clientes || [],
       eventos: data?.eventos || [],
     };
@@ -139,17 +120,11 @@ export default function IAPage() {
 
   const docsData = contextQuery.data?.docs || [];
 
-  useEffect(() => {
-    if (historyQuery.data && historyQuery.data.length > 0 && msgs.length === 0)
-      setMsgs(historyQuery.data.map((m: any) => ({
-        id: m.id,
-        role: m.role as "user" | "assistant",
-        content: m.content,
-        created_at: m.created_at
-      })));
-  }, [historyQuery.data, msgs.length]);
+  const { messages, sendMessage, clearHistory, streaming, addUser, addAssistant, setMessages } = useArunaChat({
+    initialContext: ctx
+  });
 
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs, streaming]);
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, streaming]);
 
   /* ─── SSE Stream Header Helper ────────────────────── */
   const AUTH_HEADER = async () => {
@@ -157,171 +132,90 @@ export default function IAPage() {
     return { Authorization: `Bearer ${token} ` };
   };
 
-  const stream = useCallback(async (url: string, body: Record<string, unknown>, aId: string) => {
-    let content = "";
-    const authHeader = await AUTH_HEADER();
-    const resp = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...authHeader },
-      body: JSON.stringify(body),
-    });
-    if (!resp.ok) { const e = await resp.json().catch(() => ({})); throw new Error(e.error || `Erro ${resp.status} `); }
-    if (!resp.body) throw new Error("Sem resposta");
-
-    const reader = resp.body.getReader();
-    const dec = new TextDecoder();
-    let buf = "";
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buf += dec.decode(value, { stream: true });
-      let ni: number;
-      while ((ni = buf.indexOf("\n")) !== -1) {
-        let ln = buf.slice(0, ni); buf = buf.slice(ni + 1);
-        if (ln.endsWith("\r")) ln = ln.slice(0, -1);
-        if (ln.startsWith(":") || !ln.trim() || !ln.startsWith("data: ")) continue;
-        const js = ln.slice(6).trim();
-        if (js === "[DONE]") break;
-        try {
-          const c = JSON.parse(js).choices?.[0]?.delta?.content;
-          if (c) { content += c; setMsgs((p) => p.map((m) => m.id === aId ? { ...m, content } : m)); }
-        } catch { buf = ln + "\n" + buf; break; }
-      }
-    }
-    // flush
-    if (buf.trim()) {
-      for (const raw of buf.split("\n")) {
-        if (!raw || !raw.replace("\r", "").startsWith("data: ")) continue;
-        const js = raw.replace("\r", "").slice(6).trim();
-        if (js === "[DONE]") continue;
-        try { const c = JSON.parse(js).choices?.[0]?.delta?.content; if (c) { content += c; setMsgs((p) => p.map((m) => m.id === aId ? { ...m, content } : m)); } } catch (e) { /* ignore */ }
-      }
-    }
-    return content;
-  }, []);
-
-  /* ─── tRPC Mutations ────────────────────────────── */
-  const saveMsgMut = trpc.ia.saveMessage.useMutation({
-    onSuccess: () => utils.ia.listHistory.invalidate(),
-  });
-
-  const clearHistMut = trpc.ia.clearHistory.useMutation({
-    onSuccess: () => {
-      setMsgs([]);
-      utils.ia.listHistory.invalidate();
-      toast({ title: "Amnésia induzida! Histórico apagado." });
-    },
-  });
-
-  /* ─── Add message helpers ────────────────────────── */
-  const addUser = (text: string) => {
-    const m: LocalMsg = { id: crypto.randomUUID(), role: "user", content: text, created_at: new Date().toISOString() };
-    setMsgs((p) => [...p, m]);
-    saveMsgMut.mutate({ role: "user", content: text });
-    return m;
-  };
-  const addAssistant = () => {
-    const id = crypto.randomUUID();
-    setMsgs((p) => [...p, { id, role: "assistant", content: "", created_at: new Date().toISOString() }]);
-    return id;
-  };
-  const saveAssistant = (content: string) => {
-    if (content) saveMsgMut.mutate({ role: "assistant", content });
-  };
-
   /* ─── Chat ──────────────────────────────────────── */
   const handleSend = async () => {
     const t = input.trim();
     if (!t || streaming) return;
-    const um = addUser(t);
     setInput("");
-    setStreaming(true);
-    const aId = addAssistant();
-    try {
-      const history = [...msgs, um].slice(-20).map((m) => ({ role: m.role, content: m.content }));
-      const c = await stream(CHAT_URL, { messages: history, context: ctx }, aId);
-      saveAssistant(c);
-    } catch (e: any) {
-      toast({ title: "Ops, a ARUNA falhou ao conectar", description: e.message, variant: "destructive" });
-      setMsgs((p) => p.filter((m) => m.id !== aId));
-    } finally { setStreaming(false); }
+    await sendMessage(t, ctx);
   };
 
   const handleKey = (e: React.KeyboardEvent) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } };
 
   const handleClear = () => {
     if (!userId || streaming) return;
-    clearHistMut.mutate();
+    clearHistory();
   };
 
   /* ─── Generate Doc ──────────────────────────────── */
   const handleGenDoc = async () => {
-    if (!docType || !userId || busy) return;
-    setBusy(true);
-    const label = DOC_TYPES.find((d) => d.value === docType)?.label || "Documento";
-    addUser(`📝 Gerar: ** ${label}** ${docInstr ? ` — ${docInstr}` : ""} `);
+    if (!docType || streaming) return;
     setTool(null);
-    const aId = addAssistant();
-    setMsgs((p) => p.map((m) => m.id === aId ? { ...m, content: "⏳ Estou redigindo o documento para você. Por favor, aguarde alguns segundos..." } : m));
-    try {
-      const authHeader = await AUTH_HEADER();
-      const r = await fetch(DOC_GEN_URL, { method: "POST", headers: { "Content-Type": "application/json", ...authHeader }, body: JSON.stringify({ doc_type: docType, instructions: docInstr, organization_id: (session as any)?.publicMetadata?.organizationId, user_id: userId }) });
-      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || `Erro ${r.status} `);
-      const res = await r.json();
-      const c = `✅ ** ${res.document.file_name}** gerado com sucesso e salvo no seu módulo de ** Documentos(GED) **.\n\n### Preview Rápido: \n${res.content_preview?.slice(0, 400)}...`;
-      setMsgs((p) => p.map((m) => m.id === aId ? { ...m, content: c } : m));
-      saveAssistant(c);
-      // Documents invalidation handled by trpc
-      toast({ title: "Minuta jurídica redigida com sucesso!" });
-    } catch (e: any) {
-      setMsgs((p) => p.map((m) => m.id === aId ? { ...m, content: `❌ Tive um problema ao gerar o documento: ${e.message} ` } : m));
-    } finally { setBusy(false); setDocType(""); setDocInstr(""); }
+    const typeLabel = DOC_TYPES.find(d => d.value === docType)?.label || docType;
+    const prompt = `📄 Gerar documento: **${typeLabel}**\nInstruções: ${docInstr || "Nenhuma"}`;
+
+    await sendMessage(prompt, {
+      ...ctx,
+      tool: "generate_doc",
+      doc_type: docType,
+      instructions: docInstr
+    });
+
+    setDocType("");
+    setDocInstr("");
   };
 
   /* ─── Jurisprudence ─────────────────────────────── */
   const handleJuris = async () => {
-    const orgId = (session as any)?.publicMetadata?.organizationId as string;
-    if (!jurisQ.trim() || streaming || !orgId) return;
-    setStreaming(true); setTool(null);
-    const area = jurisArea !== "all" ? jurisArea : "";
-    addUser(`🔍 Pesquisar Jurisprudência: ** ${jurisQ}** ${area ? ` (${AREAS_DIREITO.find(a => a.value === jurisArea)?.label})` : ""} `);
-    const aId = addAssistant();
-    try {
-      const c = await stream(JURIS_URL, { query: jurisQ, area, organization_id: orgId }, aId);
-      saveAssistant(c);
-      setJurisQ(""); setJurisArea("all");
-    } catch (e: any) {
-      toast({ title: "Erro na pesquisa de jurisprudência", description: e.message, variant: "destructive" });
-      setMsgs((p) => p.filter((m) => m.id !== aId));
-    } finally { setStreaming(false); }
+    if (!jurisQ.trim() || streaming) return;
+    setTool(null);
+    const areaLabel = AREAS_DIREITO.find(a => a.value === jurisArea)?.label;
+    const prompt = `🔍 Pesquisar Jurisprudência: **${jurisQ}** ${jurisArea !== "all" ? `(${areaLabel})` : ""}`;
+
+    await sendMessage(prompt, {
+      ...ctx,
+      tool: "jurisprudencia",
+      query: jurisQ,
+      area: jurisArea !== "all" ? jurisArea : ""
+    });
+
+    setJurisQ("");
+    setJurisArea("all");
   };
 
   /* ─── Analyze Doc ───────────────────────────────── */
   const handleAnalyze = async () => {
-    const orgId = (session as any)?.publicMetadata?.organizationId as string;
-    if (!analyzeDocId || !orgId || streaming) return;
-    setStreaming(true); setTool(null);
-    const dn = docsData?.find((d) => d.id === analyzeDocId)?.file_name || "Documento";
-    addUser(`📄 Analisar PDF: ** ${dn}** (${ANALYSIS_TYPES.find(a => a.value === analyzeType)?.label})`);
-    const aId = addAssistant();
-    try {
-      const c = await stream(ANALYZE_URL, { document_id: analyzeDocId, organization_id: orgId, analysis_type: analyzeType, custom_instructions: analyzeInstr }, aId);
-      saveAssistant(c);
-      setAnalyzeDocId(""); setAnalyzeInstr("");
-    } catch (e: any) {
-      toast({ title: "Falha ao processar o arquivo", description: e.message, variant: "destructive" });
-      setMsgs((p) => p.filter((m) => m.id !== aId));
-    } finally { setStreaming(false); }
+    if (!analyzeDocId || streaming) return;
+    setTool(null);
+    const docName = docsData?.find((d: { id: string; file_name: string }) => d.id === analyzeDocId)?.file_name || "Documento";
+    const typeLabel = ANALYSIS_TYPES.find(a => a.value === analyzeType)?.label;
+    const prompt = `📄 Analisar PDF: **${docName}** (${typeLabel})`;
+
+    await sendMessage(prompt, {
+      ...ctx,
+      tool: "analyze_doc",
+      document_id: analyzeDocId,
+      analysis_type: analyzeType,
+      custom_instructions: analyzeInstr
+    });
+
+    setAnalyzeDocId("");
+    setAnalyzeInstr("");
   };
 
   /* ─── Transcribe Audio ──────────────────────────── */
   const handleTranscribe = async () => {
-    const orgId = (session as any)?.publicMetadata?.organizationId as string;
+    const orgId = (session as any)?.publicMetadata?.organizationId as string | undefined;
     if (!audioFile || !orgId || !userId || streaming) return;
-    setStreaming(true); setTool(null);
+    setTool(null);
     const typeLabel = AUDIO_TYPES.find(t => t.value === audioType)?.label || audioType;
-    addUser(`🎙️ Transcrever gravação: ** ${audioFile.name}** (${typeLabel})`);
+    const content = `🎙️ Transcrever gravação: **${audioFile.name}** (${typeLabel})`;
+
+    // Use the hook's helper to add a user message and trigger save
+    addUser(content);
+
     const aId = addAssistant();
+
     try {
       const fd = new FormData();
       fd.append("audio", audioFile);
@@ -335,7 +229,7 @@ export default function IAPage() {
       if (!resp.ok) throw new Error((await resp.json().catch(() => ({}))).error || `Erro ${resp.status} `);
       if (!resp.body) throw new Error("Sem resposta");
 
-      let content = "";
+      let fullText = "";
       const reader = resp.body.getReader();
       const dec = new TextDecoder();
       let buf = "";
@@ -350,16 +244,25 @@ export default function IAPage() {
           if (ln.startsWith(":") || !ln.trim() || !ln.startsWith("data: ")) continue;
           const js = ln.slice(6).trim();
           if (js === "[DONE]") break;
-          try { const c = JSON.parse(js).choices?.[0]?.delta?.content; if (c) { content += c; setMsgs((p) => p.map((m) => m.id === aId ? { ...m, content } : m)); } } catch { buf = ln + "\n" + buf; break; }
+          try {
+            const c = JSON.parse(js).choices?.[0]?.delta?.content;
+            if (c) {
+              fullText += c;
+              setMessages((p: ArunaMessage[]) => p.map((m: ArunaMessage) => m.id === aId ? { ...m, content: fullText } : m));
+            }
+          } catch { buf = ln + "\n" + buf; break; }
         }
       }
-      saveAssistant(content);
-      setAudioFile(null); setAudioInstr("");
+
+      trpc.ia.saveMessage.useMutation().mutate({ role: "assistant", content: fullText });
+      setAudioFile(null);
+      setAudioInstr("");
       if (fileRef.current) fileRef.current.value = "";
-    } catch (e: any) {
-      toast({ title: "Erro na transcrição de voz", description: e.message, variant: "destructive" });
-      setMsgs((p) => p.filter((m) => m.id !== aId));
-    } finally { setStreaming(false); }
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : "Erro desconhecido";
+      toast({ title: "Erro na transcrição de voz", description: message, variant: "destructive" });
+      setMessages((p: ArunaMessage[]) => p.filter((m: ArunaMessage) => m.id !== aId));
+    }
   };
 
   const isWorking = streaming || busy;
@@ -421,7 +324,7 @@ export default function IAPage() {
 
           <div className="w-px h-6 bg-border mx-2" />
 
-          {msgs.length > 0 && (
+          {messages.length > 0 && (
             <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors" onClick={handleClear} disabled={isWorking} title="Apagar Histórico de Conversa">
               <Trash2 className="h-4 w-4" />
             </Button>
@@ -445,7 +348,7 @@ export default function IAPage() {
                     <Input value={jurisQ} onChange={(e) => setJurisQ(e.target.value)} placeholder="Ex: Dano moral atraso de voo companhia internacional..." className="h-11 flex-1 text-sm bg-background border-border" onKeyDown={(e) => { if (e.key === "Enter") handleJuris(); }} />
                     <Select value={jurisArea} onValueChange={setJurisArea}>
                       <SelectTrigger className="h-11 sm:w-56 text-sm bg-background"><SelectValue /></SelectTrigger>
-                      <SelectContent>{AREAS_DIREITO.map(a => <SelectItem key={a.value} value={a.value} className="text-sm py-2">{a.label}</SelectItem>)}</SelectContent>
+                      <SelectContent>{AREAS_DIREITO.map((a: { value: string, label: string }) => <SelectItem key={a.value} value={a.value} className="text-sm py-2">{a.label}</SelectItem>)}</SelectContent>
                     </Select>
                     <Button className="h-11 px-8 shadow-sm" onClick={handleJuris} disabled={!jurisQ.trim() || isWorking}>
                       <Search className="mr-2 h-4 w-4" /> Buscar Precedentes
@@ -468,11 +371,11 @@ export default function IAPage() {
                       <div className="flex flex-col md:flex-row gap-3">
                         <Select value={analyzeDocId} onValueChange={setAnalyzeDocId}>
                           <SelectTrigger className="h-11 flex-1 text-sm bg-background shadow-sm border-border"><SelectValue placeholder="Selecione o documento armazenado no GED que deseja analisar" /></SelectTrigger>
-                          <SelectContent>{docsData.map(d => <SelectItem key={d.id} value={d.id} className="text-sm py-2">{d.file_name}</SelectItem>)}</SelectContent>
+                          <SelectContent>{docsData.map((d: { id: string, file_name: string }) => <SelectItem key={d.id} value={d.id} className="text-sm py-2">{d.file_name}</SelectItem>)}</SelectContent>
                         </Select>
                         <Select value={analyzeType} onValueChange={setAnalyzeType}>
                           <SelectTrigger className="h-11 md:w-56 text-sm bg-background shadow-sm"><SelectValue /></SelectTrigger>
-                          <SelectContent>{ANALYSIS_TYPES.map(a => <SelectItem key={a.value} value={a.value} className="text-sm py-2">{a.label}</SelectItem>)}</SelectContent>
+                          <SelectContent>{ANALYSIS_TYPES.map((a: { value: string, label: string }) => <SelectItem key={a.value} value={a.value} className="text-sm py-2">{a.label}</SelectItem>)}</SelectContent>
                         </Select>
                       </div>
                       {analyzeDocId && (
@@ -496,7 +399,7 @@ export default function IAPage() {
                     <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full bg-background" onClick={() => setTool(null)}><X className="h-4 w-4" /></Button>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {DOC_TYPES.map(dt => (
+                    {DOC_TYPES.map((dt: { value: string, label: string }) => (
                       <button key={dt.value} onClick={() => setDocType(docType === dt.value ? "" : dt.value)}
                         className={cn("rounded-lg border px-4 py-2 text-sm transition-all font-medium", docType === dt.value ? "border-primary bg-primary text-primary-foreground shadow-md hover:scale-105" : "bg-card border-border/80 text-foreground shadow-sm hover:border-primary/50 hover:bg-accent/5")}>
                         {dt.label}
@@ -533,7 +436,7 @@ export default function IAPage() {
                     </div>
                     <Select value={audioType} onValueChange={setAudioType}>
                       <SelectTrigger className="h-12 md:w-56 text-sm bg-background shadow-sm"><SelectValue /></SelectTrigger>
-                      <SelectContent>{AUDIO_TYPES.map(a => <SelectItem key={a.value} value={a.value} className="text-sm py-2">{a.label}</SelectItem>)}</SelectContent>
+                      <SelectContent>{AUDIO_TYPES.map((a: { value: string, label: string }) => <SelectItem key={a.value} value={a.value} className="text-sm py-2">{a.label}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
                   {audioFile && (
@@ -553,7 +456,7 @@ export default function IAPage() {
 
       {/* ─── Messages Interface ─────────────────────────────────── */}
       <div className="flex-1 overflow-y-auto px-4 md:px-12 py-8 relative z-10 scroll-smooth">
-        {msgs.length === 0 && !busy ? (
+        {messages.length === 0 && !busy ? (
           <div className="mx-auto max-w-3xl space-y-8 pt-10">
             {/* Greeting */}
             <div className="flex items-start gap-5">
@@ -568,7 +471,7 @@ export default function IAPage() {
             </div>
             {/* Quick actions grid */}
             <div className="ml-[68px] grid grid-cols-1 md:grid-cols-2 gap-3">
-              {quickActions.map((a) => {
+              {quickActions.map((a: { label: string, prompt: string, icon: any }) => {
                 const Icon = a.icon;
                 return (
                   <button key={a.label} onClick={() => setInput(a.prompt)}
@@ -587,7 +490,7 @@ export default function IAPage() {
           </div>
         ) : (
           <div className="mx-auto max-w-4xl space-y-6">
-            {msgs.map((m) => (
+            {messages.map((m: ArunaMessage) => (
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} key={m.id} className={cn("flex gap-4", m.role === "user" && "flex-row-reverse")}>
                 <div className={cn("h-10 w-10 shrink-0 overflow-hidden rounded-2xl flex items-center justify-center shadow-sm", m.role === "user" ? "bg-primary text-primary-foreground" : "bg-gradient-to-br from-indigo-500/20 to-purple-500/20 p-0.5 ring-1 ring-border/50")}>
                   {m.role === "user" ? <User className="h-5 w-5" /> : <Image src={arunaAvatar} alt="ARUNA" width={40} height={40} className="h-full w-full object-cover rounded-[14px]" />}
@@ -605,12 +508,12 @@ export default function IAPage() {
                     </div>
                   )}
                   <p className={cn("mt-2 text-xs font-medium text-right flex items-center gap-1 justify-end", m.role === "user" ? "text-primary-foreground/70" : "text-muted-foreground")}>
-                    {m.role === "assistant" && <Sparkles className="h-3 w-3" />} {format(parseISO(m.created_at), "HH:mm", { locale: ptBR })}
+                    {m.role === "assistant" && <Sparkles className="h-3 w-3" />} {m.created_at ? format(parseISO(m.created_at), "HH:mm", { locale: ptBR }) : ""}
                   </p>
                 </div>
               </motion.div>
             ))}
-            {streaming && msgs[msgs.length - 1]?.role !== "assistant" && (
+            {streaming && messages[messages.length - 1]?.role !== "assistant" && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-4">
                 <div className="h-10 w-10 shrink-0 overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 p-0.5 ring-1 ring-border/50 shadow-sm">
                   <Image src={arunaAvatar} alt="ARUNA" width={40} height={40} className="h-full w-full object-cover rounded-[14px]" />

@@ -210,7 +210,7 @@ export default function ConfiguracoesPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {(teamMembers as TeamMember[]).map((member) => (
+                  {(teamMembers as TeamMember[]).map((member: TeamMember) => (
                     <div key={member.id} className="flex items-center justify-between rounded-lg border border-border p-3">
                       <div className="flex items-center gap-3">
                         {member.avatar_url ? (
@@ -271,7 +271,7 @@ export default function ConfiguracoesPage() {
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    {employees.map((emp) => (
+                    {employees.map((emp: Employee) => (
                       <div key={emp.id} className="flex items-center justify-between rounded-lg border border-border p-3 hover:bg-muted/20 transition-colors">
                         <div className="flex items-center gap-3 min-w-0">
                           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary text-sm font-medium shrink-0">
@@ -314,7 +314,7 @@ export default function ConfiguracoesPage() {
               <div className="grid gap-4 md:grid-cols-3">
                 {plans.map((plan, i) => {
                   const isCurrent = orgSubscription?.plans?.slug === plan.slug;
-                  const planIcons = ["", "✨", "🚀", "👑"];
+                  const planIcons: string[] = ["", "✨", "🚀", "👑"];
                   return (
                     <Card key={plan.id} className={cn("relative border-border overflow-hidden transition-shadow hover:shadow-md", isCurrent && "ring-2 ring-primary")}>
                       {isCurrent && <Badge className="absolute top-3 right-3 text-[10px]">{t("settings.currentPlan")}</Badge>}

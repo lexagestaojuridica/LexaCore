@@ -12,7 +12,7 @@ import { Skeleton } from "@/shared/ui/skeleton";
 
 interface PlatformSetting {
     key: string;
-    value: any;
+    value: string | boolean;
     description: string;
 }
 
@@ -32,7 +32,7 @@ export default function AdminSettings() {
     const { data: settingsData, isLoading } = useQuery({
         queryKey: ["admin-platform-settings"],
         queryFn: async () => {
-            const { data, error } = await (supabase as any).from("platform_settings").select("*");
+            const { data, error } = await supabase.from("platform_settings").select("*");
             if (error) throw error;
             return data as PlatformSetting[];
         },
@@ -42,9 +42,9 @@ export default function AdminSettings() {
         if (settingsData) {
             const newState = { ...settingsState };
             settingsData.forEach((setting: PlatformSetting) => {
-                if (setting.key === 'maintenance_mode') newState.maintenance_mode = setting.value;
-                if (setting.key === 'disable_new_signups') newState.disable_new_signups = setting.value;
-                if (setting.key === 'platform_notice') newState.platform_notice = setting.value;
+                if (setting.key === 'maintenance_mode') newState.maintenance_mode = !!setting.value;
+                if (setting.key === 'disable_new_signups') newState.disable_new_signups = !!setting.value;
+                if (setting.key === 'platform_notice') newState.platform_notice = String(setting.value);
             });
             setSettingsState(newState);
         }
@@ -57,15 +57,16 @@ export default function AdminSettings() {
                 { key: 'disable_new_signups', value: settingsState.disable_new_signups, description: 'Impede o registro de novas organizações' },
                 { key: 'platform_notice', value: settingsState.platform_notice, description: 'Mensagem de aviso global no painel dos clientes' }
             ];
-            const { error } = await (supabase as any).from('platform_settings').upsert(updates, { onConflict: 'key' });
+            const { error } = await supabase.from('platform_settings').upsert(updates, { onConflict: 'key' });
             if (error) throw error;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["admin-platform-settings"] });
             toast.success("Configurações globais salvas com sucesso!");
         },
-        onError: (err: any) => {
-            toast.error(`Falha ao salvar configurações: ${err.message}`);
+        onError: (err) => {
+            const message = err instanceof Error ? err.message : "Erro desconhecido";
+            toast.error(`Falha ao salvar configurações: ${message}`);
         }
     });
 

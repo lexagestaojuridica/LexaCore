@@ -1,5 +1,4 @@
-import { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { trpc } from "@/shared/lib/trpc";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Send, X, Sparkles } from "lucide-react";
 import { Button } from "@/shared/ui/button";
@@ -7,123 +6,32 @@ import { Textarea } from "@/shared/ui/textarea";
 import arunaAvatar from "@/assets/aruna-avatar.png";
 import ReactMarkdown from "react-markdown";
 import Image from "next/image";
-import { useUser, useSession } from "@clerk/nextjs";
-
-const BASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const CHAT_URL = `${BASE_URL}/functions/v1/aruna-chat`;
-
-interface Msg {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-}
+import { useArunaChat } from "../hooks/useArunaChat";
+import { toast } from "sonner"; // Assuming sonner is used based on package.json
 
 export default function ArunaQuickChat() {
-  const { user } = useUser();
-  const { session } = useSession();
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
-  const [streaming, setStreaming] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
 
-  const utils = trpc.useUtils();
-
-  const { data: history = [] } = trpc.ia.listHistory.useQuery(undefined, {
-    enabled: open,
+  const { messages, sendMessage, streaming } = useArunaChat({
+    initialContext: "quick_chat"
   });
 
-  const saveMsgMut = trpc.ia.saveMessage.useMutation({
-    onSuccess: () => utils.ia.listHistory.invalidate(),
-  });
-
-  // Local state for streaming response
-  const [localMsgs, setLocalMsgs] = useState<Msg[]>([]);
-
-  // Sync history to localMsgs when not streaming
   useEffect(() => {
-    if (!streaming) {
-      setLocalMsgs(history.map(h => ({
-        id: h.id,
-        role: h.role as "user" | "assistant",
-        content: h.content
-      })));
+    if (open) {
+      endRef.current?.scrollIntoView({ behavior: "smooth" });
     }
-  }, [history, streaming]);
-
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [localMsgs]);
-
-  const stream = useCallback(async (url: string, body: Record<string, unknown>, aId: string) => {
-    const token = await session?.getToken({ template: "supabase" });
-    let content = "";
-    const resp = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
-      },
-      body: JSON.stringify(body),
-    });
-    if (!resp.ok) throw new Error(`Erro ${resp.status}`);
-    if (!resp.body) throw new Error("Sem resposta");
-
-    const reader = resp.body.getReader();
-    const dec = new TextDecoder();
-    let buf = "";
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buf += dec.decode(value, { stream: true });
-      let ni: number;
-      while ((ni = buf.indexOf("\n")) !== -1) {
-        let ln = buf.slice(0, ni); buf = buf.slice(ni + 1);
-        if (ln.endsWith("\r")) ln = ln.slice(0, -1);
-        if (!ln.startsWith("data: ") || ln.startsWith(":")) continue;
-        const js = ln.slice(6).trim();
-        if (js === "[DONE]") break;
-        try {
-          const c = JSON.parse(js).choices?.[0]?.delta?.content;
-          if (c) {
-            content += c;
-            setLocalMsgs((p) => p.map((m) => m.id === aId ? { ...m, content } : m));
-          }
-        } catch { break; }
-      }
-    }
-    return content;
-  }, [session]);
+  }, [messages, open]);
 
   const handleSend = async () => {
     const t = input.trim();
-    const orgId = (session as any)?.publicMetadata?.organizationId as string;
-    if (!t || streaming || !orgId) return;
+    if (!t || streaming) return;
 
-    const uId = crypto.randomUUID();
-    const userMsg: Msg = { id: uId, role: "user", content: t };
-
-    // Save user message immediately to DB
-    saveMsgMut.mutate({ id: uId, role: "user", content: t });
-
-    setLocalMsgs((p) => [...p, userMsg]);
     setInput("");
-    setStreaming(true);
-
-    const aId = crypto.randomUUID();
-    setLocalMsgs((p) => [...p, { id: aId, role: "assistant", content: "" }]);
-
-    try {
-      const hist = [...localMsgs, userMsg].slice(-10).map((m) => ({ role: m.role, content: m.content }));
-      const content = await stream(CHAT_URL, {
-        messages: hist,
-        organization_id: orgId,
-        context: "quick_chat"
-      }, aId);
-
-      // Save assistant message to DB
-      saveMsgMut.mutate({ id: aId, role: "assistant", content });
-    } catch {
-      setLocalMsgs((p) => p.filter((m) => m.id !== aId));
-    } finally { setStreaming(false); }
+    await sendMessage(t);
   };
+
 
   return (
     <>
@@ -173,7 +81,7 @@ export default function ArunaQuickChat() {
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto px-4 py-5 space-y-5 scroll-smooth relative">
-              {localMsgs.length === 0 && (
+              {messages.length === 0 && (
                 <div className="flex flex-col items-center justify-center h-full text-center space-y-4 max-w-[240px] mx-auto">
                   <div className="h-20 w-20 shrink-0 overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-500/10 to-purple-500/10 p-1 ring-1 ring-border/50">
                     <Image src={arunaAvatar} alt="ARUNA" width={80} height={80} className="h-full w-full object-cover rounded-[20px] opacity-60 grayscale-[30%]" />
@@ -184,7 +92,7 @@ export default function ArunaQuickChat() {
                   </div>
                 </div>
               )}
-              {localMsgs.map((m) => (
+              {messages.map((m) => (
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} key={m.id} className={`flex gap-3 ${m.role === "user" ? "flex-row-reverse" : "flex-row"}`}>
                   {m.role === "assistant" && (
                     <div className="h-8 w-8 shrink-0 overflow-hidden rounded-[10px] bg-gradient-to-br from-indigo-500/20 to-purple-500/20 p-px ring-1 ring-border/50 mt-1">
@@ -205,7 +113,7 @@ export default function ArunaQuickChat() {
                   </div>
                 </motion.div>
               ))}
-              {streaming && localMsgs[localMsgs.length - 1]?.role !== "assistant" && (
+              {streaming && messages[messages.length - 1]?.role !== "assistant" && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-3">
                   <div className="h-8 w-8 shrink-0 overflow-hidden rounded-[10px] bg-gradient-to-br from-indigo-500/20 to-purple-500/20 p-px ring-1 ring-border/50">
                     <Image src={arunaAvatar} alt="ARUNA" width={32} height={32} className="h-full w-full object-cover rounded-[8px]" />

@@ -23,3 +23,26 @@ export type Documento = {
     file_type: string | null;
     created_at: string;
 };
+
+export interface ProcessCapture {
+    id: string;
+    process_id: string;
+    capture_date: string;
+    content: string;
+    source: string;
+    status: string;
+    created_at: string;
+}
+
+export interface Deadline {
+    id: string;
+    process_id: string;
+    organization_id: string;
+    title: string;
+    deadline_type: 'useful_days' | 'calendar_days';
+    start_date: string;
+    days_count: number;
+    fatal_date: string;
+    status: 'pending' | 'completed' | 'overdue' | 'cancelled';
+    created_at: string;
+}

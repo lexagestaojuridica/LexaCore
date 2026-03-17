@@ -11,8 +11,8 @@ export function useMeuDia() {
 
     return {
         user,
-        eventos: (dashboardQuery.data?.eventos || []) as Evento[],
-        processos: (dashboardQuery.data?.processos || []) as Processo[],
+        eventos: (dashboardQuery.data?.eventos ?? []) as Evento[],
+        processos: (dashboardQuery.data?.processos ?? []) as Processo[],
         stats: dashboardQuery.data?.stats as DashboardStats | undefined,
         timesheetToday: dashboardQuery.data?.timesheetToday as TimesheetSummary | undefined,
         isLoading: dashboardQuery.isLoading,

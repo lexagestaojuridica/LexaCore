@@ -16,6 +16,20 @@ import { Skeleton } from "@/shared/ui/skeleton";
 import { EmptyState } from "@/shared/components/EmptyState";
 import { Badge } from "@/shared/ui/badge";
 
+interface AuditLogEntry {
+    id: string;
+    action: string;
+    created_at: string;
+    details: any;
+    profiles: {
+        full_name: string | null;
+        email: string | null;
+    } | null;
+    organizations: {
+        name: string | null;
+    } | null;
+}
+
 export default function AdminAudit() {
     const [searchTerm, setSearchTerm] = useState("");
 
@@ -34,7 +48,7 @@ export default function AdminAudit() {
 
             const { data, error } = await query;
             if (error) throw error;
-            return data;
+            return data as unknown as AuditLogEntry[];
         },
     });
 
@@ -102,7 +116,7 @@ export default function AdminAudit() {
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                logs?.map((log: any) => (
+                                logs?.map((log) => (
                                     <TableRow key={log.id} className="border-zinc-800 hover:bg-zinc-800/50 transition-colors">
                                         <TableCell className="font-medium">
                                             <Badge variant="outline" className="bg-indigo-500/10 text-indigo-400 border-indigo-500/20 font-mono text-xs">

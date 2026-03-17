@@ -29,11 +29,14 @@ export function useTimer(orgId: string | undefined, userId: string | undefined) 
     }, [activeTimer]);
 
     const logTimerAction = async (entryId: string, action: string) => {
-        await supabase.from("timesheet_timer_logs").insert({
+        const { error } = await supabase.from("timesheet_timer_logs").insert({
             timesheet_entry_id: entryId,
             action,
             logged_at: new Date().toISOString(),
         });
+        if (error) {
+            console.error("Erro ao logar ação do timer:", error);
+        }
     };
 
     const startTimer = () => {
@@ -73,7 +76,7 @@ export function useTimer(orgId: string | undefined, userId: string | undefined) 
 
         const startedIso = new Date(endedAt.getTime() - elapsed * 1000).toISOString();
 
-        const { data: inserted } = await supabase.from("timesheet_entries").insert({
+        const { data: inserted, error } = await supabase.from("timesheet_entries").insert({
             organization_id: orgId,
             user_id: userId,
             process_id: activeTimer.processId,
@@ -85,11 +88,13 @@ export function useTimer(orgId: string | undefined, userId: string | undefined) 
             billing_status: "pendente",
         }).select("id").single();
 
-        if (inserted) {
-            const insertedId = inserted.id;
-            if (insertedId) {
-                await logTimerAction(insertedId, "stop");
-            }
+        if (error) {
+            toast.error(`Erro ao salvar: ${error.message}`);
+            return;
+        }
+
+        if (inserted?.id) {
+            await logTimerAction(inserted.id, "stop");
         }
 
         queryClient.invalidateQueries({ queryKey: ["timesheet"] });

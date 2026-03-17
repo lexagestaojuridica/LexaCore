@@ -1,0 +1,2 @@
+﻿src/features/rh/pages/ColaboradoresPage.tsx(567,59): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/features/rh/pages/ColaboradoresPage.tsx(567,74): error TS7006: Parameter 'profile' implicitly has an 'any' type.

@@ -216,8 +216,6 @@ function TimesheetBITab({ orgId }: { orgId: string | null }) {
 
 export default function BIPage() {
   const { user } = useAuth();
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("overview");
 
   const { data: profile } = useQuery({
@@ -230,13 +228,12 @@ export default function BIPage() {
   });
   const orgId = profile?.organization_id ?? null;
 
-  useEffect(() => {
-    if (orgId) fetchData(orgId);
-  }, [orgId]);
+  const { data, isLoading: loading } = useQuery({
+    queryKey: ["bi", "dashboard", orgId],
+    enabled: !!orgId,
+    queryFn: async (): Promise<DashboardData> => {
+      if (!orgId) throw new Error("No orgId");
 
-  const fetchData = async (orgId: string) => {
-    setLoading(true);
-    try {
       const [
         { data: processos },
         { data: clientes },
@@ -338,11 +335,11 @@ export default function BIPage() {
       const ticketMedioProcesso = processosComValor.length > 0 ? processosComValor.reduce((s: number, p: any) => s + Number(p.estimated_value || 0), 0) / processosComValor.length : 0;
       const valorEstimadoCarteira = procs.filter((p: any) => p.status === "ativo").reduce((s: number, p: any) => s + Number(p.estimated_value || 0), 0);
 
-      setData({
+      return {
         totalProcessos: procs.length,
-        processosAtivos: procs.filter((p) => p.status === "ativo").length,
-        processosEncerrados: procs.filter((p) => p.status === "encerrado").length,
-        processosSuspensos: procs.filter((p) => p.status === "suspenso").length,
+        processosAtivos: procs.filter((p: any) => p.status === "ativo").length,
+        processosEncerrados: procs.filter((p: any) => p.status === "encerrado").length,
+        processosSuspensos: procs.filter((p: any) => p.status === "suspenso").length,
         totalClientes: (clientes || []).length,
         totalReceitas, totalReceitasPagas, totalReceitasPendentes, totalReceitasAtrasadas,
         totalDespesas, totalDespesasPagas, totalDespesasPendentes, totalDespesasAtrasadas,
@@ -351,13 +348,9 @@ export default function BIPage() {
         processosPorStatus, monthlyData, eventosPorCategoria, processosRecentes,
         receitasPorCategoria, despesasPorCategoria,
         ticketMedioProcesso, valorEstimadoCarteira,
-      });
-    } catch (err) {
-      console.error("BI fetch error:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+      };
+    },
+  });
 
   const computed = useMemo(() => {
     if (!data) return null;

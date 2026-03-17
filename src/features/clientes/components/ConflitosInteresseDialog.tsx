@@ -40,10 +40,12 @@ export function ConflitosInteresseDialog({
     const { data: profile } = useQuery({
         queryKey: ["profile", user?.id],
         queryFn: async () => {
-            const { data } = await supabase.from("profiles").select("organization_id").eq("user_id", user!.id).single();
+            if (!user?.id) return null;
+            const { data, error } = await supabase.from("profiles").select("organization_id").eq("user_id", user.id).single();
+            if (error) throw error;
             return data;
         },
-        enabled: !!user && open,
+        enabled: !!user?.id && open,
     });
     const orgId = profile?.organization_id;
 
@@ -63,7 +65,7 @@ export function ConflitosInteresseDialog({
                     .ilike("name", `%${clientName.trim()}%`)
                     .limit(10);
 
-                (nameMatches ?? []).forEach((c) => results.push({ ...c, conflictType: "name" as const }));
+                (nameMatches || []).forEach((c: { id: string; name: string; email: string | null; phone: string | null }) => results.push({ ...c, conflictType: "name" as const }));
             }
 
             // Check by email
@@ -75,7 +77,7 @@ export function ConflitosInteresseDialog({
                     .eq("email", clientEmail.trim())
                     .limit(5);
 
-                (emailMatches ?? []).forEach((c) => {
+                (emailMatches || []).forEach((c: { id: string; name: string; email: string | null; phone: string | null }) => {
                     if (!results.find((r) => r.id === c.id)) {
                         results.push({ ...c, conflictType: "email" as const });
                     }
@@ -91,7 +93,7 @@ export function ConflitosInteresseDialog({
                     .eq("document", clientDocument.trim())
                     .limit(5);
 
-                (docMatches ?? []).forEach((c) => {
+                (docMatches || []).forEach((c: { id: string; name: string; email: string | null; phone: string | null }) => {
                     if (!results.find((r) => r.id === c.id)) {
                         results.push({ ...c, conflictType: "document" as const });
                     }

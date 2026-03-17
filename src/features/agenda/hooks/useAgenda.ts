@@ -22,7 +22,10 @@ export function useAgenda(
             utils.agenda.getUpcomingDeadlines.invalidate();
             toast.success("Compromisso criado com sucesso");
         },
-        onError: (err: any) => toast.error(err.message),
+        onError: (err: unknown) => {
+            const message = err instanceof Error ? err.message : "Erro desconhecido";
+            toast.error(message);
+        },
     });
 
     const updateMutation = trpc.agenda.update.useMutation({
@@ -31,7 +34,10 @@ export function useAgenda(
             utils.agenda.getUpcomingDeadlines.invalidate();
             toast.success("Compromisso atualizado");
         },
-        onError: (err: any) => toast.error(err.message),
+        onError: (err: unknown) => {
+            const message = err instanceof Error ? err.message : "Erro desconhecido";
+            toast.error(message);
+        },
     });
 
     const deleteMutation = trpc.agenda.delete.useMutation({
@@ -40,7 +46,10 @@ export function useAgenda(
             utils.agenda.getUpcomingDeadlines.invalidate();
             toast.success("Compromisso excluído com sucesso");
         },
-        onError: (err: any) => toast.error(err.message),
+        onError: (err: unknown) => {
+            const message = err instanceof Error ? err.message : "Erro desconhecido";
+            toast.error(message);
+        },
     });
 
     return {
@@ -48,13 +57,13 @@ export function useAgenda(
         isLoading: agendaQuery.isLoading,
         createMutation: {
             ...createMutation,
-            mutate: (payload: any) => createMutation.mutate(payload)
+            mutate: (payload: Partial<Evento> & { user_id: string; organization_id: string }) => createMutation.mutate(payload as any)
         },
         updateMutation: {
             ...updateMutation,
-            mutate: (payload: { id: string } & Record<string, any>) => {
+            mutate: (payload: { id: string } & Partial<Evento>) => {
                 const { id, ...data } = payload;
-                updateMutation.mutate({ id, data });
+                updateMutation.mutate({ id, data: data as any });
             }
         },
         deleteMutation: {

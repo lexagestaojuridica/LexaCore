@@ -29,8 +29,12 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
         if (typeof window !== "undefined" && (window as any).Clerk?.session) {
           clerkToken = await (window as any).Clerk.session.getToken({ template: "supabase" });
         }
-      } catch (e) {
-        console.error("Error getting Clerk token for Supabase", e);
+      } catch (e: any) {
+        if (e.message?.includes("template")) {
+          console.error("❌ ERRO LEXA: Template JWT 'supabase' não encontrado no Clerk. Configure-o no dashboard do Clerk para habilitar RLS/IA.");
+        } else {
+          console.error("Error getting Clerk token for Supabase", e);
+        }
       }
 
       const headers = new Headers(options.headers);

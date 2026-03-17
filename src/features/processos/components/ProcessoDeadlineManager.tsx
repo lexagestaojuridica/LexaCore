@@ -9,16 +9,8 @@ import { Input } from "@/shared/ui/input";
 import { Badge } from "@/shared/ui/badge";
 import { calculateDeadline, isOverdue } from "@/shared/lib/legalDates";
 import { toast } from "sonner";
+import type { Deadline } from "../types";
 
-interface Deadline {
-    id: string;
-    title: string;
-    deadline_type: 'useful_days' | 'calendar_days';
-    start_date: string;
-    days_count: number;
-    fatal_date: string;
-    status: 'pending' | 'completed' | 'overdue' | 'cancelled';
-}
 
 export function ProcessoDeadlineManager({ processId, orgId }: { processId: string; orgId: string }) {
     const queryClient = useQueryClient();
@@ -44,7 +36,7 @@ export function ProcessoDeadlineManager({ processId, orgId }: { processId: strin
     });
 
     const createMutation = useMutation({
-        mutationFn: async (payload: any) => {
+        mutationFn: async (payload: Omit<Deadline, "id" | "created_at">) => {
             const { error } = await supabase.from("processos_prazos").insert(payload);
             if (error) throw error;
         },
@@ -153,7 +145,7 @@ export function ProcessoDeadlineManager({ processId, orgId }: { processId: strin
 
                             <div className="flex items-center gap-4 flex-1">
                                 <div className={`h-10 w-10 rounded-xl flex items-center justify-center transition-colors ${p.status === 'completed' ? 'bg-emerald-500/10 text-emerald-600' :
-                                        overdue ? 'bg-destructive/10 text-destructive' : 'bg-primary/10 text-primary'
+                                    overdue ? 'bg-destructive/10 text-destructive' : 'bg-primary/10 text-primary'
                                     }`}>
                                     {p.status === 'completed' ? <CheckCircle2 className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />}
                                 </div>

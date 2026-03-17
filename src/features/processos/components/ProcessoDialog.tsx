@@ -61,12 +61,11 @@ export function ProcessoDialog({
         }
     }, [open, selectedProcesso, isEditing]);
 
-    const setField = (field: keyof Processo | string, value: any) => setForm((prev) => ({ ...prev, [field]: value }));
+    const setField = <K extends keyof Processo | string>(field: K, value: any) => setForm((prev) => ({ ...prev, [field]: value }));
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const payload = { ...form };
-        const { estimated_value_display, ...cleanPayload } = payload as Partial<Processo> & { estimated_value_display?: string };
+        const { estimated_value_display: _, ...cleanPayload } = form as Partial<Processo> & { estimated_value_display?: string };
         onSave(cleanPayload);
     };
 

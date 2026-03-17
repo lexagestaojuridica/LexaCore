@@ -3,6 +3,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { ReactNode, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { db as supabase } from "@/integrations/supabase/db";
+import { UserRole } from "@/shared/types";
 
 const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   const { session, user, loading } = useAuth();
@@ -12,8 +13,8 @@ const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   const { data: userRoleData, isLoading: roleLoading } = useQuery({
     queryKey: ["user-role", user?.id],
     queryFn: async () => {
-      const { data } = await (supabase as any).from("user_roles").select("role").eq("user_id", user!.id).maybeSingle();
-      return data;
+      const { data } = await supabase.from("user_roles").select("role").eq("user_id", user!.id).maybeSingle();
+      return data as { role: UserRole } | null;
     },
     enabled: !!user,
     staleTime: 1000 * 60 * 30,
@@ -36,7 +37,7 @@ const ProtectedRoute = ({ children }: { children: ReactNode }) => {
 
   if (!session) return null;
 
-  const role = (userRoleData as any)?.role ?? (user?.user_metadata as any)?.app_role ?? "admin";
+  const role = userRoleData?.role || (user?.user_metadata?.app_role as UserRole) || "admin";
   const isPortalRoute = (pathname ?? "").startsWith('/portal');
 
   if (role === 'cliente' && !isPortalRoute) {

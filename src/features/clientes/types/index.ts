@@ -59,7 +59,33 @@ export const STATE_OPTIONS = [
     "SP", "SE", "TO",
 ];
 
-export const emptyClientForm: Record<string, string> = {
+export interface ClientForm {
+    name: string;
+    email: string;
+    phone: string;
+    document: string;
+    notes: string;
+    client_type: string;
+    rg: string;
+    birth_date: string;
+    gender: string;
+    marital_status: string;
+    nationality: string;
+    profession: string;
+    address_street: string;
+    address_number: string;
+    address_complement: string;
+    address_neighborhood: string;
+    address_city: string;
+    address_state: string;
+    address_zip: string;
+    secondary_phone: string;
+    secondary_email: string;
+    company_name: string;
+    company_position: string;
+}
+
+export const emptyClientForm: ClientForm = {
     name: "", email: "", phone: "", document: "", notes: "",
     client_type: "pessoa_fisica", rg: "", birth_date: "", gender: "",
     marital_status: "", nationality: "Brasileira", profession: "",

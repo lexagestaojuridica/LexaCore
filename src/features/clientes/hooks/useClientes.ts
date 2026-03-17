@@ -24,7 +24,7 @@ export function useClientes() {
 
     const biCountsQuery = trpc.cliente.getCounts.useQuery();
 
-    const clients = (clientsQuery.data?.data as unknown as Client[]) || [];
+    const clients = (clientsQuery.data?.data || []) as Client[];
     const totalCount = clientsQuery.data?.count || 0;
     const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
@@ -40,7 +40,10 @@ export function useClientes() {
             utils.cliente.list.invalidate();
             toast.success("Cliente criado com sucesso");
         },
-        onError: (err: any) => toast.error(`Erro ao criar cliente: ${err.message}`),
+        onError: (err: unknown) => {
+            const message = err instanceof Error ? err.message : "Erro desconhecido";
+            toast.error(`Erro ao criar cliente: ${message}`);
+        },
     });
 
     const updateMutation = trpc.cliente.update.useMutation({
@@ -48,7 +51,10 @@ export function useClientes() {
             utils.cliente.list.invalidate();
             toast.success("Cliente atualizado com sucesso");
         },
-        onError: (err: any) => toast.error(`Erro ao atualizar cliente: ${err.message}`),
+        onError: (err: unknown) => {
+            const message = err instanceof Error ? err.message : "Erro desconhecido";
+            toast.error(`Erro ao atualizar cliente: ${message}`);
+        },
     });
 
     const deleteMutation = trpc.cliente.delete.useMutation({
@@ -56,7 +62,10 @@ export function useClientes() {
             utils.cliente.list.invalidate();
             toast.success("Cliente excluído com sucesso");
         },
-        onError: (err: any) => toast.error(`Erro ao excluir cliente: ${err.message}`),
+        onError: (err: unknown) => {
+            const message = err instanceof Error ? err.message : "Erro desconhecido";
+            toast.error(`Erro ao excluir cliente: ${message}`);
+        },
     });
 
     const uploadDocMutation = trpc.documento.create.useMutation({
@@ -87,7 +96,10 @@ export function useClientes() {
             toast.success("Sincronizado com Asaas!");
             utils.cliente.list.invalidate();
         },
-        onError: (err: any) => toast.error(`Erro ao sincronizar: ${err.message}`),
+        onError: (err: unknown) => {
+            const message = err instanceof Error ? err.message : "Erro desconhecido";
+            toast.error(`Erro ao sincronizar: ${message}`);
+        },
     });
 
     const generatePortalAuth = trpc.cliente.generatePortalAuth.useMutation({
@@ -99,7 +111,10 @@ export function useClientes() {
                 description: "Link copiado para a área de transferência."
             });
         },
-        onError: (err: any) => toast.error(`Erro ao gerar portal: ${err.message}`),
+        onError: (err: unknown) => {
+            const message = err instanceof Error ? err.message : "Erro desconhecido";
+            toast.error(`Erro ao gerar portal: ${message}`);
+        },
     });
 
     // ── Helpers ──
@@ -128,7 +143,7 @@ export function useClientes() {
                 client_id: clientId,
                 size: file.size,
             });
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Erro no upload:", error);
             throw error;
         }
@@ -150,14 +165,14 @@ export function useClientes() {
         createMutation,
         updateMutation: {
             ...updateMutation,
-            mutate: (payload: { id: string } & Record<string, any>) => {
+            mutate: (payload: { id: string } & Partial<Client>) => {
                 const { id, ...data } = payload;
-                updateMutation.mutate({ id, data });
+                updateMutation.mutate({ id, data: data as any });
             }
         },
         deleteMutation,
         uploadDoc: handleUpload,
-        requestSignature: (docId: string, clientId: string, signerData: any) =>
+        requestSignature: (docId: string, clientId: string, signerData: { name: string; email: string; document?: string | null }) =>
             requestSignatureMutation.mutate({
                 document_id: docId,
                 client_id: clientId,

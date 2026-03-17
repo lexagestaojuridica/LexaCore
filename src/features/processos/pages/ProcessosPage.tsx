@@ -61,7 +61,28 @@ const statusBadge = (status: string) => {
   return <Badge variant="outline" className={`font-bold uppercase tracking-widest text-[10px] border ${opt?.color ?? "bg-muted text-muted-foreground"}`}>{opt?.label ?? status}</Badge>;
 };
 
-const emptyForm: Record<string, any> = {
+interface ProcessoForm {
+  title: string;
+  number: string;
+  court: string;
+  subject: string;
+  status: string;
+  estimated_value: number | null;
+  notes: string;
+  client_id: string | null;
+  estimated_value_display: string;
+  area_direito: string | null;
+  tipo_acao: string | null;
+  parte_contraria: string | null;
+  instancia: string | null;
+  fase_processual: string | null;
+  comarca: string | null;
+  uf: string | null;
+  data_distribuicao: string | null;
+  auto_capture_enabled: boolean;
+}
+
+const emptyForm: ProcessoForm = {
   title: "", number: "", court: "", subject: "", status: "ativo",
   estimated_value: null, notes: "", client_id: null, estimated_value_display: "",
   area_direito: null, tipo_acao: null, parte_contraria: null,
@@ -128,6 +149,17 @@ export default function ProcessosPage() {
 
   const totalPages = viewMode === "table" ? Math.max(1, Math.ceil(totalCount / PAGE_SIZE)) : 1;
 
+  const { data: profile } = useQuery({
+    queryKey: ["profile", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data, error } = await supabase.from("profiles").select("organization_id").eq("user_id", user.id).single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
   const { data: clientes = [] } = useQuery({
     queryKey: ["clientes-select", orgId],
     queryFn: async () => {
@@ -176,7 +208,7 @@ export default function ProcessosPage() {
       if (error) throw error;
     },
     onSuccess: () => { toast.success("Fatura criada! Redirecionando..."); setViewDialogOpen(false); setTimeout(() => navigate.push("/dashboard/financeiro"), 1200); },
-    onError: (err: any) => toast.error(`Erro ao faturar: ${err.message}`),
+    onError: (err: unknown) => toast.error(`Erro ao faturar: ${err instanceof Error ? err.message : 'Erro desconhecido'}`),
   });
 
   const aiSummaryMutation = useMutation({
@@ -188,7 +220,7 @@ export default function ProcessosPage() {
       return data.summary;
     },
     onSuccess: (summary) => { setAiSummary(summary); toast.success("Sumário gerado com sucesso!"); },
-    onError: (err: any) => toast.error(`Erro ao gerar sumário: ${err.message}`),
+    onError: (err: unknown) => toast.error(`Erro ao gerar sumário: ${err instanceof Error ? err.message : 'Erro desconhecido'}`),
   });
 
   const uploadDocMutation = useMutation({
@@ -210,11 +242,30 @@ export default function ProcessosPage() {
   const openCreate = () => { setForm(emptyForm); setIsEditing(false); setDialogOpen(true); };
   const openEdit = (p: Processo) => {
     const display = p.estimated_value != null ? formatCurrencyInput(String(Math.round(Number(p.estimated_value) * 100))) : "";
-    setForm({ title: p.title, number: p.number, court: p.court, subject: p.subject, status: p.status, estimated_value: p.estimated_value, notes: p.notes, client_id: p.client_id, estimated_value_display: display, auto_capture_enabled: p.auto_capture_enabled || false, area_direito: p.area_direito, tipo_acao: p.tipo_acao, parte_contraria: p.parte_contraria, instancia: p.instancia, fase_processual: p.fase_processual, comarca: p.comarca, uf: p.uf, data_distribuicao: p.data_distribuicao });
+    setForm({
+      title: p.title,
+      number: p.number || "",
+      court: p.court || "",
+      subject: p.subject || "",
+      status: p.status,
+      estimated_value: p.estimated_value,
+      notes: p.notes || "",
+      client_id: p.client_id,
+      estimated_value_display: display,
+      auto_capture_enabled: p.auto_capture_enabled || false,
+      area_direito: p.area_direito,
+      tipo_acao: p.tipo_acao,
+      parte_contraria: p.parte_contraria,
+      instancia: p.instancia,
+      fase_processual: p.fase_processual,
+      comarca: p.comarca,
+      uf: p.uf,
+      data_distribuicao: p.data_distribuicao
+    });
     setSelectedProcesso(p); setIsEditing(true); setDialogOpen(true);
   };
 
-  const setField = useCallback((key: string, value: any) => {
+  const setField = useCallback(<K extends keyof ProcessoForm>(key: K, value: ProcessoForm[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   }, []);
 
@@ -235,8 +286,8 @@ export default function ProcessosPage() {
       if (rest.status === "encerrado" && selectedProcesso.status !== "encerrado" && rest.estimated_value) {
         const isAsaasConfigured = !!selectedProcesso.clientes?.asaas_customer_id;
         const msg = isAsaasConfigured
-          ? `Processo encerrado! Deseja faturar Honorários no valor de ${rest.estimated_value_display} com cobrança no Asaas?`
-          : `Processo encerrado! Deseja registrar os Honorários (${rest.estimated_value_display}) no Financeiro local?`;
+          ? `Processo encerrado! Deseja faturar Honorários no valor de ${estimated_value_display} com cobrança no Asaas?`
+          : `Processo encerrado! Deseja registrar os Honorários (${estimated_value_display}) no Financeiro local?`;
 
         if (window.confirm(msg)) {
           createContaMutation.mutate({

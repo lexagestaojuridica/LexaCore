@@ -48,7 +48,7 @@ export function AsyncProcessCombobox({ organizationId, value, onChange }: AsyncP
 
             const { data, error } = await query;
             if (error) throw error;
-            return data || [];
+            return (data || []) as { id: string; title: string; number: string | null }[];
         },
         enabled: !!organizationId,
     });
@@ -63,12 +63,12 @@ export function AsyncProcessCombobox({ organizationId, value, onChange }: AsyncP
                 .select("id, title, number")
                 .eq("id", value)
                 .single();
-            return data;
+            return data as { id: string; title: string; number: string | null } | null;
         },
         enabled: !!value,
     });
 
-    const selectedDisplay = processos.find((p) => p.id === value) || selectedProcess;
+    const selectedDisplay = (processos as { id: string; title: string; number: string | null }[]).find((p) => p.id === value) || selectedProcess;
 
     return (
         <Popover open={open} onOpenChange={setOpen}>

@@ -20,6 +20,7 @@ import {
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import LexaLoadingOverlay from "@/shared/components/LexaLoadingOverlay";
+import type { Vaga, Candidato } from "../types";
 
 const STAGES = [
     { id: "novo", label: "Novos", color: "bg-blue-500" },
@@ -38,10 +39,12 @@ export default function RecrutamentoPage() {
     const { data: profile } = useQuery({
         queryKey: ["profile", user?.id],
         queryFn: async () => {
-            const { data } = await supabase.from("profiles").select("organization_id").eq("user_id", user!.id).single();
+            if (!user?.id) return null;
+            const { data, error } = await supabase.from("profiles").select("organization_id").eq("user_id", user.id).single();
+            if (error) throw error;
             return data;
         },
-        enabled: !!user,
+        enabled: !!user?.id,
     });
 
     const orgId = profile?.organization_id;
@@ -49,7 +52,8 @@ export default function RecrutamentoPage() {
     const { data: vagas } = useQuery({
         queryKey: ["rh-vagas", orgId],
         queryFn: async () => {
-            const { data, error } = await supabase.from("rh_recrutamento_vagas").select("*").eq("organization_id", orgId!);
+            if (!orgId) return [];
+            const { data, error } = await supabase.from("rh_recrutamento_vagas").select("*").eq("organization_id", orgId);
             if (error) throw error;
             return data;
         },
@@ -59,7 +63,8 @@ export default function RecrutamentoPage() {
     const { data: candidatos, isLoading } = useQuery({
         queryKey: ["rh-candidatos", orgId, selectedJobId],
         queryFn: async () => {
-            let query = supabase.from("rh_recrutamento_candidatos").select("*, rh_recrutamento_vagas(title)").eq("organization_id", orgId!);
+            if (!orgId) return [];
+            let query = supabase.from("rh_recrutamento_candidatos").select("*, rh_recrutamento_vagas(title)").eq("organization_id", orgId);
             if (selectedJobId !== "all") {
                 query = query.eq("job_id", selectedJobId);
             }
@@ -82,8 +87,9 @@ export default function RecrutamentoPage() {
     });
 
     const jobMutation = useMutation({
-        mutationFn: async (payload: any) => {
-            const { error } = await supabase.from("rh_recrutamento_vagas").insert([{ ...payload, organization_id: orgId! }]);
+        mutationFn: async (payload: { title: string; department: string; description: string }) => {
+            if (!orgId) throw new Error("Org ID not found");
+            const { error } = await supabase.from("rh_recrutamento_vagas").insert([{ ...payload, organization_id: orgId }]);
             if (error) throw error;
         },
         onSuccess: () => {
@@ -116,7 +122,7 @@ export default function RecrutamentoPage() {
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">Todas as Vagas</SelectItem>
-                            {vagas?.map(v => (
+                            {vagas?.map((v: Vaga) => (
                                 <SelectItem key={v.id} value={v.id}>{v.title}</SelectItem>
                             ))}
                         </SelectContent>
@@ -161,13 +167,13 @@ export default function RecrutamentoPage() {
                                 <h3 className="font-bold text-xs uppercase tracking-wider text-muted-foreground">{stage.label}</h3>
                             </div>
                             <Badge variant="secondary" className="h-5 text-[10px] px-1.5 font-bold">
-                                {candidatos?.filter(c => c.pipeline_stage === stage.id).length || 0}
+                                {candidatos?.filter((c: Candidato) => c.pipeline_stage === stage.id).length || 0}
                             </Badge>
                         </div>
 
                         <div className="flex-1 p-3 space-y-3 overflow-y-auto custom-scrollbar">
                             <AnimatePresence mode="popLayout">
-                                {candidatos?.filter(c => c.pipeline_stage === stage.id).map((c) => (
+                                {candidatos?.filter((c: Candidato) => c.pipeline_stage === stage.id).map((c: Candidato) => (
                                     <motion.div
                                         key={c.id}
                                         layout
@@ -216,7 +222,7 @@ export default function RecrutamentoPage() {
                                 ))}
                             </AnimatePresence>
 
-                            {(!candidatos || candidatos.filter(c => c.pipeline_stage === stage.id).length === 0) && (
+                            {(!candidatos || candidatos.filter((c: Candidato) => c.pipeline_stage === stage.id).length === 0) && (
                                 <div className="border-2 border-dashed border-border/30 rounded-lg h-24 flex flex-center items-center justify-center p-4 text-center">
                                     <span className="text-[10px] text-muted-foreground/50 font-medium">Arraste para mover</span>
                                 </div>

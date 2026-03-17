@@ -1,0 +1,27 @@
+﻿src/features/clientes/components/ConflitosInteresseDialog.tsx(66,46): error TS7006: Parameter 'c' implicitly has an 'any' type.
+src/features/clientes/components/ConflitosInteresseDialog.tsx(78,47): error TS7006: Parameter 'c' implicitly has an 'any' type.
+src/features/clientes/components/ConflitosInteresseDialog.tsx(94,45): error TS7006: Parameter 'c' implicitly has an 'any' type.
+src/features/configuracoes/pages/ConfiguracoesPage.tsx(274,37): error TS7006: Parameter 'emp' implicitly has an 'any' type.
+src/features/crm/components/CrmDealsTable.tsx(13,18): error TS2459: Module '"@/features/crm/contexts/CrmContext"' declares 'CrmDeal' locally, but it is not exported.
+src/features/ia/components/ArunaQuickChat.tsx(18,5): error TS2322: Type 'string' is not assignable to type 'ArunaContext'.
+src/features/meu-dia/hooks/useRealtimeNotifications.ts(51,18): error TS7006: Parameter 'payload' implicitly has an 'any' type.
+src/features/meu-dia/hooks/useRealtimeNotifications.ts(69,18): error TS7006: Parameter 'payload' implicitly has an 'any' type.
+src/features/processos/components/AsyncProcessCombobox.tsx(71,45): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/features/processos/components/AsyncProcessCombobox.tsx(131,45): error TS7006: Parameter 'proc' implicitly has an 'any' type.
+src/features/processos/pages/ProcessosPage.tsx(234,31): error TS2322: Type 'string | null' is not assignable to type 'string'.
+  Type 'null' is not assignable to type 'string'.
+src/features/processos/pages/ProcessosPage.tsx(234,49): error TS2322: Type 'string | null' is not assignable to type 'string'.
+  Type 'null' is not assignable to type 'string'.
+src/features/processos/pages/ProcessosPage.tsx(234,65): error TS2322: Type 'string | null' is not assignable to type 'string'.
+  Type 'null' is not assignable to type 'string'.
+src/features/processos/pages/ProcessosPage.tsx(234,139): error TS2322: Type 'string | null' is not assignable to type 'string'.
+  Type 'null' is not assignable to type 'string'.
+src/features/processos/pages/ProcessosPage.tsx(259,79): error TS2339: Property 'estimated_value_display' does not exist on type '{ title: string; number: string; court: string; subject: string; status: string; estimated_value: number | null; notes: string; client_id: string | null; area_direito: string | null; tipo_acao: string | null; ... 6 more ...; auto_capture_enabled: boolean; }'.
+src/features/processos/pages/ProcessosPage.tsx(260,73): error TS2339: Property 'estimated_value_display' does not exist on type '{ title: string; number: string; court: string; subject: string; status: string; estimated_value: number | null; notes: string; client_id: string | null; area_direito: string | null; tipo_acao: string | null; ... 6 more ...; auto_capture_enabled: boolean; }'.
+src/features/rh/pages/ColaboradoresPage.tsx(567,59): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/features/rh/pages/ColaboradoresPage.tsx(567,74): error TS7006: Parameter 'profile' implicitly has an 'any' type.
+src/features/rh/pages/RecrutamentoPage.tsx(119,41): error TS7006: Parameter 'v' implicitly has an 'any' type.
+src/features/rh/pages/RecrutamentoPage.tsx(164,53): error TS7006: Parameter 'c' implicitly has an 'any' type.
+src/features/rh/pages/RecrutamentoPage.tsx(170,53): error TS7006: Parameter 'c' implicitly has an 'any' type.
+src/features/rh/pages/RecrutamentoPage.tsx(170,94): error TS7006: Parameter 'c' implicitly has an 'any' type.
+src/features/rh/pages/RecrutamentoPage.tsx(219,64): error TS7006: Parameter 'c' implicitly has an 'any' type.

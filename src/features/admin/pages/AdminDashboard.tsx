@@ -18,7 +18,7 @@ export default function AdminDashboard() {
     const { data: activeSubs } = useQuery({
         queryKey: ["admin-active-subs"],
         queryFn: async () => {
-            const { count } = await (supabase as any)
+            const { count } = await supabase
                 .from("subscriptions")
                 .select("*", { count: "exact", head: true })
                 .eq("status", "active");

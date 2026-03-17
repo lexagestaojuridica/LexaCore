@@ -10,6 +10,7 @@ import { workflowRouter } from "./workflow";
 import { timesheetRouter } from "./timesheet";
 import { rhRouter } from "./rh";
 import { iaRouter } from "./ia";
+import { minutasRouter } from "./minutas";
 
 /**
  * Roteador Raiz do tRPC.
@@ -34,6 +35,7 @@ export const appRouter = createTRPCRouter({
     timesheet: timesheetRouter,
     rh: rhRouter,
     ia: iaRouter,
+    minutas: minutasRouter,
 });
 
 export type AppRouter = typeof appRouter;

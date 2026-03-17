@@ -8,6 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/shared/ui/textarea";
 import FormField from "@/shared/components/FormField";
 import { useCrm } from "@/features/crm/contexts/CrmContext";
+import type { CrmContact } from "../types";
+import type { CrmLead } from "../types";
 
 // ── Stages ─────────────────────────────────────────────
 const STAGES = [
@@ -45,7 +47,7 @@ export default function CrmPipelineBoard() {
         setDialogOpen(true);
     };
 
-    const openEdit = (lead: typeof leads[0]) => {
+    const openEdit = (lead: CrmLead) => {
         setForm({ name: lead.name, contactName: lead.contactName, value: String(lead.value), priority: lead.priority, date: lead.date, notes: lead.notes, stageId: lead.stageId });
         setEditingId(lead.id);
         setDialogOpen(true);

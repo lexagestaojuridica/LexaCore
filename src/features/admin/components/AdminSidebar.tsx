@@ -15,7 +15,12 @@ import {
     Settings,
     Headset,
 } from "lucide-react";
+import { StaticImageData } from "next/image";
 import iconLexa from "@/assets/icon-lexa.png";
+
+const getIconSrc = (icon: string | StaticImageData) => {
+    return typeof icon === 'string' ? icon : icon.src;
+};
 
 const adminNavItems = [
     { title: "Executivo (SaaS)", url: "/admin/hq", icon: BarChart3 },
@@ -29,15 +34,16 @@ const adminNavItems = [
 export function AdminSidebar() {
     const { state } = useSidebar();
     const collapsed = state === "collapsed";
+    const logoSrc = getIconSrc(iconLexa);
 
     return (
         <Sidebar collapsible="icon" className="bg-zinc-950 border-r border-zinc-900">
             <div className="flex h-14 shrink-0 items-center justify-center border-b border-zinc-900 px-3 bg-zinc-950">
                 {collapsed ? (
-                    <img src={typeof iconLexa === 'string' ? iconLexa : (iconLexa as any).src} alt="LEXA" className="h-8 w-8 object-contain opacity-80" />
+                    <img src={logoSrc} alt="LEXA" className="h-8 w-8 object-contain opacity-80" />
                 ) : (
                     <div className="flex items-center gap-2">
-                        <img src={typeof iconLexa === 'string' ? iconLexa : (iconLexa as any).src} alt="LEXA" className="h-6 w-6 object-contain" />
+                        <img src={logoSrc} alt="LEXA" className="h-6 w-6 object-contain" />
                         <span className="text-white font-bold tracking-wider text-sm">BACKOFFICE</span>
                     </div>
                 )}

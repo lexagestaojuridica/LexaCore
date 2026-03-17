@@ -35,10 +35,11 @@ export default function ResetPassword() {
                 title: "E-mail enviado!",
                 description: "Verifique sua caixa de entrada para redefinir a senha.",
             });
-        } catch (error: any) {
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "Ocorreu um erro inesperado";
             toast({
                 title: "Erro ao enviar",
-                description: error.message,
+                description: message,
                 variant: "destructive",
             });
         } finally {

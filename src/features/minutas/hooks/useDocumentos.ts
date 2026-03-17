@@ -16,17 +16,21 @@ export function useDocumentos() {
     const { data: profile } = useQuery({
         queryKey: ["profile", user?.id],
         queryFn: async () => {
-            const { data } = await supabase.from("profiles").select("organization_id").eq("user_id", user!.id).single();
+            if (!user?.id) return null;
+            const { data, error } = await supabase.from("profiles").select("organization_id").eq("user_id", user.id).single();
+            if (error) throw error;
             return data;
         },
-        enabled: !!user,
+        enabled: !!user?.id,
     });
     const orgId = profile?.organization_id;
 
     const { data: processos = [] } = useQuery({
         queryKey: ["processos-select", orgId],
         queryFn: async () => {
-            const { data } = await supabase.from("processos_juridicos").select("id, title, number").eq("organization_id", orgId!).order("title");
+            if (!orgId) return [];
+            const { data, error } = await supabase.from("processos_juridicos").select("id, title, number").eq("organization_id", orgId).order("title");
+            if (error) throw error;
             return data || [];
         },
         enabled: !!orgId,
@@ -35,7 +39,9 @@ export function useDocumentos() {
     const { data: clientes = [] } = useQuery({
         queryKey: ["clientes-select", orgId],
         queryFn: async () => {
-            const { data } = await supabase.from("clientes").select("id, name").eq("organization_id", orgId!).order("name");
+            if (!orgId) return [];
+            const { data, error } = await supabase.from("clientes").select("id, name").eq("organization_id", orgId).order("name");
+            if (error) throw error;
             return data || [];
         },
         enabled: !!orgId,
@@ -44,9 +50,10 @@ export function useDocumentos() {
     const { data: documentos = [], isLoading } = useQuery({
         queryKey: ["documentos", orgId],
         queryFn: async () => {
-            const { data, error } = await supabase.from("documentos").select("*").eq("organization_id", orgId!).order("created_at", { ascending: false });
+            if (!orgId) return [];
+            const { data, error } = await supabase.from("documentos").select("*").eq("organization_id", orgId).order("created_at", { ascending: false });
             if (error) throw error;
-            return data as Documento[];
+            return (data || []) as Documento[];
         },
         enabled: !!orgId,
     });
@@ -74,7 +81,10 @@ export function useDocumentos() {
             return uploadedCount;
         },
         onSuccess: (count) => { queryClient.invalidateQueries({ queryKey: ["documentos"] }); toast.success(`${count} arquivo(s) enviado(s).`); },
-        onError: (err: Error) => toast.error(`Erro no upload: ${err.message}`),
+        onError: (err: unknown) => {
+            const message = err instanceof Error ? err.message : "Erro desconhecido";
+            toast.error(`Erro no upload: ${message}`);
+        },
     });
 
     const requestSignatureMutation = useMutation({
@@ -94,7 +104,10 @@ export function useDocumentos() {
             navigator.clipboard.writeText(signingUrl).catch(() => { });
             toast.success("Solicitação de assinatura criada!", { duration: 8000, description: "Link de assinatura copiado." });
         },
-        onError: (err: Error) => toast.error(`Erro ao solicitar: ${err.message}`),
+        onError: (err: unknown) => {
+            const message = err instanceof Error ? err.message : "Erro desconhecido";
+            toast.error(`Erro ao solicitar: ${message}`);
+        },
     });
 
     const deleteMutation = useMutation({
@@ -105,7 +118,10 @@ export function useDocumentos() {
             if (dbError) throw dbError;
         },
         onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["documentos"] }); toast.success("Documento excluído"); },
-        onError: (err: Error) => toast.error(`Erro ao excluir: ${err.message}`),
+        onError: (err: unknown) => {
+            const message = err instanceof Error ? err.message : "Erro desconhecido";
+            toast.error(`Erro ao excluir: ${message}`);
+        },
     });
 
     // ── Actions ──

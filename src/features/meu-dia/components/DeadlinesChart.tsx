@@ -3,13 +3,7 @@ import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell } from 
 import { format, addDays, isSameDay, startOfToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CalendarClock } from "lucide-react";
-
-interface Evento {
-  id: string;
-  title: string;
-  start_time: string;
-  category: string;
-}
+import type { Evento } from "../types";
 
 interface DeadlinesChartProps {
   eventos: Evento[];
@@ -21,8 +15,8 @@ export function DeadlinesChart({ eventos }: DeadlinesChartProps) {
     const next7Days = Array.from({ length: 7 }).map((_, i) => addDays(today, i));
 
     return next7Days.map((date) => {
-      const dayEvents = eventos.filter((e) => 
-        isSameDay(new Date(e.start_time), date) && 
+      const dayEvents = eventos.filter((e) =>
+        isSameDay(new Date(e.start_time), date) &&
         (e.category === "prazo" || e.category === "audiencia")
       );
 
@@ -50,18 +44,18 @@ export function DeadlinesChart({ eventos }: DeadlinesChartProps) {
           <p className="text-xs text-muted-foreground">Prazos e audiências críticas</p>
         </div>
       </div>
-      
+
       <div className="flex-1 w-full min-h-[140px]">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
-            <XAxis 
-              dataKey="name" 
-              axisLine={false} 
-              tickLine={false} 
-              tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} 
+            <XAxis
+              dataKey="name"
+              axisLine={false}
+              tickLine={false}
+              tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
               dy={10}
             />
-            <YAxis 
+            <YAxis
               hide={false}
               axisLine={false}
               tickLine={false}
@@ -76,15 +70,15 @@ export function DeadlinesChart({ eventos }: DeadlinesChartProps) {
                   const data = payload[0].payload;
                   return (
                     <div className="bg-popover/95 backdrop-blur-sm border border-border/50 text-popover-foreground text-xs p-3 rounded-lg shadow-xl ring-1 ring-black/5 flex flex-col gap-2">
-                       <span className="font-semibold text-foreground border-b border-border/50 pb-1 mb-1">{data.fullDate}</span>
-                       <div className="flex items-center justify-between gap-4">
-                         <span className="text-amber-500 font-medium">Prazos</span>
-                         <span className="font-bold">{data.prazos}</span>
-                       </div>
-                       <div className="flex items-center justify-between gap-4">
-                         <span className="text-indigo-500 font-medium">Audiências</span>
-                         <span className="font-bold">{data.audiencias}</span>
-                       </div>
+                      <span className="font-semibold text-foreground border-b border-border/50 pb-1 mb-1">{data.fullDate}</span>
+                      <div className="flex items-center justify-between gap-4">
+                        <span className="text-amber-500 font-medium">Prazos</span>
+                        <span className="font-bold">{data.prazos}</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-4">
+                        <span className="text-indigo-500 font-medium">Audiências</span>
+                        <span className="font-bold">{data.audiencias}</span>
+                      </div>
                     </div>
                   );
                 }
@@ -93,9 +87,9 @@ export function DeadlinesChart({ eventos }: DeadlinesChartProps) {
             />
             <Bar dataKey="total" radius={[4, 4, 4, 4]} maxBarSize={32}>
               {data.map((entry, index) => (
-                <Cell 
-                  key={`cell-${index}`} 
-                  fill={entry.total === 0 ? "hsl(var(--muted)/0.3)" : entry.isToday ? "hsl(var(--destructive))" : "hsl(var(--primary))"} 
+                <Cell
+                  key={`cell-${index}`}
+                  fill={entry.total === 0 ? "hsl(var(--muted)/0.3)" : entry.isToday ? "hsl(var(--destructive))" : "hsl(var(--primary))"}
                   className="transition-all duration-300"
                 />
               ))}

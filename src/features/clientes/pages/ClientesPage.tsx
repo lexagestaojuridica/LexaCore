@@ -29,7 +29,7 @@ import { cn } from "@/shared/lib/utils";
 
 // FSD Imports
 import { useClientes } from "@/features/clientes/hooks/useClientes";
-import type { Client, ClientDocumento } from "@/features/clientes/types";
+import type { Client, ClientDocumento, ClientForm } from "@/features/clientes/types";
 import { emptyClientForm } from "@/features/clientes/types";
 import { useQuery } from "@tanstack/react-query";
 import { db as supabase } from "@/integrations/supabase/db";
@@ -54,7 +54,7 @@ export default function ClientesPage() {
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const [form, setForm] = useState(emptyClientForm);
+  const [form, setForm] = useState<ClientForm>(emptyClientForm);
   const [isEditing, setIsEditing] = useState(false);
   const [conflitosOpen, setConflitosOpen] = useState(false);
   const [pendingSubmit, setPendingSubmit] = useState(false);
@@ -72,26 +72,33 @@ export default function ClientesPage() {
   const closeDialog = () => { setDialogOpen(false); setForm(emptyClientForm); setIsEditing(false); };
   const openCreate = () => { setForm(emptyClientForm); setIsEditing(false); setDialogOpen(true); };
   const openEdit = (c: Client) => {
-    const f: Record<string, string> = {};
-    Object.keys(emptyClientForm).forEach((k) => { f[k] = (c as unknown as Record<string, string | null>)[k] ?? ""; });
+    const f: ClientForm = { ...emptyClientForm };
+    Object.keys(emptyClientForm).forEach((key) => {
+      const k = key as keyof ClientForm;
+      if (k in c) {
+        (f as any)[k] = (c as any)[k] ?? "";
+      }
+    });
     setForm(f); setSelectedClient(c); setIsEditing(true); setDialogOpen(true);
   };
 
-  const doSave = (formData?: Record<string, string>) => {
+  const doSave = (formData?: ClientForm) => {
     const dataToSave = formData || form;
-    const payload: Record<string, any> = {};
-    Object.entries(dataToSave).forEach(([k, v]) => { payload[k] = v || null; });
+    const payload: Partial<Client> = {};
+    Object.entries(dataToSave).forEach(([k, v]) => {
+      (payload as any)[k] = v || null;
+    });
     payload.name = dataToSave.name;
     if (isEditing && selectedClient) {
       updateMutation.mutate({ id: selectedClient.id, ...payload });
       closeDialog();
     } else {
-      createMutation.mutate(payload);
+      createMutation.mutate(payload as any);
       closeDialog();
     }
   };
 
-  const handleFormSubmit = (formData: Record<string, string>) => {
+  const handleFormSubmit = (formData: ClientForm) => {
     setForm(formData);
     if (!formData.name) { toast.error("O nome é obrigatório"); return; }
     if (!isEditing) { setConflitosOpen(true); setPendingSubmit(true); return; }
@@ -260,7 +267,7 @@ export default function ClientesPage() {
         onAsaasSync={(c) => syncAsaas(c)}
         isAsaasSyncing={false}
         onDocDownload={handleDocDownload}
-        onSignatureRequest={(doc, c) => requestSignature(doc.id, c.id, { name: c.name, email: c.email })}
+        onSignatureRequest={(doc, c) => requestSignature(doc.id, c.id, { name: c.name, email: c.email! })}
         isSignatureRequesting={false}
         onUploadDoc={(file) => selectedClient && uploadDoc(file, selectedClient.id)}
       />

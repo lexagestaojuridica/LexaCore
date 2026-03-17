@@ -12,12 +12,13 @@ import { GENDER_OPTIONS, MARITAL_OPTIONS, STATE_OPTIONS } from "../types";
 import { useQuery } from "@tanstack/react-query";
 import { db as supabase } from "@/integrations/supabase/db";
 import { Download, File } from "lucide-react";
+import type { ClientForm } from "../types";
 
 interface ClientFormDialogProps {
     open: boolean;
     onClose: () => void;
-    onSubmit: (form: Record<string, string>) => void;
-    initialData: Record<string, string>;
+    onSubmit: (form: ClientForm) => void;
+    initialData: ClientForm;
     isEditing: boolean;
     isSaving: boolean;
     clientId?: string;
@@ -36,10 +37,10 @@ export function ClientFormDialog({
     onUploadDoc,
     isUploading,
 }: ClientFormDialogProps) {
-    const [form, setForm] = useState(initialData);
+    const [form, setForm] = useState<ClientForm>(initialData);
     const [cepLoading, setCepLoading] = useState(false);
 
-    const setField = (key: string, value: string) => {
+    const setField = (key: keyof ClientForm, value: string) => {
         setForm((prev) => ({ ...prev, [key]: value }));
     };
 

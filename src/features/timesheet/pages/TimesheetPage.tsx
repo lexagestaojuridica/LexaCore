@@ -76,10 +76,12 @@ export default function TimesheetPage() {
     const { data: profile } = useQuery({
         queryKey: ["profile", user?.id],
         queryFn: async () => {
-            const { data } = await supabase.from("profiles").select("organization_id").eq("user_id", user!.id).single();
+            if (!user?.id) return null;
+            const { data, error } = await supabase.from("profiles").select("organization_id").eq("user_id", user.id).single();
+            if (error) throw error;
             return data;
         },
-        enabled: !!user,
+        enabled: !!user?.id,
     });
     const orgId = profile?.organization_id;
 
@@ -96,12 +98,14 @@ export default function TimesheetPage() {
     const { data: rawTimerLogs = [] } = useQuery({
         queryKey: ["timer-logs", expandedEntry],
         queryFn: async () => {
-            const { data } = await supabase
+            if (!expandedEntry) return [];
+            const { data, error } = await supabase
                 .from("timesheet_timer_logs")
                 .select("*")
-                .eq("timesheet_entry_id", expandedEntry!)
+                .eq("timesheet_entry_id", expandedEntry)
                 .order("logged_at", { ascending: true });
-            return (data ?? []) as unknown as TimerLog[];
+            if (error) throw error;
+            return (data ?? []) as TimerLog[];
         },
         enabled: !!expandedEntry,
     });
@@ -111,13 +115,14 @@ export default function TimesheetPage() {
     }, [rawTimerLogs]);
 
     const handleManualSubmit = () => {
+        if (!orgId || !user?.id) return;
         const startedAt = new Date(`${manualForm.date}T${manualForm.startTime}:00`);
         const endedAt = new Date(`${manualForm.date}T${manualForm.endTime}:00`);
         if (endedAt <= startedAt) { toast.error("Horário de fim deve ser após o início"); return; }
         const durationMinutes = differenceInMinutes(endedAt, startedAt);
         createMutation.mutate({
-            organization_id: orgId!,
-            user_id: user!.id,
+            organization_id: orgId,
+            user_id: user.id,
             process_id: manualForm.processId === "none" ? null : manualForm.processId,
             description: manualForm.description || null,
             started_at: startedAt.toISOString(),
@@ -158,15 +163,17 @@ export default function TimesheetPage() {
     const { data: agendaEvents = [] } = useQuery({
         queryKey: ["agenda-suggestions", orgId, todayStr],
         queryFn: async () => {
+            if (!orgId) return [];
             const dayStart = startOfDay(new Date()).toISOString();
             const dayEnd = endOfDay(new Date()).toISOString();
-            const { data } = await supabase
+            const { data, error } = await supabase
                 .from("agenda_eventos")
                 .select("id, title, start_time, end_time")
-                .eq("organization_id", orgId!)
+                .eq("organization_id", orgId)
                 .gte("start_time", dayStart)
                 .lte("start_time", dayEnd)
                 .order("start_time");
+            if (error) throw error;
             return data || [];
         },
         enabled: !!orgId,
@@ -190,7 +197,7 @@ export default function TimesheetPage() {
         const todayDescriptions = entries
             .filter(e => { try { return isToday(parseISO(e.started_at)); } catch { return false; } })
             .map(e => (e.description || "").toLowerCase());
-        return agendaEvents.filter((ev: any) => {
+        return agendaEvents.filter((ev: { title: string }) => {
             const title = (ev.title || "").toLowerCase();
             return !todayDescriptions.some(d => d.includes(title) || title.includes(d));
         });
@@ -404,7 +411,7 @@ export default function TimesheetPage() {
                             <p className="text-xs font-semibold text-foreground">Sugestões da Agenda</p>
                         </div>
                         <div className="flex flex-wrap gap-1.5">
-                            {suggestions.slice(0, 5).map((ev: any) => (
+                            {suggestions.slice(0, 5).map((ev: { id: string; title: string }) => (
                                 <button
                                     key={ev.id}
                                     className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg bg-background border border-border/50 hover:border-primary/40 hover:bg-primary/5 transition-all text-foreground font-medium"

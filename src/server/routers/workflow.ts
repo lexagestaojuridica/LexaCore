@@ -15,6 +15,57 @@ export const workflowRouter = createTRPCRouter({
         return data || [];
     }),
 
+    listTemplates: tenantProcedure.query(async ({ ctx }) => {
+        const { tenantId, db } = ctx;
+        const { data, error } = await db
+            .from("workflow_templates")
+            .select("*")
+            .or(`organization_id.is.null,organization_id.eq.${tenantId}`)
+            .order("name") as any;
+
+        if (error) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao buscar templates" });
+        return data || [];
+    }),
+
+    listSectors: tenantProcedure.query(async ({ ctx }) => {
+        const { tenantId, db } = ctx;
+        const { data, error } = await db
+            .from("workflow_sectors")
+            .select("*")
+            .eq("organization_id", tenantId as any)
+            .order("name") as any;
+
+        if (error) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao buscar setores" });
+        return data || [];
+    }),
+
+    upsertSector: tenantProcedure
+        .input(z.object({
+            id: z.string().optional(),
+            data: z.any(),
+        }))
+        .mutation(async ({ ctx, input }) => {
+            const { tenantId, db } = ctx;
+            const payload = { ...input.data, organization_id: tenantId };
+
+            if (input.id) {
+                const { error } = await db.from("workflow_sectors").update(payload).eq("id", input.id as any).eq("organization_id", tenantId as any);
+                if (error) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao atualizar setor" });
+                return { id: input.id };
+            } else {
+                const { data, error } = await db.from("workflow_sectors").insert(payload).select().single() as any;
+                if (error) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao criar setor" });
+                return data;
+            }
+        }),
+
+    deleteSector: tenantProcedure.input(z.string()).mutation(async ({ ctx, input: id }) => {
+        const { tenantId, db } = ctx;
+        const { error } = await db.from("workflow_sectors").delete().eq("id", id as any).eq("organization_id", tenantId as any);
+        if (error) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao excluir setor" });
+        return { success: true };
+    }),
+
     getSteps: tenantProcedure
         .input(z.array(z.string()))
         .query(async ({ ctx, input }) => {

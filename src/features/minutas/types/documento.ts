@@ -1,5 +1,5 @@
 // ─── Documentos Types ──────────────────────────────────────
-import { FileText, FileSpreadsheet, Image as ImageIcon, FileArchive, File } from "lucide-react";
+import { FileText, FileSpreadsheet, Image as ImageIcon, FileArchive, File, type LucideIcon } from "lucide-react";
 
 export interface Documento {
     id: string;
@@ -15,7 +15,7 @@ export interface Documento {
     created_at: string;
 }
 
-const FILE_ICONS: Record<string, any> = {
+const FILE_ICONS: Record<string, LucideIcon> = {
     pdf: FileText, doc: FileText, docx: FileText, txt: FileText,
     xls: FileSpreadsheet, xlsx: FileSpreadsheet, csv: FileSpreadsheet,
     jpg: ImageIcon, jpeg: ImageIcon, png: ImageIcon, webp: ImageIcon, svg: ImageIcon,

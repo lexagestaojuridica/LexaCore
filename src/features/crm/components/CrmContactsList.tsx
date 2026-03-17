@@ -14,7 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { Textarea } from "@/shared/ui/textarea";
 import FormField from "@/shared/components/FormField";
-import { useCrm, CrmContact } from "@/features/crm/contexts/CrmContext";
+import { useCrm } from "@/features/crm/contexts/CrmContext";
+import type { CrmContact, CrmLead, CrmDeal, CrmActivity } from "../types";
 
 // ── Tag colors ─────────────────────────────────────────
 const TAG_COLORS: Record<string, string> = {
@@ -103,10 +104,10 @@ export default function CrmContactsList() {
 
     // Get stats per contact
     const getContactStats = (id: string) => {
-        const contactLeads = leads.filter((l) => l.contactId === id);
-        const contactDeals = deals.filter((d) => d.contactId === id);
-        const contactActivities = activities.filter((a) => a.contactId === id);
-        const lastActivity = contactActivities.sort((a, b) => `${b.date}${b.time}`.localeCompare(`${a.date}${a.time}`))[0];
+        const contactLeads = leads.filter((l: CrmLead) => l.contactId === id);
+        const contactDeals = deals.filter((d: CrmDeal) => d.contactId === id);
+        const contactActivities = activities.filter((a: CrmActivity) => a.contactId === id);
+        const lastActivity = contactActivities.sort((a: CrmActivity, b: CrmActivity) => `${b.date}${b.time}`.localeCompare(`${a.date}${a.time}`))[0];
         return { leadsCount: contactLeads.length, dealsCount: contactDeals.length, activitiesCount: contactActivities.length, lastActivity };
     };
 

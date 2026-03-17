@@ -176,7 +176,7 @@ export default function DashboardOverview() {
 
             {/* Chart Graphic Area */}
             <div className="lg:col-span-2 flex flex-col md:min-h-0 overflow-visible md:overflow-hidden">
-              <DeadlinesChart eventos={eventos as any[]} />
+              <DeadlinesChart eventos={eventos} />
             </div>
 
           </div>

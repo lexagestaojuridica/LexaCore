@@ -4,82 +4,48 @@ import { useAuth } from "@/contexts/AuthContext";
 import { trpc } from "@/shared/lib/trpc";
 import { toast } from "sonner";
 
-// ── Shared CRM Types ───────────────────────────────────
-export interface CrmContact {
-    id: string;
-    name: string;
-    email: string;
-    phone: string;
-    type: "pessoa_fisica" | "pessoa_juridica";
-    company: string;
-    city: string;
-    state: string;
-    tags: string[];
-    score: number;
-    notes: string;
-    createdAt: string;
-    source: "manual" | "lead" | "deal";
-}
-
-export interface CrmLead {
-    id: string;
-    name: string;
-    contactId: string;
-    contactName: string;
-    value: number;
-    priority: "alta" | "media" | "baixa";
-    date: string;
-    notes: string;
-    stageId: string;
-}
-
-export interface CrmDeal {
-    id: string;
-    name: string;
-    contactId: string;
-    contactName: string;
-    value: number;
-    probability: number;
-    stage: string;
-    dueDate: string;
-    notes: string;
-    createdAt: string;
-}
-
-export interface CrmActivity {
-    id: string;
-    type: "ligacao" | "email" | "reuniao" | "tarefa";
-    title: string;
-    description: string;
-    contactId: string;
-    contactName: string;
-    date: string;
-    time: string;
-    completed: boolean;
-}
+import { CrmContact, CrmLead, CrmDeal, CrmActivity } from "../types";
+export type { CrmDeal };
 
 // ── DB row mappers ─────────────────────────────────────
-const mapContact = (r: Record<string, any>): CrmContact => ({
+const mapContact = (r: {
+    id: string; name: string; email?: string | null; phone?: string | null;
+    type?: string | null; company?: string | null; city?: string | null;
+    state?: string | null; tags?: string[] | null; score?: number | null;
+    notes?: string | null; created_at?: string | null; source?: string | null;
+}): CrmContact => ({
     id: r.id, name: r.name, email: r.email || "", phone: r.phone || "",
-    type: r.type || "pessoa_fisica", company: r.company || "", city: r.city || "",
+    type: (r.type as any) || "pessoa_fisica", company: r.company || "", city: r.city || "",
     state: r.state || "", tags: r.tags || [], score: r.score || 1,
-    notes: r.notes || "", createdAt: r.created_at?.split("T")[0] || "", source: r.source || "manual",
+    notes: r.notes || "", createdAt: r.created_at?.split("T")[0] || "", source: (r.source as any) || "manual",
 });
 
-const mapLead = (r: Record<string, any>): CrmLead => ({
+const mapLead = (r: {
+    id: string; name: string; contact_id?: string | null; contact_name?: string | null;
+    value?: number | string | null; priority?: string | null; date?: string | null;
+    notes?: string | null; stage_id?: string | null;
+}): CrmLead => ({
     id: r.id, name: r.name, contactId: r.contact_id || "", contactName: r.contact_name || "",
-    value: Number(r.value) || 0, priority: r.priority || "media", date: r.date || "",
+    value: Number(r.value) || 0, priority: (r.priority as any) || "media", date: r.date || "",
     notes: r.notes || "", stageId: r.stage_id || "novo_lead",
 });
 
-const mapDeal = (r: Record<string, any>): CrmDeal => ({
+const mapDeal = (r: {
+    id: string; name: string; contact_id?: string | null; contact_name?: string | null;
+    value?: number | string | null; probability?: number | null; stage?: string | null;
+    due_date?: string | null; notes?: string | null; created_at?: string | null;
+}): CrmDeal => ({
     id: r.id, name: r.name, contactId: r.contact_id || "", contactName: r.contact_name || "",
     value: Number(r.value) || 0, probability: r.probability || 50, stage: r.stage || "Qualificação",
     dueDate: r.due_date || "", notes: r.notes || "", createdAt: r.created_at?.split("T")[0] || "",
 });
 
-const mapActivity = (r: Record<string, any>): CrmActivity => ({
-    id: r.id, type: r.type || "tarefa", title: r.title, description: r.description || "",
+const mapActivity = (r: {
+    id: string; type?: string | null; title: string; description?: string | null;
+    contact_id?: string | null; contact_name?: string | null;
+    date?: string | null; time?: string | null; completed?: boolean | null;
+}): CrmActivity => ({
+    id: r.id, type: (r.type as any) || "tarefa", title: r.title, description: r.description || "",
     contactId: r.contact_id || "", contactName: r.contact_name || "",
     date: r.date || "", time: r.time || "09:00", completed: r.completed || false,
 });
@@ -161,7 +127,7 @@ export function CrmProvider({ children }: { children: ReactNode }) {
     });
 
     const findOrCreateContact = async (name: string): Promise<CrmContact> => {
-        const existing = contacts.find((c) => c.name.toLowerCase() === name.toLowerCase());
+        const existing = contacts.find((c: CrmContact) => c.name.toLowerCase() === name.toLowerCase());
         if (existing) return existing;
         const data = await findOrCreateMut.mutateAsync(name);
         return mapContact(data);
@@ -206,8 +172,7 @@ export function CrmProvider({ children }: { children: ReactNode }) {
             const c = await findOrCreateContact(data.contactName);
             payload = { ...payload, contactId: c.id } as any;
         }
-        // Map camelCase to snake_case if needed, but our router handles any. Let's be consistent.
-        const dbData: any = {};
+        const dbData: Record<string, unknown> = {};
         if (data.name !== undefined) dbData.name = data.name;
         if (data.contactName !== undefined) dbData.contact_name = data.contactName;
         if (data.value !== undefined) dbData.value = data.value;
@@ -237,7 +202,7 @@ export function CrmProvider({ children }: { children: ReactNode }) {
         dealUpsertMut.mutate({ data: { ...data, contact_id: contact.id, contact_name: data.contactName, due_date: data.dueDate } });
     };
     const updateDeal = async (id: string, data: Partial<CrmDeal>) => {
-        const dbData: any = {};
+        const dbData: Record<string, unknown> = {};
         if (data.name !== undefined) dbData.name = data.name;
         if (data.contactName !== undefined) {
             const c = await findOrCreateContact(data.contactName);

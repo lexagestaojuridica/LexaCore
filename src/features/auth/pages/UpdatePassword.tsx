@@ -58,10 +58,11 @@ export default function UpdatePassword() {
                 description: "Sua senha foi redefinida com sucesso. Você pode acessar sua conta.",
             });
             router.push("/dashboard");
-        } catch (error: any) {
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "Erro ao atualizar senha";
             toast({
                 title: "Erro ao atualizar senha",
-                description: error.message,
+                description: message,
                 variant: "destructive",
             });
         } finally {

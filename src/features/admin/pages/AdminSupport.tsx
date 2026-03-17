@@ -27,6 +27,24 @@ import { Badge } from "@/shared/ui/badge";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 
+interface SupportTicket {
+    id: string;
+    subject: string;
+    message: string;
+    status: string;
+    priority: string;
+    created_at: string;
+    user_id: string;
+    organization_id: string;
+    profiles: {
+        full_name: string | null;
+        email: string | null;
+    } | null;
+    organizations: {
+        name: string | null;
+    } | null;
+}
+
 export default function AdminSupport() {
     const queryClient = useQueryClient();
     const [searchTerm, setSearchTerm] = useState("");
@@ -38,7 +56,7 @@ export default function AdminSupport() {
     const { data: tickets, isLoading } = useQuery({
         queryKey: ["admin-support-tickets", searchTerm],
         queryFn: async () => {
-            let query = (supabase as any).from("support_tickets").select(`
+            let query = supabase.from("support_tickets").select(`
                 *,
                 profiles:user_id(full_name, email),
                 organizations:organization_id(name)
@@ -50,13 +68,13 @@ export default function AdminSupport() {
 
             const { data, error } = await query;
             if (error) throw error;
-            return data;
+            return data as unknown as SupportTicket[];
         },
     });
 
     const updateTicketMutation = useMutation({
         mutationFn: async ({ id, status }: { id: string, status: string }) => {
-            const { error } = await (supabase as any)
+            const { error } = await supabase
                 .from("support_tickets")
                 .update({ status })
                 .eq("id", id);
@@ -66,8 +84,9 @@ export default function AdminSupport() {
             queryClient.invalidateQueries({ queryKey: ["admin-support-tickets"] });
             toast.success("Status do chamado atualizado.");
         },
-        onError: (err: any) => {
-            toast.error(`Falha: ${err.message}`);
+        onError: (err) => {
+            const message = err instanceof Error ? err.message : "Erro desconhecido";
+            toast.error(`Falha: ${message}`);
         }
     });
 
@@ -162,7 +181,7 @@ export default function AdminSupport() {
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                tickets?.map((ticket: any) => (
+                                tickets?.map((ticket) => (
                                     <TableRow key={ticket.id} className="border-zinc-800 hover:bg-zinc-800/50 transition-colors">
                                         <TableCell>
                                             {getStatusBadge(ticket.status || 'open')}

@@ -30,7 +30,7 @@ export function useRealtimeNotifications() {
                 .limit(20);
 
             if (error) throw error;
-            return (data ?? []) as unknown as RealtimeNotification[];
+            return (data ?? []) as RealtimeNotification[];
         },
         enabled: !!user?.id,
     });
@@ -48,7 +48,7 @@ export function useRealtimeNotifications() {
                     schema: 'public',
                     table: 'notifications',
                 },
-                (payload) => {
+                (payload: { new: any }) => {
                     // Se for para este usuário ou global
                     const newNotif = payload.new as RealtimeNotification;
                     if (newNotif.user_id === user.id || newNotif.user_id === null) {
@@ -66,7 +66,7 @@ export function useRealtimeNotifications() {
                     schema: 'public',
                     table: 'notifications',
                 },
-                (payload) => {
+                (payload: { new: any }) => {
                     // Se foi lida, remove da lista de não lidas
                     const updated = payload.new as RealtimeNotification;
                     if (updated.is_read) {

@@ -44,6 +44,8 @@ type Colaborador = {
     document_cpf: string | null;
 };
 
+type ColaboradorPayload = Omit<Colaborador, "id" | "organization_id" | "base_salary"> & { base_salary: string };
+
 const emptyForm = {
     full_name: "",
     email: "",
@@ -63,7 +65,7 @@ export default function ColaboradoresPage() {
     const queryClient = useQueryClient();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
-    const [form, setForm] = useState(emptyForm);
+    const [form, setForm] = useState<ColaboradorPayload>(emptyForm);
     const [step, setStep] = useState(1);
     const [searchTerm, setSearchTerm] = useState("");
     const debouncedSearch = useDebounce(searchTerm, 500);
@@ -80,10 +82,12 @@ export default function ColaboradoresPage() {
     const { data: profile } = useQuery({
         queryKey: ["profile", user?.id],
         queryFn: async () => {
-            const { data } = await supabase.from("profiles").select("organization_id").eq("user_id", user!.id).single();
+            if (!user?.id) return null;
+            const { data, error } = await supabase.from("profiles").select("organization_id").eq("user_id", user.id).single();
+            if (error) throw error;
             return data;
         },
-        enabled: !!user,
+        enabled: !!user?.id,
     });
 
     const orgId = profile?.organization_id;
@@ -91,7 +95,9 @@ export default function ColaboradoresPage() {
     const { data: teamProfiles } = useQuery({
         queryKey: ["profiles-transfer", orgId],
         queryFn: async () => {
-            const { data } = await supabase.from("profiles").select("user_id, full_name").eq("organization_id", orgId!);
+            if (!orgId) return [];
+            const { data, error } = await supabase.from("profiles").select("user_id, full_name").eq("organization_id", orgId);
+            if (error) throw error;
             return data || [];
         },
         enabled: !!orgId,
@@ -100,7 +106,8 @@ export default function ColaboradoresPage() {
     const { data: colaboradores, isLoading } = useQuery({
         queryKey: ["colaboradores", orgId, debouncedSearch],
         queryFn: async () => {
-            let query = supabase.from("employees").select("*").eq("organization_id", orgId!);
+            if (!orgId) return [];
+            let query = supabase.from("employees").select("*").eq("organization_id", orgId);
             if (debouncedSearch) {
                 query = query.ilike("full_name", `%${debouncedSearch}%`);
             }
@@ -112,14 +119,19 @@ export default function ColaboradoresPage() {
     });
 
     const mutation = useMutation({
-        mutationFn: async (payload: any) => {
+        mutationFn: async (payload: ColaboradorPayload) => {
+            if (!orgId) throw new Error("Org ID not found");
+            const dbPayload = {
+                ...payload,
+                base_salary: payload.base_salary ? parseFloat(payload.base_salary) : 0,
+                organization_id: orgId
+            };
+
             if (editingId) {
-                delete payload.organization_id;
-                delete payload.created_at;
-                const { error } = await supabase.from("employees").update(payload).eq("id", editingId).eq("organization_id", orgId!);
+                const { error } = await supabase.from("employees").update(dbPayload).eq("id", editingId).eq("organization_id", orgId);
                 if (error) throw error;
             } else {
-                const { error } = await supabase.from("employees").insert([{ ...payload, organization_id: orgId! }]);
+                const { error } = await supabase.from("employees").insert([dbPayload]);
                 if (error) throw error;
             }
         },
@@ -297,21 +309,21 @@ export default function ColaboradoresPage() {
                                     <div className="grid gap-4">
                                         <div className="space-y-2">
                                             <Label>Nome Completo</Label>
-                                            <Input value={form.full_name} onChange={e => setForm({ ...form, full_name: e.target.value })} placeholder="Ex: João Silva" className="h-11 rounded-xl" />
+                                            <Input value={form.full_name || ""} onChange={e => setForm({ ...form, full_name: e.target.value })} placeholder="Ex: João Silva" className="h-11 rounded-xl" />
                                         </div>
                                         <div className="grid grid-cols-2 gap-4">
                                             <div className="space-y-2">
                                                 <Label>E-mail Corporativo</Label>
-                                                <Input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="joao@empresa.com" className="h-11 rounded-xl" />
+                                                <Input type="email" value={form.email || ""} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="joao@empresa.com" className="h-11 rounded-xl" />
                                             </div>
                                             <div className="space-y-2">
                                                 <Label>Telefone / WhatsApp</Label>
-                                                <Input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="(11) 99999-9999" className="h-11 rounded-xl" />
+                                                <Input value={form.phone || ""} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="(11) 99999-9999" className="h-11 rounded-xl" />
                                             </div>
                                         </div>
                                         <div className="space-y-2">
                                             <Label>CPF</Label>
-                                            <Input value={form.document_cpf} onChange={e => setForm({ ...form, document_cpf: e.target.value })} placeholder="000.000.000-00" className="h-11 rounded-xl" />
+                                            <Input value={form.document_cpf || ""} onChange={e => setForm({ ...form, document_cpf: e.target.value })} placeholder="000.000.000-00" className="h-11 rounded-xl" />
                                         </div>
                                     </div>
                                 </motion.div>
@@ -346,7 +358,7 @@ export default function ColaboradoresPage() {
                                         </div>
                                         <div className="space-y-2">
                                             <Label>Formato de Trabalho</Label>
-                                            <Select value={form.work_format} onValueChange={v => setForm({ ...form, work_format: v })}>
+                                            <Select value={form.work_format || "Híbrido"} onValueChange={v => setForm({ ...form, work_format: v })}>
                                                 <SelectTrigger className="h-11 rounded-xl"><SelectValue /></SelectTrigger>
                                                 <SelectContent>
                                                     <SelectItem value="Presencial">Presencial</SelectItem>
@@ -382,7 +394,7 @@ export default function ColaboradoresPage() {
                                         <div className="grid grid-cols-2 gap-4">
                                             <div className="space-y-2">
                                                 <Label>Tipo de Vínculo</Label>
-                                                <Select value={form.employment_type} onValueChange={v => setForm({ ...form, employment_type: v })}>
+                                                <Select value={form.employment_type || "CLT"} onValueChange={v => setForm({ ...form, employment_type: v })}>
                                                     <SelectTrigger className="h-11 rounded-xl"><SelectValue /></SelectTrigger>
                                                     <SelectContent>
                                                         <SelectItem value="CLT">CLT</SelectItem>
@@ -394,7 +406,7 @@ export default function ColaboradoresPage() {
                                             </div>
                                             <div className="space-y-2">
                                                 <Label>Status Atual</Label>
-                                                <Select value={form.status} onValueChange={v => setForm({ ...form, status: v })}>
+                                                <Select value={form.status || "active"} onValueChange={v => setForm({ ...form, status: v })}>
                                                     <SelectTrigger className="h-11 rounded-xl"><SelectValue /></SelectTrigger>
                                                     <SelectContent>
                                                         <SelectItem value="active">Ativo</SelectItem>
@@ -564,7 +576,7 @@ export default function ColaboradoresPage() {
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="none" className="text-muted-foreground">Não transferir (Arquivar responsável)</SelectItem>
-                                    {teamProfiles?.filter(p => true).map(profile => (
+                                    {teamProfiles?.map((profile: { user_id: string; full_name: string }) => (
                                         <SelectItem key={profile.user_id} value={profile.user_id}>{profile.full_name}</SelectItem>
                                     ))}
                                 </SelectContent>

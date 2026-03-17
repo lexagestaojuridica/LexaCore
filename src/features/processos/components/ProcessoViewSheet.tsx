@@ -12,13 +12,13 @@ import { Separator } from "@/shared/ui/separator";
 import { MinutasProvider } from "@/features/minutas/contexts/MinutasContext";
 import { MinutaTemplateSelector } from "@/features/minutas/components/MinutaTemplateSelector";
 import { STATUS_OPTIONS } from "../constants";
-import type { Processo, Documento } from "../types";
+import type { Processo, Documento, ProcessCapture } from "../types";
 
 interface ProcessoViewSheetProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     selectedProcesso: Processo | null;
-    captures: any[];
+    captures: ProcessCapture[];
     processDocs: Documento[];
     aiSummary: string | null;
     onGenerateAiSummary: (content: string) => void;
@@ -64,7 +64,7 @@ export function ProcessoViewSheet(props: ProcessoViewSheetProps) {
                                             size="sm"
                                             className="h-8 gap-2 text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 rounded-full border border-primary/20 transition-all shadow-sm"
                                             onClick={() => {
-                                                const content = captures.map((c: any) => `${format(new Date(c.capture_date), "dd/MM/yyyy")}: ${c.content}`).join("\n");
+                                                const content = captures.map((c) => `${format(new Date(c.capture_date), "dd/MM/yyyy")}: ${c.content}`).join("\n");
                                                 onGenerateAiSummary(content);
                                             }}
                                             disabled={isAiLoading}
@@ -179,7 +179,7 @@ export function ProcessoViewSheet(props: ProcessoViewSheetProps) {
                                         ) : (
                                             <div className="relative space-y-8 pl-4">
                                                 <div className="absolute left-0 inset-y-0 w-0.5 bg-gradient-to-b from-primary/30 to-muted/20 ml-[-1px]" />
-                                                {captures.map((cap: any) => (
+                                                {captures.map((cap) => (
                                                     <div key={cap.id} className="relative pl-8">
                                                         <div className="absolute left-[-5px] top-1.5 h-2.5 w-2.5 rounded-full bg-primary shadow-sm" />
                                                         <div className="bg-card border border-border/50 rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow">

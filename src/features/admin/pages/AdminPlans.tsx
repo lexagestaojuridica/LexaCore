@@ -8,16 +8,25 @@ import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
 import { Skeleton } from "@/shared/ui/skeleton";
 
+interface Plan {
+    id: string;
+    name: string;
+    price_cents: number;
+    max_users: number;
+    max_processes: number;
+    features: string[];
+}
+
 export default function AdminPlans() {
     const { data: plans, isLoading } = useQuery({
         queryKey: ["admin-plans"],
         queryFn: async () => {
-            const { data, error } = await (supabase as any)
+            const { data, error } = await supabase
                 .from("plans")
                 .select("*")
                 .order("price_cents", { ascending: true });
             if (error) throw error;
-            return data as any[];
+            return data as Plan[];
         },
     });
 

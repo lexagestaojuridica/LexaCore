@@ -57,7 +57,16 @@ function getMonthYearLabel(dateStr: string, i18n: { language: string }) {
     locale: i18n.language === 'en' ? undefined : (i18n.language === 'es' ? undefined : ptBR)
   });
 }
-const emptyForm = { description: "", amount_display: "", due_date: "", status: "pendente", category: "" };
+
+interface FinanceiroForm {
+  description: string;
+  amount_display: string;
+  due_date: string;
+  status: string;
+  category: string;
+}
+
+const emptyForm: FinanceiroForm = { description: "", amount_display: "", due_date: "", status: "pendente", category: "" };
 
 export default function FinanceiroPage() {
   const { user } = useAuth();
@@ -71,7 +80,7 @@ export default function FinanceiroPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState<FinanceiroForm>(emptyForm);
 
   const [pixModalOpen, setPixModalOpen] = useState(false);
   const [selectedPix, setSelectedPix] = useState<ContaBase | null>(null);
@@ -79,10 +88,11 @@ export default function FinanceiroPage() {
   const { data: profile } = useQuery({
     queryKey: ["profile", user?.id],
     queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("organization_id").eq("user_id", user!.id).single();
+      if (!user?.id) return null;
+      const { data } = await supabase.from("profiles").select("organization_id").eq("user_id", user.id).single();
       return data;
     },
-    enabled: !!user,
+    enabled: !!user?.id,
   });
 
   const orgId = profile?.organization_id;
@@ -148,7 +158,7 @@ export default function FinanceiroPage() {
     closeDialog();
   };
 
-  const filtered = contas.filter((c: ContaBase) => {
+  const filtered = contas.filter((c) => {
     const matchStatus = statusFilter === "all" || c.status === statusFilter;
     const q = debouncedSearch.toLowerCase();
     const matchSearch = !q || c.description.toLowerCase().includes(q) || (c.category ?? "").toLowerCase().includes(q);

@@ -10,7 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/shared/ui/textarea";
 import FormField from "@/shared/components/FormField";
 import { Separator } from "@/shared/ui/separator";
-import { useCrm, CrmDeal } from "@/features/crm/contexts/CrmContext";
+import { useCrm } from "@/features/crm/contexts/CrmContext";
+import { CrmDeal } from "@/features/crm/types";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { db as supabase } from "@/integrations/supabase/db";
 import { useAuth } from "@/contexts/AuthContext";
@@ -56,10 +57,12 @@ export default function CrmDealsTable() {
     const { data: profile } = useQuery({
         queryKey: ["profile", user?.id],
         queryFn: async () => {
-            const { data } = await supabase.from("profiles").select("organization_id").eq("user_id", user!.id).single();
+            if (!user?.id) return null;
+            const { data, error } = await supabase.from("profiles").select("organization_id").eq("user_id", user.id).single();
+            if (error) throw error;
             return data;
         },
-        enabled: !!user,
+        enabled: !!user?.id,
     });
 
     const orgId = profile?.organization_id;
@@ -67,7 +70,7 @@ export default function CrmDealsTable() {
     // Convert Deal to Client and Process Mutation
     const convertMutation = useMutation({
         mutationFn: async (deal: CrmDeal) => {
-            if (!orgId) throw new Error("Org ID not found");
+            if (!orgId || !user?.id) throw new Error("Org ID or User ID not found");
 
             // 1. Create client
             const { data: client, error: clientErr } = await supabase.from("clientes").insert({
@@ -87,7 +90,7 @@ export default function CrmDealsTable() {
                 status: "ativo",
                 estimated_value: deal.value,
                 notes: `Origem: CRM.\nContato original: ${deal.contactName}\nObs: ${deal.notes || ''}`,
-                responsible_user_id: user!.id
+                responsible_user_id: user.id
             });
 
             if (processErr) throw processErr;
