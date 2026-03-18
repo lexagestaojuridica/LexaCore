@@ -19,9 +19,7 @@ const nextConfig = {
     }
     return config;
   },
-  experimental: {
-    optimizePackageImports: ['lucide-react', 'date-fns', 'recharts', 'framer-motion'],
-  },
+  optimizePackageImports: ['lucide-react', 'date-fns', 'recharts', 'framer-motion'],
   // Removing standalone output to avoid dev filesystem issues on Windows
 };
 

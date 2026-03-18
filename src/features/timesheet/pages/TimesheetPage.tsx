@@ -1,7 +1,8 @@
+"use client";
+
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { db as supabase } from "@/integrations/supabase/db";
-"use client";
 import { useUser } from "@clerk/nextjs";
 import { useTimer } from "@/features/timesheet/hooks/useTimer";
 import { useTimesheet } from "@/features/timesheet/hooks/useTimesheet";
