@@ -135,17 +135,17 @@ export default function ConfiguracoesPage() {
                       <img src={profile.avatar_url} alt="Avatar" className="h-16 w-16 rounded-full object-cover border-2 border-border" />
                     ) : (
                       <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary font-display text-2xl">
-                        {(profile?.full_name || user?.email || "U").charAt(0).toUpperCase()}
+                        {(profile?.full_name || user?.primaryEmailAddress?.emailAddress || "U").charAt(0).toUpperCase()}
                       </div>
-                    )}
+                    ) /* line 138 fixed */}
                     <button type="button" onClick={() => avatarInputRef.current?.click()} className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
                       <Camera className="h-5 w-5 text-white" />
                     </button>
                     <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const file = e.target.files?.[0]; if (file) uploadAvatarMutation.mutate(file); }} />
                   </div>
                   <div>
-                    <p className="font-medium text-foreground">{profile?.full_name || user?.email}</p>
-                    <p className="text-sm text-muted-foreground">{user?.email}</p>
+                    <p className="font-medium text-foreground">{profile?.full_name || user?.primaryEmailAddress?.emailAddress}</p>
+                    <p className="text-sm text-muted-foreground">{user?.primaryEmailAddress?.emailAddress}</p>
                     <Badge variant="outline" className="mt-1 text-xs">{roleLabels[userRole?.role || "advogado"] || userRole?.role}</Badge>
                   </div>
                 </div>
@@ -162,7 +162,7 @@ export default function ConfiguracoesPage() {
                 </div>
                 <div className="space-y-1.5">
                   <Label>{t("common.email")}</Label>
-                  <Input value={user?.email || ""} disabled className="bg-muted" />
+                  <Input value={user?.primaryEmailAddress?.emailAddress || ""} disabled className="bg-muted" />
                   <p className="text-xs text-muted-foreground">{t("settings.emailCannotChange")}</p>
                 </div>
                 <div className="flex justify-end pt-2">
@@ -280,7 +280,7 @@ export default function ConfiguracoesPage() {
                           <div className="min-w-0">
                             <div className="flex items-center gap-2">
                               <p className="text-sm font-medium text-foreground truncate">{emp.full_name}</p>
-                              {!emp.is_active && <Badge variant="secondary" className="text-[10px]">{t("common.inactive")}</Badge>}
+                              {!emp.is_active && <Badge variant="secondary" className="text-[10px] text-muted-foreground">{t("common.inactive")}</Badge>}
                             </div>
                             <div className="flex items-center gap-3 mt-0.5 text-xs text-muted-foreground">
                               {emp.position && <span>{emp.position}</span>}

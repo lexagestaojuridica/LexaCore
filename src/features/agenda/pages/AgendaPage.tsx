@@ -1,5 +1,5 @@
-import { useState, useMemo, useCallback } from "react";
 "use client";
+import { useState, useMemo, useCallback } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useGoogleCalendar } from "@/features/agenda/hooks/useGoogleCalendar";
 import { useMicrosoftCalendar } from "@/features/agenda/hooks/useMicrosoftCalendar";

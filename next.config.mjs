@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true,
+  reactStrictMode: false,
+  swcMinify: true,
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -9,6 +10,17 @@ const nextConfig = {
   },
   images: {
     unoptimized: true,
+  },
+  webpack: (config, { dev }) => {
+    if (dev) {
+      config.watchOptions = {
+        ignored: ['**/node_modules', '**/.git', 'C:/*'],
+      };
+    }
+    return config;
+  },
+  experimental: {
+    optimizePackageImports: ['lucide-react', 'date-fns', 'recharts', 'framer-motion'],
   },
   // Removing standalone output to avoid dev filesystem issues on Windows
 };

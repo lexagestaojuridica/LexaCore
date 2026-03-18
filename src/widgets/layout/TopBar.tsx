@@ -44,8 +44,13 @@ export function TopBar() {
     const { signOut } = useAuth();
     const { user } = useUser();
     const { theme, setTheme } = useTheme();
+    const [mounted, setMounted] = useState(false);
     const { t } = useTranslation();
     const navigate = useRouter();
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
     const pathname = usePathname();
     const queryClient = useQueryClient();
 
@@ -139,7 +144,7 @@ export function TopBar() {
                     className="hidden md:flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80"
                     title="Alternar Tema"
                 >
-                    {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+                    {mounted ? (theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />) : <div className="h-4 w-4" />}
                 </Button>
 
                 {/* Language Switcher */}

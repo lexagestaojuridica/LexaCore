@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useUser } from "@clerk/nextjs";
+import { useUser, useAuth } from "@clerk/nextjs";
 import { db as supabase } from "@/integrations/supabase/db";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
@@ -17,6 +17,7 @@ import { motion } from "framer-motion";
 
 export default function PortalDashboard() {
     const { user } = useUser();
+    const { signOut } = useAuth();
     const queryClient = useQueryClient();
 
     const [pixModalOpen, setPixModalOpen] = useState(false);

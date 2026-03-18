@@ -23,6 +23,7 @@ export const navGroups: NavGroupConfig[] = [
         defaultOpen: true,
         items: [
             { titleKey: "nav.dashboard", url: "/dashboard", icon: LayoutDashboard },
+            { titleKey: "Newsletter", url: "/dashboard/newsletter", icon: Newspaper },
         ],
     },
     {
@@ -50,6 +51,8 @@ export const navGroups: NavGroupConfig[] = [
         defaultOpen: false,
         items: [
             { titleKey: "nav.ia", url: "/dashboard/ia", icon: Bot },
+            { titleKey: "B.I.", url: "/dashboard/bi", icon: BarChart3 },
+            { titleKey: "Relatórios", url: "/dashboard/relatorios", icon: FileEdit },
         ],
     },
     {
