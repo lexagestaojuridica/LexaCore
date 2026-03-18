@@ -11,32 +11,51 @@ const Auth = () => {
 
   const clerkAppearance = {
     elements: {
-      rootBox: "w-full shadow-none",
-      card: "shadow-none border-0 bg-transparent w-full",
-      main: "bg-transparent shadow-none",
+      rootBox: "w-full",
+      card: "shadow-none border-0 bg-transparent w-full !p-0 !m-0",
+      cardBox: "shadow-none border-0 bg-transparent w-full !rounded-none",
+      main: "bg-transparent shadow-none !gap-4",
       header: "hidden",
-      footer: "bg-transparent shadow-none",
-      socialButtonsBlockButton: "rounded-2xl border-2 border-border/50 bg-muted/30 hover:bg-muted/50 text-foreground transition-all font-bold",
-      socialButtonsBlockButtonIcon: "opacity-80",
-      formButtonPrimary: "bg-primary text-primary-foreground hover:opacity-90 rounded-2xl font-bold transition-all shadow-xl shadow-primary/20 btn-glow",
-      formFieldInput: "rounded-xl border-2 border-border/50 bg-muted/20 focus:bg-background focus:ring-2 focus:ring-primary/10 transition-all px-4",
-      formFieldLabel: "text-xs font-black text-foreground/70 mb-1.5 uppercase tracking-widest ml-1",
+      headerTitle: "hidden",
+      headerSubtitle: "hidden",
+      footer: "hidden",
       footerAction: "hidden",
-      dividerLine: "bg-border/50 h-[1px]",
-      dividerText: "text-muted-foreground text-[10px] uppercase tracking-[0.2em] font-black",
-      formFieldAction: "text-primary hover:text-primary/80 font-bold text-xs transition-colors",
-      identityPreviewText: "text-foreground font-bold",
+      footerActionLink: "hidden",
+      socialButtonsBlockButton:
+        "!rounded-xl !border !border-border/60 !bg-muted/40 hover:!bg-muted/70 !text-foreground !transition-all !font-semibold !h-12 !text-sm",
+      socialButtonsBlockButtonText: "!font-semibold",
+      socialButtonsBlockButtonIcon: "!opacity-90",
+      formButtonPrimary:
+        "!bg-foreground !text-background hover:!opacity-90 !rounded-xl !font-bold !transition-all !shadow-lg !h-12 !text-sm !tracking-wide",
+      formFieldInput:
+        "!rounded-xl !border !border-border/60 !bg-muted/30 focus:!bg-background focus:!ring-2 focus:!ring-primary/20 focus:!border-primary/40 !transition-all !px-4 !h-12 !text-sm",
+      formFieldLabel:
+        "!text-[11px] !font-bold !text-foreground/60 !mb-1.5 !uppercase !tracking-[0.15em] !ml-0.5",
+      dividerLine: "!bg-border/40 !h-px",
+      dividerText:
+        "!text-muted-foreground/60 !text-[10px] !uppercase !tracking-[0.25em] !font-bold",
+      dividerRow: "!my-4",
+      formFieldAction:
+        "!text-primary/70 hover:!text-primary !font-semibold !text-xs !transition-colors",
+      identityPreviewText: "!text-foreground !font-semibold",
       formHeaderTitle: "hidden",
       formHeaderSubtitle: "hidden",
-      otpCodeFieldInput: "bg-muted/20 border-2 border-border/50 focus:border-primary",
+      otpCodeFieldInput:
+        "!bg-muted/20 !border !border-border/50 focus:!border-primary !rounded-lg",
+      internal: "hidden",
+      badge: "hidden",
+      logoBox: "hidden",
+      logoImage: "hidden",
     },
     variables: {
-      colorPrimary: "#1a1f2c",
-      colorText: "#1a1f2c",
+      colorPrimary: "hsl(222, 47%, 11%)",
+      colorText: "hsl(222, 47%, 11%)",
       colorBackground: "transparent",
-      fontFamily: "Inter, sans-serif",
-      borderRadius: "1rem",
-    }
+      colorInputBackground: "transparent",
+      fontFamily: "'Inter', sans-serif",
+      borderRadius: "0.75rem",
+      spacingUnit: "1rem",
+    },
   };
 
   return (
