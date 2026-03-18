@@ -21,6 +21,9 @@ if (!SUPABASE_PUBLISHABLE_KEY) {
   );
 }
 
+// Throttle clerk JWT warning to avoid console spam
+let jwtWarningLogged = false;
+
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   global: {
     fetch: async (url, options: RequestInit = {}) => {
@@ -31,7 +34,10 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
         }
       } catch (e: any) {
         if (e.message?.includes("template")) {
-          console.error("❌ ERRO LEXA: Template JWT 'supabase' não encontrado no Clerk. Configure-o no dashboard do Clerk para habilitar RLS/IA.");
+          if (!jwtWarningLogged) {
+            console.error("❌ ERRO LEXA: Template JWT 'supabase' não encontrado no Clerk. Configure-o no dashboard do Clerk para habilitar RLS/IA.");
+            jwtWarningLogged = true;
+          }
         } else {
           console.error("Error getting Clerk token for Supabase", e);
         }

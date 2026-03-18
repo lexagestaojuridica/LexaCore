@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { SidebarProvider, SidebarTrigger } from "@/shared/ui/sidebar";
 import { AdminSidebar } from "./AdminSidebar";
@@ -24,6 +25,11 @@ export default function AdminLayout({ children }: { children?: React.ReactNode }
     const navigate = useRouter();
     const pathname = usePathname();
     const { theme, setTheme } = useTheme();
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     const displayName = user?.user_metadata?.full_name || user?.email || "Super Admin";
     const initials = (displayName as string)
@@ -69,7 +75,7 @@ export default function AdminLayout({ children }: { children?: React.ReactNode }
                                 <RefreshCw className="h-3.5 w-3.5" />
                             </Button>
                             <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-white hover:bg-zinc-800" onClick={() => setTheme(theme === "light" ? "dark" : "light")}>
-                                {theme === "light" ? <Moon className="h-3.5 w-3.5" /> : <Sun className="h-3.5 w-3.5" />}
+                                {mounted ? (theme === "light" ? <Moon className="h-3.5 w-3.5" /> : <Sun className="h-3.5 w-3.5" />) : <div className="h-3.5 w-3.5" />}
                             </Button>
                             <div className="h-5 w-px bg-zinc-800 mx-1" />
                             <DropdownMenu>
