@@ -161,15 +161,14 @@ const Auth = () => {
             </p>
           </div>
 
-          <div className="p-1 rounded-[2.5rem] bg-gradient-to-b from-primary/5 to-transparent shadow-xl border border-white/5">
-            <div className="bg-card/98 backdrop-blur-2xl rounded-[2.3rem] p-4 border border-white/10 overflow-hidden">
+          <div className="rounded-2xl bg-card/80 backdrop-blur-xl p-6 sm:p-8 border border-border/30 shadow-2xl shadow-primary/5">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={mode}
-                  initial={{ opacity: 0, y: 10 }}
+                  initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.3 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.25 }}
                 >
                   {mode === "login" ? (
                     <SignIn
@@ -188,7 +187,6 @@ const Auth = () => {
                   )}
                 </motion.div>
               </AnimatePresence>
-            </div>
           </div>
 
           <p className="text-center mt-10 text-[11px] text-muted-foreground/60 leading-relaxed max-w-xs mx-auto">
