@@ -1,7 +1,8 @@
+"use client";
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { db as supabase } from "@/integrations/supabase/db";
-import { useAuth } from "@/contexts/AuthContext";
+import { useUser } from "@clerk/nextjs";
 import { toast } from "sonner";
 import { Card, CardContent } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
@@ -61,7 +62,7 @@ const emptyForm = {
 };
 
 export default function ColaboradoresPage() {
-    const { user } = useAuth();
+    const { user } = useUser();
     const queryClient = useQueryClient();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);

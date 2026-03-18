@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, useUser } from "@clerk/nextjs";
 import { useRouter, usePathname } from "next/navigation";
 import { SidebarTrigger } from "@/shared/ui/sidebar";
 import {
@@ -41,7 +41,8 @@ const PAGE_TITLE_KEYS: Record<string, string> = {
 };
 
 export function TopBar() {
-    const { user, signOut } = useAuth();
+    const { signOut } = useAuth();
+    const { user } = useUser();
     const { theme, setTheme } = useTheme();
     const { t } = useTranslation();
     const navigate = useRouter();
@@ -63,8 +64,8 @@ export function TopBar() {
         document.dispatchEvent(e);
     };
 
-    const displayName = user?.user_metadata?.full_name || user?.email || "";
-    const avatarUrl = user?.user_metadata?.avatar_url;
+    const displayName = user?.fullName || user?.primaryEmailAddress?.emailAddress || "";
+    const avatarUrl = user?.imageUrl;
     const initials = displayName
         .split(" ")
         .map((n: string) => n[0])
@@ -175,8 +176,8 @@ export function TopBar() {
                         <DropdownMenuLabel className="font-normal p-2.5">
                             <div className="flex flex-col space-y-2">
                                 <p className="text-sm font-semibold leading-none text-foreground truncate">{displayName}</p>
-                                {displayName !== user?.email && (
-                                    <p className="text-xs leading-none text-muted-foreground truncate">{user?.email}</p>
+                                {displayName !== user?.primaryEmailAddress?.emailAddress && (
+                                    <p className="text-xs leading-none text-muted-foreground truncate">{user?.primaryEmailAddress?.emailAddress}</p>
                                 )}
                             </div>
                         </DropdownMenuLabel>
@@ -185,7 +186,7 @@ export function TopBar() {
                             <Settings className="h-4 w-4 text-muted-foreground" />
                             <span>{t("nav.settings")}</span>
                         </DropdownMenuItem>
-                        {user?.email === "lexagestaojuridica@gmail.com" && (
+                        {user?.primaryEmailAddress?.emailAddress === "lexagestaojuridica@gmail.com" && (
                             <>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem className="cursor-pointer gap-2 text-rose-600 focus:text-rose-700 focus:bg-rose-500/10" onClick={() => navigate.push("/admin/hq")}>

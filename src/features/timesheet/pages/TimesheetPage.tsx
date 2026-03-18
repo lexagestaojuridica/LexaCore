@@ -1,7 +1,8 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { db as supabase } from "@/integrations/supabase/db";
-import { useAuth } from "@/contexts/AuthContext";
+"use client";
+import { useUser } from "@clerk/nextjs";
 import { useTimer } from "@/features/timesheet/hooks/useTimer";
 import { useTimesheet } from "@/features/timesheet/hooks/useTimesheet";
 import type { TimesheetEntry, TimerLog, ProcessoTimesheet as Processo } from "@/features/timesheet/types";
@@ -61,7 +62,7 @@ const ACTION_LABELS: Record<string, { label: string; color: string }> = {
 
 // ─── Main Page ────────────────────────────────────────────────
 export default function TimesheetPage() {
-    const { user } = useAuth();
+    const { user } = useUser();
     const { t } = useTranslation();
 
     const [dialogOpen, setDialogOpen] = useState(false);

@@ -14,7 +14,7 @@ import { useCrm } from "@/features/crm/contexts/CrmContext";
 import { CrmDeal } from "@/features/crm/types";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { db as supabase } from "@/integrations/supabase/db";
-import { useAuth } from "@/contexts/AuthContext";
+import { useUser } from "@clerk/nextjs";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -40,7 +40,7 @@ const emptyForm: FormState = { name: "", contactName: "", value: "", probability
 
 export default function CrmDealsTable() {
     const { deals, contacts, addDeal, updateDeal, deleteDeal: deleteDealCtx } = useCrm();
-    const { user } = useAuth();
+    const { user } = useUser();
     const queryClient = useQueryClient();
     const navigate = useRouter();
 

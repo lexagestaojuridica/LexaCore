@@ -1,9 +1,9 @@
-import { useAuth } from "@/contexts/AuthContext";
+import { useUser } from "@clerk/nextjs";
 import { trpc } from "@/shared/lib/trpc";
 import type { Evento, Processo, DashboardStats, TimesheetSummary } from "../types";
 
 export function useMeuDia() {
-    const { user } = useAuth();
+    const { user } = useUser();
 
     const dashboardQuery = trpc.meuDia.getDashboardData.useQuery(undefined, {
         enabled: !!user,

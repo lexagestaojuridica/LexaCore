@@ -1,6 +1,6 @@
 import { createContext, useContext, ReactNode, useCallback, useEffect } from "react";
 import { db as supabase } from "@/integrations/supabase/db"; // Only for Realtime now
-import { useAuth } from "@/contexts/AuthContext";
+import { useUser } from "@clerk/nextjs";
 import { trpc } from "@/shared/lib/trpc";
 import { toast } from "sonner";
 
@@ -82,7 +82,7 @@ export const useCrm = () => {
 
 // ── Provider ───────────────────────────────────────────
 export function CrmProvider({ children }: { children: ReactNode }) {
-    const { user } = useAuth();
+    const { user } = useUser();
     const utils = trpc.useUtils();
 
     // ── Queries ──

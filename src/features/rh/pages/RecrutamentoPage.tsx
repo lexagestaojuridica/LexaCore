@@ -1,7 +1,8 @@
+"use client";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { db as supabase } from "@/integrations/supabase/db";
-import { useAuth } from "@/contexts/AuthContext";
+import { useUser } from "@clerk/nextjs";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
 import {
@@ -30,7 +31,7 @@ const STAGES = [
 ];
 
 export default function RecrutamentoPage() {
-    const { user } = useAuth();
+    const { user } = useUser();
     const queryClient = useQueryClient();
     const [selectedJobId, setSelectedJobId] = useState<string>("all");
     const [isJobDialogOpen, setIsJobDialogOpen] = useState(false);

@@ -1,14 +1,14 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { db as supabase } from "@/integrations/supabase/db";
-import { useAuth } from "@/contexts/AuthContext";
+import { useUser } from "@clerk/nextjs";
 import { toast } from "sonner";
 import { useBilling } from "@/features/financeiro/hooks/useBilling";
 import type { Plan, Employee, OrgFormState, EmployeeFormState, CustomRole, GatewaySettings, CustomOption, TeamMember } from "../types";
 import { emptyEmployee, emptyOrgForm, FALLBACK_PLANS } from "../types";
 
 export function useConfiguracoes() {
-    const { user } = useAuth();
+    const { user } = useUser();
     const queryClient = useQueryClient();
     const avatarInputRef = useRef<HTMLInputElement>(null);
 

@@ -23,7 +23,6 @@ export const navGroups: NavGroupConfig[] = [
         defaultOpen: true,
         items: [
             { titleKey: "nav.dashboard", url: "/dashboard", icon: LayoutDashboard },
-            { titleKey: "nav.news", url: "/dashboard/noticias", icon: Newspaper },
         ],
     },
     {
@@ -50,7 +49,6 @@ export const navGroups: NavGroupConfig[] = [
         labelKey: "groups.intelligence",
         defaultOpen: false,
         items: [
-            { titleKey: "nav.bi", url: "/dashboard/bi", icon: BarChart3 },
             { titleKey: "nav.ia", url: "/dashboard/ia", icon: Bot },
         ],
     },
@@ -59,7 +57,6 @@ export const navGroups: NavGroupConfig[] = [
         defaultOpen: false,
         items: [
             { titleKey: "nav.financial", url: "/dashboard/financeiro", icon: DollarSign, allowedRoles: ["admin", "advogado", "financeiro"] },
-            { titleKey: "nav.units", url: "/dashboard/unidades", icon: Building2, allowedRoles: ["admin"] },
             { titleKey: "nav.rhDashboard", url: "/dashboard/rh", icon: BarChart3, allowedRoles: ["admin", "advogado"] },
             { titleKey: "nav.employees", url: "/dashboard/rh/colaboradores", icon: Users, allowedRoles: ["admin", "advogado"] },
             { titleKey: "nav.timeclock", url: "/dashboard/rh/ponto", icon: Clock, allowedRoles: ["admin", "advogado"] },

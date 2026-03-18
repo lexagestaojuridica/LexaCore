@@ -1,7 +1,8 @@
+"use client";
 import { useState } from "react";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { db as supabase } from "@/integrations/supabase/db";
-import { useAuth } from "@/contexts/AuthContext";
+import { useUser } from "@clerk/nextjs";
 import { toast } from "sonner";
 import { format, parseISO, isPast, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -69,7 +70,7 @@ interface FinanceiroForm {
 const emptyForm: FinanceiroForm = { description: "", amount_display: "", due_date: "", status: "pendente", category: "" };
 
 export default function FinanceiroPage() {
-  const { user } = useAuth();
+  const { user } = useUser();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   const [tab, setTab] = useState<TipoConta | "dasdarf" | "orcamento">("receber");

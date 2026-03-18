@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { db as supabase } from "@/integrations/supabase/db";
-import { useAuth } from "@/contexts/AuthContext";
+import { useUser } from "@clerk/nextjs";
 import { toast } from "sonner";
 
 export interface Subscription {
@@ -19,7 +19,7 @@ export interface Subscription {
 }
 
 export function useBilling() {
-    const { user } = useAuth();
+    const { user } = useUser();
     const queryClient = useQueryClient();
 
     // Get current subscription

@@ -1,5 +1,5 @@
 import { createContext, useContext, ReactNode, useCallback, useState } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useUser } from "@clerk/nextjs";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { trpc } from "@/shared/lib/trpc";
@@ -274,6 +274,7 @@ export const useMinutas = () => {
 };
 
 export function MinutasProvider({ children }: { children: ReactNode }) {
+    const { user } = useUser();
     const utils = trpc.useUtils();
     const [openDocument, setOpenDocument] = useState<string | null>(null);
 

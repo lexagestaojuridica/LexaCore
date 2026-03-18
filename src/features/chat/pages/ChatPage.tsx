@@ -1,7 +1,8 @@
+"use client";
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { db as supabase } from "@/integrations/supabase/db";
-import { useAuth } from "@/contexts/AuthContext";
+import { useUser } from "@clerk/nextjs";
 import { toast } from "sonner";
 import { format, isToday, isYesterday, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -58,7 +59,7 @@ const CHANNEL_LABELS: Record<string, string> = {
 // ─── ChatPage ─────────────────────────────────────────────────
 
 export default function ChatPage() {
-    const { user } = useAuth();
+    const { user } = useUser();
     const queryClient = useQueryClient();
     const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null);
     const [newChannelOpen, setNewChannelOpen] = useState(false);

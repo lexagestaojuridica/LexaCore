@@ -1,7 +1,8 @@
+"use client";
 import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { db as supabase } from "@/integrations/supabase/db";
-import { useAuth } from "@/contexts/AuthContext";
+import { useUser } from "@clerk/nextjs";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -120,7 +121,7 @@ function SortableHeader({ field, label, sortField, sortDir, onSort }: {
 // ─── Main Page ──────────────────────────────────────────────────
 
 export default function ProcessosPage() {
-  const { user } = useAuth();
+  const { user } = useUser();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   const [search, setSearch] = useState("");

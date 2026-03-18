@@ -5,13 +5,13 @@ import { TopBar } from "@/widgets/layout/TopBar";
 import dynamic from "next/dynamic";
 const ArunaQuickChat = dynamic(() => import("@/features/ia/components/ArunaQuickChat"), { ssr: false });
 const OnboardingTour = dynamic(() => import("@/features/meu-dia/components/OnboardingTour").then(mod => ({ default: mod.OnboardingTour })), { ssr: false });
-import { useAuth } from "@/contexts/AuthContext";
+import { useUser } from "@clerk/nextjs";
 import { cn } from "@/shared/lib/utils";
 
 // ─── DashboardLayout ──────────────────────────────────────────
 
 export default function DashboardLayout({ children }: { children?: React.ReactNode }) {
-  const { user } = useAuth();
+  const { user } = useUser();
   const pathname = usePathname();
   const isOverview = pathname === "/dashboard";
 

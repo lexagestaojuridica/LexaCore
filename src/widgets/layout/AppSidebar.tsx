@@ -6,7 +6,7 @@ import {
 } from "@/shared/ui/sidebar";
 import Image from "next/image";
 import { NavLink } from "@/widgets/layout/NavLink";
-import { useAuth } from "@/contexts/AuthContext";
+import { useUser } from "@clerk/nextjs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";
 import { ChevronDown } from "lucide-react";
 import { useState } from "react";
@@ -90,7 +90,7 @@ function NavGroup({
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
-  const { user } = useAuth();
+  const { user } = useUser();
   const { t } = useTranslation();
 
   const { data: userRoleData } = useQuery({
@@ -102,7 +102,7 @@ export function AppSidebar() {
     enabled: !!user,
   });
 
-  const role = (userRoleData?.role) ?? (user?.user_metadata?.app_role) ?? "admin";
+  const role = (userRoleData?.role) ?? (user?.publicMetadata?.app_role as string) ?? "admin";
 
   return (
     <Sidebar collapsible="icon" className="border-r border-white/5 bg-sidebar-background shadow-2xl">

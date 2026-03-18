@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+"use client";
+import { useUser } from "@clerk/nextjs";
 import { useGoogleCalendar } from "@/features/agenda/hooks/useGoogleCalendar";
 import { useMicrosoftCalendar } from "@/features/agenda/hooks/useMicrosoftCalendar";
 import { useAppleCalendar } from "@/features/agenda/hooks/useAppleCalendar";
@@ -41,7 +42,7 @@ import { EventDialog } from "@/features/agenda/components/EventDialog";
 
 // ─── Main Page ────────────────────────────────────────────────
 export default function AgendaPage() {
-  const { user } = useAuth();
+  const { user } = useUser();
   const { t } = useTranslation();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -56,7 +57,7 @@ export default function AgendaPage() {
   const mscal = useMicrosoftCalendar();
   const appleCal = useAppleCalendar();
 
-  const organizationId = user?.user_metadata?.organization_id as string | undefined;
+  const organizationId = user?.publicMetadata?.organization_id as string | undefined;
 
   const { eventos, isLoading, createMutation, updateMutation, deleteMutation } = useAgenda(currentMonth);
 

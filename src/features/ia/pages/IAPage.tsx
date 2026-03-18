@@ -18,16 +18,16 @@ import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/shared/ui/tooltip";
-import { useAuth, useSession } from "@clerk/nextjs";
+import { useUser, useSession } from "@clerk/nextjs";
 import { useArunaChat } from "../hooks/useArunaChat";
 import type { ArunaContext, ArunaMessage } from "../types";
 
 /* ─── Constants ──────────────────────────────────── */
-const ARUNA_GREETING = `Olá! Sou a **ARUNA**, sua assistente jurídica avançada da Lexa Nova. ⚖️✨
+const ARUNA_GREETING = `Olá! Sou a ** ARUNA **, sua assistente jurídica avançada da Lexa Nova. ⚖️✨
 
-Estou conectada diretamente aos dados do seu escritório. Posso **Resumir Processos**, analisar métricas do **Dashboard**, redigir **Petições**, consultar **Jurisprudências**, e até **Transcrever Audiências** em tempo real.
+Estou conectada diretamente aos dados do seu escritório.Posso ** Resumir Processos **, analisar métricas do ** Dashboard **, redigir ** Petições **, consultar ** Jurisprudências **, e até ** Transcrever Audiências ** em tempo real.
 
-Como posso acelerar seu trabalho hoje?`;
+Como posso acelerar seu trabalho hoje ? `;
 
 const quickActions = [
   { label: "Prazos Perigosos", prompt: "Quais prazos processuais vencem esta semana?", icon: Search },
@@ -74,17 +74,17 @@ const AUDIO_TYPES = [
 ];
 
 const BASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const DOC_GEN_URL = `${BASE_URL}/functions/v1/aruna-generate-doc`;
-const JURIS_URL = `${BASE_URL}/functions/v1/aruna-jurisprudencia`;
-const ANALYZE_URL = `${BASE_URL}/functions/v1/aruna-analyze-doc`;
-const TRANSCRIBE_URL = `${BASE_URL}/functions/v1/aruna-transcribe`;
+const DOC_GEN_URL = `${BASE_URL} /functions/v1 / aruna - generate - doc`;
+const JURIS_URL = `${BASE_URL} /functions/v1 / aruna - jurisprudencia`;
+const ANALYZE_URL = `${BASE_URL} /functions/v1 / aruna - analyze - doc`;
+const TRANSCRIBE_URL = `${BASE_URL} /functions/v1 / aruna - transcribe`;
 
 type Tool = null | "doc" | "juris" | "analyze" | "transcribe";
 
 /* ═══════════════════════════════════════════════════ */
 
 export default function IAPage() {
-  const { userId } = useAuth();
+  const { user } = useUser();
   const { session } = useSession();
   const { toast } = useToast();
   const endRef = useRef<HTMLDivElement>(null);
@@ -152,7 +152,7 @@ export default function IAPage() {
     if (!docType || streaming) return;
     setTool(null);
     const typeLabel = DOC_TYPES.find(d => d.value === docType)?.label || docType;
-    const prompt = `📄 Gerar documento: **${typeLabel}**\nInstruções: ${docInstr || "Nenhuma"}`;
+    const prompt = `📄 Gerar documento: ** ${typeLabel}**\nInstruções: ${docInstr || "Nenhuma"} `;
 
     await sendMessage(prompt, {
       ...ctx,
@@ -170,7 +170,7 @@ export default function IAPage() {
     if (!jurisQ.trim() || streaming) return;
     setTool(null);
     const areaLabel = AREAS_DIREITO.find(a => a.value === jurisArea)?.label;
-    const prompt = `🔍 Pesquisar Jurisprudência: **${jurisQ}** ${jurisArea !== "all" ? `(${areaLabel})` : ""}`;
+    const prompt = `🔍 Pesquisar Jurisprudência: ** ${jurisQ}** ${jurisArea !== "all" ? `(${areaLabel})` : ""} `;
 
     await sendMessage(prompt, {
       ...ctx,
@@ -189,7 +189,7 @@ export default function IAPage() {
     setTool(null);
     const docName = docsData?.find((d: { id: string; file_name: string }) => d.id === analyzeDocId)?.file_name || "Documento";
     const typeLabel = ANALYSIS_TYPES.find(a => a.value === analyzeType)?.label;
-    const prompt = `📄 Analisar PDF: **${docName}** (${typeLabel})`;
+    const prompt = `📄 Analisar PDF: ** ${docName}** (${typeLabel})`;
 
     await sendMessage(prompt, {
       ...ctx,
@@ -209,7 +209,7 @@ export default function IAPage() {
     if (!audioFile || !orgId || !userId || streaming) return;
     setTool(null);
     const typeLabel = AUDIO_TYPES.find(t => t.value === audioType)?.label || audioType;
-    const content = `🎙️ Transcrever gravação: **${audioFile.name}** (${typeLabel})`;
+    const content = `🎙️ Transcrever gravação: ** ${audioFile.name}** (${typeLabel})`;
 
     // Use the hook's helper to add a user message and trigger save
     addUser(content);

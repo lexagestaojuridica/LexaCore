@@ -1,5 +1,5 @@
 import { ReactNode, useEffect, useState } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { db as supabase } from "@/integrations/supabase/db";
 
@@ -8,7 +8,8 @@ interface AdminGuardProps {
 }
 
 export default function AdminGuard({ children }: AdminGuardProps) {
-    const { user, loading: authLoading } = useAuth();
+    const { isLoaded: authLoaded } = useAuth();
+    const { user, isLoaded: userLoaded } = useUser();
     const [isSuperAdmin, setIsSuperAdmin] = useState<boolean | null>(null);
     const router = useRouter();
 
@@ -23,7 +24,7 @@ export default function AdminGuard({ children }: AdminGuardProps) {
                 return;
             }
 
-            const isEmailAuthorized = MASTER_ADMIN_EMAILS.includes(user.email ?? "");
+            const isEmailAuthorized = MASTER_ADMIN_EMAILS.includes(user.primaryEmailAddress?.emailAddress ?? "");
 
             if (isEmailAuthorized) {
                 setIsSuperAdmin(true);
@@ -51,10 +52,10 @@ export default function AdminGuard({ children }: AdminGuardProps) {
             }
         };
 
-        if (!authLoading) {
+        if (authLoaded && userLoaded) {
             checkMasterRole();
         }
-    }, [user, authLoading]);
+    }, [user, authLoaded, userLoaded]);
 
     useEffect(() => {
         if (isSuperAdmin === false) {
@@ -62,7 +63,7 @@ export default function AdminGuard({ children }: AdminGuardProps) {
         }
     }, [isSuperAdmin, router]);
 
-    if (authLoading || isSuperAdmin === null) {
+    if (!authLoaded || !userLoaded || isSuperAdmin === null) {
         return (
             <div className="flex h-screen w-full items-center justify-center bg-zinc-950">
                 <div className="flex flex-col items-center gap-4">

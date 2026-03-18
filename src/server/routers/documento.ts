@@ -74,4 +74,23 @@ export const documentoRouter = createTRPCRouter({
 
             return { token };
         }),
+
+    getSignedUrl: tenantProcedure
+        .input(z.string()) // file_path
+        .mutation(async ({ ctx, input: filePath }) => {
+            const { db } = ctx;
+            const { data, error } = await db.storage
+                .from("documentos")
+                .createSignedUrl(filePath, 3600);
+
+            if (error) {
+                throw new TRPCError({
+                    code: "INTERNAL_SERVER_ERROR",
+                    message: "Erro ao gerar link do documento",
+                    cause: error,
+                });
+            }
+
+            return { signedUrl: data.signedUrl };
+        }),
 });

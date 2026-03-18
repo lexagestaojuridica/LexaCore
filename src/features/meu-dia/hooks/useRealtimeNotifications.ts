@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { db as supabase } from "@/integrations/supabase/db";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@/contexts/AuthContext";
+import { useUser } from "@clerk/nextjs";
 
 export interface RealtimeNotification {
     id: string;
@@ -15,7 +15,7 @@ export interface RealtimeNotification {
 }
 
 export function useRealtimeNotifications() {
-    const { user } = useAuth();
+    const { user } = useUser();
     const queryClient = useQueryClient();
 
     // Buscar notificações iniciais do banco

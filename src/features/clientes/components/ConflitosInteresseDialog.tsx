@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { db as supabase } from "@/integrations/supabase/db";
-import { useAuth } from "@/contexts/AuthContext";
+import { useUser } from "@clerk/nextjs";
 import { AlertTriangle, CheckCircle2, Search, X } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
@@ -35,7 +35,7 @@ export function ConflitosInteresseDialog({
     clientDocument,
     onProceed,
 }: Props) {
-    const { user } = useAuth();
+    const { user } = useUser();
 
     const { data: profile } = useQuery({
         queryKey: ["profile", user?.id],

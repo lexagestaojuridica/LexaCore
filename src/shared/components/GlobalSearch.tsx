@@ -15,16 +15,10 @@ import {
 } from "@/shared/ui/command";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { useAuth } from "@/contexts/AuthContext";
+import { useUser } from "@clerk/nextjs";
 import { useTheme } from "@/shared/components/ThemeProvider";
 import { supabase } from "@/integrations/supabase/client";
 
-interface AuthContextType {
-    session: { user: any } | null;
-    user: any | null; // Tipagem flexível para acomodar o enriquecimento customizado
-    loading: boolean;
-    signOut: () => Promise<void>;
-}
 
 export function GlobalSearch() {
     const [open, setOpen] = useState(false);
@@ -33,7 +27,7 @@ export function GlobalSearch() {
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useRouter();
     const { t } = useTranslation();
-    const { user } = useAuth() as AuthContextType;
+    const { user } = useUser();
     const { theme, setTheme } = useTheme();
 
 

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useUser } from "@clerk/nextjs";
 import { db as supabase, supabaseClient } from "@/integrations/supabase/db";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -27,7 +27,7 @@ interface GoogleAuthResponse {
 }
 
 export function useGoogleCalendar() {
-  const { user } = useAuth();
+  const { user } = useUser();
   const queryClient = useQueryClient();
   const [connecting, setConnecting] = useState(false);
 

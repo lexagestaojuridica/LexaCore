@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { SidebarProvider, SidebarTrigger } from "@/shared/ui/sidebar";
 import { AdminSidebar } from "./AdminSidebar";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { Button } from "@/shared/ui/button";
 import {
@@ -21,7 +21,8 @@ const ADMIN_TITLES: Record<string, string> = {
 };
 
 export default function AdminLayout({ children }: { children?: React.ReactNode }) {
-    const { user, signOut } = useAuth();
+    const { signOut } = useAuth();
+    const { user } = useUser();
     const navigate = useRouter();
     const pathname = usePathname();
     const { theme, setTheme } = useTheme();
@@ -31,7 +32,7 @@ export default function AdminLayout({ children }: { children?: React.ReactNode }
         setMounted(true);
     }, []);
 
-    const displayName = user?.user_metadata?.full_name || user?.email || "Super Admin";
+    const displayName = user?.fullName || user?.primaryEmailAddress?.emailAddress || "Super Admin";
     const initials = (displayName as string)
         .split(" ")
         .map((n: string) => n[0])

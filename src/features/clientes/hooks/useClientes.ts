@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { useUser } from "@clerk/nextjs";
 import { toast } from "sonner";
 import type { Client, ClientDocumento } from "../types";
 import { trpc } from "@/shared/lib/trpc";
@@ -9,7 +9,7 @@ import { trpc } from "@/shared/lib/trpc";
 const PAGE_SIZE = 15;
 
 export function useClientes() {
-    const { user } = useAuth();
+    const { user } = useUser();
     const queryClient = useQueryClient();
     const utils = trpc.useUtils();
 
@@ -91,6 +91,8 @@ export function useClientes() {
         },
     });
 
+    const getSignedUrlMutation = trpc.documento.getSignedUrl.useMutation();
+
     const syncAsaasMutation = trpc.cliente.syncAsaas.useMutation({
         onSuccess: () => {
             toast.success("Sincronizado com Asaas!");
@@ -121,8 +123,13 @@ export function useClientes() {
     const handleSearch = (v: string) => { setSearch(v); setPage(1); };
 
     const handleDocDownload = async (doc: ClientDocumento) => {
-        const { data } = await supabase.storage.from("documentos").createSignedUrl(doc.file_path, 60);
-        if (data?.signedUrl) window.open(data.signedUrl, "_blank");
+        try {
+            const { signedUrl } = await getSignedUrlMutation.mutateAsync(doc.file_path);
+            if (signedUrl) window.open(signedUrl, "_blank");
+        } catch (error) {
+            console.error("Erro ao baixar documento:", error);
+            toast.error("Erro ao gerar link de download");
+        }
     };
 
     const handleUpload = async (file: File, clientId: string) => {

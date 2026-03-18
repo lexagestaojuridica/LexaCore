@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { db as supabase } from "@/integrations/supabase/db";
-import { useAuth } from "@/contexts/AuthContext";
+import { useUser } from "@clerk/nextjs";
 import { toast } from "sonner";
 import { Bot, Plus, Zap, ArrowRight, Activity, Trash2, Edit2, Play, ToggleLeft, ToggleRight, X } from "lucide-react";
 import { Button } from "@/shared/ui/button";
@@ -28,7 +28,7 @@ const ACTION_OPTIONS = [
 ];
 
 export default function WorkflowAutomations() {
-    const { user } = useAuth();
+    const { user } = useUser();
     const queryClient = useQueryClient();
     const [dialogOpen, setDialogOpen] = useState(false);
     const [form, setForm] = useState({ name: "", description: "", trigger_type: "", action: "" });

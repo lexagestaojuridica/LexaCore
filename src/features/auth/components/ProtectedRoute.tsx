@@ -1,4 +1,4 @@
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, useUser } from "@clerk/nextjs";
 import { useRouter, usePathname } from "next/navigation";
 import { ReactNode, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -6,7 +6,8 @@ import { db as supabase } from "@/integrations/supabase/db";
 import { UserRole } from "@/shared/types";
 
 const ProtectedRoute = ({ children }: { children: ReactNode }) => {
-  const { session, user, loading } = useAuth();
+  const { isLoaded, userId } = useAuth();
+  const { user, isLoaded: userLoaded } = useUser();
   const pathname = usePathname();
   const router = useRouter();
 
@@ -22,12 +23,12 @@ const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   });
 
   useEffect(() => {
-    if (!loading && !session) {
+    if (isLoaded && !userId) {
       router.replace("/auth");
     }
-  }, [loading, session, router]);
+  }, [isLoaded, userId, router]);
 
-  if (loading || (session && roleLoading)) {
+  if (!isLoaded || !userLoaded || (userId && roleLoading)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
@@ -35,9 +36,9 @@ const ProtectedRoute = ({ children }: { children: ReactNode }) => {
     );
   }
 
-  if (!session) return null;
+  if (!userId) return null;
 
-  const role = userRoleData?.role || (user?.user_metadata?.app_role as UserRole) || "admin";
+  const role = userRoleData?.role || (user?.publicMetadata?.app_role as UserRole) || "admin";
   const isPortalRoute = (pathname ?? "").startsWith('/portal');
 
   if (role === 'cliente' && !isPortalRoute) {

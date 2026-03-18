@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { db as supabase } from "@/integrations/supabase/db";
-import { useAuth } from "@/contexts/AuthContext";
+import { useUser } from "@clerk/nextjs";
 import { toast } from "sonner";
 import { format, isToday, isYesterday, parseISO } from "date-fns";
 import {
@@ -52,7 +52,7 @@ const CHANNEL_LABELS: Record<string, string> = {
 // ─── ChatWidget (Global Floating Sheet) ───────────────────────
 
 export default function ChatWidget() {
-    const { user } = useAuth();
+    const { user } = useUser();
     const queryClient = useQueryClient();
     const [isOpen, setIsOpen] = useState(false);
     const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null);

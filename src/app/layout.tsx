@@ -5,7 +5,6 @@ import { ThemeProvider } from "@/shared/components/ThemeProvider";
 import { TooltipProvider } from "@/shared/ui/tooltip";
 import { Toaster } from "@/shared/ui/toaster";
 import { Toaster as Sonner } from "@/shared/ui/sonner";
-import { AuthProvider } from "@/contexts/AuthContext";
 import { TRPCProvider } from "./TRPCProvider";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -16,9 +15,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <TRPCProvider>
             <ThemeProvider defaultTheme="system" storageKey="lexa-theme">
               <TooltipProvider>
-                <AuthProvider>
-                  {children}
-                </AuthProvider>
+                {children}
                 <Toaster />
                 <Sonner />
               </TooltipProvider>

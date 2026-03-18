@@ -1,7 +1,8 @@
+"use client";
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { db as supabase } from "@/integrations/supabase/db";
-import { useAuth } from "@/contexts/AuthContext";
+import { useUser } from "@clerk/nextjs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
 import { Clock, MapPin, Fingerprint, Calendar, CheckCircle2, History, Users } from "lucide-react";
@@ -18,7 +19,7 @@ import { toast } from "sonner";
 import LexaLoadingOverlay from "@/shared/components/LexaLoadingOverlay";
 
 export default function PontoEletronicoPage() {
-    const { user } = useAuth();
+    const { user } = useUser();
     const queryClient = useQueryClient();
     const [time, setTime] = useState(new Date());
     const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>("");

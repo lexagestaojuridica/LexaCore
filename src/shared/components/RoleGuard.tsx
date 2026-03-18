@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, useUser } from "@clerk/nextjs";
 import { useQuery } from "@tanstack/react-query";
 import { db as supabase } from "@/integrations/supabase/db";
 
@@ -12,7 +12,8 @@ interface RoleGuardProps {
 }
 
 export default function RoleGuard({ allowedRoles, children, fallback = null }: RoleGuardProps) {
-    const { user, loading: authLoading } = useAuth();
+    const { isLoaded: authLoaded } = useAuth();
+    const { user, isLoaded: userLoaded } = useUser();
 
     const { data: userRoleData, isLoading } = useQuery({
         queryKey: ["user-role", user?.id],
@@ -25,9 +26,9 @@ export default function RoleGuard({ allowedRoles, children, fallback = null }: R
         gcTime: 1000 * 60 * 60,
     });
 
-    if (authLoading || isLoading) return <div className="p-4 flex justify-center"><div className="h-6 w-6 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
+    if (!authLoaded || !userLoaded || isLoading) return <div className="p-4 flex justify-center"><div className="h-6 w-6 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
 
-    const role = (userRoleData?.role as AppRole) ?? (user?.user_metadata as any)?.app_role ?? "admin";
+    const role = (userRoleData?.role as AppRole) ?? (user?.publicMetadata?.app_role as AppRole) ?? "admin";
 
     if (role === "admin") return <>{children}</>;
 
