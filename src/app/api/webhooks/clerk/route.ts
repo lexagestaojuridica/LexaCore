@@ -58,12 +58,12 @@ export async function POST(req: Request) {
   console.log(`Webhook received for user ${id} with type ${eventType}`);
 
   if (eventType === 'user.created' || eventType === 'user.updated') {
-    const { 
-      id: clerkId, 
-      first_name, 
-      last_name, 
-      image_url, 
-      email_addresses 
+    const {
+      id: clerkId,
+      first_name,
+      last_name,
+      image_url,
+      email_addresses
     } = evt.data;
 
     const email = email_addresses[0]?.email_address;
@@ -76,7 +76,7 @@ export async function POST(req: Request) {
       updated_at: new Date().toISOString(),
     };
 
-    // UPSERT para garantir que o perfil sempre exista e esteja atualizado
+    // UPSERT no banco (agora compatível com Clerk String ID)
     const { error } = await supabaseAdmin
       .from('profiles')
       .upsert(profileData, { onConflict: 'user_id' });
