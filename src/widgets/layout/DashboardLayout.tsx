@@ -2,8 +2,9 @@ import { SidebarProvider } from "@/shared/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { usePathname } from "next/navigation";
 import { TopBar } from "@/widgets/layout/TopBar";
-import ArunaQuickChat from "@/features/ia/components/ArunaQuickChat";
-import { OnboardingTour } from "@/features/meu-dia/components/OnboardingTour";
+import dynamic from "next/dynamic";
+const ArunaQuickChat = dynamic(() => import("@/features/ia/components/ArunaQuickChat"), { ssr: false });
+const OnboardingTour = dynamic(() => import("@/features/meu-dia/components/OnboardingTour").then(mod => ({ default: mod.OnboardingTour })), { ssr: false });
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/shared/lib/utils";
 

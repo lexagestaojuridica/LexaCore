@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { db as supabase } from "@/integrations/supabase/db";
 import type { Database } from "@/integrations/supabase/types";
 import { useAuth } from "@/contexts/AuthContext";
+import { trpc } from "@/shared/lib/trpc";
 import { toast } from "sonner";
 import {
     Building2, Plus, Search, Edit2, Trash2, MapPin, Phone, Mail, Crown,
@@ -48,6 +49,7 @@ const emptyForm = {
 export default function UnidadesPage() {
     const { user } = useAuth();
     const queryClient = useQueryClient();
+    const trpcUtils = trpc.useUtils();
     const [search, setSearch] = useState("");
     const debouncedSearch = useDebounce(search, 400);
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -66,48 +68,24 @@ export default function UnidadesPage() {
     const orgId = profile?.organization_id;
     const isSuperAdmin = true; // Admin check via RLS
 
-    const { data: units = [], isLoading } = useQuery({
-        queryKey: ["unidades", orgId],
-        queryFn: async () => {
-            const { data, error } = await supabase
-                .from("unidades")
-                .select("*")
-                .eq("organization_id", orgId!)
-                .order("is_headquarters", { ascending: false })
-                .order("name");
-            if (error) throw error;
-            return (data || []) as Unit[];
-        },
+    const { data: unitsRaw, isLoading } = trpc.unidades.list.useQuery(undefined, {
         enabled: !!orgId,
     });
+    const units = (unitsRaw as Unit[]) || [];
 
-    const createMutation = useMutation({
-        mutationFn: async (payload: Omit<Unit, "id" | "created_at" | "updated_at"> & { organization_id: string }) => {
-            const { error } = await supabase.from("unidades").insert(payload as Database["public"]["Tables"]["unidades"]["Insert"]);
-            if (error) throw error;
-        },
-        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["unidades"] }); toast.success("Unidade criada!"); closeDialog(); },
-        onError: (e: Error) => toast.error(`Erro ao criar unidade: ${e.message}`),
+    const createMutation = trpc.unidades.create.useMutation({
+        onSuccess: () => { trpcUtils.unidades.list.invalidate(); toast.success("Unidade criada!"); closeDialog(); },
+        onError: (e) => toast.error(`Erro ao criar unidade: ${e.message}`),
     });
 
-    const updateMutation = useMutation({
-        mutationFn: async ({ id, ...payload }: { id: string } & Partial<Unit>) => {
-            const { organization_id, created_at, ...cleanPayload } = payload as Partial<Unit> & { organization_id?: string; created_at?: string };
-
-            const { error } = await supabase.from("unidades").update(cleanPayload as Database["public"]["Tables"]["unidades"]["Update"]).eq("id", id).eq("organization_id", orgId!);
-            if (error) throw error;
-        },
-        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["unidades"] }); toast.success("Unidade atualizada!"); closeDialog(); },
-        onError: (e: Error) => toast.error(`Erro ao atualizar unidade: ${e.message}`),
+    const updateMutation = trpc.unidades.update.useMutation({
+        onSuccess: () => { trpcUtils.unidades.list.invalidate(); toast.success("Unidade atualizada!"); closeDialog(); },
+        onError: (e) => toast.error(`Erro ao atualizar unidade: ${e.message}`),
     });
 
-    const deleteMutation = useMutation({
-        mutationFn: async (id: string) => {
-            const { error } = await supabase.from("unidades").delete().eq("id", id);
-            if (error) throw error;
-        },
-        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["unidades"] }); toast.success("Unidade excluída permanentemente!"); setDeleteDialogOpen(false); setEditingUnit(null); },
-        onError: (e: any) => toast.error(`Erro ao excluir unidade: ${e.message}`),
+    const deleteMutation = trpc.unidades.delete.useMutation({
+        onSuccess: () => { trpcUtils.unidades.list.invalidate(); toast.success("Unidade excluída permanentemente!"); setDeleteDialogOpen(false); setEditingUnit(null); },
+        onError: (e) => toast.error(`Erro ao excluir unidade: ${e.message}`),
     });
 
     const closeDialog = () => { setDialogOpen(false); setForm(emptyForm); setEditingUnit(null); };
@@ -133,7 +111,7 @@ export default function UnidadesPage() {
         if (editingUnit) {
             updateMutation.mutate({ id: editingUnit.id, ...payload });
         } else {
-            createMutation.mutate(payload);
+            createMutation.mutate(payload as any);
         }
     };
 
