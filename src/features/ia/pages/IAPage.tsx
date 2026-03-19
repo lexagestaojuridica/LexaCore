@@ -206,7 +206,7 @@ export default function IAPage() {
   /* ─── Transcribe Audio ──────────────────────────── */
   const handleTranscribe = async () => {
     const orgId = (session as any)?.publicMetadata?.organizationId as string | undefined;
-    if (!audioFile || !orgId || !userId || streaming) return;
+    if (!audioFile || !orgId || !user?.id || streaming) return;
     setTool(null);
     const typeLabel = AUDIO_TYPES.find(t => t.value === audioType)?.label || audioType;
     const content = `🎙️ Transcrever gravação: ** ${audioFile.name}** (${typeLabel})`;
