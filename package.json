@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "build:dev": "next build"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.0.1",
