@@ -7,13 +7,8 @@ import { Badge } from "@/shared/ui/badge";
 import { cn } from "@/shared/lib/utils";
 import type { Processo } from "../types";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
+import { KANBAN_COLUMNS } from "../constants/kanban";
 
-export const KANBAN_COLUMNS = [
-    { status: "ativo", label: "Ativo", color: "border-t-emerald-500 dark:border-t-emerald-400" },
-    { status: "suspenso", label: "Suspenso", color: "border-t-amber-500 dark:border-t-amber-400" },
-    { status: "arquivado", label: "Arquivado", color: "border-t-muted-foreground" },
-    { status: "encerrado", label: "Encerrado", color: "border-t-rose-500 dark:border-t-rose-400" },
-];
 
 export function KanbanCard({ p, onEdit, onView, onDelete }: {
     p: Processo;
@@ -88,11 +83,11 @@ export function ProcessKanban({
 
         const newStatus = destination.droppableId;
         const oldStatus = source.droppableId;
-        
+
         // Only trigger DB update if status actually changed
         if (newStatus !== oldStatus) {
             // Optimistic update
-            const updated = localProcessos.map(p => 
+            const updated = localProcessos.map(p =>
                 p.id === draggableId ? { ...p, status: newStatus } : p
             );
             setLocalProcessos(updated);
@@ -107,7 +102,7 @@ export function ProcessKanban({
             <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
                 {KANBAN_COLUMNS.map((col) => {
                     const colProcessos = localProcessos.filter((p) => p.status === col.status);
-                    
+
                     return (
                         <div key={col.status} className="flex flex-col gap-2">
                             <div className={cn("rounded-xl border border-border/60 bg-muted/20 overflow-hidden shadow-sm", col.color, "border-t-4")}>

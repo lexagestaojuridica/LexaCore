@@ -4,7 +4,7 @@ import { db as supabase, supabaseClient } from "@/integrations/supabase/db";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-const db = supabase as any;
+const db = supabase;
 
 interface MicrosoftCalendarConnection {
     id: string;
@@ -100,7 +100,7 @@ export function useMicrosoftCalendar() {
         };
 
         handleCodeFromUrl();
-    }, [user?.id, queryClient]);
+    }, [user?.id, queryClient, supabase.functions]);
 
     const connect = useCallback(async () => {
         setConnecting(true);
@@ -119,7 +119,7 @@ export function useMicrosoftCalendar() {
             toast.error(error.message || "Erro ao iniciar conexão");
             setConnecting(false);
         }
-    }, []);
+    }, [supabase.functions]);
 
     const disconnect = useMutation({
         mutationFn: async () => {

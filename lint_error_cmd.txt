@@ -1,0 +1,522 @@
+
+> lexanova-producao@3.2.0 lint
+> next lint
+
+`next lint` is deprecated and will be removed in Next.js 16.
+For new projects, use create-next-app to choose your preferred linter.
+For existing projects, migrate to the ESLint CLI:
+npx @next/codemod@canary next-lint-to-eslint-cli .
+
+
+ ⚠ The Next.js plugin was not detected in your ESLint configuration. See https://nextjs.org/docs/app/api-reference/config/eslint#migrating-existing-config
+
+./src/app/layout.tsx
+2:1  Error: Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free.  @typescript-eslint/ban-ts-comment
+
+./src/features/admin/components/AdminGuard.tsx
+58:8  Warning: React Hook useEffect has a missing dependency: 'MASTER_ADMIN_EMAILS'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/features/admin/pages/AdminAudit.tsx
+23:14  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/features/admin/pages/AdminPlans.tsx
+102:69  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/features/admin/pages/AdminSettings.tsx
+51:8  Warning: React Hook useEffect has a missing dependency: 'settingsState'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/features/agenda/components/DayView.tsx
+12:17  Warning: Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.  react-refresh/only-export-components
+164:52  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/features/agenda/components/KPICard.tsx
+8:11  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/features/agenda/hooks/useAgenda.ts
+60:131  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+66:59  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/features/agenda/hooks/useAppleCalendar.ts
+7:24  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+43:23  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+63:24  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+75:27  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+80:24  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+96:24  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+108:27  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+112:24  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/features/agenda/hooks/useGoogleCalendar.ts
+7:24  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+52:3  Warning: Unused eslint-disable directive (no problems were reported from 'react-hooks/exhaustive-deps').
+95:21  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+103:6  Warning: React Hook useEffect has a missing dependency: 'user'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+165:20  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+179:20  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/features/agenda/hooks/useMicrosoftCalendar.ts
+7:24  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+52:5  Warning: Unused eslint-disable directive (no problems were reported from 'react-hooks/exhaustive-deps').
+95:27  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+103:8  Warning: React Hook useEffect has a missing dependency: 'user'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+165:24  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+179:24  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/features/chat/components/ChatWidget.tsx
+137:8  Warning: React Hook useEffect has a missing dependency: 'selectedChannel'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/features/chat/pages/ChatPage.tsx
+45:37  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+101:37  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+111:22  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+148:8  Warning: React Hook useEffect has a missing dependency: 'selectedChannel'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+173:22  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/features/clientes/hooks/useClientes.ts
+177:59  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/features/clientes/pages/ClientesPage.tsx
+79:15  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+79:31  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+89:19  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+96:40  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/features/configuracoes/types/index.ts
+90:18  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/features/crm/contexts/CrmContext.tsx
+18:22  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+20:94  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+29:59  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+48:32  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+77:14  Warning: Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.  react-refresh/only-export-components
+173:58  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/features/financeiro/components/BudgetPerformanceTab.tsx
+56:14  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+122:56  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+174:34  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+175:34  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+178:68  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+179:59  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+183:68  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+199:70  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+251:80  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/features/financeiro/components/DasDarfPanel.tsx
+88:62  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/features/financeiro/hooks/useAsaasBilling.ts
+8:27  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+19:22  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+31:24  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/features/financeiro/hooks/useFinanceiro.ts
+55:136  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+61:70  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/features/ia/hooks/useArunaChat.ts
+88:15  Error: 'line' is never reassigned. Use 'const' instead.  prefer-const
+118:31  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/features/ia/pages/IAPage.tsx
+208:31  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+474:76  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/features/ia/types.ts
+15:16  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+16:15  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+17:14  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/features/meu-dia/components/FacilitadorBar.tsx
+57:13  Error: Empty block statement.  no-empty
+
+./src/features/meu-dia/components/GuidedOnboarding.tsx
+16:11  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/features/meu-dia/components/OnboardingTour.tsx
+15:11  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+153:17  Warning: Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.  react-refresh/only-export-components
+
+./src/features/meu-dia/hooks/useRealtimeNotifications.ts
+51:34  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+69:34  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/features/minutas/components/MinutasEditor.tsx
+81:73  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/features/minutas/components/MinutasGed.tsx
+173:65  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+174:63  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+247:60  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+257:59  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/features/minutas/components/MinutasMyDocuments.tsx
+154:78  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/features/minutas/components/MinutaTemplateSelector.tsx
+15:15  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/features/minutas/contexts/MinutasContext.tsx
+10:14  Warning: Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.  react-refresh/only-export-components
+245:20  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+270:14  Warning: Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.  react-refresh/only-export-components
+285:56  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+288:59  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+290:25  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+291:22  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/features/portal/pages/PortalDashboard.tsx
+209:56  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+265:61  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+336:64  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/features/portal/pages/PortalLogin.tsx
+40:21  Error: Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free.  @typescript-eslint/ban-ts-comment
+51:25  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/features/portal/pages/PortalSignature.tsx
+42:54  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+76:24  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/features/portal/pages/ProcessPublicView.tsx
+18:15  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/features/processos/components/ProcessKanban.tsx
+11:14  Warning: Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.  react-refresh/only-export-components
+
+./src/features/processos/components/ProcessoDialog.tsx
+47:8  Warning: React Hook useEffect has a missing dependency: 'maxStepVisited'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+64:75  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/features/rh/pages/ColaboradoresPage.tsx
+146:24  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+166:24  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/features/rh/pages/PontoEletronicoPage.tsx
+52:38  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+97:24  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+150:67  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+250:69  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/features/rh/pages/RhDashboardPage.tsx
+100:67  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/features/workflow/components/WorkflowAutomations.tsx
+131:44  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+132:92  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/features/workflow/components/WorkflowMyList.tsx
+12:60  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/features/workflow/components/WorkflowTemplates.tsx
+136:77  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/features/workflow/contexts/WorkflowContext.tsx
+53:12  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+93:14  Warning: Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.  react-refresh/only-export-components
+107:11  Warning: The 'templates' logical expression could make the dependencies of useCallback Hook (at line 224) change on every render. To fix this, wrap the initialization of 'templates' in its own useMemo() Hook.  react-hooks/exhaustive-deps
+108:65  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+117:61  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+123:71  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+131:79  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+132:61  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+133:56  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+204:108  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+218:39  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/integrations/supabase/client.ts
+32:57  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+33:41  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+35:19  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/integrations/supabase/db.ts
+23:30  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+41:35  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+43:28  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/server/routers/agenda.ts
+18:52  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+21:62  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+37:48  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+38:55  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+40:58  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+45:25  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+46:22  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+82:30  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+98:39  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+99:52  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+110:32  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+111:48  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/server/routers/cliente.ts
+21:52  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+57:46  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+108:33  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+109:52  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+146:111  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+147:111  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+147:153  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+148:111  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+148:155  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+167:39  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+168:30  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+185:18  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+197:35  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+198:34  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+211:39  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+212:30  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+225:52  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+226:48  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+227:35  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+241:34  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+242:35  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+243:35  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+244:37  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+245:47  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+246:37  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+247:43  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+248:40  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+249:38  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+250:40  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+253:39  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+254:41  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+255:44  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+262:49  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+268:33  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+279:29  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+282:71  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+283:43  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/server/routers/crm.ts
+12:48  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+29:102  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+29:141  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+33:108  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+41:81  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+41:120  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+52:48  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+69:99  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+69:138  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+73:105  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+81:78  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+81:117  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+92:48  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+109:99  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+109:138  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+113:105  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+121:78  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+121:117  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+132:48  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+149:104  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+149:143  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+153:110  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+161:83  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+161:122  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+176:52  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+178:35  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+189:18  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+189:44  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/server/routers/documento.ts
+25:22  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+65:18  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/server/routers/financeiro.ts
+17:52  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+18:60  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+35:98  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+36:96  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+39:47  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+40:45  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+100:39  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+101:52  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+126:39  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+127:52  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+151:39  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+152:52  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+153:30  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+161:52  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+162:48  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+163:35  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+190:32  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+202:18  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+202:40  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+220:39  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+221:30  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+229:52  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+230:48  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+231:35  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+242:28  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+249:22  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+249:44  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/server/routers/ia.ts
+11:38  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+12:58  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+28:46  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+29:36  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+32:18  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+43:38  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+54:176  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+55:106  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+56:134  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+57:116  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+58:15  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+114:46  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+115:36  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+118:18  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/server/routers/meuDia.ts
+15:52  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+24:52  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+25:42  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+32:52  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+33:42  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+38:52  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+43:42  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+44:52  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+49:52  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+57:50  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+81:56  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+83:34  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+86:56  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+88:34  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+91:56  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+93:34  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+96:28  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+99:56  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+108:55  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+117:51  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/server/routers/minutas.ts
+11:48  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+25:43  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+42:107  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+42:146  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+46:113  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+54:86  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+54:125  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/server/routers/processo.ts
+25:42  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+28:46  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+37:46  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+70:42  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+74:42  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+75:33  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+79:42  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+80:33  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+98:18  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+127:41  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+128:29  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+129:42  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+149:29  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+150:42  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/server/routers/rh.ts
+11:48  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+12:39  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+12:47  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+23:48  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+23:56  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+27:41  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+28:42  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+29:45  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+34:27  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+46:27  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+57:47  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+57:105  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/server/routers/timesheet.ts
+11:48  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+12:59  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+23:48  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+24:38  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+24:46  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+38:30  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+49:32  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+50:48  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/server/routers/workflow.ts
+11:48  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+12:59  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+24:31  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+35:48  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+36:31  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+52:106  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+52:145  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+56:112  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+64:85  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+64:124  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+76:45  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+77:41  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+102:46  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+103:36  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+112:39  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+113:41  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+118:40  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+127:88  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+142:39  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+143:43  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+159:50  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+164:18  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+175:32  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+176:48  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+191:102  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+192:39  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+193:52  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/services/asaasService.ts
+29:36  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+40:73  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/shared/components/GlobalSearch.tsx
+26:55  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+26:73  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+54:13  Error: Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free.  @typescript-eslint/ban-ts-comment
+59:30  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+60:30  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/shared/components/RichTextEditor.tsx
+21:69  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/shared/components/RoleGuard.tsx
+21:49  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/shared/components/ThemeProvider.tsx
+71:14  Warning: Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.  react-refresh/only-export-components
+
+./src/shared/lib/DocumentTemplateEngine.ts
+8:67  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+38:75  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+54:64  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/shared/lib/utils.ts
+39:7  Error: 'result' is never reassigned. Use 'const' instead.  prefer-const
+
+./src/shared/ui/badge.tsx
+29:17  Warning: Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.  react-refresh/only-export-components
+
+./src/shared/ui/button.tsx
+49:18  Warning: Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.  react-refresh/only-export-components
+
+./src/shared/ui/form.tsx
+129:10  Warning: Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.  react-refresh/only-export-components
+
+./src/shared/ui/navigation-menu.tsx
+111:3  Warning: Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.  react-refresh/only-export-components
+
+./src/shared/ui/sidebar.tsx
+636:3  Warning: Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.  react-refresh/only-export-components
+
+./src/shared/ui/sonner.tsx
+29:19  Warning: Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.  react-refresh/only-export-components
+
+./src/shared/ui/toggle.tsx
+37:18  Warning: Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.  react-refresh/only-export-components
+
+./src/widgets/layout/config/sidebar-config.ts
+10:11  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules

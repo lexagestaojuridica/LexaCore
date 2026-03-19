@@ -51,13 +51,13 @@ export function GlobalSearch() {
         setIsLoading(true);
         try {
             const { data: profile } = await supabase.from("profiles").select("organization_id").eq("user_id", user.id).maybeSingle();
-            // @ts-ignore - Supabase types can be complex with joins/selects
+            // @ts-expect-error: organization_id might be missing from profile if the query fails or schema is incomplete
             const orgId = profile?.organization_id;
             if (!orgId) return;
 
             const [procRes, cliRes] = await Promise.all([
-                (supabase as any).from("processos_juridicos").select("id, title, number").eq("organization_id", orgId).ilike("title", `%${q}%`).limit(5),
-                (supabase as any).from("clients").select("id, name").eq("organization_id", orgId).ilike("name", `%${q}%`).limit(5)
+                supabase.from("processos_juridicos" as any).select("id, title, number").eq("organization_id", orgId).ilike("title", `%${q}%`).limit(5),
+                supabase.from("clients" as any).select("id, name").eq("organization_id", orgId).ilike("name", `%${q}%`).limit(5)
             ]);
             const proc = procRes.data;
             const cli = cliRes.data;

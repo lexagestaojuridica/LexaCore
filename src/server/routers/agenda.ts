@@ -15,10 +15,10 @@ export const agendaRouter = createTRPCRouter({
             const { data, error } = await db
                 .from("eventos_agenda")
                 .select("*")
-                .eq("organization_id", tenantId as any)
+                .eq("organization_id", tenantId!)
                 .gte("start_time", input.start)
                 .lte("start_time", input.end)
-                .order("start_time", { ascending: true }) as any;
+                .order("start_time", { ascending: true });
 
             if (error) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao buscar agenda" });
             return data || [];
@@ -34,16 +34,16 @@ export const agendaRouter = createTRPCRouter({
         const { data, error } = await db
             .from("eventos_agenda")
             .select("*")
-            .eq("organization_id", tenantId as any)
-            .in("category", ["prazo", "audiencia"] as any)
+            .eq("organization_id", tenantId!)
+            .in("category", ["prazo", "audiencia"])
             .lte("start_time", in7Days)
-            .order("start_time", { ascending: true }) as any;
+            .order("start_time", { ascending: true });
 
         if (error) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao buscar prazos" });
 
         const notifications = (data || [])
-            .filter((e: any) => parseISO(e.start_time) >= threeDaysAgo)
-            .map((e: any) => {
+            .filter((e) => parseISO(e.start_time) >= threeDaysAgo)
+            .map((e) => {
                 const eventDate = parseISO(e.start_time);
                 const overdue = isPast(eventDate);
                 const hoursUntil = (eventDate.getTime() - Date.now()) / (1000 * 60 * 60);
@@ -79,7 +79,7 @@ export const agendaRouter = createTRPCRouter({
                 .from("eventos_agenda")
                 .insert({ ...input, organization_id: tenantId, user_id: userId })
                 .select()
-                .single() as any;
+                .single();
 
             if (error) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao criar evento" });
             return data;
@@ -95,8 +95,8 @@ export const agendaRouter = createTRPCRouter({
             const { error } = await db
                 .from("eventos_agenda")
                 .update(input.data)
-                .eq("id", input.id as any)
-                .eq("organization_id", tenantId as any);
+                .eq("id", input.id)
+                .eq("organization_id", tenantId!);
 
             if (error) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao atualizar evento" });
             return { success: true };
@@ -107,8 +107,8 @@ export const agendaRouter = createTRPCRouter({
         const { error } = await db
             .from("eventos_agenda")
             .delete()
-            .eq("id", input as any)
-            .eq("organization_id", tenantId as any);
+            .eq("id", input)
+            .eq("organization_id", tenantId!);
 
         if (error) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao excluir evento" });
         return { success: true };

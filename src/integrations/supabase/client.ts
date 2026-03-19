@@ -29,10 +29,12 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     fetch: async (url, options: RequestInit = {}) => {
       let clerkToken: string | null = null;
       try {
-        if (typeof window !== "undefined" && (window as any).Clerk?.session) {
-          clerkToken = await (window as any).Clerk.session.getToken({ template: "supabase" });
+        const clerk = (window as any).Clerk;
+        if (typeof window !== "undefined" && clerk?.session) {
+          clerkToken = await clerk.session.getToken({ template: "supabase" });
         }
-      } catch (e: any) {
+      } catch (err: unknown) {
+        const e = err as { message?: string };
         if (e.message?.includes("template")) {
           if (!jwtWarningLogged) {
             console.error("❌ ERRO LEXA: Template JWT 'supabase' não encontrado no Clerk. Configure-o no dashboard do Clerk para habilitar RLS/IA.");

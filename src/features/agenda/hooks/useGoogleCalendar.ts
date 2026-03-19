@@ -4,7 +4,7 @@ import { db as supabase, supabaseClient } from "@/integrations/supabase/db";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-const db = supabase as any;
+const db = supabase;
 
 interface GoogleCalendarConnection {
   id: string;
@@ -49,7 +49,6 @@ export function useGoogleCalendar() {
   const lastSyncAt = connection?.last_sync_at;
   const syncEnabled = connection?.sync_enabled ?? false;
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const handleCodeFromUrl = async () => {
       const searchParams = new URLSearchParams(window.location.search);
@@ -100,7 +99,7 @@ export function useGoogleCalendar() {
     };
 
     handleCodeFromUrl();
-  }, [user?.id, queryClient]);
+  }, [user, queryClient, supabase.functions]);
 
   const connect = useCallback(async () => {
     setConnecting(true);
@@ -119,7 +118,7 @@ export function useGoogleCalendar() {
       toast.error(error.message || "Erro ao iniciar conexão");
       setConnecting(false);
     }
-  }, []);
+  }, [supabase.functions]);
 
   const disconnect = useMutation({
     mutationFn: async () => {

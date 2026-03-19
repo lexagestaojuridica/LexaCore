@@ -4,7 +4,7 @@ import { db as supabase } from "@/integrations/supabase/db";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/shared/hooks/use-toast";
 
-const db = supabase as any;
+const db = supabase;
 
 export function useAppleCalendar() {
     const { user } = useUser();
@@ -46,7 +46,7 @@ export function useAppleCalendar() {
         } finally {
             setConnecting(false);
         }
-    }, [queryClient]);
+    }, [queryClient, supabase.functions]);
 
     const disconnect = useMutation({
         mutationFn: async () => {

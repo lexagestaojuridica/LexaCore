@@ -3,9 +3,10 @@
  * Avoids "supabaseUrl is required" errors during `next build` page-data collection,
  * where env vars may not yet be available at module-evaluation time.
  */
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from './types';
 
-let _client: ReturnType<typeof createClient> | null = null;
+let _client: SupabaseClient<Database> | null = null;
 
 function getClient() {
   if (!_client) {
@@ -20,7 +21,7 @@ function getClient() {
 
     if (!url || !key) {
       // Return a proxy that throws helpful errors at call-time instead of import-time
-      return new Proxy({} as any, {
+      return new Proxy({} as unknown as Record<string, unknown>, {
         get(_, prop) {
           if (typeof prop === "symbol" || prop === "then") return undefined;
           return () => {
@@ -32,15 +33,16 @@ function getClient() {
       });
     }
 
-    _client = createClient(url, key);
+    _client = createClient<Database>(url, key);
   }
   return _client;
 }
 
 /** Untyped Supabase client – safe for server & build time */
-export const db = new Proxy({} as any, {
+export const db = new Proxy({} as unknown as SupabaseClient<Database>, {
   get(_, prop) {
-    return (getClient() as any)[prop];
+    const client = getClient();
+    return (client as Record<string, any>)[prop as string];
   },
 });
 

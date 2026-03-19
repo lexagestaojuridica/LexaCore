@@ -12,7 +12,7 @@ export const meuDiaRouter = createTRPCRouter({
             // Eventos próximos 14 dias
             db.from("eventos_agenda")
                 .select("id, title, start_time, end_time, category")
-                .eq("organization_id", tenantId as any)
+                .eq("organization_id", tenantId!)
                 .gte("start_time", startOfDay(now).toISOString())
                 .lte("start_time", addDays(now, 14).toISOString())
                 .order("start_time", { ascending: true })
@@ -21,27 +21,27 @@ export const meuDiaRouter = createTRPCRouter({
             // Processos ativos recentes
             db.from("processos_juridicos")
                 .select("id, title, status, number, updated_at")
-                .eq("organization_id", tenantId as any)
-                .eq("status", "ativo" as any)
+                .eq("organization_id", tenantId!)
+                .eq("status", "ativo")
                 .order("updated_at", { ascending: false })
                 .limit(5),
 
             // Stats Count Processos
             db.from("processos_juridicos")
                 .select("*", { count: "exact", head: true })
-                .eq("organization_id", tenantId as any)
-                .eq("status", "ativo" as any),
+                .eq("organization_id", tenantId!)
+                .eq("status", "ativo"),
 
             // Stats Count Clientes
-            db.from("clientes")
+            db.from("clientes" as any)
                 .select("*", { count: "exact", head: true })
-                .eq("organization_id", tenantId as any),
+                .eq("organization_id", tenantId!) as any,
 
             // Timesheet Hoje
             db.from("timesheet_entries")
                 .select("duration_minutes, billing_status")
-                .eq("user_id", userId as any)
-                .eq("organization_id", tenantId as any)
+                .eq("user_id", userId!)
+                .eq("organization_id", tenantId!)
                 .gte("started_at", startOfDay(now).toISOString())
                 .lte("started_at", endOfDay(now).toISOString())
         ]);
@@ -78,12 +78,12 @@ export const meuDiaRouter = createTRPCRouter({
             const [processos, clientes, wiki] = await Promise.all([
                 db.from("processos_juridicos")
                     .select("id, title")
-                    .eq("organization_id", tenantId as any)
+                    .eq("organization_id", tenantId!)
                     .ilike("title", searchTerm)
-                    .limit(5) as any,
-                db.from("clientes")
+                    .limit(5),
+                db.from("clientes" as any)
                     .select("id, name")
-                    .eq("organization_id", tenantId as any)
+                    .eq("organization_id", tenantId!)
                     .ilike("name", searchTerm)
                     .limit(5) as any,
                 db.from("wiki_juridica")

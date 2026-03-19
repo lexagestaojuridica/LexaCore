@@ -6,9 +6,9 @@ export const minutasRouter = createTRPCRouter({
     list: tenantProcedure.query(async ({ ctx }) => {
         const { tenantId, db } = ctx;
         const { data, error } = await db
-            .from("minutas_documents")
+            .from("minutas_documents" as any)
             .select("*")
-            .eq("organization_id", tenantId as any)
+            .eq("organization_id", tenantId!)
             .order("updated_at", { ascending: false });
 
         if (error) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao buscar minutas" });
@@ -20,9 +20,9 @@ export const minutasRouter = createTRPCRouter({
         .query(async ({ ctx, input: ids }) => {
             const { db } = ctx;
             const { data, error } = await db
-                .from("minutas_versions")
+                .from("minutas_versions" as any)
                 .select("*")
-                .in("document_id", ids as any)
+                .in("document_id", ids)
                 .order("saved_at", { ascending: false });
 
             if (error) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao buscar versões" });
@@ -39,7 +39,7 @@ export const minutasRouter = createTRPCRouter({
             const payload = { ...input.data, organization_id: tenantId, user_id: userId, updated_at: new Date().toISOString() };
 
             if (input.id) {
-                const { error } = await db.from("minutas_documents").update(payload).eq("id", input.id as any).eq("organization_id", tenantId as any);
+                const { error } = await db.from("minutas_documents" as any).update(payload).eq("id", input.id).eq("organization_id", tenantId!);
                 if (error) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao atualizar minuta" });
                 return { id: input.id };
             } else {
@@ -51,7 +51,7 @@ export const minutasRouter = createTRPCRouter({
 
     delete: tenantProcedure.input(z.string()).mutation(async ({ ctx, input: id }) => {
         const { tenantId, db } = ctx;
-        const { error } = await db.from("minutas_documents").delete().eq("id", id as any).eq("organization_id", tenantId as any);
+        const { error } = await db.from("minutas_documents" as any).delete().eq("id", id).eq("organization_id", tenantId!);
         if (error) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao excluir minuta" });
         return { success: true };
     }),
@@ -64,7 +64,7 @@ export const minutasRouter = createTRPCRouter({
         }))
         .mutation(async ({ ctx, input }) => {
             const { db } = ctx;
-            const { error } = await db.from("minutas_versions").insert(input);
+            const { error } = await db.from("minutas_versions" as any).insert(input);
             if (error) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao salvar versão" });
             return { success: true };
         }),

@@ -1,0 +1,4 @@
+﻿
+> lexanova-producao@3.2.0 lint
+> next lint
+

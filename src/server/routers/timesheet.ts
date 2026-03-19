@@ -8,8 +8,8 @@ export const timesheetRouter = createTRPCRouter({
         const { data, error } = await db
             .from("timesheet_entries")
             .select("*")
-            .eq("organization_id", tenantId as any)
-            .order("started_at", { ascending: false }) as any;
+            .eq("organization_id", tenantId!)
+            .order("started_at", { ascending: false });
 
         if (error) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao buscar timesheet" });
         return data || [];
@@ -19,9 +19,9 @@ export const timesheetRouter = createTRPCRouter({
         const { tenantId, db } = ctx;
         const { data, error } = await db
             .from("processos_juridicos")
-            .select("id, title, number, client_id, clientes(id, name, asaas_customer_id)")
-            .eq("organization_id", tenantId as any)
-            .eq("status", "ativo" as any) as any;
+            .select("id, title, number, client_id, clientes:clientes(id, name, asaas_customer_id)" as any)
+            .eq("organization_id", tenantId!)
+            .eq("status", "ativo") as any;
 
         if (error) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao buscar processos para timesheet" });
         return data || [];
@@ -46,8 +46,8 @@ export const timesheetRouter = createTRPCRouter({
         const { error } = await db
             .from("timesheet_entries")
             .delete()
-            .eq("id", input as any)
-            .eq("organization_id", tenantId as any);
+            .eq("id", input)
+            .eq("organization_id", tenantId!);
 
         if (error) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao excluir entrada de timesheet" });
         return { success: true };

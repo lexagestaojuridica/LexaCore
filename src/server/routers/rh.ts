@@ -6,10 +6,10 @@ export const rhRouter = createTRPCRouter({
     listColaboradores: tenantProcedure.query(async ({ ctx }) => {
         const { tenantId, db } = ctx;
         const { data, error } = await db
-            .from("employees")
+            .from("employees" as any)
             .select("*")
-            .eq("organization_id", tenantId as any)
-            .eq("status", "active" as any) as any;
+            .eq("organization_id", tenantId!)
+            .eq("status", "active") as any;
 
         if (error) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao buscar colaboradores" });
         return data || [];
@@ -18,9 +18,9 @@ export const rhRouter = createTRPCRouter({
     getDashboardStats: tenantProcedure.query(async ({ ctx }) => {
         const { tenantId, db } = ctx;
         const { data, error } = await db
-            .from("employees")
+            .from("employees" as any)
             .select("*")
-            .eq("organization_id", tenantId as any) as any;
+            .eq("organization_id", tenantId!) as any;
 
         if (error) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao carregar estatísticas de RH" });
 

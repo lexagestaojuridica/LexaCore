@@ -22,10 +22,10 @@ export const processoRouter = createTRPCRouter({
             let query = db
                 .from("processos_juridicos")
                 .select("*, clientes(id, name, phone, asaas_customer_id)", { count: "exact" })
-                .eq("organization_id" as any, tenantId as string);
+                .eq("organization_id", tenantId!);
 
             if (statusFilter !== "all") {
-                query = query.eq("status" as any, statusFilter);
+                query = query.eq("status", statusFilter);
             }
 
             if (search) {
@@ -67,17 +67,17 @@ export const processoRouter = createTRPCRouter({
             db
                 .from("processos_juridicos")
                 .select("*", { count: "exact", head: true })
-                .eq("organization_id" as any, tenantId as string),
+                .eq("organization_id", tenantId!),
             db
                 .from("processos_juridicos")
                 .select("*", { count: "exact", head: true })
-                .eq("organization_id" as any, tenantId as string)
-                .eq("status" as any, "ativo"),
+                .eq("organization_id", tenantId!)
+                .eq("status", "ativo"),
             db
                 .from("processos_juridicos")
                 .select("*", { count: "exact", head: true })
-                .eq("organization_id" as any, tenantId as string)
-                .eq("status" as any, "suspenso"),
+                .eq("organization_id", tenantId!)
+                .eq("status", "suspenso"),
         ]);
 
         return {
@@ -95,7 +95,7 @@ export const processoRouter = createTRPCRouter({
                 ...input,
                 organization_id: tenantId,
                 responsible_user_id: userId,
-            } as any).select().single();
+            }).select().single();
 
             if (error) {
                 throw new TRPCError({
@@ -124,9 +124,9 @@ export const processoRouter = createTRPCRouter({
 
             const { error } = await db
                 .from("processos_juridicos")
-                .update(filteredData as any)
-                .eq("id" as any, id)
-                .eq("organization_id" as any, tenantId as string);
+                .update(filteredData)
+                .eq("id", id)
+                .eq("organization_id", tenantId!);
 
             if (error) {
                 throw new TRPCError({
@@ -146,8 +146,8 @@ export const processoRouter = createTRPCRouter({
             const { error } = await db
                 .from("processos_juridicos")
                 .delete()
-                .eq("id" as any, id)
-                .eq("organization_id" as any, tenantId as string);
+                .eq("id", id)
+                .eq("organization_id", tenantId!);
 
             if (error) {
                 throw new TRPCError({

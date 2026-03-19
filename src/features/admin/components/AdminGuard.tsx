@@ -7,15 +7,16 @@ interface AdminGuardProps {
     children: ReactNode;
 }
 
+const MASTER_ADMIN_EMAILS = [
+    "lexagestaojuridica@gmail.com",
+];
+
 export default function AdminGuard({ children }: AdminGuardProps) {
     const { isLoaded: authLoaded } = useAuth();
     const { user, isLoaded: userLoaded } = useUser();
     const [isSuperAdmin, setIsSuperAdmin] = useState<boolean | null>(null);
     const router = useRouter();
 
-    const MASTER_ADMIN_EMAILS = [
-        "lexagestaojuridica@gmail.com",
-    ];
 
     useEffect(() => {
         const checkMasterRole = async () => {

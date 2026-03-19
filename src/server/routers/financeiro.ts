@@ -14,8 +14,8 @@ export const financeiroRouter = createTRPCRouter({
             const { data, error } = await db
                 .from(tableName)
                 .select("*")
-                .eq("organization_id", tenantId as any)
-                .order("due_date", { ascending: true }) as any;
+                .eq("organization_id", tenantId!)
+                .order("due_date", { ascending: true });
 
             if (error) {
                 throw new TRPCError({
@@ -32,8 +32,8 @@ export const financeiroRouter = createTRPCRouter({
         const { tenantId, db } = ctx;
 
         const [receber, pagar] = await Promise.all([
-            db.from("contas_receber").select("amount, status").eq("organization_id", tenantId as any),
-            db.from("contas_pagar").select("amount, status").eq("organization_id", tenantId as any),
+            db.from("contas_receber").select("amount, status").eq("organization_id", tenantId!),
+            db.from("contas_pagar").select("amount, status").eq("organization_id", tenantId!),
         ]);
 
         const rData = (receber.data || []) as any[];
@@ -97,8 +97,8 @@ export const financeiroRouter = createTRPCRouter({
             const { error } = await db
                 .from(tableName)
                 .update(input.data)
-                .eq("id", input.id as any)
-                .eq("organization_id", tenantId as any);
+                .eq("id", input.id)
+                .eq("organization_id", tenantId!);
 
             if (error) {
                 throw new TRPCError({
@@ -123,8 +123,8 @@ export const financeiroRouter = createTRPCRouter({
             const { error } = await db
                 .from(tableName)
                 .delete()
-                .eq("id", input.id as any)
-                .eq("organization_id", tenantId as any);
+                .eq("id", input.id)
+                .eq("organization_id", tenantId!);
 
             if (error) {
                 throw new TRPCError({
@@ -148,18 +148,18 @@ export const financeiroRouter = createTRPCRouter({
             const { data: c, error: cErr } = await db
                 .from("contas_receber")
                 .select("*")
-                .eq("id", input.id as any)
-                .eq("organization_id", tenantId as any)
-                .single() as any;
+                .eq("id", input.id)
+                .eq("organization_id", tenantId!)
+                .single();
 
             if (cErr || !c) throw new TRPCError({ code: "NOT_FOUND", message: "Lançamento não encontrado" });
 
             // 2. Get Asaas Settings
             const { data: gateway } = await db
-                .from("gateway_settings")
+                .from("gateway_settings" as any)
                 .select("api_key, environment, status")
-                .eq("organization_id", tenantId as any)
-                .eq("gateway_name", "asaas" as any)
+                .eq("organization_id", tenantId!)
+                .eq("gateway_name", "asaas")
                 .maybeSingle() as any;
 
             if (!gateway?.api_key || gateway.status !== "active") {
@@ -170,7 +170,7 @@ export const financeiroRouter = createTRPCRouter({
 
             // 3. Create Payment in Asaas
             const payload = {
-                customer: c.asaas_customer_id || c.client_id || "",
+                customer: (c as any).asaas_customer_id || (c as any).client_id || "",
                 billingType: "PIX",
                 value: Number(c.amount),
                 dueDate: c.due_date,
@@ -199,7 +199,7 @@ export const financeiroRouter = createTRPCRouter({
                 pix_code: pixCode,
                 gateway_id: paymentData.id,
                 asaas_id: paymentData.id,
-            } as any).eq("id", c.id as any);
+            }).eq("id", c.id);
 
             return { success: true, pixCode };
         }),

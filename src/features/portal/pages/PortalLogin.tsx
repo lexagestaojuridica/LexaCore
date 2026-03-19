@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { db as supabase } from "@/integrations/supabase/db";
 import { Button } from "@/shared/ui/button";
@@ -37,7 +37,7 @@ export default function PortalLogin() {
                 const { data: clientData, error: clientError } = await supabase
                     .from("clientes")
                     .select("id")
-                    // @ts-ignore
+                    // @ts-expect-error: auth_user_id is not yet in the official schema for types, but exists in the DB
                     .eq("auth_user_id", data.user.id)
                     .single();
 

@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { trpc } from "@/shared/lib/trpc";
 import { useSession } from "@clerk/nextjs";
 import { useToast } from "@/shared/hooks/use-toast";
@@ -85,7 +85,7 @@ export function useArunaChat(options: ArunaChatOptions = {}) {
         let nextIndex;
 
         while ((nextIndex = buffer.indexOf("\n")) !== -1) {
-          let line = buffer.slice(0, nextIndex).trim();
+          const line = buffer.slice(0, nextIndex).trim();
           buffer = buffer.slice(nextIndex + 1);
 
           if (!line.startsWith("data: ") || line.includes("[DONE]")) continue;
@@ -111,11 +111,16 @@ export function useArunaChat(options: ArunaChatOptions = {}) {
     return currentContent;
   }, [session]);
 
+  const optionsRef = useRef(options);
+  useEffect(() => {
+    optionsRef.current = options;
+  }, [options]);
+
   const sendMessage = useCallback(async (text: string, customContext?: ArunaContext) => {
     const trimmedText = text.trim();
     if (!trimmedText || streaming) return;
 
-    const orgId = (session as any)?.publicMetadata?.organizationId as string | undefined;
+    const orgId = (session?.publicMetadata as any)?.organizationId as string | undefined;
     if (!orgId) {
       toast({ title: "Erro de Contexto", description: "Organização não identificada.", variant: "destructive" });
       return;
@@ -134,7 +139,7 @@ export function useArunaChat(options: ArunaChatOptions = {}) {
     setStreaming(true);
 
     try {
-      const context = customContext || options.initialContext;
+      const context = customContext || optionsRef.current.initialContext;
       const historyContext = messages.slice(-10).map(m => ({ role: m.role, content: m.content }));
 
       const fullHistory = [...historyContext, { role: "user", content: trimmedText }];
@@ -154,17 +159,17 @@ export function useArunaChat(options: ArunaChatOptions = {}) {
       // Remove temp messages now that they are in the database (query invalidation will handle the rest)
       setTempMsgs((prev) => prev.filter((m) => m.id !== userMsgId && m.id !== assistantId));
 
-      options.onSuccess?.(finalContent);
+      optionsRef.current.onSuccess?.(finalContent);
     } catch (error: unknown) {
       console.error("Aruna Chat Error:", error);
       setTempMsgs((prev) => prev.filter((m) => m.id !== assistantId));
       const message = error instanceof Error ? error.message : "Erro desconhecido";
       toast({ title: "Falha na ARUNA", description: message, variant: "destructive" });
-      options.onError?.(error instanceof Error ? error : new Error(message));
+      optionsRef.current.onError?.(error instanceof Error ? error : new Error(message));
     } finally {
       setStreaming(false);
     }
-  }, [session, streaming, messages, stream, saveMsgMut, options, toast]);
+  }, [session, streaming, messages, stream, saveMsgMut, toast]);
 
   const clearHistory = useCallback(async () => {
     try {
