@@ -81,7 +81,7 @@ export async function POST(req: Request) {
     };
 
     // UPSERT no banco (agora compatível com Clerk String ID)
-    const { error } = await supabaseAdmin
+    const { error } = await getSupabaseAdmin()
       .from('profiles')
       .upsert(profileData, { onConflict: 'user_id' });
 
@@ -94,7 +94,7 @@ export async function POST(req: Request) {
   }
 
   if (eventType === 'user.deleted') {
-    const { error } = await supabaseAdmin
+    const { error } = await getSupabaseAdmin()
       .from('profiles')
       .delete()
       .eq('user_id', id);
