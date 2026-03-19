@@ -4,18 +4,18 @@ import type { Database } from './types';
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SUPABASE_PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const SUPABASE_PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || '';
 
-if (!SUPABASE_URL) {
-  throw new Error(
+if (!SUPABASE_URL && typeof window !== 'undefined') {
+  console.warn(
     "Missing environment variable: NEXT_PUBLIC_SUPABASE_URL. " +
     "Please check your .env.local file (see .env.example for reference) and ensure it's set correctly."
   );
 }
 
-if (!SUPABASE_PUBLISHABLE_KEY) {
-  throw new Error(
+if (!SUPABASE_PUBLISHABLE_KEY && typeof window !== 'undefined') {
+  console.warn(
     "Missing environment variable: NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY. " +
     "Please check your .env.local file (see .env.example for reference) and ensure it's set correctly."
   );
