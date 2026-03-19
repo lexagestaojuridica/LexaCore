@@ -56,8 +56,8 @@ export function GlobalSearch() {
             if (!orgId) return;
 
             const [{ data: proc }, { data: cli }] = await Promise.all([
-                supabase.from("processos_juridicos").select("id, title, number").eq("organization_id" as any, orgId as any).ilike("title", `%${q}%`).limit(5),
-                supabase.from("clientes").select("id, name").eq("organization_id" as any, orgId as any).ilike("name", `%${q}%`).limit(5)
+                supabase.from("processos_juridicos" as any).select("id, title, number").eq("organization_id" as any, orgId as any).ilike("title" as any, `%${q}%`).limit(5),
+                supabase.from("clients" as any).select("id, name").eq("organization_id" as any, orgId as any).ilike("name" as any, `%${q}%`).limit(5)
             ]);
 
             setResults({

@@ -222,7 +222,7 @@ export default function IAPage() {
       fd.append("audio_type", audioType);
       fd.append("instructions", audioInstr);
       fd.append("organization_id", orgId);
-      fd.append("user_id", userId);
+      fd.append("user_id", user!.id);
 
       const authHeader = await AUTH_HEADER();
       const resp = await fetch(TRANSCRIBE_URL, { method: "POST", headers: { ...authHeader }, body: fd });
