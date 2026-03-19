@@ -167,7 +167,7 @@ export default function PortalDashboard() {
                     </div>
                     <div className="flex items-center gap-4">
                         <span className="text-sm font-medium hidden sm:inline-block">Olá, {clientUser?.name?.split(' ')[0]}</span>
-                        <Button variant="ghost" size="sm" onClick={signOut} className="text-muted-foreground hover:text-destructive">
+                        <Button variant="ghost" size="sm" onClick={() => signOut()} className="text-muted-foreground hover:text-destructive">
                             <LogOut className="h-4 w-4 mr-2" /> Sair
                         </Button>
                     </div>

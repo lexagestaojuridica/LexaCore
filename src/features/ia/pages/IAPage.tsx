@@ -143,7 +143,7 @@ export default function IAPage() {
   const handleKey = (e: React.KeyboardEvent) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } };
 
   const handleClear = () => {
-    if (!userId || streaming) return;
+    if (!user?.id || streaming) return;
     clearHistory();
   };
 
@@ -206,7 +206,7 @@ export default function IAPage() {
   /* ─── Transcribe Audio ──────────────────────────── */
   const handleTranscribe = async () => {
     const orgId = (session as any)?.publicMetadata?.organizationId as string | undefined;
-    if (!audioFile || !orgId || !userId || streaming) return;
+    if (!audioFile || !orgId || !user?.id || streaming) return;
     setTool(null);
     const typeLabel = AUDIO_TYPES.find(t => t.value === audioType)?.label || audioType;
     const content = `🎙️ Transcrever gravação: ** ${audioFile.name}** (${typeLabel})`;
@@ -222,7 +222,7 @@ export default function IAPage() {
       fd.append("audio_type", audioType);
       fd.append("instructions", audioInstr);
       fd.append("organization_id", orgId);
-      fd.append("user_id", userId);
+      fd.append("user_id", user!.id);
 
       const authHeader = await AUTH_HEADER();
       const resp = await fetch(TRANSCRIBE_URL, { method: "POST", headers: { ...authHeader }, body: fd });
