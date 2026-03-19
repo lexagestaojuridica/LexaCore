@@ -55,10 +55,12 @@ export function GlobalSearch() {
             const orgId = profile?.organization_id;
             if (!orgId) return;
 
-            const [{ data: proc }, { data: cli }] = await Promise.all([
-                supabase.from("processos_juridicos" as any).select("id, title, number").eq("organization_id" as any, orgId as any).ilike("title" as any, `%${q}%`).limit(5),
-                supabase.from("clients" as any).select("id, name").eq("organization_id" as any, orgId as any).ilike("name" as any, `%${q}%`).limit(5)
+            const [procRes, cliRes] = await Promise.all([
+                (supabase as any).from("processos_juridicos").select("id, title, number").eq("organization_id", orgId).ilike("title", `%${q}%`).limit(5),
+                (supabase as any).from("clients").select("id, name").eq("organization_id", orgId).ilike("name", `%${q}%`).limit(5)
             ]);
+            const proc = procRes.data;
+            const cli = cliRes.data;
 
             setResults({
                 processes: proc || [],
