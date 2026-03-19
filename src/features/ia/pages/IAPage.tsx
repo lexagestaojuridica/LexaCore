@@ -143,7 +143,7 @@ export default function IAPage() {
   const handleKey = (e: React.KeyboardEvent) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } };
 
   const handleClear = () => {
-    if (!userId || streaming) return;
+    if (!user?.id || streaming) return;
     clearHistory();
   };
 
