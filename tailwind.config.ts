@@ -16,8 +16,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['DM Sans', 'system-ui', 'sans-serif'],
-        display: ['DM Sans', 'system-ui', 'sans-serif'],
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        display: ['Outfit', 'system-ui', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -54,21 +54,25 @@ export default {
           foreground: "hsl(var(--card-foreground))",
         },
         cream: {
-          DEFAULT: "hsl(var(--cream))",
-          light: "hsl(var(--cream-light))",
+          DEFAULT: "hsl(240 4.8% 95.9%)",
+          light: "hsl(240 4.8% 98%)",
         },
         navy: {
-          DEFAULT: "hsl(var(--navy))",
-          light: "hsl(var(--navy-light))",
+          DEFAULT: "hsl(240 10% 3.9%)",
+          light: "hsl(240 5% 15%)",
         },
         gold: {
-          DEFAULT: "hsl(var(--gold))",
-          light: "hsl(var(--gold-light))",
+          DEFAULT: "hsl(var(--lux-gold))",
+          light: "hsl(var(--lux-gold) / 0.8)",
         },
         champagne: {
-          DEFAULT: "hsl(var(--champagne))",
-          light: "hsl(var(--champagne-light))",
-          glow: "hsl(var(--champagne-glow))",
+          DEFAULT: "hsl(var(--lux-gold) / 0.1)",
+          light: "hsl(var(--lux-gold) / 0.05)",
+          glow: "hsl(var(--lux-gold) / 0.2)",
+        },
+        zinc: {
+          DEFAULT: "hsl(var(--lux-zinc))",
+          dark: "hsl(var(--lux-dark))",
         },
         success: {
           DEFAULT: "hsl(var(--success))",
