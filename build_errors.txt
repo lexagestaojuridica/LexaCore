@@ -1,0 +1,68 @@
+
+> lexanova-producao@3.2.0 build
+> next build
+
+   ▲ Next.js 15.5.12
+   - Environments: .env.local, .env
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 11.8s
+   Skipping validation of types
+   Skipping linting
+   Collecting page data ...
+   Generating static pages (0/32) ...
+🌐 i18next is maintained with support from Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+🌐 i18next is maintained with support from Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+   Generating static pages (8/32) 
+   Generating static pages (16/32) 
+   Generating static pages (24/32) 
+ ✓ Generating static pages (32/32)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                 Size  First Load JS
+┌ ○ /                                      13 kB         202 kB
+├ ○ /_not-found                             1 kB         104 kB
+├ ○ /admin/hq                            4.08 kB         271 kB
+├ ○ /admin/hq/audit                      5.04 kB         173 kB
+├ ○ /admin/hq/organizations              12.9 kB         222 kB
+├ ○ /admin/hq/plans                      4.72 kB         182 kB
+├ ○ /admin/hq/settings                   9.86 kB         187 kB
+├ ○ /admin/hq/support                    11.3 kB         220 kB
+├ ƒ /api/trpc/[trpc]                       132 B         103 kB
+├ ƒ /api/webhooks/clerk                    132 B         103 kB
+├ ƒ /auth/[[...rest]]                    7.93 kB         186 kB
+├ ○ /dashboard                           12.1 kB         402 kB
+├ ○ /dashboard/agenda                    28.9 kB         361 kB
+├ ○ /dashboard/bi                        10.9 kB         266 kB
+├ ○ /dashboard/chat                      15.6 kB         306 kB
+├ ○ /dashboard/clientes                  14.1 kB         343 kB
+├ ○ /dashboard/configuracoes             15.3 kB         321 kB
+├ ○ /dashboard/crm                       17.2 kB         327 kB
+├ ○ /dashboard/financeiro                27.4 kB         455 kB
+├ ○ /dashboard/ia                        51.8 kB         298 kB
+├ ○ /dashboard/minutas                    132 kB         457 kB
+├ ○ /dashboard/newsletter                6.37 kB         155 kB
+├ ○ /dashboard/processos                 21.3 kB         389 kB
+├ ○ /dashboard/relatorios                5.79 kB         162 kB
+├ ○ /dashboard/rh                        8.22 kB         301 kB
+├ ○ /dashboard/rh/colaboradores          12.5 kB         304 kB
+├ ○ /dashboard/rh/ponto                  9.32 kB         255 kB
+├ ○ /dashboard/rh/recrutamento           9.51 kB         291 kB
+├ ○ /dashboard/timesheet                 12.1 kB         335 kB
+├ ○ /dashboard/workflow                  15.2 kB         326 kB
+├ ○ /portal                              5.67 kB         205 kB
+├ ƒ /portal/assinatura/[token]           10.8 kB         195 kB
+├ ○ /portal/dashboard                    16.2 kB         280 kB
+└ ƒ /public/processo/[token]             10.4 kB         200 kB
++ First Load JS shared by all             103 kB
+  ├ chunks/1255-bf7df81c18fe5d23.js      45.7 kB
+  ├ chunks/4bd1b696-100b9d70ed4e49c1.js  54.2 kB
+  └ other shared chunks (total)          2.65 kB
+
+
+ƒ Middleware                             89.1 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
