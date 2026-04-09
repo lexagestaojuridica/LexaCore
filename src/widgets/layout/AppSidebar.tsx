@@ -100,6 +100,8 @@ export function AppSidebar() {
       return data;
     },
     enabled: !!user,
+    staleTime: 30 * 60 * 1000, // 30 minutes
+    gcTime: 60 * 60 * 1000,    // 1 hour
   });
 
   const role = (userRoleData?.role) ?? (user?.publicMetadata?.app_role as string) ?? "admin";

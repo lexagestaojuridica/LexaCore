@@ -21,8 +21,9 @@ if (!SUPABASE_PUBLISHABLE_KEY && typeof window !== 'undefined') {
   );
 }
 
-// Throttle clerk JWT warning to avoid console spam
-let jwtWarningLogged = false;
+// Cache the Clerk token to avoid redundant async calls on every fetch
+let cachedToken: string | null = null;
+let tokenExpiry = 0;
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   global: {
@@ -31,7 +32,16 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
       try {
         const clerk = (window as any).Clerk;
         if (typeof window !== "undefined" && clerk?.session) {
-          clerkToken = await clerk.session.getToken({ template: "supabase" });
+          const now = Date.now();
+          // Clerk tokens are valid for 60 seconds by default. 
+          // We cache it for 50 seconds to be safe.
+          if (cachedToken && now < tokenExpiry) {
+            clerkToken = cachedToken;
+          } else {
+            clerkToken = await clerk.session.getToken({ template: "supabase" });
+            cachedToken = clerkToken;
+            tokenExpiry = now + 50 * 1000;
+          }
         }
       } catch (err: unknown) {
         const e = err as { message?: string };

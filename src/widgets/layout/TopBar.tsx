@@ -17,9 +17,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/shared/lib/utils";
 import { LanguageSwitcher } from "@/shared/components/LanguageSwitcher";
-import { NotificationsDropdown } from "@/features/meu-dia/components/NotificationsDropdown";
-import FacilitadorBar from "@/features/meu-dia/components/FacilitadorBar";
-import ChatWidget from "@/features/chat/components/ChatWidget";
+import dynamic from "next/dynamic";
+const NotificationsDropdown = dynamic(() => import("@/features/meu-dia/components/NotificationsDropdown").then(mod => ({ default: mod.NotificationsDropdown })), { ssr: false });
+const FacilitadorBar = dynamic(() => import("@/features/meu-dia/components/FacilitadorBar"), { ssr: false });
+const ChatWidget = dynamic(() => import("@/features/chat/components/ChatWidget"), { ssr: false });
 
 // Route → i18n key mapping for dynamic TopBar title
 const PAGE_TITLE_KEYS: Record<string, string> = {
