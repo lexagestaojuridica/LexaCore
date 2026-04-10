@@ -1,6 +1,6 @@
 # CONTRIBUTING.md - Guia de Contribuição
 
-## Bem-vindo ao LEXA!
+## Bem-vindo ao LEXA
 
 Obrigado pelo interesse em contribuir. Este guia garante que todos seguem os mesmos padrões de qualidade.
 
@@ -9,18 +9,21 @@ Obrigado pelo interesse em contribuir. Este guia garante que todos seguem os mes
 ## Fluxo de Trabalho
 
 ### 1. Fork e Clone
+
 ```bash
-git clone https://github.com/Guiilhermerodriiguess/lexanova-core.git
-cd lexanova-core
+git clone https://github.com/lexagestaojuridica/LexaCore.git
+cd LexaCore
 npm install
 ```
 
 ### 2. Criar branch
+
 ```bash
 git checkout -b <tipo>/<descricao-curta>
 ```
 
 **Tipos de branch:**
+
 - `feat/` — nova funcionalidade
 - `fix/` — correção de bug
 - `docs/` — documentação
@@ -29,7 +32,8 @@ git checkout -b <tipo>/<descricao-curta>
 - `chore/` — manutenção, CI/CD, dependências
 
 **Exemplos:**
-```
+
+```text
 feat/add-processo-search
 fix/timesheet-calculation-error
 docs/update-api-examples
@@ -51,6 +55,7 @@ git commit -m "<tipo>(<escopo>): <descrição>"
 ```
 
 **Tipos:**
+
 - `feat` — nova funcionalidade
 - `fix` — correção de bug
 - `docs` — documentação
@@ -59,7 +64,8 @@ git commit -m "<tipo>(<escopo>): <descrição>"
 - `chore` — manutenção
 
 **Exemplos:**
-```
+
+```text
 feat(processos): add search by numero and cliente
 fix(timesheet): correct hours calculation on DST change
 docs(api): update supabase integration examples
@@ -173,6 +179,7 @@ const form = useForm<Processo>({
 Toda PR requer aprovação de pelo menos **um reviewer**.
 
 O reviewer verifica:
+
 - [ ] Funcionalidade implementada corretamente
 - [ ] TypeScript sem erros
 - [ ] Testes cobrem os casos principais

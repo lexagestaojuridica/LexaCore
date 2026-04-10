@@ -2,7 +2,7 @@
 
 ## 1. Visão Geral da Arquitetura
 
-O LEXA opera sob arquitetura **Next.js 15 (App Router)** com backend-as-a-service provido pelo **Supabase**. Autenticação e gestão de usuários são providas pelo **Clerk**. Frontend e serverless functions são implantados na **Hostinger**. O **Supabase (PostgreSQL)** atua como banco de dados principal com RLS nativo para multitenancy.
+O LEXA opera sob arquitetura **Next.js 15 (App Router)** com backend-as-a-service provido pelo **Supabase**. Autenticação e gestão de usuários são providas pelo **Clerk**. Frontend e serverless functions são implantados na **Vercel** (Projeto: `lexacore`, Scope: `lexagestaojuridica-7277s-projects`). O **Supabase (PostgreSQL)** atua como banco de dados principal com RLS nativo para multitenancy.
 
 **Princípio central: Feature-Sliced Design (FSD) + Clean Architecture + Zero Acoplamento.**
 
@@ -11,15 +11,15 @@ O LEXA opera sob arquitetura **Next.js 15 (App Router)** com backend-as-a-servic
 ## 2. Tecnologias Utilizadas
 
 | Camada | Tecnologia |
-|--------|-----------|
+| :--- | :--- |
 | Frontend | Next.js 15 (App Router), React 18, TypeScript 5 (strict) |
 | Estilização | Tailwind CSS, shadcn-ui (Radix UI), framer-motion |
 | Estado/Dados | TanStack React Query, react-hook-form + zod |
 | Autenticação | **Clerk** (Auth, RBAC, Organizações) |
-| Backend/DB | **Supabase** (PostgreSQL 15+), Hostinger Edge Functions |
-| Pagamentos | **Asaas** (via Hostinger Edge Functions) |
+| Backend/DB | **Supabase** (PostgreSQL 15+), Vercel Edge Functions |
+| Pagamentos | **Asaas** (via Vercel Edge Functions) |
 | Testes | Vitest, React Testing Library, Cypress (E2E) |
-| CI/CD | GitHub Actions → Hostinger |
+| CI/CD | GitHub Actions → Vercel |
 | Ícones | lucide-react |
 | Charts | Recharts |
 | i18n | i18next, react-i18next |
@@ -47,7 +47,7 @@ Domínios modelados (45+ migrations):
 - **Supabase Client:** `@supabase/supabase-js` com JWT do Clerk via template `supabase`
 - **Asaas:** Gateway de pagamento via Hostinger Edge Functions
 - **Clerk:** Auth, RBAC, Organizations, Webhooks
-- **Calendários:** Google Calendar, Microsoft Calendar, Apple Calendar (via Hostinger Edge Functions)
+- **Calendários:** Google Calendar, Microsoft Calendar, Apple Calendar (via Vercel Edge Functions)
 - **WhatsApp:** Integração nativa para notificações e triggers
 - **Armazenamento:** Supabase Storage (GED)
 
@@ -67,17 +67,17 @@ Domínios modelados (45+ migrations):
 
 ## 6. Infraestrutura e DevOps
 
-- **CI/CD:** GitHub Actions → testes → build → deploy Hostinger
+- **CI/CD:** GitHub Actions → testes → build → deploy Vercel
 - **Ambientes:** Development, Staging, Production
 - **Migrations:** Supabase CLI, versionadas por data/hora
-- **Monitoramento:** Logs na Hostinger, alertas de performance
-- **Performance:** Code-splitting Next.js, Hostinger Edge Functions, CDN global Hostinger
+- **Monitoramento:** Logs na Vercel, alertas de performance
+- **Performance:** Code-splitting Next.js, Vercel Edge Functions, Global Edge Network
 
 ---
 
 ## 7. Estrutura de Pastas (Feature-Sliced Design)
 
-```
+```text
 src/
 ├── app/                     # Next.js App Router (pages, layouts, API routes)
 │   ├── api/                 # API routes (tRPC, webhooks)

@@ -8,7 +8,8 @@ O LEXA é um sistema de gestão jurídica (ERP/LegalTech) abrangente, moderno e 
 
 - ✅ Zero bugs críticos
 - ✅ Desacoplamento Total (Feature-Sliced Design - FSD)
-- ✅ Escalabilidade (Clerk + Supabase + Hostinger)
+- ✅ Escalabilidade (Clerk + Supabase + Vercel)
+- ✅ Design Premium (Zinc / Gold Palette)
 - ✅ Segurança (RLS, LGPD, Auditoria)
 - ✅ Testes Automatizados (Unitários, Integração, E2E)
 
@@ -50,8 +51,8 @@ O LEXA é um sistema de gestão jurídica (ERP/LegalTech) abrangente, moderno e 
 
 - **Conformidade Legal (LGPD):** Audit logs completos, controle de acesso compartimentado.
 - **Viabilidade Financeira:** Monetização via Asaas, precificação por consumo, gestão via Clerk.
-- **Usabilidade:** shadcn-ui, Dark/Light mode, acessibilidade (Radix UI), experiência fluida.
-- **Qualidade e Escalabilidade:** FSD, Clean Architecture, TypeScript strict, zero acoplamento.
+- **Usabilidade:** Design System Zinc/Gold, Dark/Light mode, acessibilidade (Radix UI), experiência fluida e premium.
+- **Qualidade e Escalabilidade:** FSD, Clean Architecture, TypeScript strict, zero acoplamento, Vercel-optimized.
 
 ---
 
@@ -67,5 +68,5 @@ Contabilidade pura (ECD/ECF), provedor de e-mail corporativo próprio.
 2. Módulo de Acordos e Negociações
 3. Monetização Flexível (consumo de IA/armazenamento)
 4. Certificação de Auditoria LGPD exportável
-5. Offline-First para Processos (Hostinger-optimized)
+5. Offline-First para Processos (Vercel-optimized)
 6. Skills de IA por domínio (Minutas, Análise Preditiva)

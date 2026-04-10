@@ -2,7 +2,7 @@
 
 ## Visão Geral
 
-O LEXA v3.5 adota **Feature-Sliced Design (FSD)** para o frontend, **tRPC** para comunicação type-safe, e **Supabase** (Postgres + RLS + Edge Functions) para a camada de persistência e lógica de borda. A autenticação e multitenancy são geridas pelo **Clerk**.
+O LEXA v3.5 adota **Feature-Sliced Design (FSD)** para o frontend, **tRPC** para comunicação type-safe, e **Supabase** (Postgres + RLS + Edge Functions) para a camada de persistência e lógica de borda. A autenticação e multitenancy são geridas pelo **Clerk**. O deploy é realizado via **Vercel**.
 
 ---
 
@@ -10,7 +10,7 @@ O LEXA v3.5 adota **Feature-Sliced Design (FSD)** para o frontend, **tRPC** para
 
 Cada funcionalidade reside em `src/features/` e segue uma estrutura rígida:
 
-```
+```text
 src/features/<feature>/
 ├── components/          # UI components locais
 ├── hooks/               # Custom hooks (usando useQuery/useMutation)

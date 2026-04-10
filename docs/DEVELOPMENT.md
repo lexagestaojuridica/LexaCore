@@ -15,8 +15,8 @@
 ### 1. Clonar o repositório
 
 ```bash
-git clone https://github.com/Guiilhermerodriiguess/lexanova-core.git
-cd lexanova-core
+git clone https://github.com/lexagestaojuridica/LexaCore.git
+cd LexaCore
 ```
 
 ### 2. Instalar dependências
@@ -63,11 +63,15 @@ supabase db push
 supabase db reset
 ```
 
-### 5. Iniciar servidor de desenvolvimento
+### 6. Configuração Vercel
 
 ```bash
-npm run dev
+# Vincular ao projeto oficial
+npx vercel link --scope lexagestaojuridica-7277s-projects
+# Projeto: lexacore
 ```
+
+### 7. Iniciar servidor de desenvolvimento
 
 Acesse: [http://localhost:3000](http://localhost:3000)
 
@@ -76,7 +80,7 @@ Acesse: [http://localhost:3000](http://localhost:3000)
 ## Scripts Disponíveis
 
 | Script | Descrição |
-|--------|-----------|
+| :--- | :--- |
 | `npm run dev` | Servidor de desenvolvimento |
 | `npm run build` | Build de produção |
 | `npm run start` | Servidor de produção |
@@ -187,17 +191,20 @@ O projeto usa **GitHub Actions** para CI/CD automático:
 - `quality-gate.yml`: Verificação de cobertura de testes
 - `security-scan.yml`: Análise de segurança (dependências)
 
-O deploy é feito automaticamente na **Hostinger** após merge na branch `main`.
+O deploy é feito automaticamente na **Vercel** após merge na branch `main`.
 
 ---
 
 ## Solução de Problemas
 
 ### Erro: Missing Supabase environment variables
+
 Verifique se `.env.local` existe e contém `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
 
 ### Erro: Clerk not configured
+
 Verifique `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` no `.env.local`.
 
 ### Erro: RLS violation
+
 O usuário não tem permissão para acessar esse dado. Verifique as políticas RLS no Supabase Dashboard.

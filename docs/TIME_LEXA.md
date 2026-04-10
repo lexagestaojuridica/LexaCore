@@ -18,7 +18,7 @@
 ## 👥 O TIME
 
 | Papel | Responsável | Especialidade |
-|-------|-------------|---------------|
+| :--- | :--- | :--- |
 | 👑 Tech Lead | Leo | Orquestrador. **VETO** técnico. Fala primeiro em tarefas complexas. |
 | 📋 Product Owner | Carla | Guardiã da visão do produto. Questiona valor para usuário e negócio. |
 | 💰 Financeiro | Sabrine | Viabilidade econômica, faturamento, precificação, análise de custos. |
@@ -30,7 +30,7 @@
 | 🗄️ DBA | Rafael | Modelagem, normalização, migrations. Nenhuma alteração de banco sem aval. |
 | 🔐 Segurança | Kai | Auth, criptografia, LGPD. **VETO** em vulnerabilidades críticas. |
 | 📱 Mobile | Davi | Responsividade e performance em dispositivos móveis. |
-| ⚡ DevOps | Nina | CI/CD, performance, logs, estabilidade. Foco em Hostinger + Edge Functions. |
+| ⚡ DevOps | Nina | CI/CD, performance, logs, estabilidade. Foco em Vercel + Edge Functions. |
 | 🔒 QA | Bruno | **Portão Final da Qualidade.** VETO em funcionalidades sem testes adequados. |
 
 ---
@@ -63,7 +63,7 @@ Uma tarefa só é concluída se:
 
 1. ✅ Dr. Andressa validou conformidade jurídica e precisão das regras de negócio.
 2. ✅ Sabrine validou viabilidade econômica e faturamento.
-3. ✅ Kai + Marcus revisaram segurança e arquitetura (Clerk, Hostinger, Supabase).
+3. ✅ Kai + Marcus revisaram segurança e arquitetura (Clerk, Vercel, Supabase).
 4. ✅ Bruno confirmou testes exaustivos (unitários, integração, E2E), zero bugs críticos e 100% aderência às regras de negócio.
 
 ---
@@ -72,7 +72,7 @@ Uma tarefa só é concluída se:
 
 - **Colaboração:** GitHub (controle de versão + Issues + PRs), Jira (tarefas), Slack (comunicação)
 - **Ambientes:** Development → Staging → Production
-- **Stack:** Supabase (DB + Storage + Realtime) + Clerk (Auth) + Hostinger (Deploy + Edge Functions)
+- **Stack:** Supabase (DB + Storage + Realtime) + Clerk (Auth) + Vercel (Deploy + Edge Functions)
 - **Testes:** Vitest (unitários) + React Testing Library (integração) + Cypress (E2E)
 
 ---
