@@ -30,7 +30,7 @@ export default function PortalDashboard() {
             const { data, error } = await supabase
                 .from("clientes")
                 .select("*")
-                .eq("auth_user_id", user?.id)
+                .eq("auth_user_id", user?.id!)
                 .single();
             if (error) throw error;
             return data;
@@ -46,7 +46,7 @@ export default function PortalDashboard() {
             const { data, error } = await supabase
                 .from("processos_juridicos")
                 .select("*")
-                .eq("client_id", clientId)
+                .eq("client_id", clientId!)
                 .order("created_at", { ascending: false });
             if (error) throw error;
             return data;
@@ -60,7 +60,7 @@ export default function PortalDashboard() {
             const { data, error } = await supabase
                 .from("contas_receber")
                 .select("*")
-                .eq("client_id", clientId)
+                .eq("client_id", clientId!)
                 .order("due_date", { ascending: true });
             if (error) throw error;
             return data;
@@ -74,7 +74,7 @@ export default function PortalDashboard() {
             const { data, error } = await supabase
                 .from("documentos")
                 .select("*")
-                .eq("client_id", clientId)
+                .eq("client_id", clientId!)
                 .order("created_at", { ascending: false });
             if (error) throw error;
             return data;
@@ -213,7 +213,7 @@ export default function PortalDashboard() {
                                                 <div className="flex justify-between items-start">
                                                     <div>
                                                         <CardTitle className="text-base text-primary">{proc.title}</CardTitle>
-                                                        <CardDescription className="font-mono text-xs mt-1">{proc.numero_processo || "Sem numeração"}</CardDescription>
+                                                        <CardDescription className="font-mono text-xs mt-1">{proc.number || "Sem numeração"}</CardDescription>
                                                     </div>
                                                     <Badge variant="outline" className={proc.status === 'ativo' ? 'bg-success/10 text-success border-success/20' : ''}>
                                                         {proc.status?.toUpperCase() || "ATIVO"}
@@ -224,11 +224,11 @@ export default function PortalDashboard() {
                                                 <div className="grid grid-cols-2 gap-4 text-sm">
                                                     <div>
                                                         <p className="text-muted-foreground text-xs mb-0.5">Tribunal/Órgão</p>
-                                                        <p className="font-medium">{proc.tribunal || "N/A"}</p>
+                                                        <p className="font-medium">{proc.court || "N/A"}</p>
                                                     </div>
                                                     <div>
                                                         <p className="text-muted-foreground text-xs mb-0.5">Assunto</p>
-                                                        <p className="font-medium line-clamp-1">{proc.subject || proc.assunto || "N/A"}</p>
+                                                        <p className="font-medium line-clamp-1">{proc.subject || "N/A"}</p>
                                                     </div>
                                                 </div>
                                                 <div className="mt-4 space-y-1.5">

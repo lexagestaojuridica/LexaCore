@@ -24,6 +24,7 @@ if (!SUPABASE_PUBLISHABLE_KEY && typeof window !== 'undefined') {
 // Cache the Clerk token to avoid redundant async calls on every fetch
 let cachedToken: string | null = null;
 let tokenExpiry = 0;
+let jwtWarningLogged = false;
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   global: {

@@ -134,6 +134,23 @@ export default {
           ring: "hsl(var(--sidebar-ring))",
         },
 
+        // ── Lexa Brand (New Design)
+        lexa: {
+          blue: {
+            DEFAULT: "#2563EB",
+            hover: "#1D4ED8",
+            light: "#EFF6FF",
+            gradient: "linear-gradient(90deg, #2563EB 0%, #3B82F6 100%)",
+          },
+          grey: {
+            50: "#F9FAFB",
+            100: "#F3F4F6",
+            200: "#E5E7EB",
+            500: "#6B7280",
+            900: "#111827",
+          }
+        },
+
         // ── Chart palette — perceptually distinct, accessible
         chart: {
           "1": "hsl(236 80% 54%)",  // indigo

@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { trpc } from "@/shared/lib/trpc";
-import { useSession } from "@clerk/nextjs";
+import { useSession, useUser } from "@clerk/nextjs";
 import { useToast } from "@/shared/hooks/use-toast";
 
 import type { ArunaMessage, ArunaChatOptions, ArunaContext } from "../types";
@@ -9,6 +9,7 @@ const CHAT_URL = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/aruna-cha
 
 export function useArunaChat(options: ArunaChatOptions = {}) {
   const { session } = useSession();
+  const { user } = useUser();
   const { toast } = useToast();
   const utils = trpc.useUtils();
 
@@ -120,7 +121,7 @@ export function useArunaChat(options: ArunaChatOptions = {}) {
     const trimmedText = text.trim();
     if (!trimmedText || streaming) return;
 
-    const orgId = (session?.publicMetadata as any)?.organizationId as string | undefined;
+    const orgId = (user?.publicMetadata as any)?.organizationId as string | undefined;
     if (!orgId) {
       toast({ title: "Erro de Contexto", description: "Organização não identificada.", variant: "destructive" });
       return;

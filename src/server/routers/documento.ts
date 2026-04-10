@@ -20,9 +20,9 @@ export const documentoRouter = createTRPCRouter({
                 .from("documentos")
                 .insert({
                     ...input,
-                    organization_id: tenantId,
-                    user_id: userId,
-                } as any)
+                    organization_id: tenantId!,
+                    user_id: userId!,
+                })
                 .select()
                 .single();
 
@@ -55,14 +55,14 @@ export const documentoRouter = createTRPCRouter({
             const { error } = await db.from("document_signatures").insert({
                 document_id: input.document_id,
                 client_id: input.client_id,
-                organization_id: tenantId,
+                organization_id: tenantId!,
                 signer_name: input.signer_name,
                 signer_email: input.signer_email,
                 signer_document: input.signer_document,
                 token,
                 status: "pendente",
                 expires_at: expiresAt,
-            } as any);
+            });
 
             if (error) {
                 throw new TRPCError({

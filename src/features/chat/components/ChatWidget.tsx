@@ -304,7 +304,7 @@ export default function ChatWidget() {
                             <div className="border-t border-border/50 p-3 bg-muted/10 shrink-0">
                                 <div className="flex items-center gap-2">
                                     <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/20 text-primary text-[10px] font-bold shrink-0">
-                                        {getInitials(profile?.full_name)}
+                                        {getInitials(profile?.full_name || null)}
                                     </div>
                                     <div className="truncate">
                                         <p className="text-xs font-medium text-foreground truncate">{profile?.full_name || "Usuário"}</p>

@@ -6,7 +6,8 @@ import { Badge } from "@/shared/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
 import FormField from "@/shared/components/FormField";
-import { useWorkflow, Sector } from "@/features/workflow/contexts/WorkflowContext";
+import { useWorkflow } from "@/features/workflow/contexts/WorkflowContext";
+import { Sector } from "../types";
 
 const COLOR_OPTIONS = [
     { value: "bg-blue-500", label: "Azul", preview: "bg-blue-500" },

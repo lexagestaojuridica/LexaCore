@@ -29,6 +29,7 @@ export interface Client {
     company_name: string | null;
     company_position: string | null;
     asaas_customer_id: string | null;
+    processes?: { id: string; title: string }[];
 }
 
 export interface ClientDocumento {

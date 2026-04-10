@@ -49,7 +49,7 @@ export const crmRouter = createTRPCRouter({
         const { data, error } = await db
             .from("crm_leads")
             .select("*")
-            .eq("organization_id", tenantId as any)
+            .eq("organization_id", tenantId!)
             .order("created_at", { ascending: false })
             .limit(300);
         if (error) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao buscar leads" });
@@ -89,7 +89,7 @@ export const crmRouter = createTRPCRouter({
         const { data, error } = await db
             .from("crm_deals")
             .select("*")
-            .eq("organization_id", tenantId as any)
+            .eq("organization_id", tenantId!)
             .order("created_at", { ascending: false })
             .limit(300);
         if (error) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao buscar negócios" });
@@ -129,7 +129,7 @@ export const crmRouter = createTRPCRouter({
         const { data, error } = await db
             .from("crm_activities")
             .select("*")
-            .eq("organization_id", tenantId as any)
+            .eq("organization_id", tenantId!)
             .order("created_at", { ascending: false })
             .limit(300);
         if (error) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao buscar atividades" });

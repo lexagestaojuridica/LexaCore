@@ -33,7 +33,7 @@ O LEXA opera sob arquitetura **Next.js 15 (App Router)** com backend-as-a-servic
 Domínios modelados (45+ migrations):
 
 - **Core:** `processos_juridicos`, `clientes`, `unidades`
-- **HR & Timesheet:** `hr_core_schema`, `timesheet_entries`, `timesheet_timer_logs`, `employees`
+- **Timesheet:** `timesheet_entries`, `timesheet_timer_logs`, `employees`
 - **Workflow:** `crm`, `automations`, `document_signatures`
 - **Financeiro:** `orcamentos`, gateways, fluxos de despesa/receita
 - **Segurança:** `universal_audit_logs`, `legal_deadlines_security`
@@ -97,7 +97,6 @@ src/
 │   ├── minutas/             # Feature: Minutas/Documentos
 │   ├── noticias/            # Feature: Notícias
 │   ├── processos/           # Feature: Processos Jurídicos
-│   ├── rh/                  # Feature: Recursos Humanos
 │   ├── timesheet/           # Feature: Timesheet
 │   └── workflow/            # Feature: Workflow
 ├── integrations/            # Clientes externos e hooks React Query

@@ -33,9 +33,9 @@ export const meuDiaRouter = createTRPCRouter({
                 .eq("status", "ativo"),
 
             // Stats Count Clientes
-            db.from("clientes" as any)
+            db.from("clientes")
                 .select("*", { count: "exact", head: true })
-                .eq("organization_id", tenantId!) as any,
+                .eq("organization_id", tenantId!),
 
             // Timesheet Hoje
             db.from("timesheet_entries")
@@ -81,16 +81,16 @@ export const meuDiaRouter = createTRPCRouter({
                     .eq("organization_id", tenantId!)
                     .ilike("title", searchTerm)
                     .limit(5),
-                db.from("clientes" as any)
+                db.from("clientes")
                     .select("id, name")
                     .eq("organization_id", tenantId!)
                     .ilike("name", searchTerm)
-                    .limit(5) as any,
+                    .limit(5),
                 db.from("wiki_juridica")
                     .select("id, title, category")
-                    .eq("organization_id", tenantId as any)
+                    .eq("organization_id", tenantId!)
                     .or(`title.ilike.${searchTerm},content.ilike.${searchTerm}`)
-                    .limit(5) as any
+                    .limit(5)
             ]);
 
             const results: any[] = [];
@@ -125,4 +125,16 @@ export const meuDiaRouter = createTRPCRouter({
 
             return results;
         }),
+
+    listTeam: tenantProcedure.query(async ({ ctx }) => {
+        const { tenantId, db } = ctx;
+        const { data, error } = await db
+            .from("profiles")
+            .select("id, user_id, full_name, avatar_url")
+            .eq("organization_id", tenantId!)
+            .order("full_name");
+
+        if (error) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao buscar equipe" });
+        return data || [];
+    }),
 });

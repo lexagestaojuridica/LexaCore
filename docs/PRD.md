@@ -2,7 +2,7 @@
 
 ## 1. Visão Geral do Produto
 
-O LEXA é um sistema de gestão jurídica (ERP/LegalTech) abrangente, moderno e escalável, projetado para digitalizar e automatizar a rotina de escritórios de advocacia. Construído para ser centrado no usuário, o sistema cobre toda a jornada operacional do escritório, desde a captação do cliente (CRM) até a execução do serviço (Processos, Documentos, IA), faturamento (Financeiro) e gestão interna (RH, Timesheet, BI). O grande valor de negócio reside na unificação de ferramentas num único ecossistema seguro, inteligente e **preditivo**.
+O LEXA é um sistema de gestão jurídica (ERP/LegalTech) abrangente, moderno e escalável, projetado para digitalizar e automatizar a rotina de escritórios de advocacia. Construído para ser centrado no usuário, o sistema cobre toda a jornada operacional do escritório, desde a captação do cliente (CRM) até a execução do serviço (Processos, Documentos, IA), faturamento (Financeiro) e gestão interna (Timesheet, BI). O grande valor de negócio reside na unificação de ferramentas num único ecossistema seguro, inteligente e **preditivo**.
 
 **Prioridade Máxima: Excelência Operacional e Qualidade Inquestionável.**
 
@@ -23,7 +23,6 @@ O LEXA é um sistema de gestão jurídica (ERP/LegalTech) abrangente, moderno e 
 - **GED & Documentos:** Gestão Eletrônica de Documentos com Supabase Storage, minutas e assinaturas digitais.
 - **Timesheet & Produtividade:** Apontamento de horas, métricas de produtividade, integração com financeiro.
 - **Agenda Inteligente:** Calendário corporativo com integrações bidirecionais (Google, Microsoft, Apple).
-- **Módulo RH:** Gestão de colaboradores, avaliação de performance e recrutamento.
 - **Portal do Cliente:** Área restrita (White-label) para acompanhamento de processos, documentos e faturas.
 - **IA & BI Preditivo:** Dashboards avançados, relatórios gerenciais, robôs de captura e chat inteligente.
 - **Omnichannel:** Integração WhatsApp para notificações e atendimento.

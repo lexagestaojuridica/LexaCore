@@ -53,7 +53,7 @@ export function useAgenda(
     });
 
     return {
-        eventos: (agendaQuery.data || []) as Evento[],
+        eventos: (agendaQuery.data || []) as unknown as Evento[],
         isLoading: agendaQuery.isLoading,
         createMutation: {
             ...createMutation,

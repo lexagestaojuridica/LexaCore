@@ -63,7 +63,7 @@ export default function ChatPage() {
     const queryClient = useQueryClient();
     const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null);
     const [newChannelOpen, setNewChannelOpen] = useState(false);
-    const [channelForm, setChannelForm] = useState({ name: "", type: "general" });
+    const [channelForm, setChannelForm] = useState({ name: "", type: "general" as Channel["type"] });
     const [messageText, setMessageText] = useState("");
     const [searchChannels, setSearchChannels] = useState("");
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -98,7 +98,7 @@ export default function ChatPage() {
     });
 
     const createChannelMutation = useMutation({
-        mutationFn: async (payload: any) => {
+        mutationFn: async (payload: { name: string; type: string; organization_id: string }) => {
             const { error } = await supabase.from("chat_channels").insert(payload);
             if (error) throw error;
         },
@@ -204,7 +204,7 @@ export default function ChatPage() {
 
     const grouped = filteredChannels.reduce((acc, ch) => {
         acc[ch.type] = acc[ch.type] || [];
-        acc[ch.type].push(ch);
+        acc[ch.type]!.push(ch);
         return acc;
     }, {} as Record<string, Channel[]>);
 
@@ -241,8 +241,8 @@ export default function ChatPage() {
                 <ScrollArea className="flex-1 px-3 pb-3">
                     {channelsLoading ? (
                         <div className="space-y-3 p-1">
-                            {[1, 2, 3, 4, 5].map((n) => (
-                                <div key={n} className="h-10 rounded-xl bg-muted/40 animate-pulse" />
+                            {[1, 2, 3, 4, 5].map((idx) => (
+                                <div key={idx} className="h-10 rounded-xl bg-muted/40 animate-pulse" />
                             ))}
                         </div>
                     ) : Object.keys(grouped).length === 0 ? (
@@ -290,7 +290,7 @@ export default function ChatPage() {
                 <div className="border-t border-border/50 p-3 bg-muted/20">
                     <div className="flex items-center gap-3">
                         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-primary text-xs font-bold shrink-0">
-                            {getInitials(profile?.full_name)}
+                            {getInitials(profile?.full_name ?? null)}
                         </div>
                         <div className="truncate min-w-0">
                             <p className="text-xs font-bold text-foreground truncate">{profile?.full_name || "Usuário"}</p>
@@ -384,7 +384,7 @@ export default function ChatPage() {
                                                         "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[10px] font-bold mt-1 shadow-sm",
                                                         isMe ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground ring-1 ring-border/50"
                                                     )}>
-                                                        {getInitials(name)}
+                                                        {getInitials(name ?? null)}
                                                     </div>
                                                 ) : (
                                                     <div className="w-8 shrink-0" />
@@ -457,13 +457,13 @@ export default function ChatPage() {
                         <FormField
                             label="Nome do Canal *"
                             value={channelForm.name}
-                            onChange={(v) => setChannelForm({ ...channelForm, name: v })}
+                            onChange={(v: string) => setChannelForm({ ...channelForm, name: v })}
                             placeholder="Ex: Equipe Trabalhista"
                             required
                         />
                         <div className="space-y-2">
                             <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Propósito do Canal</label>
-                            <Select value={channelForm.type} onValueChange={(v) => setChannelForm({ ...channelForm, type: v })}>
+                            <Select value={channelForm.type} onValueChange={(v: Channel["type"]) => setChannelForm({ ...channelForm, type: v })}>
                                 <SelectTrigger className="h-10 bg-muted/20"><SelectValue /></SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="general" className="py-2.5"><div className="flex items-center gap-2"><Hash className="h-4 w-4 text-primary" /><span>Geral / Discussão</span></div></SelectItem>

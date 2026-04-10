@@ -6,7 +6,8 @@ import { Input } from "@/shared/ui/input";
 import { Card, CardContent } from "@/shared/ui/card";
 import { Badge } from "@/shared/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
-import { useWorkflow, WorkflowInstance } from "@/features/workflow/contexts/WorkflowContext";
+import { useWorkflow } from "@/features/workflow/contexts/WorkflowContext";
+import { WorkflowInstance } from "../types";
 import WorkflowDetail from "./WorkflowDetail";
 
 const STATUS_CONFIG: Record<string, { label: string; icon: any; color: string; className: string }> = {

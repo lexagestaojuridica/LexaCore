@@ -34,7 +34,7 @@ export const processoRouter = createTRPCRouter({
                 );
             }
 
-            query = query.order(sortField as any, { ascending: sortDir === "asc" });
+            query = query.order(sortField as any, { ascending: sortDir === "asc" }); // sortField is still generic enough to need as any or a better mapping
 
             if (viewMode === "table") {
                 const from = (page - 1) * pageSize;

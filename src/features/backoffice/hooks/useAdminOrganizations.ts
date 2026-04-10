@@ -39,7 +39,7 @@ export function useAdminOrganizations(searchTerm: string) {
 
             const { data, error } = await query.order("created_at", { ascending: false });
             if (error) throw error;
-            return data as Organization[];
+            return (data as any) as Organization[];
         },
     });
 

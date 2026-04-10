@@ -19,9 +19,9 @@ export const timesheetRouter = createTRPCRouter({
         const { tenantId, db } = ctx;
         const { data, error } = await db
             .from("processos_juridicos")
-            .select("id, title, number, client_id, clientes:clientes(id, name, asaas_customer_id)" as any)
+            .select("id, title, number, client_id, clientes(id, name, asaas_customer_id)")
             .eq("organization_id", tenantId!)
-            .eq("status", "ativo") as any;
+            .eq("status", "ativo");
 
         if (error) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao buscar processos para timesheet" });
         return data || [];
@@ -33,9 +33,9 @@ export const timesheetRouter = createTRPCRouter({
             const { tenantId, db, userId } = ctx;
             const { data, error } = await db
                 .from("timesheet_entries")
-                .insert({ ...input, organization_id: tenantId, user_id: userId })
+                .insert({ ...input, organization_id: tenantId!, user_id: userId! })
                 .select()
-                .single() as any;
+                .single();
 
             if (error) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao registrar entrada de timesheet" });
             return data;

@@ -9,7 +9,7 @@ export const workflowRouter = createTRPCRouter({
             .from("workflow_instances")
             .select("*")
             .eq("organization_id", tenantId!)
-            .order("created_at", { ascending: false }) as any;
+            .order("created_at", { ascending: false });
 
         if (error) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao buscar instâncias de workflow" });
         return data || [];
@@ -18,10 +18,10 @@ export const workflowRouter = createTRPCRouter({
     listTemplates: tenantProcedure.query(async ({ ctx }) => {
         const { tenantId, db } = ctx;
         const { data, error } = await db
-            .from("workflow_templates" as any)
+            .from("workflow_templates")
             .select("*")
             .or(`organization_id.is.null,organization_id.eq.${tenantId!}`)
-            .order("name") as any;
+            .order("name");
 
         if (error) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao buscar templates" });
         return data || [];
@@ -30,10 +30,10 @@ export const workflowRouter = createTRPCRouter({
     listSectors: tenantProcedure.query(async ({ ctx }) => {
         const { tenantId, db } = ctx;
         const { data, error } = await db
-            .from("workflow_sectors" as any)
+            .from("workflow_sectors")
             .select("*")
-            .eq("organization_id", tenantId as any)
-            .order("name") as any;
+            .eq("organization_id", tenantId!)
+            .order("name");
 
         if (error) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao buscar setores" });
         return data || [];
@@ -49,11 +49,11 @@ export const workflowRouter = createTRPCRouter({
             const payload = { ...input.data, organization_id: tenantId };
 
             if (input.id) {
-                const { error } = await db.from("workflow_sectors" as any).update(payload).eq("id", input.id as any).eq("organization_id", tenantId!);
+                const { error } = await db.from("workflow_sectors").update(payload).eq("id", input.id).eq("organization_id", tenantId!);
                 if (error) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao atualizar setor" });
                 return { id: input.id };
             } else {
-                const { data, error } = await db.from("workflow_sectors" as any).insert(payload).select().single() as any;
+                const { data, error } = await db.from("workflow_sectors").insert(payload).select().single();
                 if (error) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao criar setor" });
                 return data;
             }
@@ -61,7 +61,7 @@ export const workflowRouter = createTRPCRouter({
 
     deleteSector: tenantProcedure.input(z.string()).mutation(async ({ ctx, input: id }) => {
         const { tenantId, db } = ctx;
-        const { error } = await db.from("workflow_sectors" as any).delete().eq("id", id).eq("organization_id", tenantId!);
+        const { error } = await db.from("workflow_sectors").delete().eq("id", id).eq("organization_id", tenantId!);
         if (error) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao excluir setor" });
         return { success: true };
     }),
@@ -115,7 +115,7 @@ export const workflowRouter = createTRPCRouter({
             if (error) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao iniciar workflow" });
 
             const steps = input.steps.map((s, i) => ({
-                workflow_id: wf!.id as any,
+                workflow_id: wf!.id,
                 title: s.title,
                 description: s.description,
                 completed: false,

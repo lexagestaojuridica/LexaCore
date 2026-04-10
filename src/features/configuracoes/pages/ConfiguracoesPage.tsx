@@ -135,7 +135,7 @@ export default function ConfiguracoesPage() {
                       <img src={profile.avatar_url} alt="Avatar" className="h-16 w-16 rounded-full object-cover border-2 border-border" />
                     ) : (
                       <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary font-display text-2xl">
-                        {(profile?.full_name || user?.primaryEmailAddress?.emailAddress || "U").charAt(0).toUpperCase()}
+                        {(profile?.full_name || (user?.primaryEmailAddress?.emailAddress ?? "") || "U").charAt(0).toUpperCase()}
                       </div>
                     ) /* line 138 fixed */}
                     <button type="button" onClick={() => avatarInputRef.current?.click()} className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
@@ -271,11 +271,11 @@ export default function ConfiguracoesPage() {
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    {employees.map((emp: Employee) => (
+                    {employees.map((emp: any) => (
                       <div key={emp.id} className="flex items-center justify-between rounded-lg border border-border p-3 hover:bg-muted/20 transition-colors">
                         <div className="flex items-center gap-3 min-w-0">
                           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary text-sm font-medium shrink-0">
-                            {emp.full_name.charAt(0).toUpperCase()}
+                            {(emp.full_name || "E").charAt(0).toUpperCase()}
                           </div>
                           <div className="min-w-0">
                             <div className="flex items-center gap-2">

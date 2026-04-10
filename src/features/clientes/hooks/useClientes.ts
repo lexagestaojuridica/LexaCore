@@ -24,7 +24,7 @@ export function useClientes() {
 
     const biCountsQuery = trpc.cliente.getCounts.useQuery();
 
-    const clients = (clientsQuery.data?.data || []) as Client[];
+    const clients = (clientsQuery.data?.data || []) as unknown as Client[];
     const totalCount = clientsQuery.data?.count || 0;
     const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
@@ -174,7 +174,7 @@ export function useClientes() {
             ...updateMutation,
             mutate: (payload: { id: string } & Partial<Client>) => {
                 const { id, ...data } = payload;
-                updateMutation.mutate({ id, data: data as any });
+                updateMutation.mutate({ id, data: data as any }); // Need to map partial Client to the router input
             }
         },
         deleteMutation,

@@ -6,7 +6,8 @@ import { Card } from "@/shared/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { Textarea } from "@/shared/ui/textarea";
 import FormField from "@/shared/components/FormField";
-import { useWorkflow, WorkflowInstance } from "@/features/workflow/contexts/WorkflowContext";
+import { useWorkflow } from "@/features/workflow/contexts/WorkflowContext";
+import { WorkflowInstance } from "../types";
 
 const PRIORITY_CONFIG = {
     alta: { label: "Alta", className: "bg-red-50 text-red-600 border-red-200" },

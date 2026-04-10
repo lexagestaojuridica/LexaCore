@@ -8,7 +8,8 @@ import { Badge } from "@/shared/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
-import { useWorkflow, WorkflowInstance } from "@/features/workflow/contexts/WorkflowContext";
+import { useWorkflow } from "@/features/workflow/contexts/WorkflowContext";
+import { WorkflowInstance } from "../types";
 import WorkflowDetail from "./WorkflowDetail";
 
 const STATUS_CONFIG: Record<string, { label: string; className: string }> = {

@@ -53,7 +53,7 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
     const instancesQuery = trpc.workflow.listInstances.useQuery();
     const templatesQuery = trpc.workflow.listTemplates.useQuery();
     const sectorsQuery = trpc.workflow.listSectors.useQuery();
-    const collaboratorsQuery = trpc.rh.listColaboradores.useQuery();
+    const collaboratorsQuery = trpc.meuDia.listTeam.useQuery();
 
     const templates = (templatesQuery.data || []) as WorkflowTemplate[];
     const sectors: Sector[] = (sectorsQuery.data || []).map((s: any) => ({
@@ -74,7 +74,7 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
     const members: Member[] = (collaboratorsQuery.data || []).map((c: any) => ({
         id: c.id,
         name: c.full_name || "",
-        role: c.position || "Colaborador",
+        role: "Equipe",
         avatar: (c.full_name || "").split(" ").map((n: string) => n[0]).slice(0, 2).join(""),
     }));
 

@@ -94,6 +94,8 @@ export default function IAPage() {
   const [busy, setBusy] = useState(false);
   const [tool, setTool] = useState<Tool>(null);
 
+  const saveMessageMutation = trpc.ia.saveMessage.useMutation();
+
   // Tool-specific state
   const [docType, setDocType] = useState("");
   const [docInstr, setDocInstr] = useState("");
@@ -112,7 +114,7 @@ export default function IAPage() {
   const ctx = useMemo((): ArunaContext => {
     const data = contextQuery.data;
     return {
-      processos: (data?.processos || []).map((p: { clients?: { name: string } }) => ({ ...p, client_name: p.clients?.name, clients: undefined })),
+      processos: (data?.processos || []).map((p: any) => ({ ...p, client_name: p.clients?.name, clients: undefined })),
       clientes: data?.clientes || [],
       eventos: data?.eventos || [],
     };
@@ -205,7 +207,7 @@ export default function IAPage() {
 
   /* ─── Transcribe Audio ──────────────────────────── */
   const handleTranscribe = async () => {
-    const orgId = (session as any)?.publicMetadata?.organizationId as string | undefined;
+    const orgId = (session?.user as any)?.publicMetadata?.organizationId as string | undefined;
     if (!audioFile || !orgId || !user?.id || streaming) return;
     setTool(null);
     const typeLabel = AUDIO_TYPES.find(t => t.value === audioType)?.label || audioType;
@@ -248,20 +250,20 @@ export default function IAPage() {
             const c = JSON.parse(js).choices?.[0]?.delta?.content;
             if (c) {
               fullText += c;
-              setMessages((p: ArunaMessage[]) => p.map((m: ArunaMessage) => m.id === aId ? { ...m, content: fullText } : m));
+              setMessages((prev: ArunaMessage[]) => prev.map((m: ArunaMessage) => m.id === aId ? { ...m, content: fullText } : m));
             }
           } catch { buf = ln + "\n" + buf; break; }
         }
       }
 
-      trpc.ia.saveMessage.useMutation().mutate({ role: "assistant", content: fullText });
+      saveMessageMutation.mutate({ role: "assistant", content: fullText });
       setAudioFile(null);
       setAudioInstr("");
       if (fileRef.current) fileRef.current.value = "";
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : "Erro desconhecido";
       toast({ title: "Erro na transcrição de voz", description: message, variant: "destructive" });
-      setMessages((p: ArunaMessage[]) => p.filter((m: ArunaMessage) => m.id !== aId));
+      setMessages((prev: ArunaMessage[]) => prev.filter((m: ArunaMessage) => m.id !== aId));
     }
   };
 

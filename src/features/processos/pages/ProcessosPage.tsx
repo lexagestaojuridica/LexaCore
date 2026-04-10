@@ -576,7 +576,7 @@ export default function ProcessosPage() {
         open={viewDialogOpen}
         onOpenChange={setViewDialogOpen}
         selectedProcesso={selectedProcesso}
-        captures={captures}
+        captures={captures as any}
         processDocs={processDocs}
         aiSummary={aiSummary}
         isAiLoading={aiSummaryMutation.isPending}

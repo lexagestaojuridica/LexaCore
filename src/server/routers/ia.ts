@@ -51,11 +51,11 @@ export const iaRouter = createTRPCRouter({
         const { tenantId, db } = ctx;
 
         const [processos, clientes, eventos, docs] = await Promise.all([
-            db.from("processos_juridicos").select("title, number, court, status, subject, estimated_value, notes, client_id, clients(name)").eq("organization_id", tenantId!).order("updated_at", { ascending: false }).limit(50),
-            db.from("clientes" as any)
+            db.from("processos_juridicos").select("title, number, court, status, subject, estimated_value, notes, client_id, clientes(name)").eq("organization_id", tenantId!).order("updated_at", { ascending: false }).limit(50),
+            db.from("clientes")
                 .select("*", { count: "exact", head: true })
                 .eq("organization_id", tenantId!)
-                .order("name").limit(50) as any,
+                .order("name").limit(50),
             db.from("eventos_agenda").select("title, start_time, end_time, category, description").eq("organization_id", tenantId!).gte("start_time", new Date().toISOString()).order("start_time").limit(30),
             db.from("documentos").select("id, file_name, file_type, created_at").eq("organization_id", tenantId!).order("created_at", { ascending: false }).limit(50)
         ]);

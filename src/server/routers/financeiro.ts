@@ -36,13 +36,10 @@ export const financeiroRouter = createTRPCRouter({
             db.from("contas_pagar").select("amount, status").eq("organization_id", tenantId!),
         ]);
 
-        const rData = (receber.data || []) as any[];
-        const pData = (pagar.data || []) as any[];
-
-        const totalReceber = rData.filter((c) => c.status === "pendente").reduce((s, c) => s + Number(c.amount), 0);
-        const totalPagar = pData.filter((c) => c.status === "pendente").reduce((s, c) => s + Number(c.amount), 0);
-        const totalRecebido = rData.filter((c) => c.status === "pago").reduce((s, c) => s + Number(c.amount), 0);
-        const totalPagoVal = pData.filter((c) => c.status === "pago").reduce((s, c) => s + Number(c.amount), 0);
+        const totalReceber = (receber.data || []).filter((c) => c.status === "pendente").reduce((s, c) => s + Number(c.amount), 0);
+        const totalPagar = (pagar.data || []).filter((c) => c.status === "pendente").reduce((s, c) => s + Number(c.amount), 0);
+        const totalRecebido = (receber.data || []).filter((c) => c.status === "pago").reduce((s, c) => s + Number(c.amount), 0);
+        const totalPagoVal = (pagar.data || []).filter((c) => c.status === "pago").reduce((s, c) => s + Number(c.amount), 0);
         const saldo = totalRecebido - totalPagoVal;
 
         const totalFluxo = totalReceber + totalPagar;
@@ -156,11 +153,11 @@ export const financeiroRouter = createTRPCRouter({
 
             // 2. Get Asaas Settings
             const { data: gateway } = await db
-                .from("gateway_settings" as any)
+                .from("gateway_settings")
                 .select("api_key, environment, status")
                 .eq("organization_id", tenantId!)
                 .eq("gateway_name", "asaas")
-                .maybeSingle() as any;
+                .maybeSingle();
 
             if (!gateway?.api_key || gateway.status !== "active") {
                 throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Integração Asaas inativa" });
@@ -170,7 +167,7 @@ export const financeiroRouter = createTRPCRouter({
 
             // 3. Create Payment in Asaas
             const payload = {
-                customer: (c as any).asaas_customer_id || (c as any).client_id || "",
+                customer: c.client_id || "",
                 billingType: "PIX",
                 value: Number(c.amount),
                 dueDate: c.due_date,
@@ -226,9 +223,9 @@ export const financeiroRouter = createTRPCRouter({
             const { data: gateway } = await db
                 .from("gateway_settings")
                 .select("api_key, environment, status")
-                .eq("organization_id", tenantId as any)
-                .eq("gateway_name", "asaas" as any)
-                .maybeSingle() as any;
+                .eq("organization_id", tenantId!)
+                .eq("gateway_name", "asaas")
+                .maybeSingle();
 
             if (!gateway?.api_key) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Configuração ausente" });
 
@@ -243,10 +240,10 @@ export const financeiroRouter = createTRPCRouter({
             if (!response.ok) return { status: "error_fetching_asaas" };
 
             if (["RECEIVED", "CONFIRMED", "RECEIVED_IN_CASH"].includes(payment.status)) {
-                await db.from(tableName).update({
+                await db.from(tableName as any).update({
                     status: "pago",
                     updated_at: new Date().toISOString()
-                } as any).eq("id", c.id as any);
+                }).eq("id", c.id);
                 return { status: "confirmed", asaasStatus: payment.status };
             }
 

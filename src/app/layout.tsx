@@ -1,5 +1,4 @@
 import { ClerkProvider } from "@clerk/nextjs";
-// @ts-expect-error: CSS file might not be found by some linters but is required for global styles
 import "../index.css";
 import { ThemeProvider } from "@/shared/components/ThemeProvider";
 import { TooltipProvider } from "@/shared/ui/tooltip";

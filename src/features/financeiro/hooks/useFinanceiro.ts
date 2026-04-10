@@ -48,7 +48,7 @@ export function useFinanceiro(tab: TipoConta) {
     };
 
     return {
-        contas: (contasQuery.data || []) as ContaBase[],
+        contas: (contasQuery.data || []) as unknown as ContaBase[],
         isLoading: contasQuery.isLoading,
         createMutation: {
             ...createMutation,

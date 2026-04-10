@@ -38,7 +38,7 @@ export default function ProcessPublicView() {
     const { data, isLoading, isError } = useQuery({
         queryKey: ["public_process", token],
         queryFn: async () => {
-            const { data, error } = await supabase.rpc("get_public_process_with_org" as "get_organization_id", { token_val: token } as Record<string, unknown>);
+            const { data, error } = await supabase.rpc("get_public_process_with_org" as any, { token_val: token });
             if (error) throw error;
             return data as unknown as PublicProcessData;
         },
@@ -221,8 +221,8 @@ export default function ProcessPublicView() {
                             {[
                                 { label: "N. Processo", value: processo.number, icon: FileText },
                                 { label: "Tribunal", value: processo.court, icon: Building2 },
-                                { label: "Distribuição", value: processo.distribution_date ? format(new Date(processo.distribution_date), "dd/MM/yyyy", { locale: ptBR }) : null, icon: Calendar },
-                                { label: "Vara / Comarca", value: processo.jurisdiction, icon: Scale }
+                                { label: "Distribuição", value: processo.data_distribuicao ? format(new Date(processo.data_distribuicao), "dd/MM/yyyy", { locale: ptBR }) : null, icon: Calendar },
+                                { label: "Vara / Comarca", value: processo.comarca, icon: Scale }
                             ].map((item, i) => (
                                 <div key={i} className="space-y-2 group/item">
                                     <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2 transition-colors group-hover/item:text-accent">

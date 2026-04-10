@@ -8,7 +8,6 @@ import { crmRouter } from "./crm";
 import { agendaRouter } from "./agenda";
 import { workflowRouter } from "./workflow";
 import { timesheetRouter } from "./timesheet";
-import { rhRouter } from "./rh";
 import { iaRouter } from "./ia";
 import { minutasRouter } from "./minutas";
 
@@ -33,7 +32,6 @@ export const appRouter = createTRPCRouter({
     agenda: agendaRouter,
     workflow: workflowRouter,
     timesheet: timesheetRouter,
-    rh: rhRouter,
     ia: iaRouter,
     minutas: minutasRouter,
 });

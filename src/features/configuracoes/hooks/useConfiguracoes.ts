@@ -190,7 +190,7 @@ export function useConfiguracoes() {
 
     const createEmployeeMutation = useMutation({
         mutationFn: async (payload: Record<string, unknown>) => {
-            const { error } = await supabase.from("employees").insert(payload);
+            const { error } = await supabase.from("employees").insert(payload as any);
             if (error) throw error;
         },
         onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["employees"] }); toast.success("Funcionário cadastrado!"); },
@@ -217,7 +217,7 @@ export function useConfiguracoes() {
 
     const createOptionMutation = useMutation({
         mutationFn: async (payload: Record<string, unknown>) => {
-            const { error } = await supabase.from("custom_options").insert(payload);
+            const { error } = await supabase.from("custom_options").insert(payload as any);
             if (error) throw error;
         },
         onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["custom-options"] }); toast.success("Opção criada!"); },

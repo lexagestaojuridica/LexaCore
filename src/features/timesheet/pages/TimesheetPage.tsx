@@ -90,7 +90,7 @@ export default function TimesheetPage() {
     const {
         activeTimer, timerDescription, setTimerDescription, timerProcess, setTimerProcess,
         timerRate, setTimerRate, elapsed, startTimer, pauseTimer, resumeTimer, stopTimer
-    } = useTimer(orgId, user?.id);
+    } = useTimer(orgId || undefined, user?.id || undefined);
 
     const {
         entries, isLoading, processos, createMutation, deleteMutation, handleBilling
@@ -168,7 +168,7 @@ export default function TimesheetPage() {
             if (!orgId) return [];
             const dayStart = startOfDay(new Date()).toISOString();
             const dayEnd = endOfDay(new Date()).toISOString();
-            const { data, error } = await supabase
+            const { data, error } = await (supabase as any)
                 .from("agenda_eventos")
                 .select("id, title, start_time, end_time")
                 .eq("organization_id", orgId)
@@ -199,7 +199,7 @@ export default function TimesheetPage() {
         const todayDescriptions = entries
             .filter(e => { try { return isToday(parseISO(e.started_at)); } catch { return false; } })
             .map(e => (e.description || "").toLowerCase());
-        return agendaEvents.filter((ev: { title: string }) => {
+        return agendaEvents.filter((ev: any) => {
             const title = (ev.title || "").toLowerCase();
             return !todayDescriptions.some(d => d.includes(title) || title.includes(d));
         });

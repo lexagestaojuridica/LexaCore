@@ -84,98 +84,70 @@ export function TopBar() {
     const currentTitle = titleKey ? t(titleKey) : "Dashboard";
 
     return (
-        <header className="sticky top-0 z-40 flex h-14 w-full items-center justify-between border-b border-border/40 glass px-4 transition-all duration-300">
+        <header className="sticky top-0 z-40 flex h-14 w-full items-center justify-between border-b border-border bg-background px-4 transition-all duration-300">
 
             {/* Left Axis: Sidebar Toggle + Title */}
-            <div className="flex items-center gap-3 w-1/3">
-                <SidebarTrigger className="shrink-0 text-foreground/60 hover:text-primary transition-colors" />
-                <div className="h-4 w-px bg-border/40" />
-                <h1 className="text-sm font-bold tracking-tight text-foreground md:text-base font-display uppercase tracking-[0.05em]">
-                    {currentTitle}
+            <div className="flex items-center gap-3 w-1/4">
+                <SidebarTrigger className="shrink-0 text-slate-400 hover:text-lexa-blue transition-colors" />
+                <h1 className="text-xs font-medium tracking-[0.15em] text-slate-500 uppercase font-sans">
+                    DASHBOARD
                 </h1>
             </div>
 
             {/* Center Axis: Global Search */}
-            <div className="flex-1 flex justify-center w-1/3">
-                <Button
-                    variant="outline"
-                    className="hidden md:flex h-9 w-64 lg:w-80 items-center justify-between bg-muted/50 px-3 text-muted-foreground hover:bg-muted/80 hover:text-foreground border-border/50 transition-colors"
-                    onClick={openGlobalSearch}
-                >
-                    <div className="flex items-center gap-2 overflow-hidden mr-2">
-                        <Search className="h-4 w-4 shrink-0" />
-                        <span className="text-sm font-normal truncate">{t("cmdK.searchPlaceholder")}</span>
+            <div className="flex-1 flex justify-center">
+                <div className="relative w-full max-w-xl group">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-lexa-blue transition-colors" />
+                    <input
+                        type="search"
+                        placeholder="Buscar módulo, ação, atalho..."
+                        className="h-10 w-full rounded-xl bg-muted pl-11 pr-12 text-sm text-foreground border border-transparent focus:border-primary/30 focus:bg-card focus:ring-4 focus:ring-primary/5 transition-all outline-none placeholder:text-muted-foreground"
+                    />
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                        <kbd className="hidden md:inline-flex h-5 items-center gap-1 rounded border border-slate-200 bg-white px-1.5 font-mono text-[10px] font-medium text-slate-400">
+                            ⌘K
+                        </kbd>
                     </div>
-                    <kbd className="pointer-events-none inline-flex h-5 items-center gap-1 rounded border border-border/50 bg-background/50 px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
-                        <span className="text-xs">⌘</span>K
-                    </kbd>
-                </Button>
+                </div>
             </div>
 
             {/* Right Axis: Tools & Profile */}
-            <div className="flex items-center gap-1.5 md:gap-3">
+            <div className="flex items-center gap-2 md:gap-4 w-1/4 justify-end">
 
-                <Button variant="ghost" size="icon" className="md:hidden h-9 w-9 text-muted-foreground hover:text-foreground" onClick={openGlobalSearch}>
-                    <Search className="h-4 w-4" />
-                </Button>
+                {/* Desktop Tools */}
+                <div className="hidden md:flex items-center gap-1">
+                    <Button variant="ghost" size="icon" className="h-9 w-9 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg" onClick={handleRefresh}>
+                        <RefreshCcw className="h-4 w-4" />
+                    </Button>
 
-                <div className="h-5 w-px bg-border/50 hidden md:block mx-1" />
+                    <Button variant="ghost" size="icon" className="h-9 w-9 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg" onClick={() => setTheme(theme === "light" ? "dark" : "light")}>
+                        {mounted && theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                    </Button>
 
-                {/* Refesh Page */}
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    className="hidden md:flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all active:rotate-180"
-                    onClick={handleRefresh}
-                    title="Refresh"
-                >
-                    <RefreshCcw className="h-4 w-4" />
-                </Button>
+                    <NotificationsDropdown />
 
-                {/* Facilitador (Quick Links) */}
-                <div className="hidden md:block">
-                    <FacilitadorBar />
+                    <Button variant="ghost" size="icon" className="h-9 w-9 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg">
+                        <svg className="h-4 w-4" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                    </Button>
                 </div>
-
-                {/* Theme Toggle */}
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-                    className="hidden md:flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80"
-                    title="Alternar Tema"
-                >
-                    {mounted ? (theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />) : <div className="h-4 w-4" />}
-                </Button>
-
-                {/* Language Switcher */}
-                <div className="hidden md:block">
-                    <LanguageSwitcher />
-                </div>
-
-                {/* Notifications Dropdown */}
-                <NotificationsDropdown />
-
-                {/* Global Chat Widget */}
-                <ChatWidget />
-
-                <div className="h-5 w-px bg-border/50 hidden md:block mx-1" />
 
                 {/* User Profile Dropdown */}
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-9 px-2 gap-2 hover:bg-muted/80 pl-2">
-                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary overflow-hidden ring-1 ring-primary/20">
+                        <Button variant="ghost" className="h-9 px-1.5 gap-2 hover:bg-slate-100 rounded-xl group transition-all">
+                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-lexa-blue text-[10px] font-bold text-white overflow-hidden shadow-sm shadow-lexa-blue/20">
                                 {avatarUrl ? (
                                     <img src={avatarUrl} alt={displayName} className="h-full w-full object-cover" />
                                 ) : (
-                                    initials
+                                    "L"
                                 )}
                             </div>
-                            <span className="hidden md:inline-flex text-sm font-medium text-foreground max-w-[120px] truncate">
-                                {displayName}
-                            </span>
-                            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground hidden md:block" />
+                            <div className="hidden md:flex flex-col items-start gap-0">
+                                <span className="text-xs font-semibold text-slate-700 leading-none">
+                                    Lexa
+                                </span>
+                            </div>
+                            <ChevronDown className="h-3.5 w-3.5 text-slate-400 group-hover:text-slate-600 transition-colors" />
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-[280px] p-2" sideOffset={8}>

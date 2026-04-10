@@ -144,8 +144,8 @@ export function CrmProvider({ children }: { children: ReactNode }) {
     });
 
     const addContact = async (data: Omit<CrmContact, "id" | "createdAt">): Promise<CrmContact> => {
-        const res = await contactUpsertMut.mutateAsync({ data });
-        return mapContact(res);
+        const res = await contactUpsertMut.mutateAsync({ data: data as any });
+        return mapContact(res as any);
     };
     const updateContact = (id: string, data: Partial<CrmContact>) => contactUpsertMut.mutate({ id, data });
     const deleteContact = (id: string) => contactDeleteMut.mutate(id);

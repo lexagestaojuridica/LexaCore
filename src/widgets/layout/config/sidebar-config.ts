@@ -1,7 +1,7 @@
 import {
     LayoutDashboard, Scale, Users, CalendarDays, DollarSign, Bot,
-    Newspaper, Target, BarChart3, Calculator, GitBranch, FileEdit,
-    Award, Timer, BookOpen, Building2, Briefcase, Clock, MessageSquare
+    Newspaper, Target, BarChart3, GitBranch, FileEdit,
+    Timer, MessageSquare
 } from "lucide-react";
 
 export interface NavItemConfig {
@@ -60,10 +60,6 @@ export const navGroups: NavGroupConfig[] = [
         defaultOpen: false,
         items: [
             { titleKey: "nav.financial", url: "/dashboard/financeiro", icon: DollarSign, allowedRoles: ["admin", "advogado", "financeiro"] },
-            { titleKey: "nav.rhDashboard", url: "/dashboard/rh", icon: BarChart3, allowedRoles: ["admin", "advogado"] },
-            { titleKey: "nav.employees", url: "/dashboard/rh/colaboradores", icon: Users, allowedRoles: ["admin", "advogado"] },
-            { titleKey: "nav.timeclock", url: "/dashboard/rh/ponto", icon: Clock, allowedRoles: ["admin", "advogado"] },
-            { titleKey: "nav.recruitment", url: "/dashboard/rh/recrutamento", icon: Briefcase, allowedRoles: ["admin", "advogado"] },
         ],
     },
 ];
