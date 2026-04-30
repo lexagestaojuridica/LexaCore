@@ -31,7 +31,8 @@ serve(async (req) => {
         redirect_uri,
         response_mode: "query",
         scope: scopes,
-        prompt: "select_account"
+        prompt: "select_account",
+        state: "microsoft",
       });
 
       return new Response(

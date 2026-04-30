@@ -14,7 +14,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <body className="min-h-screen bg-background font-sans antialiased" suppressHydrationWarning>
           <I18nProvider>
             <TRPCProvider>
-              <ThemeProvider defaultTheme="system" storageKey="lexa-theme">
+              <ThemeProvider defaultTheme="light" storageKey="lexa-theme">
                 <TooltipProvider>
                   {children}
                   <Toaster />

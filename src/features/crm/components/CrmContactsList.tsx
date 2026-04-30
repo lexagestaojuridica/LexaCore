@@ -1,8 +1,10 @@
+"use client";
+
 import { useState } from "react";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 import {
     Users, Search, Phone, Mail, Building2, MapPin, Star, Eye,
-    LayoutGrid, List, MessageSquarePlus, Filter, Plus, Edit2, Trash2,
+    LayoutGrid, List, MessageSquarePlus, Filter, Edit2, Trash2,
     UserPlus,
 } from "lucide-react";
 import { Button } from "@/shared/ui/button";
@@ -15,9 +17,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/shared/ui/di
 import { Textarea } from "@/shared/ui/textarea";
 import FormField from "@/shared/components/FormField";
 import { useCrm } from "@/features/crm/contexts/CrmContext";
+import { useTranslation } from "react-i18next";
 import type { CrmContact, CrmLead, CrmDeal, CrmActivity } from "../types";
+import { cn } from "@/shared/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
 
-// ── Tag colors ─────────────────────────────────────────
 const TAG_COLORS: Record<string, string> = {
     "VIP": "bg-amber-100 text-amber-700 border-amber-200",
     "Recorrente": "bg-blue-100 text-blue-700 border-blue-200",
@@ -34,7 +38,11 @@ function StarRating({ score, onChange }: { score: number; onChange?: (s: number)
             {[1, 2, 3, 4, 5].map((s) => (
                 <Star
                     key={s}
-                    className={`h-3 w-3 ${s <= score ? "fill-amber-400 text-amber-400" : "text-muted-foreground/20"} ${onChange ? "cursor-pointer hover:scale-110 transition-transform" : ""}`}
+                    className={cn(
+                        "h-3.5 w-3.5 transition-all",
+                        s <= score ? "fill-amber-400 text-amber-400" : "text-muted-foreground/20",
+                        onChange && "cursor-pointer hover:scale-125"
+                    )}
                     onClick={() => onChange?.(s)}
                 />
             ))}
@@ -42,9 +50,10 @@ function StarRating({ score, onChange }: { score: number; onChange?: (s: number)
     );
 }
 
-const emptyContact: { name: string; email: string; phone: string; type: "pessoa_fisica" | "pessoa_juridica"; company: string; city: string; state: string; tags: string[]; score: number; notes: string } = { name: "", email: "", phone: "", type: "pessoa_fisica", company: "", city: "", state: "", tags: [], score: 1, notes: "" };
+const emptyContact: any = { name: "", email: "", phone: "", type: "pessoa_fisica", company: "", city: "", state: "", tags: [], score: 1, notes: "" };
 
 export default function CrmContactsList() {
+    const { t } = useTranslation();
     const { contacts, leads, deals, activities, addContact, updateContact, deleteContact, addActivity } = useCrm();
     const [search, setSearch] = useState("");
     const debouncedSearch = useDebounce(search, 400);
@@ -93,16 +102,15 @@ export default function CrmContactsList() {
 
     const handleActivitySubmit = () => {
         if (selectedContact && activityNote) {
-            addActivity({ type: activityType as "ligacao" | "email" | "reuniao" | "tarefa", title: `${activityType === "ligacao" ? "Ligação" : activityType === "email" ? "E-mail" : activityType === "reuniao" ? "Reunião" : "Tarefa"} — ${selectedContact.name}`, description: activityNote, contactName: selectedContact.name, date: new Date().toISOString().split("T")[0], time: new Date().toTimeString().slice(0, 5), completed: false });
+            addActivity({ type: activityType as any, title: `${activityType} — ${selectedContact.name}`, description: activityNote, contactName: selectedContact.name, date: new Date().toISOString().split("T")[0], time: new Date().toTimeString().slice(0, 5), completed: false });
         }
         setActivityDialogOpen(false);
     };
 
     const toggleTag = (tag: string) => {
-        setForm((p) => ({ ...p, tags: p.tags.includes(tag) ? p.tags.filter((t) => t !== tag) : [...p.tags, tag] }));
+        setForm((p: any) => ({ ...p, tags: p.tags.includes(tag) ? p.tags.filter((t: string) => t !== tag) : [...p.tags, tag] }));
     };
 
-    // Get stats per contact
     const getContactStats = (id: string) => {
         const contactLeads = leads.filter((l: CrmLead) => l.contactId === id);
         const contactDeals = deals.filter((d: CrmDeal) => d.contactId === id);
@@ -113,143 +121,165 @@ export default function CrmContactsList() {
 
     return (
         <div className="space-y-5">
-            {/* KPIs */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                {[
-                    { label: "Total Contatos", value: contacts.length, icon: Users, color: "text-foreground", bg: "bg-muted", accent: "bg-primary" },
-                    { label: "Pessoa Física", value: contacts.filter((c) => c.type === "pessoa_fisica").length, icon: Users, color: "text-blue-600", bg: "bg-blue-50", accent: "bg-blue-500" },
-                    { label: "Pessoa Jurídica", value: contacts.filter((c) => c.type === "pessoa_juridica").length, icon: Building2, color: "text-violet-600", bg: "bg-violet-50", accent: "bg-violet-500" },
-                    { label: "VIP", value: contacts.filter((c) => c.tags.includes("VIP")).length, icon: Star, color: "text-amber-600", bg: "bg-amber-50", accent: "bg-amber-500" },
-                ].map((kpi) => (
-                    <Card key={kpi.label} className="border-border/50 overflow-hidden group hover:shadow-md transition-all duration-300">
-                        <div className="p-4">
-                            <div className="flex items-center justify-between mb-2.5">
-                                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{kpi.label}</p>
-                                <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${kpi.bg} transition-transform group-hover:scale-110`}><kpi.icon className={`h-4 w-4 ${kpi.color}`} /></div>
-                            </div>
-                            <p className={`text-xl font-bold ${kpi.color}`}>{kpi.value}</p>
-                        </div>
-                        <div className={`h-0.5 ${kpi.accent} opacity-60`} />
-                    </Card>
-                ))}
-            </div>
-
-            {/* Filters */}
-            <Card className="border-border/50">
-                <CardContent className="flex flex-wrap items-center gap-3 p-3">
-                    <div className="relative flex-1 min-w-[200px]">
+            {/* Professional Filters */}
+            <Card className="border-border/40 shadow-sm bg-card/50 overflow-hidden rounded-2xl">
+                <CardContent className="flex flex-wrap items-center gap-4 p-4">
+                    <div className="relative flex-1 min-w-[280px]">
                         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input placeholder="Buscar contato..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-9" />
+                        <Input
+                            placeholder={t("crm.contacts.searchPlaceholder")}
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            className="pl-9 h-11 bg-background border-border/60 rounded-xl"
+                        />
                     </div>
-                    <Select value={typeFilter} onValueChange={setTypeFilter}>
-                        <SelectTrigger className="w-[150px] h-9"><Filter className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" /><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="todos">Todos</SelectItem>
-                            <SelectItem value="pessoa_fisica">Pessoa Física</SelectItem>
-                            <SelectItem value="pessoa_juridica">Pessoa Jurídica</SelectItem>
-                        </SelectContent>
-                    </Select>
-                    <div className="flex items-center border border-border rounded-md">
-                        <Button variant={viewMode === "grid" ? "secondary" : "ghost"} size="icon" className="h-9 w-9 rounded-r-none" onClick={() => setViewMode("grid")}><LayoutGrid className="h-4 w-4" /></Button>
-                        <Button variant={viewMode === "table" ? "secondary" : "ghost"} size="icon" className="h-9 w-9 rounded-l-none" onClick={() => setViewMode("table")}><List className="h-4 w-4" /></Button>
+                    <div className="flex items-center gap-2">
+                        <Select value={typeFilter} onValueChange={setTypeFilter}>
+                            <SelectTrigger className="w-[180px] h-11 rounded-xl bg-background border-border/60 shadow-sm">
+                                <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="rounded-xl shadow-xl">
+                                <SelectItem value="todos">{t("common.all")}</SelectItem>
+                                <SelectItem value="pessoa_fisica">{t("clients.pf")}</SelectItem>
+                                <SelectItem value="pessoa_juridica">{t("clients.pj")}</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <div className="flex items-center bg-muted/30 border border-border/60 rounded-xl p-1 h-11">
+                            <Button variant={viewMode === "grid" ? "background" : "ghost"} size="icon" className={cn("h-9 w-9 rounded-lg shadow-none", viewMode === "grid" && "bg-background shadow-sm")} onClick={() => setViewMode("grid")}><LayoutGrid className="h-4 w-4" /></Button>
+                            <Button variant={viewMode === "table" ? "background" : "ghost"} size="icon" className={cn("h-9 w-9 rounded-lg shadow-none", viewMode === "table" && "bg-background shadow-sm")} onClick={() => setViewMode("table")}><List className="h-4 w-4" /></Button>
+                        </div>
                     </div>
-                    <Button className="gap-1.5 shadow-sm" onClick={openCreate}><UserPlus className="h-4 w-4" /> Novo Contato</Button>
+                    <Button className="gap-2 shadow-lg shadow-primary/10 h-11 px-6 rounded-xl" onClick={openCreate}>
+                        <UserPlus className="h-4 w-4" /> {t("crm.contacts.newContact")}
+                    </Button>
                 </CardContent>
             </Card>
 
-            {/* Content */}
+            {/* Content Area */}
             {filtered.length === 0 ? (
-                <Card className="border-border/50">
-                    <CardContent className="flex flex-col items-center justify-center py-20 text-center">
-                        <div className="h-14 w-14 rounded-2xl bg-muted/50 flex items-center justify-center mb-3"><Users className="h-7 w-7 text-muted-foreground/30" /></div>
-                        <p className="text-sm font-medium text-muted-foreground">Nenhum contato encontrado</p>
-                        <p className="text-xs text-muted-foreground/50 mt-1">Crie um contato ou adicione um Lead — o contato será criado automaticamente</p>
-                    </CardContent>
-                </Card>
+                <div className="flex flex-col items-center justify-center py-24 text-center bg-muted/5 border-2 border-dashed border-border/40 rounded-3xl m-4">
+                    <div className="h-16 w-16 rounded-3xl bg-primary/10 flex items-center justify-center mb-4"><Users className="h-8 w-8 text-primary" /></div>
+                    <h3 className="text-lg font-bold text-foreground tracking-tight">{t("crm.contacts.noContacts")}</h3>
+                    <p className="text-sm text-muted-foreground max-w-xs mt-1">{t("crm.contacts.noContactsDesc")}</p>
+                </div>
             ) : viewMode === "grid" ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {filtered.map((c) => {
-                        const stats = getContactStats(c.id);
-                        return (
-                            <Card key={c.id} className="border-border/50 hover:shadow-md transition-all duration-200 group overflow-hidden">
-                                <CardContent className="p-4 space-y-3">
-                                    <div className="flex items-start justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-base shrink-0">{c.name.charAt(0).toUpperCase()}</div>
-                                            <div className="min-w-0">
-                                                <p className="text-sm font-semibold text-foreground truncate">{c.name}</p>
-                                                <div className="flex items-center gap-1.5 mt-0.5">
-                                                    <Badge variant="outline" className="text-[10px]">{c.type === "pessoa_juridica" ? "PJ" : "PF"}</Badge>
-                                                    {c.source === "lead" && <Badge variant="outline" className="text-[9px] bg-blue-50 text-blue-600 border-blue-200">via Lead</Badge>}
-                                                    {c.source === "deal" && <Badge variant="outline" className="text-[9px] bg-violet-50 text-violet-600 border-violet-200">via Deal</Badge>}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    <AnimatePresence>
+                        {filtered.map((c, idx) => {
+                            const stats = getContactStats(c.id);
+                            return (
+                                <motion.div
+                                    key={c.id}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.3, delay: idx * 0.05 }}
+                                >
+                                    <Card className="border-border/40 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group overflow-hidden bg-card/60 backdrop-blur-sm rounded-2xl">
+                                        <CardContent className="p-5 space-y-4">
+                                            <div className="flex items-start justify-between">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary font-black text-lg shrink-0 shadow-inner">
+                                                        {c.name.charAt(0).toUpperCase()}
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <p className="text-sm font-bold text-foreground truncate tracking-tight">{c.name}</p>
+                                                        <div className="flex items-center gap-1.5 mt-1">
+                                                            <Badge variant="outline" className="text-[10px] font-extrabold uppercase border-primary/20 bg-primary/5 text-primary">
+                                                                {c.type === "pessoa_juridica" ? "PJ" : "PF"}
+                                                            </Badge>
+                                                            {c.source === "lead" && <Badge variant="outline" className="text-[9px] bg-blue-50 text-blue-600 border-blue-200">Lead</Badge>}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <StarRating score={c.score} />
+                                            </div>
+
+                                            <div className="space-y-2 py-1">
+                                                {c.email && <div className="flex items-center gap-2.5 text-xs text-muted-foreground"><Mail className="h-3.5 w-3.5 shrink-0 opacity-40" /><span className="truncate font-medium">{c.email}</span></div>}
+                                                {c.phone && <div className="flex items-center gap-2.5 text-xs text-muted-foreground"><Phone className="h-3.5 w-3.5 shrink-0 opacity-40" /><span className="font-medium">{c.phone}</span></div>}
+                                                {(c.city || c.company) && <div className="flex items-center gap-2.5 text-xs text-muted-foreground">{c.company ? <Building2 className="h-3.5 w-3.5 shrink-0 opacity-40" /> : <MapPin className="h-3.5 w-3.5 shrink-0 opacity-40" />}<span className="truncate font-medium">{c.company || `${c.city}/${c.state}`}</span></div>}
+                                            </div>
+
+                                            {c.tags.length > 0 && (
+                                                <div className="flex flex-wrap gap-1.5 pt-1">
+                                                    {c.tags.map((tag) => (
+                                                        <Badge key={tag} variant="outline" className={cn("text-[9px] px-2 py-0.5 font-bold uppercase border-none rounded-full", TAG_COLORS[tag])}>
+                                                            {tag}
+                                                        </Badge>
+                                                    ))}
+                                                </div>
+                                            )}
+
+                                            <div className="flex items-center justify-between pt-3 border-t border-border/40 mt-1">
+                                                <div className="flex items-center gap-1.5">
+                                                    <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-sm" />
+                                                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                                                        {stats.activitiesCount} {t("crm.tabs.activities")}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all scale-90 group-hover:scale-100">
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-xl bg-muted/40" onClick={() => { setSelectedContact(c); setViewDialogOpen(true); }}><Eye className="h-4 w-4" /></Button>
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-xl bg-muted/40" onClick={() => openEdit(c)}><Edit2 className="h-4 w-4" /></Button>
+                                                    <Button variant="secondary" size="sm" className="h-8 px-3 text-[11px] font-bold gap-1.5 rounded-xl shadow-sm" onClick={() => openActivity(c)}><MessageSquarePlus className="h-3.5 w-3.5" /></Button>
                                                 </div>
                                             </div>
-                                        </div>
-                                        <StarRating score={c.score} />
-                                    </div>
-
-                                    <div className="space-y-1.5">
-                                        {c.email && <div className="flex items-center gap-2 text-xs text-muted-foreground"><Mail className="h-3 w-3 shrink-0" /><span className="truncate">{c.email}</span></div>}
-                                        {c.phone && <div className="flex items-center gap-2 text-xs text-muted-foreground"><Phone className="h-3 w-3 shrink-0" /><span>{c.phone}</span></div>}
-                                        {(c.city || c.company) && <div className="flex items-center gap-2 text-xs text-muted-foreground">{c.company ? <Building2 className="h-3 w-3 shrink-0" /> : <MapPin className="h-3 w-3 shrink-0" />}<span className="truncate">{c.company || `${c.city}/${c.state}`}</span></div>}
-                                    </div>
-
-                                    {c.tags.length > 0 && (<div className="flex flex-wrap gap-1">{c.tags.map((tag) => <Badge key={tag} variant="outline" className={`text-[9px] px-1.5 py-0 ${TAG_COLORS[tag] || ""}`}>{tag}</Badge>)}</div>)}
-
-                                    {/* Stats Row */}
-                                    <div className="flex items-center gap-3 text-[10px] text-muted-foreground/60">
-                                        <span>{stats.leadsCount} leads</span>
-                                        <span>·</span>
-                                        <span>{stats.dealsCount} negócios</span>
-                                        <span>·</span>
-                                        <span>{stats.activitiesCount} atividades</span>
-                                    </div>
-
-                                    <div className="flex items-center justify-between pt-1 border-t border-border/30">
-                                        <span className="text-[10px] text-muted-foreground">
-                                            {stats.lastActivity ? `Último: ${new Date(stats.lastActivity.date + "T00:00:00").toLocaleDateString("pt-BR")}` : "Sem atividades"}
-                                        </span>
-                                        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setSelectedContact(c); setViewDialogOpen(true); }}><Eye className="h-3 w-3" /></Button>
-                                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(c)}><Edit2 className="h-3 w-3" /></Button>
-                                            <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => openActivity(c)}><MessageSquarePlus className="h-3 w-3" /></Button>
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        );
-                    })}
+                                        </CardContent>
+                                    </Card>
+                                </motion.div>
+                            );
+                        })}
+                    </AnimatePresence>
                 </div>
             ) : (
-                <Card className="border-border/50 overflow-hidden">
+                <Card className="border-border/40 overflow-hidden rounded-2xl shadow-sm bg-card/50 backdrop-blur-sm">
                     <CardContent className="p-0">
                         <div className="overflow-x-auto">
                             <Table>
-                                <TableHeader><TableRow className="bg-muted/30 hover:bg-muted/30">
-                                    <TableHead className="font-semibold">Contato</TableHead><TableHead className="font-semibold">Tipo</TableHead><TableHead className="font-semibold">E-mail</TableHead><TableHead className="font-semibold">Telefone</TableHead><TableHead className="font-semibold">Score</TableHead><TableHead className="font-semibold">Tags</TableHead><TableHead className="font-semibold">Leads</TableHead><TableHead className="text-right font-semibold">Ações</TableHead>
-                                </TableRow></TableHeader>
+                                <TableHeader>
+                                    <TableRow className="bg-muted/30 hover:bg-muted/30 border-b border-border/60">
+                                        <TableHead className="font-bold text-[11px] uppercase tracking-wider">{t("crm.contacts.fullName")}</TableHead>
+                                        <TableHead className="font-bold text-[11px] uppercase tracking-wider">{t("crm.contacts.type")}</TableHead>
+                                        <TableHead className="font-bold text-[11px] uppercase tracking-wider">{t("common.email")}</TableHead>
+                                        <TableHead className="font-bold text-[11px] uppercase tracking-wider">{t("common.phone")}</TableHead>
+                                        <TableHead className="font-bold text-[11px] uppercase tracking-wider">{t("crm.contacts.score")}</TableHead>
+                                        <TableHead className="font-bold text-[11px] uppercase tracking-wider">{t("crm.contacts.tags")}</TableHead>
+                                        <TableHead className="text-right font-bold text-[11px] uppercase tracking-wider">{t("common.actions")}</TableHead>
+                                    </TableRow>
+                                </TableHeader>
                                 <TableBody>
-                                    {filtered.map((c) => {
-                                        const stats = getContactStats(c.id);
-                                        return (
-                                            <TableRow key={c.id} className="group hover:bg-muted/20">
-                                                <TableCell><div className="flex items-center gap-2"><div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-xs shrink-0">{c.name.charAt(0).toUpperCase()}</div><span className="font-medium text-sm">{c.name}</span></div></TableCell>
-                                                <TableCell><Badge variant="outline" className="text-[10px]">{c.type === "pessoa_juridica" ? "PJ" : "PF"}</Badge></TableCell>
-                                                <TableCell className="text-muted-foreground text-sm">{c.email || "—"}</TableCell>
-                                                <TableCell className="text-muted-foreground text-sm">{c.phone || "—"}</TableCell>
-                                                <TableCell><StarRating score={c.score} /></TableCell>
-                                                <TableCell><div className="flex flex-wrap gap-1">{c.tags.map((tag) => <Badge key={tag} variant="outline" className={`text-[9px] px-1 py-0 ${TAG_COLORS[tag] || ""}`}>{tag}</Badge>)}</div></TableCell>
-                                                <TableCell className="text-muted-foreground text-xs">{stats.leadsCount}L / {stats.dealsCount}N</TableCell>
-                                                <TableCell>
-                                                    <div className="flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-all">
-                                                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(c)}><Edit2 className="h-3.5 w-3.5" /></Button>
-                                                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openActivity(c)}><MessageSquarePlus className="h-3.5 w-3.5" /></Button>
-                                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => { setSelectedContact(c); setDeleteDialogOpen(true); }}><Trash2 className="h-3.5 w-3.5" /></Button>
+                                    {filtered.map((c) => (
+                                        <TableRow key={c.id} className="group hover:bg-primary/[0.02] border-b border-border/40 transition-colors">
+                                            <TableCell>
+                                                <div className="flex items-center gap-3">
+                                                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary font-black text-xs shrink-0 shadow-inner">
+                                                        {c.name.charAt(0).toUpperCase()}
                                                     </div>
-                                                </TableCell>
-                                            </TableRow>
-                                        );
-                                    })}
+                                                    <span className="font-bold text-sm tracking-tight">{c.name}</span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell><Badge variant="outline" className="text-[10px] font-black border-primary/20 bg-primary/5 text-primary">{c.type === "pessoa_juridica" ? "PJ" : "PF"}</Badge></TableCell>
+                                            <TableCell className="text-muted-foreground font-medium text-xs">{c.email || "—"}</TableCell>
+                                            <TableCell className="text-muted-foreground font-medium text-xs">{c.phone || "—"}</TableCell>
+                                            <TableCell><StarRating score={c.score} /></TableCell>
+                                            <TableCell>
+                                                <div className="flex flex-wrap gap-1">
+                                                    {c.tags.map((tag) => (
+                                                        <Badge key={tag} variant="outline" className={cn("text-[9px] px-2 py-0.5 font-bold border-none rounded-full", TAG_COLORS[tag])}>
+                                                            {tag}
+                                                        </Badge>
+                                                    ))}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-xl" onClick={() => openEdit(c)}><Edit2 className="h-4 w-4" /></Button>
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-xl" onClick={() => openActivity(c)}><MessageSquarePlus className="h-4 w-4" /></Button>
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-xl text-muted-foreground hover:text-destructive" onClick={() => { setSelectedContact(c); setDeleteDialogOpen(true); }}><Trash2 className="h-4 w-4" /></Button>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
                                 </TableBody>
                             </Table>
                         </div>
@@ -257,46 +287,71 @@ export default function CrmContactsList() {
                 </Card>
             )}
 
-            {/* Create/Edit Contact Dialog */}
+            {/* Dialogs - Professional Styling */}
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-                    <DialogHeader><DialogTitle className="flex items-center gap-2">{editingId ? <Edit2 className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />} {editingId ? "Editar Contato" : "Novo Contato"}</DialogTitle></DialogHeader>
-                    <form onSubmit={handleSubmit} className="space-y-4 pt-2">
-                        <FormField label="Nome Completo" value={form.name} onChange={(v) => setForm((p) => ({ ...p, name: v }))} placeholder="Ex: João da Silva" required />
-                        <div className="grid grid-cols-2 gap-3">
-                            <FormField label="E-mail" value={form.email} onChange={(v) => setForm((p) => ({ ...p, email: v }))} placeholder="email@exemplo.com" type="email" />
-                            <FormField label="Telefone" value={form.phone} onChange={(v) => setForm((p) => ({ ...p, phone: v }))} placeholder="(00) 00000-0000" />
+                <DialogContent className="max-w-md rounded-[32px] border-none shadow-2xl p-0 overflow-hidden">
+                    <div className="bg-gradient-to-br from-primary to-primary/90 p-7 text-white">
+                        <DialogHeader>
+                            <DialogTitle className="flex items-center gap-3 text-white">
+                                {editingId ? <Edit2 className="h-5 w-5" /> : <UserPlus className="h-5 w-5" />}
+                                {editingId ? t("crm.contacts.editContact") : t("crm.contacts.newContact")}
+                            </DialogTitle>
+                        </DialogHeader>
+                    </div>
+                    <form onSubmit={handleSubmit} className="p-7 space-y-5 bg-background">
+                        <FormField label={t("crm.contacts.fullName")} value={form.name} onChange={(v) => setForm((p: any) => ({ ...p, name: v }))} placeholder="Ex: João da Silva" required />
+                        <div className="grid grid-cols-2 gap-4">
+                            <FormField label={t("common.email")} value={form.email} onChange={(v) => setForm((p: any) => ({ ...p, email: v }))} placeholder="email@exemplo.com" type="email" />
+                            <FormField label={t("common.phone")} value={form.phone} onChange={(v) => setForm((p: any) => ({ ...p, phone: v }))} placeholder="(00) 00000-0000" />
                         </div>
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1.5">
-                                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Tipo</label>
-                                <Select value={form.type} onValueChange={(v: "pessoa_fisica" | "pessoa_juridica") => setForm((p) => ({ ...p, type: v }))}><SelectTrigger className="h-10 bg-background"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="pessoa_fisica">Pessoa Física</SelectItem><SelectItem value="pessoa_juridica">Pessoa Jurídica</SelectItem></SelectContent></Select>
+                                <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">{t("crm.contacts.type")}</label>
+                                <Select value={form.type} onValueChange={(v: any) => setForm((p: any) => ({ ...p, type: v }))}>
+                                    <SelectTrigger className="h-11 bg-background rounded-xl border-border/60 shadow-sm"><SelectValue /></SelectTrigger>
+                                    <SelectContent className="rounded-xl border-border/40 shadow-xl">
+                                        <SelectItem value="pessoa_fisica">{t("clients.pf")}</SelectItem>
+                                        <SelectItem value="pessoa_juridica">{t("clients.pj")}</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
-                            <FormField label="Empresa" value={form.company} onChange={(v) => setForm((p) => ({ ...p, company: v }))} placeholder="Nome da empresa" />
+                            <FormField label={t("crm.contacts.company")} value={form.company} onChange={(v) => setForm((p: any) => ({ ...p, company: v }))} placeholder="Nome da empresa" />
                         </div>
-                        <div className="grid grid-cols-2 gap-3">
-                            <FormField label="Cidade" value={form.city} onChange={(v) => setForm((p) => ({ ...p, city: v }))} placeholder="Cidade" />
-                            <FormField label="UF" value={form.state} onChange={(v) => setForm((p) => ({ ...p, state: v }))} placeholder="SP" />
-                        </div>
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Score</label>
-                            <StarRating score={form.score} onChange={(s) => setForm((p) => ({ ...p, score: s }))} />
+                        <div className="grid grid-cols-2 gap-4">
+                            <FormField label={t("crm.contacts.city")} value={form.city} onChange={(v) => setForm((p: any) => ({ ...p, city: v }))} />
+                            <FormField label={t("crm.contacts.state")} value={form.state} onChange={(v) => setForm((p: any) => ({ ...p, state: v }))} placeholder="UF" />
                         </div>
                         <div className="space-y-1.5">
-                            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Tags</label>
-                            <div className="flex flex-wrap gap-1.5">
+                            <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">{t("crm.contacts.score")}</label>
+                            <div className="bg-muted/30 p-2.5 rounded-xl border border-border/20 inline-block">
+                                <StarRating score={form.score} onChange={(s) => setForm((p: any) => ({ ...p, score: s }))} />
+                            </div>
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">{t("crm.contacts.tags")}</label>
+                            <div className="flex flex-wrap gap-2">
                                 {ALL_TAGS.map((tag) => (
-                                    <Badge key={tag} variant="outline" className={`text-xs cursor-pointer transition-all ${form.tags.includes(tag) ? TAG_COLORS[tag] + " ring-1 ring-offset-1" : "opacity-50 hover:opacity-80"}`} onClick={() => toggleTag(tag)}>{tag}</Badge>
+                                    <Badge
+                                        key={tag}
+                                        variant="outline"
+                                        className={cn(
+                                            "text-[10px] font-bold uppercase cursor-pointer transition-all px-3 py-1 rounded-full border-border/40",
+                                            form.tags.includes(tag) ? TAG_COLORS[tag] + " ring-2 ring-primary/20 scale-105" : "bg-muted/20 opacity-60 hover:opacity-100"
+                                        )}
+                                        onClick={() => toggleTag(tag)}
+                                    >
+                                        {tag}
+                                    </Badge>
                                 ))}
                             </div>
                         </div>
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Observações</label>
-                            <Textarea value={form.notes} onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))} rows={3} placeholder="Notas..." className="bg-background" />
-                        </div>
-                        <div className="flex justify-end gap-2 pt-2">
-                            <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
-                            <Button type="submit" className="gap-1.5">{editingId ? "Salvar" : <><UserPlus className="h-3.5 w-3.5" /> Criar</>}</Button>
+                        <div className="flex justify-end gap-3 pt-3">
+                            <Button type="button" variant="ghost" onClick={() => setDialogOpen(false)} className="rounded-xl">
+                                {t("common.cancel")}
+                            </Button>
+                            <Button type="submit" className="gap-2 rounded-xl shadow-lg shadow-primary/20 h-11 px-8 font-bold">
+                                {editingId ? t("common.save") : t("common.create")}
+                            </Button>
                         </div>
                     </form>
                 </DialogContent>
@@ -304,64 +359,119 @@ export default function CrmContactsList() {
 
             {/* View Contact Dialog */}
             <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-                <DialogContent className="max-w-md">{selectedContact && (() => {
-                    const stats = getContactStats(selectedContact.id);
-                    return (<>
-                        <DialogHeader><DialogTitle className="flex items-center gap-2"><Users className="h-4 w-4" /> {selectedContact.name}</DialogTitle></DialogHeader>
-                        <div className="space-y-4 pt-2">
-                            <div className="flex items-center gap-3 rounded-xl bg-muted/30 p-4">
-                                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-xl">{selectedContact.name.charAt(0)}</div>
-                                <div><p className="font-semibold">{selectedContact.name}</p><div className="flex items-center gap-2 mt-1"><Badge variant="outline" className="text-[10px]">{selectedContact.type === "pessoa_juridica" ? "PJ" : "PF"}</Badge><StarRating score={selectedContact.score} /></div></div>
+                <DialogContent className="max-w-md rounded-[32px] border-none shadow-2xl p-0 overflow-hidden">
+                    {selectedContact && (() => {
+                        const stats = getContactStats(selectedContact.id);
+                        return (<>
+                            <div className="bg-gradient-to-br from-primary to-primary/80 p-8 text-white">
+                                <div className="flex items-center gap-5">
+                                    <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-white/20 backdrop-blur-md shadow-inner text-white font-black text-3xl ring-1 ring-white/30">
+                                        {selectedContact.name.charAt(0)}
+                                    </div>
+                                    <div className="min-w-0">
+                                        <h2 className="text-2xl font-black tracking-tight truncate">{selectedContact.name}</h2>
+                                        <div className="flex items-center gap-2 mt-2">
+                                            <Badge variant="outline" className="text-[10px] font-bold bg-white/20 text-white border-none rounded-full">
+                                                {selectedContact.type === "pessoa_juridica" ? "PJ" : "PF"}
+                                            </Badge>
+                                            <StarRating score={selectedContact.score} />
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div className="grid grid-cols-2 gap-3 text-sm">
-                                {selectedContact.email && <div><span className="text-[10px] uppercase tracking-wider text-muted-foreground">E-mail</span><p className="mt-0.5">{selectedContact.email}</p></div>}
-                                {selectedContact.phone && <div><span className="text-[10px] uppercase tracking-wider text-muted-foreground">Telefone</span><p className="mt-0.5">{selectedContact.phone}</p></div>}
-                                {selectedContact.company && <div><span className="text-[10px] uppercase tracking-wider text-muted-foreground">Empresa</span><p className="mt-0.5">{selectedContact.company}</p></div>}
-                                {selectedContact.city && <div><span className="text-[10px] uppercase tracking-wider text-muted-foreground">Local</span><p className="mt-0.5">{selectedContact.city}/{selectedContact.state}</p></div>}
+                            <div className="p-7 space-y-6 bg-background">
+                                <div className="grid grid-cols-2 gap-6 text-sm">
+                                    {selectedContact.email && <div><span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{t("common.email")}</span><p className="font-semibold mt-1 truncate">{selectedContact.email}</p></div>}
+                                    {selectedContact.phone && <div><span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{t("common.phone")}</span><p className="font-semibold mt-1">{selectedContact.phone}</p></div>}
+                                    {selectedContact.company && <div><span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{t("crm.contacts.company")}</span><p className="font-semibold mt-1 truncate">{selectedContact.company}</p></div>}
+                                    {selectedContact.city && <div><span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Local</span><p className="font-semibold mt-1">{selectedContact.city}/{selectedContact.state}</p></div>}
+                                </div>
+                                <div className="flex items-center gap-2 rounded-2xl bg-muted/30 p-4 border border-border/20">
+                                    <div className="flex-1 text-center"><p className="font-black text-xl text-primary">{stats.leadsCount}</p><p className="text-[9px] font-bold uppercase tracking-tighter text-muted-foreground opacity-60">Leads</p></div>
+                                    <div className="h-8 w-px bg-border/40" />
+                                    <div className="flex-1 text-center"><p className="font-black text-xl text-primary">{stats.dealsCount}</p><p className="text-[9px] font-bold uppercase tracking-tighter text-muted-foreground opacity-60">Deals</p></div>
+                                    <div className="h-8 w-px bg-border/40" />
+                                    <div className="flex-1 text-center"><p className="font-black text-xl text-primary">{stats.activitiesCount}</p><p className="text-[9px] font-bold uppercase tracking-tighter text-muted-foreground opacity-60">Ativ.</p></div>
+                                </div>
+                                {selectedContact.tags.length > 0 && (
+                                    <div className="flex flex-wrap gap-1.5 pt-1">
+                                        {selectedContact.tags.map((tag) => (
+                                            <Badge key={tag} variant="outline" className={cn("text-[10px] font-bold px-3 py-1 border-none rounded-full", TAG_COLORS[tag])}>
+                                                {tag}
+                                            </Badge>
+                                        ))}
+                                    </div>
+                                )}
+                                <div className="flex justify-end gap-3 pt-2">
+                                    <Button variant="ghost" onClick={() => setViewDialogOpen(false)} className="rounded-xl">{t("common.close")}</Button>
+                                    <Button onClick={() => { setViewDialogOpen(false); openEdit(selectedContact); }} className="rounded-xl px-8 font-bold shadow-lg shadow-primary/10">{t("common.edit")}</Button>
+                                </div>
                             </div>
-                            <div className="flex items-center gap-4 rounded-lg bg-primary/5 p-3 text-sm">
-                                <div className="text-center"><p className="font-bold text-lg text-primary">{stats.leadsCount}</p><p className="text-[10px] text-muted-foreground">Leads</p></div>
-                                <div className="text-center"><p className="font-bold text-lg text-primary">{stats.dealsCount}</p><p className="text-[10px] text-muted-foreground">Negócios</p></div>
-                                <div className="text-center"><p className="font-bold text-lg text-primary">{stats.activitiesCount}</p><p className="text-[10px] text-muted-foreground">Atividades</p></div>
-                            </div>
-                            {selectedContact.tags.length > 0 && <div className="flex flex-wrap gap-1">{selectedContact.tags.map((tag) => <Badge key={tag} variant="outline" className={`text-xs ${TAG_COLORS[tag] || ""}`}>{tag}</Badge>)}</div>}
-                            <div className="flex justify-end gap-2 pt-2">
-                                <Button variant="outline" onClick={() => setViewDialogOpen(false)}>Fechar</Button>
-                                <Button onClick={() => { setViewDialogOpen(false); openEdit(selectedContact); }}>Editar</Button>
-                            </div>
-                        </div>
-                    </>);
-                })()}</DialogContent>
+                        </>);
+                    })()}</DialogContent>
             </Dialog>
 
             {/* Activity Dialog */}
             <Dialog open={activityDialogOpen} onOpenChange={setActivityDialogOpen}>
-                <DialogContent className="max-w-md">
-                    <DialogHeader><DialogTitle className="flex items-center gap-2"><MessageSquarePlus className="h-4 w-4" /> Registrar Atividade</DialogTitle></DialogHeader>
-                    {selectedContact && (<div className="space-y-4 pt-2">
-                        <div className="flex items-center gap-2 rounded-lg bg-muted/40 p-3"><div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-sm">{selectedContact.name.charAt(0)}</div><div><p className="text-sm font-medium">{selectedContact.name}</p><p className="text-xs text-muted-foreground">{selectedContact.email || selectedContact.phone || "—"}</p></div></div>
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Tipo</label>
-                            <Select value={activityType} onValueChange={setActivityType}><SelectTrigger className="h-10 bg-background"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="ligacao">📞 Ligação</SelectItem><SelectItem value="email">✉️ E-mail</SelectItem><SelectItem value="reuniao">📅 Reunião</SelectItem><SelectItem value="tarefa">✅ Tarefa</SelectItem></SelectContent></Select>
+                <DialogContent className="max-w-md rounded-[32px] border-none shadow-2xl p-0 overflow-hidden">
+                    <div className="bg-primary/5 p-7 border-b border-border/20">
+                        <DialogHeader>
+                            <DialogTitle className="flex items-center gap-2 text-primary">
+                                <MessageSquarePlus className="h-5 w-5" /> {t("crm.contacts.registerActivity")}
+                            </DialogTitle>
+                        </DialogHeader>
+                    </div>
+                    {selectedContact && (
+                        <div className="p-7 space-y-5 bg-background">
+                            <div className="flex items-center gap-3 rounded-2xl bg-muted/40 p-3 border border-border/20">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary font-bold text-sm shadow-inner">{selectedContact.name.charAt(0)}</div>
+                                <div className="min-w-0">
+                                    <p className="text-sm font-bold truncate tracking-tight">{selectedContact.name}</p>
+                                    <p className="text-[11px] text-muted-foreground/60">{selectedContact.email || selectedContact.phone || "—"}</p>
+                                </div>
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">{t("crm.contacts.activityType")}</label>
+                                <Select value={activityType} onValueChange={setActivityType}>
+                                    <SelectTrigger className="h-11 bg-background rounded-xl border-border/60 shadow-sm"><SelectValue /></SelectTrigger>
+                                    <SelectContent className="rounded-xl shadow-xl">
+                                        <SelectItem value="ligacao">📞 {t("crm.tabs.activities")} - Ligação</SelectItem>
+                                        <SelectItem value="email">✉️ E-mail</SelectItem>
+                                        <SelectItem value="reuniao">📅 Reunião</SelectItem>
+                                        <SelectItem value="tarefa">✅ Tarefa</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">{t("common.description")}</label>
+                                <Textarea
+                                    value={activityNote}
+                                    onChange={(e) => setActivityNote(e.target.value)}
+                                    rows={4}
+                                    placeholder={t("crm.contacts.activityDesc")}
+                                    className="bg-background rounded-xl border-border/60 shadow-sm focus-visible:ring-primary/20 transition-all"
+                                />
+                            </div>
+                            <div className="flex justify-end gap-3 pt-2">
+                                <Button variant="ghost" onClick={() => setActivityDialogOpen(false)} className="rounded-xl">{t("common.cancel")}</Button>
+                                <Button onClick={handleActivitySubmit} className="rounded-xl px-8 font-bold shadow-lg shadow-primary/20">{t("common.confirm")}</Button>
+                            </div>
                         </div>
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Descrição</label>
-                            <Textarea value={activityNote} onChange={(e) => setActivityNote(e.target.value)} rows={3} placeholder="Descreva a atividade..." className="bg-background" />
-                        </div>
-                        <div className="flex justify-end gap-2 pt-2">
-                            <Button variant="outline" onClick={() => setActivityDialogOpen(false)}>Cancelar</Button>
-                            <Button onClick={handleActivitySubmit}>Registrar</Button>
-                        </div>
-                    </div>)}
+                    )}
                 </DialogContent>
             </Dialog>
 
             {/* Delete Dialog */}
             <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-                <DialogContent className="max-w-sm">
-                    <DialogHeader><DialogTitle>Excluir Contato</DialogTitle></DialogHeader>
-                    <p className="text-sm text-muted-foreground">Tem certeza que deseja excluir <strong className="text-foreground">{selectedContact?.name}</strong>?</p>
-                    <div className="flex justify-end gap-2 pt-2"><Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Cancelar</Button><Button variant="destructive" onClick={handleDelete}>Excluir</Button></div>
+                <DialogContent className="max-w-sm rounded-[28px] border-none shadow-2xl p-6">
+                    <DialogHeader><DialogTitle className="font-bold text-lg">{t("common.delete")}</DialogTitle></DialogHeader>
+                    <p className="text-sm text-muted-foreground leading-relaxed mt-2">
+                        Tem certeza que deseja excluir o contato <strong className="text-foreground">{selectedContact?.name}</strong>? Esta ação é irreversível.
+                    </p>
+                    <div className="flex justify-end gap-3 pt-6">
+                        <Button variant="ghost" onClick={() => setDeleteDialogOpen(false)} className="rounded-xl">{t("common.cancel")}</Button>
+                        <Button variant="destructive" onClick={handleDelete} className="rounded-xl px-8 font-bold shadow-lg shadow-destructive/10">{t("common.delete")}</Button>
+                    </div>
                 </DialogContent>
             </Dialog>
         </div>

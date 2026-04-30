@@ -32,6 +32,7 @@ serve(async (req) => {
         scope: scopes,
         access_type: "offline",
         prompt: "consent",
+        state: "google",
       });
 
       return new Response(

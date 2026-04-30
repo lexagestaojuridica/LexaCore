@@ -54,11 +54,18 @@ export function useMicrosoftCalendar() {
         const handleCodeFromUrl = async () => {
             const searchParams = new URLSearchParams(window.location.search);
             const code = searchParams.get("code");
-            if (!code || window.location.pathname !== "/dashboard/agenda") return;
+            const state = searchParams.get("state");
+
+            if (!code || state !== "microsoft" || window.location.pathname !== "/dashboard/agenda") return;
 
             setConnecting(true);
             try {
-                window.history.replaceState({}, document.title, window.location.pathname);
+                // Clear URL params
+                const url = new URL(window.location.href);
+                url.searchParams.delete("code");
+                url.searchParams.delete("state");
+                window.history.replaceState({}, document.title, url.pathname);
+
                 const redirectUri = `${window.location.origin}/dashboard/agenda`;
 
                 const { data: tokenData, error } = await supabase.functions.invoke("microsoft-calendar-auth", {
@@ -100,7 +107,7 @@ export function useMicrosoftCalendar() {
         };
 
         handleCodeFromUrl();
-    }, [user?.id, queryClient, supabase.functions]);
+    }, [user?.id, queryClient]);
 
     const connect = useCallback(async () => {
         setConnecting(true);
@@ -119,7 +126,7 @@ export function useMicrosoftCalendar() {
             toast.error(error.message || "Erro ao iniciar conexão");
             setConnecting(false);
         }
-    }, [supabase.functions]);
+    }, []);
 
     const disconnect = useMutation({
         mutationFn: async () => {

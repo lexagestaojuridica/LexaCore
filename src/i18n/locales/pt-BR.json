@@ -614,5 +614,110 @@
     "workflow": {
         "title": "Workflow",
         "subtitle": "Automação de processos e fluxos de trabalho"
+    },
+    "crm": {
+        "title": "CRM",
+        "subtitle": "Gerencie seu pipeline de vendas e relacionamentos",
+        "tabs": {
+            "pipeline": "Pipeline",
+            "contacts": "Contatos",
+            "activities": "Atividades",
+            "deals": "Negócios"
+        },
+        "overview": {
+            "funnel": "Funil de Vendas",
+            "totalPipeline": "Pipeline Total",
+            "conversion": "Conversão",
+            "activeDeals": "Negócios Ativos",
+            "activeLeads": "Leads Ativos",
+            "wonValue": "Ganhos",
+            "contacts": "Contatos",
+            "conversionRate": "Taxa de Conversão"
+        },
+        "pipeline": {
+            "dragHint": "Arraste cards entre as colunas para atualizar o status",
+            "newLead": "Novo Lead",
+            "editLead": "Editar Lead",
+            "saveLead": "Salvar",
+            "createLead": "Criar Lead",
+            "leadName": "Nome do Lead",
+            "contact": "Contato",
+            "contactHint": "Se o contato não existir, será criado automaticamente",
+            "value": "Valor (R$)",
+            "date": "Data Prevista",
+            "priority": "Prioridade",
+            "stage": "Etapa",
+            "notes": "Observações",
+            "placeholderName": "Ex: Contrato Empresarial",
+            "placeholderContact": "Nome do contato (novo ou existente)",
+            "placeholderNotes": "Notas...",
+            "emptyStage": "Arraste leads aqui",
+            "priorityLevels": {
+                "high": "Alta",
+                "medium": "Média",
+                "low": "Baixa"
+            },
+            "stages": {
+                "novo_lead": "Novo Lead",
+                "contato_feito": "Contato Feito",
+                "proposta_enviada": "Proposta Enviada",
+                "em_negociacao": "Em Negociação",
+                "fechado_ganho": "Fechado / Ganho",
+                "perdido": "Perdido"
+            }
+        },
+        "contacts": {
+            "newContact": "Novo Contato",
+            "editContact": "Editar Contato",
+            "searchPlaceholder": "Buscar contato...",
+            "noContacts": "Nenhum contato encontrado",
+            "noContactsDesc": "Crie um contato ou adicione um Lead — o contato será criado automaticamente",
+            "fullName": "Nome Completo",
+            "type": "Tipo",
+            "company": "Empresa",
+            "city": "Cidade",
+            "state": "UF",
+            "score": "Score",
+            "tags": "Tags",
+            "lastActivity": "Última Atividade",
+            "noActivities": "Sem atividades",
+            "registerActivity": "Registrar Atividade",
+            "activityDesc": "Descreva a atividade...",
+            "activityType": "Tipo de Atividade"
+      }
+    },
+    "agenda": {
+      "integrations": {
+        "title": "Integrações de Agenda",
+        "description": "Conecte suas agendas externas para sincronizar compromissos e audiências.",
+        "google": {
+          "title": "Google Calendar",
+          "description": "Sincronização bidirecional com sua conta Google Workspace ou Gmail."
+        },
+        "microsoft": {
+          "title": "Microsoft Calendar",
+          "description": "Conecte-se ao Outlook 365, Exchange ou Microsoft Teams."
+        },
+        "apple": {
+          "title": "Apple Calendar",
+          "description": "Sincronização via iCloud usando senhas de app."
+        },
+        "status": {
+          "connected": "Conectado",
+          "disconnected": "Não conectado",
+          "syncing": "Sincronizando...",
+          "importing": "Importando...",
+          "exporting": "Exportando..."
+        },
+        "actions": {
+          "connect": "Conectar",
+          "disconnect": "Desconectar",
+          "import": "Importar Eventos",
+          "export": "Exportar Eventos",
+          "clear": "Limpar Agenda Importada"
+        },
+        "apple_instructions": "Para conectar o iCloud, você precisa de uma 'Senha de App' gerada no site do ID Apple.",
+        "help_link": "Saiba como configurar"
+      }
     }
-}
+  }

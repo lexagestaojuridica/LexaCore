@@ -606,5 +606,110 @@
     "workflow": {
         "title": "Workflow",
         "subtitle": "Process automation and workflows"
+    },
+    "crm": {
+        "title": "CRM",
+        "subtitle": "Manage your sales pipeline and relationships",
+        "tabs": {
+            "pipeline": "Pipeline",
+            "contacts": "Contacts",
+            "activities": "Activities",
+            "deals": "Deals"
+        },
+        "overview": {
+            "funnel": "Sales Funnel",
+            "totalPipeline": "Total Pipeline",
+            "conversion": "Conversion",
+            "activeDeals": "Active Deals",
+            "activeLeads": "Active Leads",
+            "wonValue": "Won",
+            "contacts": "Contacts",
+            "conversionRate": "Conversion Rate"
+        },
+        "pipeline": {
+            "dragHint": "Drag cards between columns to update status",
+            "newLead": "New Lead",
+            "editLead": "Edit Lead",
+            "saveLead": "Save",
+            "createLead": "Create Lead",
+            "leadName": "Lead Name",
+            "contact": "Contact",
+            "contactHint": "If contact doesn't exist, it will be created automatically",
+            "value": "Value ($)",
+            "date": "Expected Date",
+            "priority": "Priority",
+            "stage": "Stage",
+            "notes": "Notes",
+            "placeholderName": "Ex: Enterprise Contract",
+            "placeholderContact": "Contact name (new or existing)",
+            "placeholderNotes": "Notes...",
+            "emptyStage": "Drag leads here",
+            "priorityLevels": {
+                "high": "High",
+                "medium": "Medium",
+                "low": "Low"
+            },
+            "stages": {
+                "novo_lead": "New Lead",
+                "contato_feito": "Contact Made",
+                "proposta_enviada": "Proposal Sent",
+                "em_negociacao": "In Negotiation",
+                "fechado_ganho": "Closed / Won",
+                "perdido": "Lost"
+            }
+        },
+        "contacts": {
+            "newContact": "New Contact",
+            "editContact": "Edit Contact",
+            "searchPlaceholder": "Search contact...",
+            "noContacts": "No contacts found",
+            "noContactsDesc": "Create a contact or add a Lead — contact will be created automatically",
+            "fullName": "Full Name",
+            "type": "Type",
+            "company": "Company",
+            "city": "City",
+            "state": "State",
+            "score": "Score",
+            "tags": "Tags",
+            "lastActivity": "Last Activity",
+            "noActivities": "No activities",
+            "registerActivity": "Register Activity",
+            "activityDesc": "Describe the activity...",
+            "activityType": "Activity Type"
+      }
+    },
+    "agenda": {
+      "integrations": {
+        "title": "Calendar Integrations",
+        "description": "Connect your external calendars to sync appointments and legal deadlines.",
+        "google": {
+          "title": "Google Calendar",
+          "description": "Two-way sync with your Google Workspace or Gmail account."
+        },
+        "microsoft": {
+          "title": "Microsoft Calendar",
+          "description": "Connect to Outlook 365, Exchange, or Microsoft Teams."
+        },
+        "apple": {
+          "title": "Apple Calendar",
+          "description": "Sync via iCloud using app-specific passwords."
+        },
+        "status": {
+          "connected": "Connected",
+          "disconnected": "Not connected",
+          "syncing": "Syncing...",
+          "importing": "Importing...",
+          "exporting": "Exporting..."
+        },
+        "actions": {
+          "connect": "Connect",
+          "disconnect": "Disconnect",
+          "import": "Import Events",
+          "export": "Export Events",
+          "clear": "Clear Imported Calendar"
+        },
+        "apple_instructions": "To connect iCloud, you need an 'App-Specific Password' generated on the Apple ID website.",
+        "help_link": "Learn how to configure"
     }
+  }
 }

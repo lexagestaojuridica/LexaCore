@@ -53,11 +53,17 @@ export function useGoogleCalendar() {
     const handleCodeFromUrl = async () => {
       const searchParams = new URLSearchParams(window.location.search);
       const code = searchParams.get("code");
-      if (!code) return;
+      const state = searchParams.get("state");
+
+      if (!code || state !== "google") return;
 
       setConnecting(true);
       try {
-        window.history.replaceState({}, document.title, window.location.pathname);
+        // Clear URL params
+        const url = new URL(window.location.href);
+        url.searchParams.delete("code");
+        url.searchParams.delete("state");
+        window.history.replaceState({}, document.title, url.pathname);
         const redirectUri = `${window.location.origin}/dashboard/agenda`;
 
         const { data: tokenData, error } = await supabase.functions.invoke("google-calendar-auth", {
@@ -99,7 +105,7 @@ export function useGoogleCalendar() {
     };
 
     handleCodeFromUrl();
-  }, [user, queryClient, supabase.functions]);
+  }, [user?.id, queryClient]);
 
   const connect = useCallback(async () => {
     setConnecting(true);
@@ -118,7 +124,7 @@ export function useGoogleCalendar() {
       toast.error(error.message || "Erro ao iniciar conexão");
       setConnecting(false);
     }
-  }, [supabase.functions]);
+  }, []);
 
   const disconnect = useMutation({
     mutationFn: async () => {
