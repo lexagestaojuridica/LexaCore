@@ -1,4 +1,7 @@
+"use client";
+
 import { useState, useEffect, useMemo, useRef } from "react";
+import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";
 import { Button } from "@/shared/ui/button";
@@ -51,6 +54,7 @@ const DEFAULT_LINKS: FacilitadorLink[] = [
 const STORAGE_KEY = "lexa_facilitador_links";
 
 function loadLinks(): FacilitadorLink[] {
+    if (typeof window === "undefined") return DEFAULT_LINKS;
     try {
         const stored = localStorage.getItem(STORAGE_KEY);
         if (stored) return JSON.parse(stored);
@@ -59,7 +63,9 @@ function loadLinks(): FacilitadorLink[] {
 }
 
 function saveLinks(links: FacilitadorLink[]) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(links));
+    if (typeof window !== "undefined") {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(links));
+    }
 }
 
 // ─── Component ────────────────────────────────────────────────
@@ -103,7 +109,7 @@ export default function FacilitadorBar() {
 
     const handleRemove = (id: string) => {
         setLinks((prev) => prev.filter((l) => l.id !== id));
-        toast.success("Link removido");
+        toast.success(t("facilitador.linkRemoved"));
     };
 
     const handleTogglePin = (id: string) => {
@@ -131,7 +137,7 @@ export default function FacilitadorBar() {
     };
 
     const handleAdd = () => {
-        if (!newLink.label || !newLink.url) { toast.error("Preencha nome e URL"); return; }
+        if (!newLink.label || !newLink.url) { toast.error(t("facilitador.fillInfo")); return; }
         const url = newLink.url.startsWith("http") ? newLink.url : `https://${newLink.url}`;
         const link: FacilitadorLink = {
             id: crypto.randomUUID(),
@@ -141,12 +147,12 @@ export default function FacilitadorBar() {
         setLinks((prev) => [...prev, link]);
         setNewLink({ label: "", url: "", emoji: "🔗" });
         setAddOpen(false);
-        toast.success("Link adicionado!");
+        toast.success(t("facilitador.linkAdded"));
     };
 
     const handleReset = () => {
         setLinks(DEFAULT_LINKS);
-        toast.success("Links restaurados ao padrão");
+        toast.success(t("facilitador.linksRestored"));
     };
 
     // Sort: pinned first, then by category
@@ -315,27 +321,27 @@ export default function FacilitadorBar() {
             <Dialog open={addOpen} onOpenChange={setAddOpen}>
                 <DialogContent className="sm:max-w-sm">
                     <DialogHeader>
-                        <DialogTitle className="font-semibold">Adicionar Atalho</DialogTitle>
+                        <DialogTitle className="font-semibold">{t("facilitador.addShortcut")}</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4 py-2">
                         <div className="flex gap-3">
                             <div className="space-y-1.5 shrink-0">
-                                <label className="text-xs font-medium text-muted-foreground">Emoji</label>
+                                <label className="text-xs font-medium text-muted-foreground">{t("facilitador.emoji")}</label>
                                 <Input value={newLink.emoji} onChange={(e) => setNewLink({ ...newLink, emoji: e.target.value })} className="h-10 w-16 text-center text-lg" maxLength={2} />
                             </div>
                             <div className="flex-1 space-y-1.5">
-                                <label className="text-xs font-medium text-muted-foreground">Nome</label>
+                                <label className="text-xs font-medium text-muted-foreground">{t("facilitador.name")}</label>
                                 <Input autoFocus value={newLink.label} onChange={(e) => setNewLink({ ...newLink, label: e.target.value })} placeholder="Ex: Tribunal..." />
                             </div>
                         </div>
                         <div className="space-y-1.5">
-                            <label className="text-xs font-medium text-muted-foreground">URL</label>
+                            <label className="text-xs font-medium text-muted-foreground">{t("facilitador.url")}</label>
                             <Input value={newLink.url} onChange={(e) => setNewLink({ ...newLink, url: e.target.value })} placeholder="https://..." />
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => { setAddOpen(false); setIsOpen(true); }}>Cancelar</Button>
-                        <Button onClick={() => { handleAdd(); setIsOpen(true); }}>Adicionar</Button>
+                        <Button variant="outline" onClick={() => { setAddOpen(false); setIsOpen(true); }}>{t("facilitador.cancel")}</Button>
+                        <Button onClick={() => { handleAdd(); setIsOpen(true); }}>{t("facilitador.add")}</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
@@ -345,9 +351,9 @@ export default function FacilitadorBar() {
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
                         <div className="flex items-center justify-between">
-                            <DialogTitle className="font-semibold">Gerenciar Links</DialogTitle>
+                            <DialogTitle className="font-semibold">{t("facilitador.manageLinks")}</DialogTitle>
                             <Button variant="ghost" size="sm" className="gap-1.5 text-xs text-muted-foreground h-8 px-2" onClick={handleReset}>
-                                <RotateCcw className="h-3 w-3" /> Restaurar Padrão
+                                <RotateCcw className="h-3 w-3" /> {t("facilitador.resetDefault")}
                             </Button>
                         </div>
                     </DialogHeader>
@@ -362,7 +368,7 @@ export default function FacilitadorBar() {
                                     <p className="text-[10px] text-muted-foreground truncate">{link.url.replace(/^https?:\/\//, '')}</p>
                                 </div>
                                 <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity bg-background/80 backdrop-blur-sm rounded-md p-0.5">
-                                    <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleTogglePin(link.id); }} className="p-1.5 rounded-sm hover:bg-muted text-muted-foreground hover:text-primary transition-colors" title={link.pinned ? "Desafixar" : "Fixar no topo"}>
+                                    <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleTogglePin(link.id); }} className="p-1.5 rounded-sm hover:bg-muted text-muted-foreground hover:text-primary transition-colors" title={link.pinned ? t("facilitador.unpin") : t("facilitador.pinToTop")}>
                                         {link.pinned ? <Star className="h-4 w-4 fill-primary text-primary" /> : <StarOff className="h-4 w-4" />}
                                     </button>
                                     <div className="h-4 w-px bg-border/60 mx-0.5" />
@@ -375,7 +381,7 @@ export default function FacilitadorBar() {
                                         </button>
                                     </div>
                                     <div className="h-4 w-px bg-border/60 mx-0.5" />
-                                    <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleRemove(link.id); }} className="p-1.5 rounded-sm hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors" title="Remover link">
+                                    <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleRemove(link.id); }} className="p-1.5 rounded-sm hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors" title={t("facilitador.removeLink")}>
                                         <X className="h-4 w-4" />
                                     </button>
                                 </div>
@@ -384,9 +390,9 @@ export default function FacilitadorBar() {
                     </div>
                     <DialogFooter className="pt-2 border-t border-border/40 mt-2">
                         <Button variant="outline" onClick={() => { setEditOpen(false); setAddOpen(true); }} className="gap-2">
-                            <Plus className="h-3.5 w-3.5" /> Novo Link
+                            <Plus className="h-3.5 w-3.5" /> {t("facilitador.addShortcut")}
                         </Button>
-                        <Button onClick={() => { setEditOpen(false); setIsOpen(true); }}>Pronto</Button>
+                        <Button onClick={() => { setEditOpen(false); setIsOpen(true); }}>{t("facilitador.done")}</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

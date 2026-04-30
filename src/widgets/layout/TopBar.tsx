@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import { useAuth, useUser } from "@clerk/nextjs";
 import { useRouter, usePathname } from "next/navigation";
@@ -90,7 +92,7 @@ export function TopBar() {
             <div className="flex items-center gap-3 w-1/4">
                 <SidebarTrigger className="shrink-0 text-slate-400 hover:text-lexa-blue transition-colors" />
                 <h1 className="text-xs font-medium tracking-[0.15em] text-slate-500 uppercase font-sans">
-                    DASHBOARD
+                    {currentTitle}
                 </h1>
             </div>
 
@@ -100,7 +102,7 @@ export function TopBar() {
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-lexa-blue transition-colors" />
                     <input
                         type="search"
-                        placeholder="Buscar módulo, ação, atalho..."
+                        placeholder={t("cmdK.searchPlaceholder")}
                         className="h-10 w-full rounded-xl bg-muted pl-11 pr-12 text-sm text-foreground border border-transparent focus:border-primary/30 focus:bg-card focus:ring-4 focus:ring-primary/5 transition-all outline-none placeholder:text-muted-foreground"
                     />
                     <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
@@ -116,6 +118,8 @@ export function TopBar() {
 
                 {/* Desktop Tools */}
                 <div className="hidden md:flex items-center gap-1">
+                    <LanguageSwitcher />
+
                     <Button variant="ghost" size="icon" className="h-9 w-9 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg" onClick={handleRefresh}>
                         <RefreshCcw className="h-4 w-4" />
                     </Button>

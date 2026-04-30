@@ -1,4 +1,7 @@
+"use client";
+
 import { useTranslation } from "react-i18next";
+import React from "react";
 import { LANGUAGES } from "@/i18n";
 import { Globe, Check } from "lucide-react";
 import { Button } from "@/shared/ui/button";

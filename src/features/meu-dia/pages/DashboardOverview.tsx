@@ -10,9 +10,11 @@ import { FinancialChart } from "../components/FinancialChart";
 import { ProcessDistributionChart } from "../components/ProcessDistributionChart";
 import { ProcessTable } from "../components/ProcessTable";
 import { UpcomingEvents } from "../components/UpcomingEvents";
+import { useTranslation } from "react-i18next";
 
 export default function DashboardOverview() {
   const { stats, isLoading } = useMeuDia();
+  const { t } = useTranslation();
 
   if (isLoading) {
     return (
@@ -41,7 +43,7 @@ export default function DashboardOverview() {
       {/* ── KPI Cards ── */}
       <StaggerItem className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 shrink-0">
         <StatsCard
-          title="Processos Ativos"
+          title={t("dashboard.activeProcesses")}
           value={stats?.totalProcessos ?? 4}
           subValue="No TJSP e TRF3"
           icon={Scale}
@@ -49,7 +51,7 @@ export default function DashboardOverview() {
           trend={{ value: "+2 este mês", direction: "up" }}
         />
         <StatsCard
-          title="Total de Clientes"
+          title={t("dashboard.totalClients")}
           value={stats?.totalClientes ?? 4}
           subValue="6 cadastrados"
           icon={Users}
@@ -57,7 +59,7 @@ export default function DashboardOverview() {
           trend={{ value: "+5 novos", direction: "up" }}
         />
         <StatsCard
-          title="Honorários"
+          title={t("dashboard.fees")}
           value="R$ 137.000"
           subValue="Mês corrente"
           icon={DollarSign}
@@ -65,7 +67,7 @@ export default function DashboardOverview() {
           trend={{ value: "+8%", direction: "up" }}
         />
         <StatsCard
-          title="Prazos Críticos"
+          title={t("dashboard.criticalDeadlines")}
           value="3"
           subValue="1 audiência urgente"
           icon={AlertTriangle}

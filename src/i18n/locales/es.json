@@ -73,7 +73,11 @@
         "startTimer": "Iniciar Timer",
         "newDraft": "Nueva Minuta",
         "crmPipeline": "CRM Pipeline",
-        "noNumber": "Sin número"
+        "noNumber": "Sin número",
+        "officeSummary": "Aquí hay un resumen de su oficina hoy.",
+        "totalClients": "Total de Clientes",
+        "fees": "Honorarios",
+        "criticalDeadlines": "Plazos Críticos"
     },
     "common": {
         "search": "Buscar",
@@ -129,7 +133,8 @@
         "or": "o",
         "type": "Tipo",
         "mainActions": "Acciones Principales",
-        "auxiliaryModules": "Módulos Auxiliares"
+        "auxiliaryModules": "Módulos Auxiliares",
+        "dateFormat": "EEEE, dd 'de' MMMM 'de' yyyy"
     },
     "globalSearch": {
         "arunaIntelligence": "Inteligencia Aruna IA",
@@ -490,8 +495,21 @@
         "search": "Buscar atajo o categoría...",
         "pin": "Fijar",
         "unpin": "Desfijar",
-        "hubSubtitle": "Hub de Accesos Rápidos",
-        "noLinks": "No se encontraron atajos",
+        "hubSubtitle": "Centro de Accesos Rápidos",
+        "noLinks": "No se encontraron accesos rápidos",
+        "addShortcut": "Agregar Acceso Rápido",
+        "emoji": "Emoji",
+        "name": "Nombre",
+        "url": "URL",
+        "cancel": "Cancelar",
+        "add": "Agregar",
+        "removeLink": "Eliminar enlace",
+        "linkRemoved": "Enlace eliminado",
+        "linkAdded": "¡Enlace agregado!",
+        "linksRestored": "Enlaces restaurados por defecto",
+        "fillInfo": "Complete nombre y URL",
+        "done": "Listo",
+        "pinToTop": "Fijar arriba",
         "categories": {
             "communication": "Comunicación",
             "courts": "Tribunales",

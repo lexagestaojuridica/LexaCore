@@ -76,9 +76,12 @@
         "noNumber": "Sem numeração",
         "timeline": "Linha do Tempo",
         "recentActivity": "Atividades Recentes",
-        "productivity": "Produtividade",
         "goal": "Meta",
-        "openTimesheet": "Abrir Timesheet"
+        "openTimesheet": "Abrir Timesheet",
+        "officeSummary": "Aqui está um resumo do seu escritório hoje.",
+        "totalClients": "Total de Clientes",
+        "fees": "Honorários",
+        "criticalDeadlines": "Prazos Críticos"
     },
     "common": {
         "search": "Buscar",
@@ -134,7 +137,8 @@
         "or": "ou",
         "type": "Tipo",
         "mainActions": "Ações Principais",
-        "auxiliaryModules": "Módulos Auxiliares"
+        "auxiliaryModules": "Módulos Auxiliares",
+        "dateFormat": "EEEE, dd 'de' MMMM 'de' yyyy"
     },
     "globalSearch": {
         "arunaIntelligence": "Inteligência Aruna IA",
@@ -497,6 +501,19 @@
         "unpin": "Desafixar",
         "hubSubtitle": "Hub de Atalhos Rápidos",
         "noLinks": "Nenhum atalho encontrado",
+        "addShortcut": "Adicionar Atalho",
+        "emoji": "Emoji",
+        "name": "Nome",
+        "url": "URL",
+        "cancel": "Cancelar",
+        "add": "Adicionar",
+        "removeLink": "Remover link",
+        "linkRemoved": "Link removido",
+        "linkAdded": "Link adicionado!",
+        "linksRestored": "Links restaurados ao padrão",
+        "fillInfo": "Preencha nome e URL",
+        "done": "Pronto",
+        "pinToTop": "Fixar no topo",
         "categories": {
             "communication": "Comunicação",
             "courts": "Tribunais",

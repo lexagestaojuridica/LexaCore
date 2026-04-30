@@ -12,8 +12,11 @@ const resources = {
     es: { translation: es },
 };
 
+if (typeof window !== "undefined") {
+    i18n.use(LanguageDetector);
+}
+
 i18n
-    .use(LanguageDetector)
     .use(initReactI18next)
     .init({
         resources,
@@ -21,7 +24,7 @@ i18n
         supportedLngs: ["pt-BR", "en", "es"],
         interpolation: { escapeValue: false },
         detection: {
-            order: ["localStorage", "navigator"],
+            order: ["localStorage"],
             lookupLocalStorage: "lexa-lang",
             caches: ["localStorage"],
         },

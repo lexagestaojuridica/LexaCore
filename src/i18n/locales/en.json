@@ -69,7 +69,11 @@
         "startTimer": "Start Timer",
         "newDraft": "New Draft",
         "crmPipeline": "CRM Pipeline",
-        "noNumber": "No number"
+        "noNumber": "No number",
+        "officeSummary": "Here is a summary of your office today.",
+        "totalClients": "Total Clients",
+        "fees": "Fees",
+        "criticalDeadlines": "Critical Deadlines"
     },
     "common": {
         "search": "Search",
@@ -125,7 +129,8 @@
         "or": "or",
         "type": "Type",
         "mainActions": "Main Actions",
-        "auxiliaryModules": "Auxiliary Modules"
+        "auxiliaryModules": "Auxiliary Modules",
+        "dateFormat": "EEEE, MMMM dd, yyyy"
     },
     "globalSearch": {
         "arunaIntelligence": "Aruna Intelligence",
@@ -488,6 +493,19 @@
         "unpin": "Unpin",
         "hubSubtitle": "Quick Shortcuts Hub",
         "noLinks": "No shortcuts found",
+        "addShortcut": "Add Shortcut",
+        "emoji": "Emoji",
+        "name": "Name",
+        "url": "URL",
+        "cancel": "Cancel",
+        "add": "Add",
+        "removeLink": "Remove link",
+        "linkRemoved": "Link removed",
+        "linkAdded": "Link added!",
+        "linksRestored": "Links restored to default",
+        "fillInfo": "Fill name and URL",
+        "done": "Done",
+        "pinToTop": "Pin to top",
         "categories": {
             "communication": "Communication",
             "courts": "Courts",
