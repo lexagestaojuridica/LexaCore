@@ -1,8 +1,10 @@
 "use client";
 
 import { Badge } from "@/shared/ui/badge";
+import { useTranslation } from "react-i18next";
 
 export function UpcomingEvents() {
+    const { t } = useTranslation();
     const events = [
         {
             title: "Reunião com TechBrasil - Estratégia Trabalhista",
@@ -15,7 +17,7 @@ export function UpcomingEvents() {
     return (
         <div className="bg-white rounded-[24px] border border-lexa-grey-200 p-8 w-full flex flex-col h-full shadow-sm">
             <h3 className="text-sm font-bold text-slate-800 tracking-tight mb-8">
-                Próximos Compromissos
+                {t("dashboard.upcomingEvents")}
             </h3>
 
             <div className="space-y-4">

@@ -2,22 +2,38 @@
 
 import { useMemo } from "react";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid } from "recharts";
+import { useTranslation } from "react-i18next";
+import { format, subMonths } from "date-fns";
+import { ptBR, enUS, es } from "date-fns/locale";
 
-const data = [
-    { name: "nov", receita: 15000, despesa: 4000 },
-    { name: "dez", receita: 45000, despesa: 1000 },
-    { name: "jan", receita: 25000, despesa: 28000 },
-    { name: "fev", receita: 12000, despesa: 8000 },
-    { name: "mar", receita: 42000, despesa: 6000 },
-    { name: "abr", receita: 2000, despesa: 1000 },
-];
+const localeMap: Record<string, any> = {
+    "pt-BR": ptBR,
+    en: enUS,
+    es: es,
+};
 
 export function FinancialChart() {
+    const { t, i18n } = useTranslation();
+    const currentLocale = localeMap[i18n.language] || ptBR;
+
+    const data = useMemo(() => {
+        const months = [];
+        for (let i = 5; i >= 0; i--) {
+            const date = subMonths(new Date(), i);
+            months.push({
+                name: format(date, "MMM", { locale: currentLocale }),
+                receita: Math.floor(Math.random() * 40000) + 5000,
+                despesa: Math.floor(Math.random() * 15000) + 1000,
+            });
+        }
+        return months;
+    }, [currentLocale]);
+
     return (
         <div className="bg-white rounded-[24px] border border-lexa-grey-200 p-8 w-full flex flex-col h-full shadow-sm">
             <div className="flex items-center justify-between mb-8">
                 <h3 className="text-sm font-bold text-slate-800 tracking-tight">
-                    Financeiro — Últimos 6 Meses
+                    {t("dashboard.financialLast6Months")}
                 </h3>
             </div>
 
@@ -49,6 +65,11 @@ export function FinancialChart() {
                             tickCount={5}
                         />
                         <Tooltip
+                            labelFormatter={(label) => `${label}`}
+                            formatter={(value: any, name: string) => [
+                                `R$ ${value.toLocaleString()}`,
+                                name === "receita" ? t("dashboard.revenue") : t("dashboard.expense")
+                            ]}
                             contentStyle={{
                                 backgroundColor: "#FFF",
                                 borderRadius: "12px",
@@ -59,6 +80,7 @@ export function FinancialChart() {
                         <Area
                             type="monotone"
                             dataKey="receita"
+                            name="receita"
                             stroke="#10B981"
                             strokeWidth={2}
                             fillOpacity={1}
@@ -67,6 +89,7 @@ export function FinancialChart() {
                         <Area
                             type="monotone"
                             dataKey="despesa"
+                            name="despesa"
                             stroke="#EF4444"
                             strokeWidth={2}
                             fillOpacity={1}

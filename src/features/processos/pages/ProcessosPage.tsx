@@ -1,28 +1,27 @@
 "use client";
 import { useState, useCallback } from "react";
-import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { db as supabase } from "@/integrations/supabase/db";
 import { useUser } from "@clerk/nextjs";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { ptBR, enUS, es } from "date-fns/locale";
+import React from "react";
 import {
-  Scale, Plus, Search, Filter, Edit2, Trash2, Eye, Upload, Download, File, Calculator, X,
+  Scale, Plus, Search, Filter, Edit2, Trash2, Eye,
   LayoutList, LayoutGrid, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
-  ArrowUpDown, ArrowUp, ArrowDown, Receipt, Bot, SwitchCamera, Share2, MessageCircle, Sparkles, Timer, Clock, Loader2
+  ArrowUpDown, ArrowUp, ArrowDown, Share2, MessageCircle, Sparkles, Clock
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 import { ProcessKanban } from "@/features/processos/components/ProcessKanban";
-import { ProcessCalculator } from "@/features/processos/components/ProcessCalculator";
 import { ProcessoDialog } from "@/features/processos/components/ProcessoDialog";
 import { ProcessoViewSheet } from "@/features/processos/components/ProcessoViewSheet";
 import type { Processo, Documento } from "@/features/processos/types";
-import { STATUS_OPTIONS, INSTANCIAS, FASES_PROCESSUAIS, UFS } from "@/features/processos/constants";
+import { STATUS_OPTIONS } from "@/features/processos/constants";
 import type { TablesInsert } from "@/integrations/supabase/types";
 import { Button } from "@/shared/ui/button";
-import { Switch } from "@/shared/ui/switch";
 import { Input } from "@/shared/ui/input";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -31,20 +30,13 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/shared/ui/dialog";
 import {
-  Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
-} from "@/shared/ui/sheet";
-import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/shared/ui/select";
-import { Textarea } from "@/shared/ui/textarea";
 import { Badge } from "@/shared/ui/badge";
 import { Card, CardContent } from "@/shared/ui/card";
 import { PageHeader } from "@/shared/components/PageHeader";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
-import { Separator } from "@/shared/ui/separator";
 import { StatCard } from "@/shared/components/StatCard";
 import { TableSkeleton } from "@/shared/components/SkeletonLoaders";
-import FormField from "@/shared/components/FormField";
 import LexaLoadingOverlay from "@/shared/components/LexaLoadingOverlay";
 import { formatCurrencyInput, parseCurrencyToNumber } from "@/shared/lib/formatters";
 import { cn } from "@/shared/lib/utils";
@@ -57,33 +49,13 @@ import { useProcessos } from "@/features/processos/hooks/useProcessos";
 type SortField = "title" | "number" | "court" | "status" | "estimated_value" | "created_at";
 type SortDir = "asc" | "desc";
 
-const statusBadge = (status: string) => {
-  const opt = STATUS_OPTIONS.find((o) => o.value === status);
-  return <Badge variant="outline" className={`font-bold uppercase tracking-widest text-[10px] border ${opt?.color ?? "bg-muted text-muted-foreground"}`}>{opt?.label ?? status}</Badge>;
+const localeMap: Record<string, any> = {
+    "pt-BR": ptBR,
+    en: enUS,
+    es: es,
 };
 
-interface ProcessoForm {
-  title: string;
-  number: string;
-  court: string;
-  subject: string;
-  status: string;
-  estimated_value: number | null;
-  notes: string;
-  client_id: string | null;
-  estimated_value_display: string;
-  area_direito: string | null;
-  tipo_acao: string | null;
-  parte_contraria: string | null;
-  instancia: string | null;
-  fase_processual: string | null;
-  comarca: string | null;
-  uf: string | null;
-  data_distribuicao: string | null;
-  auto_capture_enabled: boolean;
-}
-
-const emptyForm: ProcessoForm = {
+const emptyForm = {
   title: "", number: "", court: "", subject: "", status: "ativo",
   estimated_value: null, notes: "", client_id: null, estimated_value_display: "",
   area_direito: null, tipo_acao: null, parte_contraria: null,
@@ -94,11 +66,11 @@ const emptyForm: ProcessoForm = {
 // ─── SortableHeader ──────────────────────────────────────────
 
 function SortableHeader({ field, label, sortField, sortDir, onSort }: {
-  field: "title" | "number" | "court" | "status" | "estimated_value" | "created_at";
+  field: SortField;
   label: string;
-  sortField: "title" | "number" | "court" | "status" | "estimated_value" | "created_at";
-  sortDir: "asc" | "desc";
-  onSort: (f: "title" | "number" | "court" | "status" | "estimated_value" | "created_at") => void;
+  sortField: SortField;
+  sortDir: SortDir;
+  onSort: (f: SortField) => void;
 }) {
   const active = sortField === field;
   return (
@@ -123,7 +95,9 @@ function SortableHeader({ field, label, sortField, sortDir, onSort }: {
 export default function ProcessosPage() {
   const { user } = useUser();
   const queryClient = useQueryClient();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const currentLocale = localeMap[i18n.language] || ptBR;
+  
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [page, setPage] = useState(1);
@@ -149,17 +123,6 @@ export default function ProcessosPage() {
   const navigate = useRouter();
 
   const totalPages = viewMode === "table" ? Math.max(1, Math.ceil(totalCount / PAGE_SIZE)) : 1;
-
-  const { data: profile } = useQuery({
-    queryKey: ["profile", user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
-      const { data, error } = await supabase.from("profiles").select("organization_id").eq("user_id", user.id).single();
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!user?.id,
-  });
 
   const { data: clientes = [] } = useQuery({
     queryKey: ["clientes-select", orgId],
@@ -191,12 +154,12 @@ export default function ProcessosPage() {
   const handleShare = (p: Processo) => {
     const token = (p as { public_token?: string }).public_token;
     if (!token) {
-      toast.error("Processo sem token público.");
+      toast.error(t("processes.copyLinkError"));
       return;
     }
     const url = `${window.location.origin}/public/processo/${token}`;
     navigator.clipboard.writeText(url);
-    toast.success("Link do Portal do Cliente copiado!");
+    toast.success(t("processes.copyLinkSuccess"));
   };
 
   const createContaMutation = useMutation({
@@ -266,39 +229,13 @@ export default function ProcessosPage() {
     setSelectedProcesso(p); setIsEditing(true); setDialogOpen(true);
   };
 
-  const setField = useCallback(<K extends keyof ProcessoForm>(key: K, value: ProcessoForm[K]) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
-  }, []);
-
-  const handleValueChange = (v: string) => {
-    const formatted = formatCurrencyInput(v);
-    const num = parseCurrencyToNumber(formatted);
-    setForm((prev) => ({ ...prev, estimated_value_display: formatted, estimated_value: num || null }));
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.title) { toast.error("O título é obrigatório"); return; }
     const { estimated_value_display, ...rest } = form;
     if (isEditing && selectedProcesso) {
       updateMutation.mutate({ id: selectedProcesso.id, ...rest });
-
-      // UX AUTOMATION: Prompt for invoicing when case is closed
-      if (rest.status === "encerrado" && selectedProcesso.status !== "encerrado" && rest.estimated_value) {
-        const isAsaasConfigured = !!selectedProcesso.clientes?.asaas_customer_id;
-        const msg = isAsaasConfigured
-          ? `Processo encerrado! Deseja faturar Honorários no valor de ${estimated_value_display} com cobrança no Asaas?`
-          : `Processo encerrado! Deseja registrar os Honorários (${estimated_value_display}) no Financeiro local?`;
-
-        if (window.confirm(msg)) {
-          createContaMutation.mutate({
-            processoTitle: rest.title || selectedProcesso.title,
-            value: Number(rest.estimated_value),
-            clientId: selectedProcesso.client_id,
-            asaasCustomerId: selectedProcesso.clientes?.asaas_customer_id || null
-          });
-        }
-      }
+      closeDialog();
     } else {
       createMutation.mutate({ ...rest, title: rest.title!, organization_id: orgId!, responsible_user_id: user!.id } as TablesInsert<"processos_juridicos">);
     }
@@ -319,11 +256,6 @@ export default function ProcessosPage() {
     input.click();
   };
 
-  // ── Filter, sort, paginate ──
-  // The 'processos' array is already filtered, sorted, and paginated by the server.
-  // We only need to compute totalPages based on totalCount for pagination UI.
-  // Note: For Kanban, 'processos' contains up to 200 items filtered by search/status.
-
   const handleSort = (field: SortField) => {
     if (sortField === field) setSortDir((d) => d === "asc" ? "desc" : "asc");
     else { setSortField(field); setSortDir("asc"); }
@@ -335,6 +267,11 @@ export default function ProcessosPage() {
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
 
+  const statusBadge = (status: string) => {
+    const opt = STATUS_OPTIONS.find((o) => o.value === status);
+    return <Badge variant="outline" className={`font-bold uppercase tracking-widest text-[10px] border ${opt?.color ?? "bg-muted text-muted-foreground"}`}>{opt?.label ?? status}</Badge>;
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -342,11 +279,11 @@ export default function ProcessosPage() {
       transition={{ duration: 0.5 }}
       className="space-y-6"
     >
-      <LexaLoadingOverlay visible={isSaving} message="Salvando processo..." />
+      <LexaLoadingOverlay visible={isSaving} message={t("processes.saving")} />
 
       <PageHeader
-        title="Gestão de Processos"
-        subtitle="Prontuário completo com histórico interativo e automação de jusbrasil"
+        title={t("processes.managementTitle")}
+        subtitle={t("processes.managementSubtitle")}
         icon={Scale}
         gradient="from-blue-600 to-cyan-600"
         actions={
@@ -360,7 +297,7 @@ export default function ProcessosPage() {
                 )}
               >
                 <LayoutList className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Tabela</span>
+                <span className="hidden sm:inline">{t("processes.table")}</span>
               </button>
               <button
                 onClick={() => setViewMode("kanban")}
@@ -370,14 +307,14 @@ export default function ProcessosPage() {
                 )}
               >
                 <LayoutGrid className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Kanban</span>
+                <span className="hidden sm:inline">{t("processes.kanban")}</span>
               </button>
             </div>
             <Button
               onClick={openCreate}
               className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90 shadow-lg shadow-accent/20"
             >
-              <Plus className="h-4 w-4" /> Novo Processo
+              <Plus className="h-4 w-4" /> {t("processes.newProcess")}
             </Button>
           </>
         }
@@ -387,21 +324,21 @@ export default function ProcessosPage() {
       <div className="grid gap-4 sm:grid-cols-3">
         <StatCard
           icon={Scale}
-          label="Total de Processos"
+          label={t("processes.totalProcesses")}
           value={biCounts.total}
           color="blue"
           index={0}
         />
         <StatCard
           icon={Sparkles}
-          label="Processos Ativos"
+          label={t("processes.activeProcesses")}
           value={biCounts.ativos}
           color="emerald"
           index={1}
         />
         <StatCard
           icon={Clock}
-          label="Processos Suspensos"
+          label={t("processes.suspendedProcesses")}
           value={biCounts.suspensos}
           color="amber"
           index={2}
@@ -419,7 +356,7 @@ export default function ProcessosPage() {
             <div className="relative flex-1 group">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" />
               <Input
-                placeholder="Buscar por título, número, vara ou assunto..."
+                placeholder={t("processes.searchPlaceholder")}
                 value={search}
                 onChange={(e) => handleSearch(e.target.value)}
                 className="pl-9 bg-white/50 dark:bg-card/50 border-border/40 focus-visible:ring-primary/20 transition-all"
@@ -429,10 +366,10 @@ export default function ProcessosPage() {
               <Filter className="h-4 w-4 text-muted-foreground" />
               <Select value={statusFilter} onValueChange={handleStatusFilter}>
                 <SelectTrigger className="w-[160px] bg-white/50 dark:bg-card/50 border-border/40">
-                  <SelectValue placeholder="Status" />
+                  <SelectValue placeholder={t("common.status")} />
                 </SelectTrigger>
                 <SelectContent className="glass">
-                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="all">{t("processes.allStatus")}</SelectItem>
                   {STATUS_OPTIONS.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
                 </SelectContent>
               </Select>
@@ -454,16 +391,16 @@ export default function ProcessosPage() {
                     <Scale className="h-8 w-8 text-primary" />
                   </div>
                   <h3 className="text-lg font-semibold tracking-tight mb-1">
-                    {search || statusFilter !== 'all' ? "Nenhum resultado" : "Bem-vindo ao Módulo de Processos!"}
+                    {search || statusFilter !== 'all' ? t("clients.noResults") : t("processes.welcomeTitle")}
                   </h3>
                   <p className="text-sm text-muted-foreground max-w-sm mb-6">
                     {search || statusFilter !== 'all'
-                      ? "Sua pesquisa não retornou resultados. Tente limpar os filtros ou usar outros termos."
-                      : "Parece que sua organização ainda não possui processos cadastrados. Comece adicionando o primeiro caso do seu escritório."}
+                      ? t("clients.noResultsSearch")
+                      : t("processes.welcomeDesc")}
                   </p>
                   {!search && statusFilter === 'all' && (
                     <Button size="sm" className="gap-2 shadow-sm" onClick={openCreate}>
-                      <Plus className="h-4 w-4" /> Cadastrar Meu Primeiro Processo
+                      <Plus className="h-4 w-4" /> {t("processes.registerFirst")}
                     </Button>
                   )}
                 </div>
@@ -473,13 +410,13 @@ export default function ProcessosPage() {
                     <Table>
                       <TableHeader className="bg-muted/5">
                         <TableRow className="hover:bg-transparent">
-                          <SortableHeader field="title" label="Título" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
-                          <SortableHeader field="number" label="Número" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
-                          <SortableHeader field="court" label="Vara / Tribunal" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
-                          <SortableHeader field="status" label="Status" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
-                          <SortableHeader field="estimated_value" label="Valor Estimado" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
-                          <SortableHeader field="created_at" label="Criado em" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
-                          <TableHead className="text-right text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Ações</TableHead>
+                          <SortableHeader field="title" label={t("common.title")} sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                          <SortableHeader field="number" label={t("processes.number")} sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                          <SortableHeader field="court" label={t("processes.court")} sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                          <SortableHeader field="status" label={t("common.status")} sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                          <SortableHeader field="estimated_value" label={t("processes.estimatedValue")} sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                          <SortableHeader field="created_at" label={t("processes.createdAt")} sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                          <TableHead className="text-right text-[10px] uppercase font-bold tracking-wider text-muted-foreground">{t("common.actions")}</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -491,7 +428,7 @@ export default function ProcessosPage() {
                               <TableCell className="text-muted-foreground max-w-[160px] truncate">{p.court || "—"}</TableCell>
                               <TableCell>{statusBadge(p.status)}</TableCell>
                               <TableCell>{p.estimated_value != null ? `R$ ${Number(p.estimated_value).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : "—"}</TableCell>
-                              <TableCell className="text-muted-foreground">{format(new Date(p.created_at), "dd/MM/yyyy", { locale: ptBR })}</TableCell>
+                              <TableCell className="text-muted-foreground">{format(new Date(p.created_at), t("common.dateFormat"), { locale: currentLocale })}</TableCell>
                               <TableCell>
                                 <div className="flex items-center justify-end gap-1">
                                   {p.clientes?.phone && (
@@ -522,7 +459,11 @@ export default function ProcessosPage() {
                   {totalPages > 1 && (
                     <div className="flex items-center justify-between border-t border-border/60 px-4 py-3 bg-muted/5">
                       <p className="text-xs text-muted-foreground">
-                        Mostrando <span className="font-semibold text-foreground">{(page - 1) * PAGE_SIZE + 1}</span>–<span className="font-semibold text-foreground">{Math.min(page * PAGE_SIZE, totalCount)}</span> de <span className="font-semibold text-foreground">{totalCount}</span> processos
+                        {t("clients.showingCount", {
+                            start: (page - 1) * PAGE_SIZE + 1,
+                            end: Math.min(page * PAGE_SIZE, totalCount),
+                            total: totalCount
+                        })}
                       </p>
                       <div className="flex items-center gap-1">
                         <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page === 1} onClick={() => setPage(1)}><ChevronsLeft className="h-3.5 w-3.5" /></Button>
@@ -595,13 +536,13 @@ export default function ProcessosPage() {
 
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent className="max-w-sm rounded-2xl border-none shadow-2xl">
-          <DialogHeader><DialogTitle className="font-bold text-lg">Excluir Processo</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="font-bold text-lg">{t("processes.deleteTitle")}</DialogTitle></DialogHeader>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            Tem certeza que deseja excluir o processo <strong className="text-foreground">{selectedProcesso?.title}</strong>? Esta ação é irreversível.
+            {t("processes.deleteConfirm", { title: selectedProcesso?.title })}
           </p>
           <div className="flex justify-end gap-2 pt-4">
-            <Button variant="ghost" onClick={() => setDeleteDialogOpen(false)}>Cancelar</Button>
-            <Button variant="destructive" className="rounded-xl px-6" disabled={deleteMutation.isPending} onClick={() => selectedProcesso && deleteMutation.mutate(selectedProcesso.id, { onSuccess: () => setDeleteDialogOpen(false) })}>Excluir</Button>
+            <Button variant="ghost" onClick={() => setDeleteDialogOpen(false)}>{t("common.cancel")}</Button>
+            <Button variant="destructive" className="rounded-xl px-6" disabled={deleteMutation.isPending} onClick={() => selectedProcesso && deleteMutation.mutate(selectedProcesso.id, { onSuccess: () => setDeleteDialogOpen(false) })}>{t("common.delete")}</Button>
           </div>
         </DialogContent>
       </Dialog>

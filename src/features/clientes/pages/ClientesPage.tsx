@@ -1,12 +1,15 @@
+"use client";
+
 import { useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { ptBR, enUS, es } from "date-fns/locale";
+import React from "react";
 import {
-  Users, Plus, Search, Edit2, Trash2, Eye, Upload, Download, File, X, ShieldAlert,
-  ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, MessageCircle,
-  RefreshCw, CheckCircle2, ShieldCheck, User
+  Users, Plus, Search, Edit2, Trash2, Eye, MessageCircle,
+  RefreshCw, CheckCircle2, ShieldCheck, User,
+  ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { ConflitosInteresseDialog } from "@/features/clientes/components/ConflitosInteresseDialog";
@@ -14,16 +17,9 @@ import { Button } from "@/shared/ui/button";
 import { StatCard } from "@/shared/components/StatCard";
 import { Input } from "@/shared/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
-import { Textarea } from "@/shared/ui/textarea";
 import { Card, CardContent } from "@/shared/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { Badge } from "@/shared/ui/badge";
-import { Separator } from "@/shared/ui/separator";
-import FormField from "@/shared/components/FormField";
 import LexaLoadingOverlay from "@/shared/components/LexaLoadingOverlay";
-import { formatDocument, formatPhone, formatCEP, fetchAddressByCEP } from "@/shared/lib/formatters";
 import { TableSkeleton } from "@/shared/components/SkeletonLoaders";
 import { cn } from "@/shared/lib/utils";
 
@@ -39,14 +35,22 @@ import { ClientFormDialog } from "@/features/clientes/components/ClientFormDialo
 import { ClientViewDialog } from "@/features/clientes/components/ClientViewDialog";
 import { ClientDeleteDialog } from "@/features/clientes/components/ClientDeleteDialog";
 
+const localeMap: Record<string, any> = {
+    "pt-BR": ptBR,
+    en: enUS,
+    es: es,
+};
+
 export default function ClientesPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const currentLocale = localeMap[i18n.language] || ptBR;
+
   const {
     clients, totalCount, totalPages, page, setPage, search, isLoading,
     biCounts, handleSearch, handleDocDownload,
     createMutation, updateMutation, deleteMutation, uploadDoc,
     requestSignature, syncAsaas, generatePortalAuth,
-    PAGE_SIZE, user,
+    PAGE_SIZE,
   } = useClientes();
 
   // ── Local UI State ──
@@ -100,7 +104,7 @@ export default function ClientesPage() {
 
   const handleFormSubmit = (formData: ClientForm) => {
     setForm(formData);
-    if (!formData.name) { toast.error("O nome é obrigatório"); return; }
+    if (!formData.name) { toast.error(t("clients.nameRequired")); return; }
     if (!isEditing) { setConflitosOpen(true); setPendingSubmit(true); return; }
     doSave(formData);
   };
@@ -114,7 +118,7 @@ export default function ClientesPage() {
       transition={{ duration: 0.5 }}
       className="space-y-6"
     >
-      <LexaLoadingOverlay visible={isSaving} message="Salvando cliente..." />
+      <LexaLoadingOverlay visible={isSaving} message={t("clients.saving")} />
 
       <ConflitosInteresseDialog
         open={conflitosOpen}
@@ -127,31 +131,31 @@ export default function ClientesPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">{t("clients.title")}</h1>
           <p className="text-sm text-muted-foreground">
-            Gestão e acompanhamento da sua base de clientes
+            {t("clients.managementSubtitle")}
           </p>
         </div>
-        <Button onClick={openCreate} className="gap-2 shadow-sm"><Plus className="h-4 w-4" /> Novo Cliente</Button>
+        <Button onClick={openCreate} className="gap-2 shadow-sm"><Plus className="h-4 w-4" /> {t("clients.newClient")}</Button>
       </div>
 
       {/* Stats Grid */}
       <div className="grid gap-4 sm:grid-cols-3">
         <StatCard
           icon={Users}
-          label="Total de Clientes"
+          label={t("clients.totalClients")}
           value={biCounts.total}
           color="blue"
           index={0}
         />
         <StatCard
           icon={User}
-          label="Pessoas Físicas"
+          label={t("clients.pf")}
           value={biCounts.pf}
           color="emerald"
           index={1}
         />
         <StatCard
           icon={ShieldCheck}
-          label="Pessoas Jurídicas"
+          label={t("clients.pj")}
           value={biCounts.pj}
           color="purple"
           index={2}
@@ -163,7 +167,7 @@ export default function ClientesPage() {
           <CardContent className="flex items-center gap-3 p-4">
             <div className="relative flex-1 group">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" />
-              <Input placeholder="Buscar por nome, e-mail, telefone, documento ou empresa..." value={search} onChange={(e) => handleSearch(e.target.value)} className="pl-9 bg-white/50 dark:bg-card/50 border-border/40 focus-visible:ring-primary/20 transition-all" />
+              <Input placeholder={t("clients.searchPlaceholder")} value={search} onChange={(e) => handleSearch(e.target.value)} className="pl-9 bg-white/50 dark:bg-card/50 border-border/40 focus-visible:ring-primary/20 transition-all" />
             </div>
           </CardContent>
         </Card>
@@ -178,9 +182,9 @@ export default function ClientesPage() {
             ) : clients.length === 0 ? (
               <div className="flex flex-col items-center justify-center p-12 text-center bg-muted/5 border-2 border-dashed border-border/50 rounded-lg m-6">
                 <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-4"><Users className="h-8 w-8 text-primary" /></div>
-                <h3 className="text-lg font-semibold tracking-tight mb-1">{search ? "Nenhum resultado" : "Nenhum cliente cadastrado"}</h3>
-                <p className="text-sm text-muted-foreground max-w-sm mb-6">{search ? "Sua pesquisa não retornou resultados." : "Comece adicionando seu primeiro cliente."}</p>
-                {!search && <Button size="sm" className="gap-2 shadow-sm" onClick={openCreate}><Plus className="h-4 w-4" /> Cadastrar primeiro cliente</Button>}
+                <h3 className="text-lg font-semibold tracking-tight mb-1">{search ? t("clients.noResults") : t("clients.emptyStateTitle")}</h3>
+                <p className="text-sm text-muted-foreground max-w-sm mb-6">{search ? t("clients.noResultsSearch") : t("clients.emptyStateDesc")}</p>
+                {!search && <Button size="sm" className="gap-2 shadow-sm" onClick={openCreate}><Plus className="h-4 w-4" /> {t("clients.registerFirst")}</Button>}
               </div>
             ) : (
               <>
@@ -188,10 +192,10 @@ export default function ClientesPage() {
                   <Table>
                     <TableHeader className="bg-muted/5">
                       <TableRow className="hover:bg-transparent">
-                        {["Nome", "Tipo", "E-mail", "Telefone", "CPF / CNPJ", "Cidade/UF", "Cadastrado"].map(h => (
+                        {[t("common.name"), t("common.type"), t("common.email"), t("common.phone"), "CPF / CNPJ", t("clients.cityState"), t("clients.registeredOn")].map(h => (
                           <TableHead key={h} className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">{h}</TableHead>
                         ))}
-                        <TableHead className="text-right text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Ações</TableHead>
+                        <TableHead className="text-right text-[10px] uppercase font-bold tracking-wider text-muted-foreground">{t("common.actions")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -203,7 +207,7 @@ export default function ClientesPage() {
                           <TableCell className="text-muted-foreground">{c.phone || "—"}</TableCell>
                           <TableCell className="text-muted-foreground">{c.document || "—"}</TableCell>
                           <TableCell className="text-muted-foreground">{c.address_city && c.address_state ? `${c.address_city}/${c.address_state}` : "—"}</TableCell>
-                          <TableCell className="text-muted-foreground">{format(new Date(c.created_at), "dd/MM/yyyy", { locale: ptBR })}</TableCell>
+                          <TableCell className="text-muted-foreground">{format(new Date(c.created_at), t("common.dateFormat"), { locale: currentLocale })}</TableCell>
                           <TableCell>
                             <div className="flex items-center justify-end gap-1">
                               {c.phone && (
@@ -227,7 +231,11 @@ export default function ClientesPage() {
                 {totalPages > 1 && (
                   <div className="flex items-center justify-between border-t border-border/60 px-4 py-3 bg-muted/5">
                     <p className="text-xs text-muted-foreground">
-                      Mostrando <span className="font-semibold text-foreground">{(page - 1) * PAGE_SIZE + 1}</span>–<span className="font-semibold text-foreground">{Math.min(page * PAGE_SIZE, totalCount)}</span> de <span className="font-semibold text-foreground">{totalCount}</span>
+                      {t("clients.showingCount", {
+                          start: (page - 1) * PAGE_SIZE + 1,
+                          end: Math.min(page * PAGE_SIZE, totalCount),
+                          total: totalCount
+                      })}
                     </p>
                     <div className="flex items-center gap-1">
                       <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page === 1} onClick={() => setPage(1)}><ChevronsLeft className="h-3.5 w-3.5" /></Button>
