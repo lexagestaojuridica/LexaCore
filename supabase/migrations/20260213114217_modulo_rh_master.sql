@@ -93,22 +93,50 @@ ALTER TABLE public.rh_recrutamento_vagas ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.rh_recrutamento_candidatos ENABLE ROW LEVEL SECURITY;
 
 -- Creating basic Policies (Assuming organization_id based multitenancy)
+DROP POLICY IF EXISTS "Users can view rh_colaboradores within their org" ON public.rh_colaboradores;
 CREATE POLICY "Users can view rh_colaboradores within their org" ON public.rh_colaboradores FOR SELECT USING (organization_id IN (SELECT organization_id FROM public.profiles WHERE user_id = auth.uid()));
+
+DROP POLICY IF EXISTS "Users can insert rh_colaboradores within their org" ON public.rh_colaboradores;
 CREATE POLICY "Users can insert rh_colaboradores within their org" ON public.rh_colaboradores FOR INSERT WITH CHECK (organization_id IN (SELECT organization_id FROM public.profiles WHERE user_id = auth.uid()));
+
+DROP POLICY IF EXISTS "Users can update rh_colaboradores within their org" ON public.rh_colaboradores;
 CREATE POLICY "Users can update rh_colaboradores within their org" ON public.rh_colaboradores FOR UPDATE USING (organization_id IN (SELECT organization_id FROM public.profiles WHERE user_id = auth.uid()));
+
+DROP POLICY IF EXISTS "Users can delete rh_colaboradores within their org" ON public.rh_colaboradores;
 CREATE POLICY "Users can delete rh_colaboradores within their org" ON public.rh_colaboradores FOR DELETE USING (organization_id IN (SELECT organization_id FROM public.profiles WHERE user_id = auth.uid()));
 
+DROP POLICY IF EXISTS "Users can view rh_ponto_registros within their org" ON public.rh_ponto_registros;
 CREATE POLICY "Users can view rh_ponto_registros within their org" ON public.rh_ponto_registros FOR SELECT USING (organization_id IN (SELECT organization_id FROM public.profiles WHERE user_id = auth.uid()));
+
+DROP POLICY IF EXISTS "Users can insert rh_ponto_registros within their org" ON public.rh_ponto_registros;
 CREATE POLICY "Users can insert rh_ponto_registros within their org" ON public.rh_ponto_registros FOR INSERT WITH CHECK (organization_id IN (SELECT organization_id FROM public.profiles WHERE user_id = auth.uid()));
+
+DROP POLICY IF EXISTS "Users can update rh_ponto_registros within their org" ON public.rh_ponto_registros;
 CREATE POLICY "Users can update rh_ponto_registros within their org" ON public.rh_ponto_registros FOR UPDATE USING (organization_id IN (SELECT organization_id FROM public.profiles WHERE user_id = auth.uid()));
+
+DROP POLICY IF EXISTS "Users can delete rh_ponto_registros within their org" ON public.rh_ponto_registros;
 CREATE POLICY "Users can delete rh_ponto_registros within their org" ON public.rh_ponto_registros FOR DELETE USING (organization_id IN (SELECT organization_id FROM public.profiles WHERE user_id = auth.uid()));
 
+DROP POLICY IF EXISTS "Users can view rh_recrutamento_vagas within their org" ON public.rh_recrutamento_vagas;
 CREATE POLICY "Users can view rh_recrutamento_vagas within their org" ON public.rh_recrutamento_vagas FOR SELECT USING (organization_id IN (SELECT organization_id FROM public.profiles WHERE user_id = auth.uid()));
+
+DROP POLICY IF EXISTS "Users can insert rh_recrutamento_vagas within their org" ON public.rh_recrutamento_vagas;
 CREATE POLICY "Users can insert rh_recrutamento_vagas within their org" ON public.rh_recrutamento_vagas FOR INSERT WITH CHECK (organization_id IN (SELECT organization_id FROM public.profiles WHERE user_id = auth.uid()));
+
+DROP POLICY IF EXISTS "Users can update rh_recrutamento_vagas within their org" ON public.rh_recrutamento_vagas;
 CREATE POLICY "Users can update rh_recrutamento_vagas within their org" ON public.rh_recrutamento_vagas FOR UPDATE USING (organization_id IN (SELECT organization_id FROM public.profiles WHERE user_id = auth.uid()));
+
+DROP POLICY IF EXISTS "Users can delete rh_recrutamento_vagas within their org" ON public.rh_recrutamento_vagas;
 CREATE POLICY "Users can delete rh_recrutamento_vagas within their org" ON public.rh_recrutamento_vagas FOR DELETE USING (organization_id IN (SELECT organization_id FROM public.profiles WHERE user_id = auth.uid()));
 
+DROP POLICY IF EXISTS "Users can view rh_recrutamento_candidatos within their org" ON public.rh_recrutamento_candidatos;
 CREATE POLICY "Users can view rh_recrutamento_candidatos within their org" ON public.rh_recrutamento_candidatos FOR SELECT USING (organization_id IN (SELECT organization_id FROM public.profiles WHERE user_id = auth.uid()));
+
+DROP POLICY IF EXISTS "Users can insert rh_recrutamento_candidatos within their org" ON public.rh_recrutamento_candidatos;
 CREATE POLICY "Users can insert rh_recrutamento_candidatos within their org" ON public.rh_recrutamento_candidatos FOR INSERT WITH CHECK (organization_id IN (SELECT organization_id FROM public.profiles WHERE user_id = auth.uid()));
+
+DROP POLICY IF EXISTS "Users can update rh_recrutamento_candidatos within their org" ON public.rh_recrutamento_candidatos;
 CREATE POLICY "Users can update rh_recrutamento_candidatos within their org" ON public.rh_recrutamento_candidatos FOR UPDATE USING (organization_id IN (SELECT organization_id FROM public.profiles WHERE user_id = auth.uid()));
+
+DROP POLICY IF EXISTS "Users can delete rh_recrutamento_candidatos within their org" ON public.rh_recrutamento_candidatos;
 CREATE POLICY "Users can delete rh_recrutamento_candidatos within their org" ON public.rh_recrutamento_candidatos FOR DELETE USING (organization_id IN (SELECT organization_id FROM public.profiles WHERE user_id = auth.uid()));

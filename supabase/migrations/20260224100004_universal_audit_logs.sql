@@ -53,23 +53,46 @@ DECLARE
     _key TEXT;
 BEGIN
     -- Extract organization_id from the row (most tables have it)
-    IF TG_OP = 'DELETE' THEN
-        _org_id := COALESCE(OLD.organization_id, NULL);
-        _record_id := OLD.id::TEXT;
-        _old_data := to_jsonb(OLD);
-        _new_data := NULL;
-    ELSIF TG_OP = 'INSERT' THEN
-        _org_id := COALESCE(NEW.organization_id, NULL);
-        _record_id := NEW.id::TEXT;
-        _old_data := NULL;
-        _new_data := to_jsonb(NEW);
-    ELSIF TG_OP = 'UPDATE' THEN
-        _org_id := COALESCE(NEW.organization_id, OLD.organization_id, NULL);
-        _record_id := NEW.id::TEXT;
-        _old_data := to_jsonb(OLD);
-        _new_data := to_jsonb(NEW);
+    -- If we are auditing the organizations table itself, the 'id' is the organization_id
+    IF TG_TABLE_NAME = 'organizations' THEN
+        IF TG_OP = 'DELETE' THEN
+            _org_id := OLD.id;
+            _record_id := OLD.id::TEXT;
+            _old_data := to_jsonb(OLD);
+            _new_data := NULL;
+        ELSIF TG_OP = 'INSERT' THEN
+            _org_id := NEW.id;
+            _record_id := NEW.id::TEXT;
+            _old_data := NULL;
+            _new_data := to_jsonb(NEW);
+        ELSIF TG_OP = 'UPDATE' THEN
+            _org_id := NEW.id;
+            _record_id := NEW.id::TEXT;
+            _old_data := to_jsonb(OLD);
+            _new_data := to_jsonb(NEW);
+        END IF;
+    ELSE
+        -- Standard logic for tables with organization_id
+        IF TG_OP = 'DELETE' THEN
+            _org_id := (to_jsonb(OLD)->>'organization_id')::UUID;
+            _record_id := OLD.id::TEXT;
+            _old_data := to_jsonb(OLD);
+            _new_data := NULL;
+        ELSIF TG_OP = 'INSERT' THEN
+            _org_id := (to_jsonb(NEW)->>'organization_id')::UUID;
+            _record_id := NEW.id::TEXT;
+            _old_data := NULL;
+            _new_data := to_jsonb(NEW);
+        ELSIF TG_OP = 'UPDATE' THEN
+            _org_id := (to_jsonb(NEW)->>'organization_id')::UUID;
+            _record_id := NEW.id::TEXT;
+            _old_data := to_jsonb(OLD);
+            _new_data := to_jsonb(NEW);
+        END IF;
+    END IF;
 
-        -- Detect which fields actually changed
+    -- For UPDATE, detect which fields actually changed
+    IF TG_OP = 'UPDATE' THEN
         FOR _key IN SELECT jsonb_object_keys(_new_data)
         LOOP
             IF _old_data->_key IS DISTINCT FROM _new_data->_key THEN

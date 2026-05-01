@@ -1,3 +1,4 @@
+DROP POLICY IF EXISTS "Users can delete own conversas" ON public.conversas_ia;
 CREATE POLICY "Users can delete own conversas"
 ON public.conversas_ia
 FOR DELETE

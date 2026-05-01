@@ -1,8 +1,11 @@
 
 -- Create storage bucket for documents
-INSERT INTO storage.buckets (id, name, public) VALUES ('documentos', 'documentos', false);
+INSERT INTO storage.buckets (id, name, public) 
+VALUES ('documentos', 'documentos', false)
+ON CONFLICT (id) DO NOTHING;
 
 -- RLS: Members can read documents from their org
+DROP POLICY IF EXISTS "Members can read org documents" ON storage.objects;
 CREATE POLICY "Members can read org documents"
 ON storage.objects FOR SELECT
 USING (
@@ -15,6 +18,7 @@ USING (
 );
 
 -- RLS: Admin/Advogado can upload documents
+DROP POLICY IF EXISTS "Admin/Advogado can upload documents" ON storage.objects;
 CREATE POLICY "Admin/Advogado can upload documents"
 ON storage.objects FOR INSERT
 WITH CHECK (
@@ -30,6 +34,7 @@ WITH CHECK (
 );
 
 -- RLS: Admin/Advogado can delete documents
+DROP POLICY IF EXISTS "Admin/Advogado can delete documents" ON storage.objects;
 CREATE POLICY "Admin/Advogado can delete documents"
 ON storage.objects FOR DELETE
 USING (

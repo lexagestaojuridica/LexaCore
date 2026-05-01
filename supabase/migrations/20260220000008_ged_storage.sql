@@ -4,16 +4,19 @@ VALUES ('documentos', 'documentos', false)
 ON CONFLICT (id) DO NOTHING;
 
 -- Policies de storage
+DROP POLICY IF EXISTS "Acesso aos documentos restrito a usuários autenticados" ON storage.objects;
 CREATE POLICY "Acesso aos documentos restrito a usuários autenticados"
 ON storage.objects FOR SELECT
 TO authenticated
 USING ( bucket_id = 'documentos' );
 
+DROP POLICY IF EXISTS "Upload permitido a usuários autenticados" ON storage.objects;
 CREATE POLICY "Upload permitido a usuários autenticados"
 ON storage.objects FOR INSERT
 TO authenticated
 WITH CHECK ( bucket_id = 'documentos' );
 
+DROP POLICY IF EXISTS "Deleção permitida ao próprio dono ou admin" ON storage.objects;
 CREATE POLICY "Deleção permitida ao próprio dono ou admin"
 ON storage.objects FOR DELETE
 TO authenticated

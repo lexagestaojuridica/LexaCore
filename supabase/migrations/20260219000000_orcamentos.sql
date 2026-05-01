@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS public.orcamentos (
 ALTER TABLE public.orcamentos ENABLE ROW LEVEL SECURITY;
 
 -- Trigger updated_at
+DROP TRIGGER IF EXISTS update_orcamentos_updated_at ON public.orcamentos;
 CREATE TRIGGER update_orcamentos_updated_at
   BEFORE UPDATE ON public.orcamentos
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
@@ -47,6 +48,7 @@ ALTER TABLE public.orcamentos_log ENABLE ROW LEVEL SECURITY;
 -- ============================================================
 
 -- Leitura: admin e financeiro da org
+DROP POLICY IF EXISTS "read_orcamentos" ON public.orcamentos;
 CREATE POLICY "read_orcamentos" ON public.orcamentos
   FOR SELECT USING (
     public.is_member_of_org(auth.uid(), organization_id)
@@ -57,6 +59,7 @@ CREATE POLICY "read_orcamentos" ON public.orcamentos
   );
 
 -- Escrita (INSERT / UPDATE / DELETE): apenas admin
+DROP POLICY IF EXISTS "manage_orcamentos" ON public.orcamentos;
 CREATE POLICY "manage_orcamentos" ON public.orcamentos
   FOR ALL USING (
     public.is_member_of_org(auth.uid(), organization_id)
@@ -67,11 +70,13 @@ CREATE POLICY "manage_orcamentos" ON public.orcamentos
 -- RLS: orcamentos_log
 -- ============================================================
 
+DROP POLICY IF EXISTS "read_orcamentos_log" ON public.orcamentos_log;
 CREATE POLICY "read_orcamentos_log" ON public.orcamentos_log
   FOR SELECT USING (
     public.is_member_of_org(auth.uid(), organization_id)
     AND public.has_role(auth.uid(), 'admin')
   );
 
+DROP POLICY IF EXISTS "insert_orcamentos_log" ON public.orcamentos_log;
 CREATE POLICY "insert_orcamentos_log" ON public.orcamentos_log
   FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);

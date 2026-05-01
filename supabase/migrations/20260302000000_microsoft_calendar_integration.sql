@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS public.microsoft_calendar_tokens (
 ALTER TABLE public.microsoft_calendar_tokens ENABLE ROW LEVEL SECURITY;
 
 -- Políticas de RLS
+DROP POLICY IF EXISTS "Users can manage their own microsoft tokens" ON public.microsoft_calendar_tokens;
 CREATE POLICY "Users can manage their own microsoft tokens"
     ON public.microsoft_calendar_tokens
     FOR ALL
@@ -30,9 +31,9 @@ CREATE POLICY "Users can manage their own microsoft tokens"
 -- Função de update se não existir
 DO $$ 
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'update_modified_column') THEN
+    IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'update_updated_at_column') THEN
         EXECUTE '
-        CREATE OR REPLACE FUNCTION public.update_modified_column()
+        CREATE OR REPLACE FUNCTION public.update_updated_at_column()
         RETURNS TRIGGER AS $func$
         BEGIN
             NEW.updated_at = TIMEZONE(''utc''::text, NOW());
@@ -44,10 +45,11 @@ BEGIN
 END $$;
 
 -- Trigger para atualização de updated_at
+DROP TRIGGER IF EXISTS update_microsoft_calendar_tokens_modtime ON public.microsoft_calendar_tokens;
 CREATE TRIGGER update_microsoft_calendar_tokens_modtime
     BEFORE UPDATE ON public.microsoft_calendar_tokens
     FOR EACH ROW
-    EXECUTE FUNCTION update_modified_column();
+    EXECUTE FUNCTION update_updated_at_column();
 
 
 -- Adicionar microsoft_event_id na tabela eventos_agenda

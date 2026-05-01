@@ -28,11 +28,13 @@ DECLARE
     trigger_stmt TEXT;
 BEGIN
     FOR target_record IN 
-        SELECT table_name 
-        FROM information_schema.columns 
-        WHERE table_schema = 'public' 
-          AND column_name = 'organization_id'
-          AND table_name != 'organizations' -- ignora a tabela root de orgs, caso o ID dela possa mudar (improvável, mas pra grantir)
+        SELECT c.table_name 
+        FROM information_schema.columns c
+        JOIN information_schema.tables t ON c.table_name = t.table_name AND c.table_schema = t.table_schema
+        WHERE c.table_schema = 'public' 
+          AND c.column_name = 'organization_id'
+          AND t.table_type = 'BASE TABLE'
+          AND c.table_name != 'organizations'
     LOOP
         -- Remove a trigger se já existir para idempotência
         EXECUTE format('DROP TRIGGER IF EXISTS trg_prevent_org_update ON %I', target_record.table_name);

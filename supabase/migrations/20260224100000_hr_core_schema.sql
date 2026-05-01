@@ -45,6 +45,7 @@ CREATE TABLE IF NOT EXISTS public.hr_employees (
     
     -- Dados Pessoais
     full_name TEXT NOT NULL,
+    social_name TEXT,
     email TEXT,
     phone TEXT,
     birth_date DATE,
@@ -55,6 +56,8 @@ CREATE TABLE IF NOT EXISTS public.hr_employees (
     cpf TEXT,
     rg TEXT,
     pis_pasep TEXT,
+    ctps_number TEXT,
+    ctps_series TEXT,
     oab_number TEXT,
     oab_uf TEXT,
     
@@ -67,8 +70,16 @@ CREATE TABLE IF NOT EXISTS public.hr_employees (
     address_state TEXT,
     address_zip TEXT,
     
-    -- Status
+    -- Dados Bancários
+    bank_name TEXT,
+    bank_agency TEXT,
+    bank_account TEXT,
+    bank_pix_key TEXT,
+    
+    -- Status e Contrato
     status TEXT DEFAULT 'active' CHECK (status IN ('active', 'on_leave', 'terminated')),
+    employment_type TEXT,
+    work_shift TEXT,
     hire_date DATE NOT NULL DEFAULT CURRENT_DATE,
     termination_date DATE,
     
@@ -115,16 +126,16 @@ CREATE INDEX IF NOT EXISTS idx_hr_contr_emp ON public.hr_contracts(employee_id);
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'set_updated_at_hr_deps') THEN
-        CREATE TRIGGER set_updated_at_hr_deps BEFORE UPDATE ON public.hr_departments FOR EACH ROW EXECUTE FUNCTION update_modified_column();
+        CREATE TRIGGER set_updated_at_hr_deps BEFORE UPDATE ON public.hr_departments FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'set_updated_at_hr_jobs') THEN
-        CREATE TRIGGER set_updated_at_hr_jobs BEFORE UPDATE ON public.hr_jobs FOR EACH ROW EXECUTE FUNCTION update_modified_column();
+        CREATE TRIGGER set_updated_at_hr_jobs BEFORE UPDATE ON public.hr_jobs FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'set_updated_at_hr_emps') THEN
-        CREATE TRIGGER set_updated_at_hr_emps BEFORE UPDATE ON public.hr_employees FOR EACH ROW EXECUTE FUNCTION update_modified_column();
+        CREATE TRIGGER set_updated_at_hr_emps BEFORE UPDATE ON public.hr_employees FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'set_updated_at_hr_contracts') THEN
-        CREATE TRIGGER set_updated_at_hr_contracts BEFORE UPDATE ON public.hr_contracts FOR EACH ROW EXECUTE FUNCTION update_modified_column();
+        CREATE TRIGGER set_updated_at_hr_contracts BEFORE UPDATE ON public.hr_contracts FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
     END IF;
 END $$;
 

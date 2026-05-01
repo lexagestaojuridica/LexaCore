@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS public.process_captures (
 ALTER TABLE public.process_captures ENABLE ROW LEVEL SECURITY;
 
 -- Setup RLS para process_captures (Acesso através do processo)
+DROP POLICY IF EXISTS "Users can view captures for their organization's processes" ON public.process_captures;
 CREATE POLICY "Users can view captures for their organization's processes"
 ON public.process_captures
 FOR SELECT
@@ -34,6 +35,7 @@ USING (
   )
 );
 
+DROP POLICY IF EXISTS "Service Role can manage process captures" ON public.process_captures;
 CREATE POLICY "Service Role can manage process captures"
 ON public.process_captures
 FOR ALL

@@ -66,7 +66,7 @@ CREATE INDEX IF NOT EXISTS idx_hr_leave_emp ON public.hr_leave_requests(employee
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'set_updated_at_hr_leaves') THEN
-        CREATE TRIGGER set_updated_at_hr_leaves BEFORE UPDATE ON public.hr_leave_requests FOR EACH ROW EXECUTE FUNCTION update_modified_column();
+        CREATE TRIGGER set_updated_at_hr_leaves BEFORE UPDATE ON public.hr_leave_requests FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
     END IF;
 END $$;
 
@@ -78,24 +78,30 @@ ALTER TABLE public.hr_leave_requests ENABLE ROW LEVEL SECURITY;
 
 -- 1. Time Entries
 -- Everyone can insert their own time entries.
+DROP POLICY IF EXISTS "Users can insert their own time entries" ON public.hr_time_entries;
 CREATE POLICY "Users can insert their own time entries" ON public.hr_time_entries FOR INSERT
     WITH CHECK (organization_id = get_user_organization_id());
 
 -- Users can only view time entries of their org
+DROP POLICY IF EXISTS "Users can view time entries in org" ON public.hr_time_entries;
 CREATE POLICY "Users can view time entries in org" ON public.hr_time_entries FOR SELECT
     USING (organization_id = get_user_organization_id());
 
 -- Updates/Deletes ONLY by admins/HR (handled by App logic, but global isolate here)
+DROP POLICY IF EXISTS "Updates allowed by org members" ON public.hr_time_entries;
 CREATE POLICY "Updates allowed by org members" ON public.hr_time_entries FOR UPDATE
     USING (organization_id = get_user_organization_id());
 
 
 -- 2. Leave Requests
+DROP POLICY IF EXISTS "Users can insert leave requests" ON public.hr_leave_requests;
 CREATE POLICY "Users can insert leave requests" ON public.hr_leave_requests FOR INSERT
     WITH CHECK (organization_id = get_user_organization_id());
 
+DROP POLICY IF EXISTS "Users can view leave requests in org" ON public.hr_leave_requests;
 CREATE POLICY "Users can view leave requests in org" ON public.hr_leave_requests FOR SELECT
     USING (organization_id = get_user_organization_id());
     
+DROP POLICY IF EXISTS "Updates allowed by org members" ON public.hr_leave_requests;
 CREATE POLICY "Updates allowed by org members" ON public.hr_leave_requests FOR UPDATE
     USING (organization_id = get_user_organization_id());

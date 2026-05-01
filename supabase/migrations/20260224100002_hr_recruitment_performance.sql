@@ -115,16 +115,16 @@ CREATE INDEX IF NOT EXISTS idx_hr_pfc_emp ON public.hr_performance_reviews(emplo
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'set_updated_at_hr_jobpostings') THEN
-        CREATE TRIGGER set_updated_at_hr_jobpostings BEFORE UPDATE ON public.hr_job_postings FOR EACH ROW EXECUTE FUNCTION update_modified_column();
+        CREATE TRIGGER set_updated_at_hr_jobpostings BEFORE UPDATE ON public.hr_job_postings FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'set_updated_at_hr_candidates') THEN
-        CREATE TRIGGER set_updated_at_hr_candidates BEFORE UPDATE ON public.hr_candidates FOR EACH ROW EXECUTE FUNCTION update_modified_column();
+        CREATE TRIGGER set_updated_at_hr_candidates BEFORE UPDATE ON public.hr_candidates FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'set_updated_at_hr_pfcycles') THEN
-        CREATE TRIGGER set_updated_at_hr_pfcycles BEFORE UPDATE ON public.hr_performance_cycles FOR EACH ROW EXECUTE FUNCTION update_modified_column();
+        CREATE TRIGGER set_updated_at_hr_pfcycles BEFORE UPDATE ON public.hr_performance_cycles FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'set_updated_at_hr_pfreviews') THEN
-        CREATE TRIGGER set_updated_at_hr_pfreviews BEFORE UPDATE ON public.hr_performance_reviews FOR EACH ROW EXECUTE FUNCTION update_modified_column();
+        CREATE TRIGGER set_updated_at_hr_pfreviews BEFORE UPDATE ON public.hr_performance_reviews FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
     END IF;
 END $$;
 

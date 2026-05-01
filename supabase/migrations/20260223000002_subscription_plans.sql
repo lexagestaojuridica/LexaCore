@@ -46,8 +46,10 @@ CREATE INDEX IF NOT EXISTS idx_org_sub_plan ON organization_subscriptions(plan_i
 ALTER TABLE subscription_plans ENABLE ROW LEVEL SECURITY;
 ALTER TABLE organization_subscriptions ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Everyone can read plans" ON subscription_plans;
 CREATE POLICY "Everyone can read plans" ON subscription_plans FOR SELECT USING (true);
 
+DROP POLICY IF EXISTS "Org members can manage subscriptions" ON organization_subscriptions;
 CREATE POLICY "Org members can manage subscriptions" ON organization_subscriptions FOR ALL
   USING (organization_id IN (SELECT organization_id FROM profiles WHERE user_id = auth.uid()))
   WITH CHECK (organization_id IN (SELECT organization_id FROM profiles WHERE user_id = auth.uid()));

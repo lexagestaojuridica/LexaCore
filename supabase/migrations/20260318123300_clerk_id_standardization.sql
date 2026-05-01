@@ -4,6 +4,9 @@
 
 BEGIN;
 
+-- 0. Drop Views that depend on UUID columns
+DROP VIEW IF EXISTS public.hr_employees_safe;
+
 -- 1. Drop Triggers & Policies
 DO $$ DECLARE r RECORD; BEGIN
     FOR r IN (SELECT trigger_name, event_object_table FROM information_schema.triggers WHERE event_object_schema = 'public') 
@@ -32,7 +35,7 @@ END $$;
 CREATE POLICY "Members can read own organization" ON public.organizations FOR SELECT USING (id = (auth.jwt()->>'org_id'));
 CREATE POLICY "Users can read their own profile" ON public.profiles FOR SELECT USING (user_id = (auth.jwt()->>'sub'));
 CREATE POLICY "Users manage their own timesheet" ON public.timesheet_entries FOR ALL USING (organization_id = (auth.jwt()->>'org_id'));
-CREATE POLICY "Members manage clients" ON public.clientes FOR ALL USING (organization_id = (auth.jwt()->>'org_id'));
+CREATE POLICY "Members manage clients" ON public.clients FOR ALL USING (organization_id = (auth.jwt()->>'org_id'));
 CREATE POLICY "Members manage processes" ON public.processos_juridicos FOR ALL USING (organization_id = (auth.jwt()->>'org_id'));
 
 COMMIT;
