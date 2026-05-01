@@ -1,10 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { useUser } from "@clerk/nextjs";
-import { db as supabase, supabaseClient } from "@/integrations/supabase/db";
+import { useSupabase } from "@/shared/hooks/useSupabase";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-
-const db = supabase;
 
 interface GoogleCalendarConnection {
   id: string;
@@ -28,22 +26,25 @@ interface GoogleAuthResponse {
 
 export function useGoogleCalendar() {
   const { user } = useUser();
+  const db = useSupabase();
+  const supabase = db;
   const queryClient = useQueryClient();
   const [connecting, setConnecting] = useState(false);
 
-  const { data: connection, isLoading: loadingConnection } = useQuery({
-    queryKey: ["google-calendar-connection", user?.id],
-    queryFn: async () => {
-      const { data, error } = await db
-        .from("google_calendar_tokens")
-        .select("*")
-        .eq("user_id", user!.id)
-        .maybeSingle();
-      if (error) throw error;
-      return data as GoogleCalendarConnection | null;
-    },
-    enabled: !!user?.id,
-  });
+    const { data: connection, isLoading: loadingConnection } = useQuery({
+        queryKey: ["google-calendar-connection", user?.id],
+        queryFn: async () => {
+            if (!user?.id) return null;
+            const { data, error } = await db
+                .from("google_calendar_tokens")
+                .select("*")
+                .eq("user_id", String(user.id))
+                .maybeSingle();
+            if (error) throw error;
+            return data as GoogleCalendarConnection | null;
+        },
+        enabled: !!user?.id,
+    });
 
   const isConnected = !!connection;
   const lastSyncAt = connection?.last_sync_at;
@@ -57,8 +58,17 @@ export function useGoogleCalendar() {
 
       if (!code || state !== "google") return;
 
+      console.log("Google Auth: Código detectado, processando...", { state });
+
+      if (!user?.id) {
+        console.log("Google Auth: Aguardando usuário...");
+        return;
+      }
+
       setConnecting(true);
       try {
+        console.log("Google Auth: Trocando código por token...");
+        
         // Clear URL params
         const url = new URL(window.location.href);
         url.searchParams.delete("code");
@@ -73,20 +83,22 @@ export function useGoogleCalendar() {
         if (error) throw error;
         if (!tokenData || tokenData.error) throw new Error(tokenData?.error || "Unknown auth error");
 
+        console.log("Google Auth: Token obtido, buscando perfil...");
         const { data: profile } = await db
           .from("profiles")
           .select("organization_id")
-          .eq("user_id", user!.id)
-          .single();
+          .eq("user_id", String(user.id))
+          .maybeSingle();
 
         if (!profile?.organization_id) throw new Error("Organization not found");
 
         const expiresAt = new Date(Date.now() + tokenData.expires_in * 1000).toISOString();
 
+        console.log("Google Auth: Salvando tokens no banco...");
         const { error: insertError } = await db
           .from("google_calendar_tokens")
           .upsert({
-            user_id: user!.id,
+            user_id: user.id,
             organization_id: profile.organization_id,
             access_token: tokenData.access_token,
             refresh_token: tokenData.refresh_token ?? null,
@@ -97,7 +109,9 @@ export function useGoogleCalendar() {
 
         queryClient.invalidateQueries({ queryKey: ["google-calendar-connection"] });
         toast.success("Google Calendar conectado com sucesso!");
+        console.log("Google Auth: Concluído com sucesso!");
       } catch (err: any) {
+        console.error("Google Auth: Erro no processo:", err);
         toast.error(err.message || "Erro ao conectar Google Calendar");
       } finally {
         setConnecting(false);
@@ -105,7 +119,7 @@ export function useGoogleCalendar() {
     };
 
     handleCodeFromUrl();
-  }, [user?.id, queryClient]);
+  }, [user?.id, queryClient, db, supabase]);
 
   const connect = useCallback(async () => {
     setConnecting(true);

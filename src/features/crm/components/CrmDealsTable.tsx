@@ -61,7 +61,7 @@ export default function CrmDealsTable() {
         queryKey: ["profile", user?.id],
         queryFn: async () => {
             if (!user?.id) return null;
-            const { data, error } = await supabase.from("profiles").select("organization_id").eq("user_id", user.id).single();
+            const { data, error } = await supabase.from("profiles").select("organization_id").eq("user_id", String(user.id)).single();
             if (error) throw error;
             return data;
         },

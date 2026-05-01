@@ -34,10 +34,11 @@ export function useMicrosoftCalendar() {
     const { data: connection, isLoading: loadingConnection } = useQuery({
         queryKey: ["microsoft-calendar-connection", user?.id],
         queryFn: async () => {
+            if (!user?.id) return null;
             const { data, error } = await db
                 .from("microsoft_calendar_tokens")
                 .select("*")
-                .eq("user_id", user!.id)
+                .eq("user_id", String(user.id))
                 .maybeSingle();
             if (error) throw error;
             return data as MicrosoftCalendarConnection | null;
@@ -56,10 +57,18 @@ export function useMicrosoftCalendar() {
             const code = searchParams.get("code");
             const state = searchParams.get("state");
 
-            if (!code || state !== "microsoft" || window.location.pathname !== "/dashboard/agenda") return;
+            if (!code || state !== "microsoft") return;
+
+            console.log("Microsoft Auth: Código detectado na URL, processando...", { code: code.substring(0, 10) + "...", state });
+
+            if (!user?.id) {
+                console.log("Microsoft Auth: Usuário ainda não carregado, aguardando...");
+                return;
+            }
 
             setConnecting(true);
             try {
+                console.log("Microsoft Auth: Trocando código por token...");
                 // Clear URL params
                 const url = new URL(window.location.href);
                 url.searchParams.delete("code");
@@ -75,20 +84,22 @@ export function useMicrosoftCalendar() {
                 if (error) throw error;
                 if (!tokenData || tokenData.error) throw new Error(tokenData?.error || "Unknown auth error");
 
+                console.log("Microsoft Auth: Token obtido, buscando perfil...");
                 const { data: profile } = await db
                     .from("profiles")
                     .select("organization_id")
-                    .eq("user_id", user!.id)
+                    .eq("user_id", String(user.id))
                     .single();
 
                 if (!profile?.organization_id) throw new Error("Organization not found");
 
                 const expiresAt = new Date(Date.now() + tokenData.expires_in * 1000).toISOString();
 
+                console.log("Microsoft Auth: Salvando tokens no banco...");
                 const { error: insertError } = await db
                     .from("microsoft_calendar_tokens")
                     .upsert({
-                        user_id: user!.id,
+                        user_id: user.id,
                         organization_id: profile.organization_id,
                         access_token: tokenData.access_token,
                         refresh_token: tokenData.refresh_token ?? null,
@@ -99,7 +110,9 @@ export function useMicrosoftCalendar() {
 
                 queryClient.invalidateQueries({ queryKey: ["microsoft-calendar-connection"] });
                 toast.success("Microsoft Calendar conectado com sucesso!");
+                console.log("Microsoft Auth: Concluído com sucesso!");
             } catch (err: any) {
+                console.error("Microsoft Auth: Erro no processo:", err);
                 toast.error(err.message || "Erro ao conectar Microsoft Calendar");
             } finally {
                 setConnecting(false);
@@ -107,7 +120,7 @@ export function useMicrosoftCalendar() {
         };
 
         handleCodeFromUrl();
-    }, [user?.id, queryClient]);
+    }, [user?.id, queryClient, db, supabase]);
 
     const connect = useCallback(async () => {
         setConnecting(true);

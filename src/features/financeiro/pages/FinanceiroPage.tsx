@@ -90,7 +90,7 @@ export default function FinanceiroPage() {
     queryKey: ["profile", user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
-      const { data } = await supabase.from("profiles").select("organization_id").eq("user_id", user.id).single();
+      const { data } = await supabase.from("profiles").select("organization_id").eq("user_id", String(user.id)).single();
       return data;
     },
     enabled: !!user?.id,

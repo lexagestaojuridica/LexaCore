@@ -50,7 +50,7 @@ export function GlobalSearch() {
 
         setIsLoading(true);
         try {
-            const { data: profile } = await supabase.from("profiles").select("organization_id").eq("user_id", user.id).maybeSingle();
+            const { data: profile } = await supabase.from("profiles").select("organization_id").eq("user_id", String(user.id)).maybeSingle();
             const orgId = profile?.organization_id as string | undefined;
             if (!orgId) return;
 
